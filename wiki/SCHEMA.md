@@ -1,0 +1,139 @@
+# wiki/SCHEMA.md — llmwiki Structure
+
+This is the schema document for the personal LLM-maintained wiki. It
+implements Karpathy's llmwiki pattern (see
+`https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f`):
+raw sources → wiki pages → schema-doc. **This file is the
+schema-doc.** The LLM consults it whenever it edits the wiki.
+
+---
+
+## Layout
+
+```
+wiki/
+├── SCHEMA.md           # this file — never auto-edit
+├── _ingest_log.jsonl   # append-only log of wiki-ingest invocations
+├── _lint_<YYYYMMDD>.md # wiki-lint reports (one per run)
+├── targets/            # per-bounty-program intel (NOT engagement work dirs)
+├── techniques/         # bug-class patterns
+├── tools/              # caido, tlx, browser, karpathy
+└── findings/           # past confirmed findings, cross-linked
+```
+
+### Naming
+
+- All page filenames are `kebab-case.md`.
+- All slugs are stable. Renames are explicit; lint will flag
+  dangling links.
+- Findings use the same id as `targets/<name>/findings/<id>/` so
+  cross-links work both ways.
+
+### Frontmatter (every wiki page)
+
+```markdown
+---
+title: <human title>
+slug: <kebab-case-slug>
+created_utc: <iso>
+updated_utc: <iso>
+tags: [tag1, tag2, ...]
+inbound: [path/to/page1.md, path/to/page2.md]   # maintained by wiki-lint
+---
+```
+
+`inbound` is a derived field. Don't hand-edit; `wiki-lint` rebuilds it.
+
+---
+
+## Per-folder conventions
+
+### `wiki/targets/<program>.md`
+
+A living dossier for one bounty program. Sections (in this order):
+
+1. **Snapshot** — payout range, rate-limit history, payout speed.
+2. **Scope quirks** — anything non-obvious about scope.
+3. **Auth quirks** — login flow, 2FA, session lifetime.
+4. **Prior findings** — bullet list of `[id](../findings/<id>.md)`.
+5. **Prior FPs that taught us something** — bullet list.
+6. **Sub-targets** — child pages if program is huge.
+
+Tags: `target/<program-name>`.
+
+### `wiki/techniques/<class>/<pattern>.md`
+
+A specific exploit pattern within a bug class. Sections:
+
+1. **Pattern** — the high-level abstract.
+2. **Preconditions** — what must be true for this to apply.
+3. **Detection** — how to spot it statically (js_analyzer hints).
+4. **Triggering** — how to actually fire it dynamically.
+5. **Bypasses** — known bypasses for common defenses.
+6. **Seen-in-the-wild** — append-only list of `{date, target, finding_id}`.
+7. **References** — external links, CVEs.
+
+Tags: `technique/<class>`, `technique/<pattern>`.
+
+### `wiki/tools/<tool>/<note>.md`
+
+Practical notes on a tool. Format is free; keep one tool per page if
+possible. Examples:
+- `wiki/tools/caido/cert-trust.md`
+- `wiki/tools/caido/graphql-quirks.md`
+- `wiki/tools/tlx/framework-overrides.md`
+- `wiki/tools/browser/proxy-setup.md`
+- `wiki/tools/karpathy/llmwiki.md` (canonical Karpathy notes)
+- `wiki/tools/karpathy/autoresearch.md`
+
+Tags: `tool/<tool>`.
+
+### `wiki/findings/<id>.md`
+
+The wiki-side mirror of an engagement finding. Distilled — full
+writeup stays in `targets/<name>/findings/<id>/`. Sections:
+
+1. **One-paragraph distilled story.**
+2. **Pattern slug** — link to `techniques/<class>/<pattern>.md`.
+3. **Target** — link to `targets/<program>.md`.
+4. **Tools used** — links to `tools/...`.
+5. **Lesson learned** — single sentence that applies beyond this
+   one bug.
+
+Tags: `finding`, plus the technique + target tags.
+
+---
+
+## Cross-link rules
+
+1. Every new finding page MUST link to: one technique page, one
+   target page, and ≥1 tool page.
+2. Every new technique page MUST be linked-from ≥1 existing
+   technique or finding page within 24 hours of creation. `wiki-lint`
+   surfaces orphans daily.
+3. Cross-links use relative paths, not URLs.
+4. Backlinks (`inbound:` in frontmatter) are computed by `wiki-lint`;
+   never hand-maintain.
+
+## Editing protocol (`wiki-ingest`)
+
+- One source → multiple pages → single ingest transaction.
+- Idempotent: re-ingesting the same source updates `updated_utc` and
+  may add new cross-refs, but never duplicates a "Seen-in-the-wild"
+  entry that already has the same `{date, finding_id}`.
+- Always append the source path to `wiki/_ingest_log.jsonl` so the
+  full audit trail is reconstructable.
+
+## Lint protocol (`wiki-lint`)
+
+- Reports never auto-delete. They surface candidates; user decides.
+- Orphans older than 30 days get flagged again at higher priority.
+- Contradiction detection uses a single-shot LLM judge on candidate
+  page pairs that share entity tags.
+
+## Out-of-scope content
+
+- Raw Opus transcripts → stay in `targets/<name>/opus/`. Not in wiki.
+- Per-engagement intermediate state → stays in `targets/<name>/`.
+- Secrets / cookies / tokens → never in any wiki page. Use Caido
+  workflow references only.

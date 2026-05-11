@@ -1,0 +1,226 @@
+[
+  {
+    "id": "location_hash",
+    "pattern": "\\blocation\\.hash\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "location.hash — fragment, fully attacker-controllable, never sent to server"
+  },
+  {
+    "id": "location_search",
+    "pattern": "\\blocation\\.search\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "location.search — query string, attacker-controllable"
+  },
+  {
+    "id": "location_href_read",
+    "pattern": "\\blocation\\.href\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "location.href — full URL read; downstream tagger should disambiguate from assignment"
+  },
+  {
+    "id": "location_pathname",
+    "pattern": "\\blocation\\.pathname\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "location.pathname — URL path, partially attacker-controllable"
+  },
+  {
+    "id": "document_URL",
+    "pattern": "\\bdocument\\.URL\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "document.URL — full URL"
+  },
+  {
+    "id": "document_referrer",
+    "pattern": "\\bdocument\\.referrer\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "document.referrer — Referer header value, attacker-controllable"
+  },
+  {
+    "id": "document_cookie",
+    "pattern": "\\bdocument\\.cookie\\b",
+    "kind": "source",
+    "severity": "low",
+    "description": "document.cookie — disclosure / attacker-influenced via Set-Cookie or other origins on subdomain"
+  },
+  {
+    "id": "URLSearchParams_ctor",
+    "pattern": "\\bURLSearchParams\\s*\\(",
+    "kind": "source",
+    "severity": "medium",
+    "description": "new URLSearchParams(...) — typically wraps location.search"
+  },
+  {
+    "id": "message_event_listener",
+    "pattern": "addEventListener\\s*\\(\\s*['\"]message['\"]",
+    "kind": "source",
+    "severity": "high",
+    "description": "addEventListener('message', ...) — postMessage receive; e.data is cross-origin input"
+  },
+  {
+    "id": "onmessage_handler",
+    "pattern": "\\.onmessage\\s*=(?!=)",
+    "kind": "source",
+    "severity": "high",
+    "description": "obj.onmessage = ... — postMessage receive handler"
+  },
+  {
+    "id": "localStorage_get",
+    "pattern": "\\blocalStorage\\.getItem\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "localStorage.getItem(...) — persistent storage, may be attacker-influenced via earlier XSS"
+  },
+  {
+    "id": "sessionStorage_get",
+    "pattern": "\\bsessionStorage\\.getItem\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "sessionStorage.getItem(...) — same as localStorage but per-tab"
+  },
+  {
+    "id": "proto_assign_bracket",
+    "pattern": "(?:__proto__|\\.prototype)\\s*\\[",
+    "kind": "source",
+    "severity": "high",
+    "description": "Bracket assignment on __proto__ or constructor.prototype with dynamic key — prototype pollution write (Stage 1)"
+  },
+  {
+    "id": "proto_assign_direct",
+    "pattern": "__proto__\\s*\\.",
+    "kind": "source",
+    "severity": "high",
+    "description": "Direct __proto__ property write — prototype pollution write (Stage 1)"
+  },
+  {
+    "id": "proto_assign_merge",
+    "pattern": "(?:_\\.merge|deepmerge|\\$\\.extend|Object\\.assign|lodash(?:\\.merge)?)\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "Deep-merge / extend / assign helper receiving user-controlled object — prototype pollution write (Stage 1, regex-only, may FP on benign merges)"
+  },
+  {
+    "id": "process_argv",
+    "pattern": "\\bprocess\\.argv\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "process.argv — attacker-controlled CLI arguments"
+  },
+  {
+    "id": "process_env_secret",
+    "pattern": "\\bprocess\\.env(?:\\.[A-Za-z_$][\\w$]*|\\[)",
+    "kind": "source",
+    "severity": "low",
+    "description": "process.env value read — low severity unless used in security-sensitive context"
+  },
+  {
+    "id": "fs_path_user",
+    "pattern": "\\bfs\\.(?:readFile|readFileSync|writeFile|writeFileSync|unlink|rename|createReadStream|appendFile)\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "fs path argument that may be user-controlled — taint-driven, regex path suppressed via AST_COVERED"
+  },
+  {
+    "id": "child_process_input",
+    "pattern": "\\b(?:exec|execSync|execFile|execFileSync|spawn|spawnSync)\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "data passed to child_process exec/spawn — attacker-controlled when arg is dynamic"
+  },
+  {
+    "id": "express_req_files",
+    "pattern": "\\breq\\.(?:files|file)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Express req.files / req.file — uploaded file metadata (filename, mimetype)"
+  },
+  {
+    "id": "nextjs_searchparams",
+    "pattern": "\\bsearchParams\\s*[\\.\\[]",
+    "kind": "source",
+    "severity": "high",
+    "description": "Next.js App Router searchParams — URL query parameters, attacker-controlled"
+  },
+  {
+    "id": "nextjs_router_query",
+    "pattern": "\\b(?:router\\.query|useRouter\\s*\\(\\s*\\)\\.query)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Next.js Pages Router router.query / useRouter().query — URL params"
+  },
+  {
+    "id": "nextjs_ssrprops_params",
+    "pattern": "\\b(?:context|props)\\.(?:params|query)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Next.js getServerSideProps / getStaticProps context.params / context.query / props.params / props.query"
+  },
+  {
+    "id": "nextjs_api_req",
+    "pattern": "\\breq\\.(?:body|query|cookies)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Next.js API route handler req.body / req.query / req.cookies (pages/api/ and app/api/)"
+  },
+  {
+    "id": "angular_activatedroute_params",
+    "pattern": "\\b(?:this\\.route|activatedRoute|route)\\.(?:params|queryParams|queryParamMap|snapshot)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Angular ActivatedRoute params / snapshot.params / queryParams / queryParamMap — URL route params"
+  },
+  {
+    "id": "angular_http_response",
+    "pattern": "\\b(?:this\\.http\\.(?:get|post|put|delete|patch|request)\\s*\\(|HttpClient\\b)",
+    "kind": "source",
+    "severity": "medium",
+    "description": "Angular HttpClient response body — may carry attacker-influenced data"
+  },
+  {
+    "id": "angular_localstorage_read",
+    "pattern": "\\b(?:localStorage|sessionStorage)\\.getItem\\s*\\(",
+    "kind": "source",
+    "severity": "medium",
+    "description": "Angular component reading localStorage / sessionStorage — can be polluted by prior XSS"
+  },
+  {
+    "id": "vue_route_params",
+    "pattern": "\\b(?:this\\.\\$route|useRoute\\s*\\(\\s*\\))\\.(?:params|query)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Vue Router route.params / route.query — attacker-controlled URL segments"
+  },
+  {
+    "id": "nuxt_useroute",
+    "pattern": "\\buseRoute\\s*\\(\\s*\\)\\.(?:params|query)\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Nuxt 3 useRoute() composable — URL params and query"
+  },
+  {
+    "id": "sveltekit_params",
+    "pattern": "\\bevent\\.(?:params|url\\.searchParams)\\b|\\bparams\\.[A-Za-z_$][\\w$]*\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "SvelteKit load function params / event.params / event.url.searchParams"
+  },
+  {
+    "id": "electron_ipc_renderer",
+    "pattern": "\\bipcRenderer\\.(?:on|once)\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "Electron ipcRenderer.on / once message data — originates from renderer (web content)"
+  },
+  {
+    "id": "electron_webcontents_input",
+    "pattern": "\\bwebContents\\.(?:loadURL|executeJavaScript)\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "Electron webContents.loadURL / executeJavaScript input — high-risk in main process"
+  }
+]
