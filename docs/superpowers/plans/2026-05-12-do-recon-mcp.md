@@ -320,11 +320,12 @@ def _classify(token: str) -> Target:
         return Target(TargetKind.WILDCARD, domain.lower())
     try:
         ip = ipaddress.ip_address(token)
+    except ValueError:
+        ip = None
+    if ip is not None:
         if ip.version == 6:
             raise InputError(f"IPv6 not supported yet: {token!r}")
         return Target(TargetKind.IP, str(ip))
-    except ValueError:
-        pass
     if _DOMAIN_RE.match(token):
         raise InputError(f"bare domain {token!r} not allowed — pass as wildcard (*.{token})")
     raise InputError(f"unrecognized target: {token!r}")
