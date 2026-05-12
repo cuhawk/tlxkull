@@ -45,16 +45,31 @@ def _input_payload(target: Target) -> dict[str, str]:
 
 async def run_scan(
     *, droplet, target: Target, local_out: Path, env: dict[str, str],
+    on_phase=None,
 ) -> ScanResult:
     result = ScanResult(target=target)
 
     await droplet.run("mkdir -p /opt/recon/in /opt/recon/out /opt/recon/scripts", check=True)
     for name, content in _input_payload(target).items():
         path = f"/opt/recon/in/{name}"
-        await droplet.run(f"cat > {path} <<'__EOF__'\n{content}\n__EOF__", check=True)
+        # Use base64 + decode on the remote side so the payload survives every shell
+        # quoting edge case (heredoc-terminator collision, embedded $, backticks, …).
+        import base64
+        b64 = base64.b64encode(content.encode()).decode()
+        await droplet.run(
+            f"echo {shlex.quote(b64)} | base64 -d > {shlex.quote(path)}",
+            check=True,
+        )
 
     env_prefix = " ".join(f"{k}={shlex.quote(v)}" for k, v in env.items())
     for phase in _phases_for(target):
+        if on_phase is not None:
+            try:
+                res = on_phase(phase)
+                if hasattr(res, "__await__"):
+                    await res
+            except Exception as e:
+                log.debug("on_phase_callback_failed", err=str(e))
         cmd = f"{env_prefix} bash {_PHASE_BIN}/phase_{phase}.sh"
         rc, out, err = await droplet.run(cmd, check=False, timeout=3600)
         status = "ok" if rc == 0 else "failed"

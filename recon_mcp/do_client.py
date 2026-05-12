@@ -72,7 +72,26 @@ class DOClient:
             raise DOAPIError(f"droplet destroy failed: {r.status_code} {r.text}")
 
     async def list_by_tag(self, tag: str) -> list[dict]:
-        r = await self._req("GET", "/droplets", params={"tag_name": tag})
-        if r.status_code != 200:
-            raise DOAPIError(f"list droplets failed: {r.status_code} {r.text}")
-        return r.json().get("droplets", [])
+        """Return every droplet carrying `tag`, following pagination cursors.
+
+        DO caps responses at 200 per page; the orphan sweep MUST see every page so a
+        runaway job that creates >200 droplets does not leave residue across the cursor.
+        """
+        out: list[dict] = []
+        params: dict[str, Any] = {"tag_name": tag, "per_page": 200}
+        path = "/droplets"
+        seen_pages = 0
+        # Hard cap to defend against pathological cursor loops; 50 pages = 10k droplets.
+        while path and seen_pages < 50:
+            r = await self._req("GET", path, params=params if seen_pages == 0 else None)
+            if r.status_code != 200:
+                raise DOAPIError(f"list droplets failed: {r.status_code} {r.text}")
+            data = r.json()
+            out.extend(data.get("droplets", []))
+            next_url = (((data.get("links") or {}).get("pages") or {}).get("next"))
+            if not next_url:
+                break
+            # Strip the base prefix so _req can prepend it cleanly.
+            path = next_url.split(_BASE, 1)[-1] if _BASE in next_url else next_url
+            seen_pages += 1
+        return out

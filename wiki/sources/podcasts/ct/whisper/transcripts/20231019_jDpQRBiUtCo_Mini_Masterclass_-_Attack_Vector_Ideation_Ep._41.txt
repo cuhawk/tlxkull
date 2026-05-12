@@ -1,0 +1,247 @@
+Yo, what's up, y'all?
+Today we've got something a little bit different
+than our normal scheduled programming.
+I'm going to take a mini episode today
+to talk about how to generate endless attack vectors
+on a given web application.
+I think this is something that we all run into
+when we're attempting to hack web application is you push,
+you push, you push, and then you're just out of attack vectors.
+And over the years, I've put together
+a couple of tips and framework of sorts
+in order to help me get past those sort of plateaus
+that I reach when auditing an application.
+So I thought I'd take some time to share those with you today.
+Before we get into my content, I want to do a shout out
+to a piece of content that I think is one of the finest pieces
+on this topic, and that is the Naham Khan 2023 talk
+by Douglas Day, aka the Archangel.
+And he talks about in that video, he talks about this concept
+of nose within an application and how a lot of the volumes
+that he finds comes from his knowledge of the application
+and how he walks through the app and looks for nose
+or things that he shouldn't be allowed to do.
+And so I'm not going to try to go over that
+and reiterate everything that he says in there.
+Definitely go just Google Naham Khan, Douglas Day,
+or the Archangel, and put that into YouTube
+and watch that video.
+Excellent content there.
+And definitely keep an eye out for that concept of nose
+when you're searching, when you're reading
+through the application.
+Look for things that you shouldn't be able to do.
+Let me give that a shot.
+He also does a shout out a little bit in that YouTube video
+to this whole concept of RBAC matrixing.
+So role-based access control matrixing, creating a matrix
+about the role-based access controls on a specific site.
+And I think that's a really insightful piece of the talk
+as well and really speaks to the thoroughness
+that Douglas takes and brings into any web application
+assessments that he does.
+And I've worked with Douglas many times on live hacking events.
+And I've seen firsthand the crazy attack
+vectors that he comes up with just by thoroughly, thoroughly
+understanding the application, getting it configured
+into all of its different states.
+So definitely an expert on the topic.
+So definitely check out that video.
+We'll link it down in the description below.
+OK.
+So on from Douglas's tips to mine, I've got, let's see,
+six different sections here that I want to talk about.
+And the first one is kind of similar to what Douglas was talking about,
+but I have this written down, use the application like a human,
+not like a hacker.
+OK.
+So oftentimes when I go into an application, I'm thinking, all right,
+how do I hack this?
+How do I hack this?
+How do I hack this?
+And that makes sense because that's our goal in this scenario, right?
+Is to be able to hack the application.
+But I think sometimes that is inversely helpful.
+It's unhelpful for us to actually understand what the application is about,
+what data is being used in the application, what is important,
+what processes are important.
+And so when I remind myself to use the application like a human,
+essentially what I do is I leave Burp or Kaido or On
+or whatever I'm proxing just to keep all that traffic.
+But I don't use any of it, and I just step through the application,
+the UI, like a human.
+I'm trying to figure out exactly what that application is supposed
+to be used for, what sort of user journeys the user would go on
+as they're going through that application
+and trying to get the application into a little bit more
+of a configured state.
+I ran into an example the other day of this concept resulting in a bug
+when I was working on a website that essentially allowed you
+to configure specific devices.
+And so I selected one of the devices from the dropdown,
+and then it gave you a bunch of options you could select.
+And I did this for a couple of the devices,
+but none of the options seemed really interesting.
+And then I was like, okay, well, let me be a little bit more thorough
+with my testing, went back, kind of clicked through the various different types
+of devices that I could configure.
+And I found a device further down the list that allowed me to configure some special settings,
+and those settings resulted in a full-read SSRF.
+And so definitely make sure you're one being thorough in your testing and exhausting all the user journey
+and code paths, and also using the application like a human, not like a hacker.
+I don't know.
+Maybe that doesn't make a bunch of sense, but it kind of rings in my head.
+All right, next, reading the documentation and looking for cannot statements.
+Okay, this is so underrated, it's ridiculous.
+Like, and it's not sexy, so I understand why most people don't do it.
+But going and just literally dumping the whole documentation for a product and reading it all,
+like literally sometimes during live hacking events when I'm like brain fried,
+I can't be at my computer anymore.
+I'll take the documentation for a product, export it to a PDF,
+or get it in some sort of form that I can get it on my e-reader.
+And I'll just take my e-reader out to a hammock and just like leisure read through the documentation.
+Okay, and when you're doing that, you're looking for a couple specific things.
+You're looking for cannot statements.
+So X user cannot do XYZ.
+You're looking for boundaries that have been set up in the application,
+which we'll talk a little bit more about later.
+And like Douglas mentioned before, you're looking for those no's.
+You're looking for anything that says, you know, the limit on this is X, right?
+Because that's something that we could potentially bypass.
+And it always helps when you're writing a report to,
+to be able to reference a specific line of documentation.
+Because if you can do that, it's very hard to debate that it's an issue,
+because then you can start talking to the program about this whole concept.
+Excuse me, this whole concept of user trust,
+where you've built documentation for your product.
+The user, you, the user trusts you that this documentation is accurate.
+And then you violated that trust by creating a product that does not actually comply with the standards that you've set up for this user.
+So it makes for a very convincing argument in the context of a report.
+And I've never gotten, well, I can't say never.
+Sometimes they'll just say like, yeah, that's a documentation bug.
+It shouldn't, it shouldn't be there.
+But most of the time in their own documentation, they will, they will pay out the bounty.
+For if you have a piece of documentation that contradicts what the application's actual functionality is.
+So definitely check that out.
+In addition to reading documentation, not only the help documentation, but go and read the forums,
+go and read the help desk facts, go and read the GitHub issues, go and read the wikis, right?
+Just a couple of live hacking events back, I found a bug in a piece of software,
+very widely used piece of software.
+And the way I found that was going to a GitHub issue.
+And I found an issue where I found a, yeah, an issue on GitHub issues that said, hey, you know,
+there's this specific functionality that happens every once in a while that kind of sort of looks
+like a security bug, but it's just a bug.
+And they're like, okay, we'll fix it.
+And so I looked into how that happened.
+And I found a way to forcibly recreate it and force that bug to happen to other users,
+resulted in a great bug and actually won me the most impactful bug on a specific target in the
+life hacking event.
+So definitely don't skip those GitHub issues.
+Always search for things like security or any keywords that might be correlated to that specific
+products like disclosure or leak or anything like that.
+And read all the GitHub issues you can get your hands on to understand why that product is acting
+the way that it is in some weird scenarios.
+Okay.
+Next was look at the grade out areas in the application.
+Now this is pretty standard, but in an application, oftentimes there will be buttons that are
+disabled and text areas you're not supposed to be able to modify or write in.
+And we all know that once, you know, you submit the form or whatever, you can just add,
+you know, you can intercept it at that level, right?
+And modify text boxes that shouldn't be modifiable and stuff like that.
+And sometimes that does result in vulnerabilities and is certainly something to be thinking
+about when you're coming up with attack factors.
+But I found that modifying things at the UI level allows you to use the application more like a
+human, right?
+And understand the flow that the application goes through, which may give you additional insight
+into request formatting and stuff like that.
+So you don't have to like fight with the format from minify.js file or something of the like.
+So that's a cool way to do it.
+There's lots of ways you can do it.
+You can use like a Burt match and replace or a Kaido match and replace to, you know,
+remove disabled elements.
+I personally have a JavaScript bookmarklet that I've been using in my browser for a very long time
+that will just go through and find every disabled element and undisable it, which is really helpful.
+And it also takes hidden elements and unhides them, which is also helpful.
+So maybe you can code up that bookmarklet similar, or I'm sure there's better ways of doing it through
+like a Chrome extension or something of the like.
+And I'm sure someone in the community will come up with a better solution than my hacky little
+bookmarklet.
+So keep that technique in mind as well.
+Paying attention to those grayed out areas of the application, re-enabling those, and then walking
+through the code path in the UI so that you understand how everything, how the application
+flows and maybe you can skip steps or something of the like.
+Okay.
+The next one is look for information that is in the UI, or excuse me, that is not in the UI,
+but is in the API response.
+Okay.
+So this can be indicative of a couple of things.
+It can be indicative of the API being used in other areas of the application and they just,
+you know, bundle all that data together.
+It could be indicative of legacy features that are still there, right?
+So if you had a feature that uses a piece of information before and they've removed that feature,
+pay attention to what information is being returned in that API recall, or that API response,
+because it will lead you to understanding what that application functionality was in the past.
+And you might even be able to look up like JS files on web archive or something of the like,
+to be able to figure out why that functionality was there.
+Or it can also just kind of inform your gut and allow you to make a more educated guess on
+maybe fields that you could modify in other places of the application, or even
+like if the application has like a start out area of like text and, but that text is in the API response.
+Sometimes programs will accept bugs like that because they're trying to prevent that leak,
+even if someone does get access to that person's account.
+So that's another, that's another cool tip there is if you have particularly grayed out or censored
+information, maybe the social security number only has the last four digits, or maybe your email is
+only being shown the first character and then the at whatever.com. If you can find a way to leak
+that, then that can violate the security boundaries in a threat model that that application has set up.
+And those are intentional security decisions that are being made by the team. So something to keep
+in mind there as well. This doesn't always result in a bug, just mind you. And one of the quotes that I
+really loved from Douglas's talk that I mentioned earlier was, make sure you evaluate the security
+impact of your nose because sometimes there is no security impact. But in scenarios, like I mentioned
+before, where there's an intentional security decision made to conceal a certain piece of
+information, if you can leak that information, it might be of something of interest to the team.
+And we know that unlike Joel, or unlike some of the other hackers we have in this podcast, I am a big
+fan of submitting every bug that's a vulnerability, getting that money, whether it's a low or a medium
+or a crit or a high. So don't let that deter you. Let's get submitting those bugs anyway.
+Yeah. And so the next one that I had on the list here was look between, look for differences between
+in the UI between two different accounts. Okay. So if you've got a admin account and a non-admin account,
+or if you've got different tiers of RBAC role-based access controls, make sure you're looking at the
+differences in the UI as well. And that can tell you and inform you which areas of the application
+you should try to attack as the less privileged user. This also goes for applications that have
+different user tiers, I guess, that are not really accessible to the normal user. For example,
+if you have like a support agent or a staff account, try to figure out what is informing
+the client side that that user or that support agent or staff account is a staff account. And then
+try to replicate that on your account because then you may be able to walk through so much of the
+application on the client side much easier rather than having to dig through JS files and break your
+brain trying to read minified JavaScript. Okay. Last one that I had here on the list was paywalls.
+Anytime there's a paywall, we talk about this all the time on the podcast, anytime there's a paywall,
+just pay it. Just bypass the paywall with one account by paying it, right? And then have the
+other account and try to access some of those same features. It's so often that I see people say,
+oh, this feature is only available in the premium, but that's just a function of something that they've
+exposed on the UI. And I imagine that this is a part of sort of a flawed development cycle,
+right? That they're developing this whole product and then they're saying, okay, well, where do we
+want to put these tiers in? And I always put the tiers here, here, here, here, right? And they kind
+of tweak that over time, right? But a lot of that stuff is just happening in the front end
+and it's not being implemented on the back end as well after the functionalities already been
+developed. Okay. So as a review, we talked about checking out that awesome talk by Douglas Day
+on nose and how to search for nose within an application to come up with great attack vectors.
+Using the application like a human, not like a hacker, try to figure out how the app works,
+what makes sense in the application from a user's perspective, and literally just don't even look at,
+your, your HTTP proxy, just use the application and get it into weird configured states, right?
+Read the documentation and not only the documentation, read forms, read GitHub issues,
+read help desk stuff, read wikis, read all that shit and assimilate it all and try to understand
+the far reaching breadth of this application or understand the deepest depths of this application.
+You have to get intimate with the application in these scenarios.
+So make sure you're reading everything about it, right? Look for grayed out areas in the application
+and try to use those to indicate where some of the security boundaries might be. And this is also a
+great indicator in a report like, hey, no, this button is specifically disabled and I am able to utilize it.
+It's very hard to, hard to debate with that in the context of a report.
+Look for information that is not in the UI, but is in the API response that can inform where old legacy
+features might have been or what kind of information is getting stored in different objects, which can lead
+to other vulnerabilities. Look for the differences in the UI between two different accounts of different
+tiers, tier level. So this could be sort of an RBAC situation, or it could be like a, like a more vertical,
+privilege escalation to like staff user or something of the like, which you can emulate via match and
+replace on the client side once you've identified how the client side is identifying those users.
+And then finally, paywalls. Make sure you're not shying away from that $20, $30 investment to get
+a two or $3K buck. All right, that's it for today. Hope you all got something out of that. Let me know if I
+missed anything. Shoot me a message on Twitter or on the info at criticalthinkingpodcast.io if you've
+got any more cool attack vector thinking, attack vector formulation tips that you'd like to share.
+All right. See y'all next week.

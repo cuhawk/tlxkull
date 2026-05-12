@@ -28,10 +28,16 @@ CREATE TABLE IF NOT EXISTS jobs (
     regions TEXT NOT NULL,
     droplets TEXT NOT NULL DEFAULT '[]',
     artifacts_dir TEXT,
-    error TEXT
+    error TEXT,
+    phase_progress TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 """
+
+
+_MIGRATIONS = (
+    "ALTER TABLE jobs ADD COLUMN phase_progress TEXT NOT NULL DEFAULT '{}'",
+)
 
 
 class JobStore:
@@ -42,6 +48,11 @@ class JobStore:
     async def init(self) -> None:
         async with aiosqlite.connect(self._path) as db:
             await db.executescript(_SCHEMA)
+            for stmt in _MIGRATIONS:
+                try:
+                    await db.execute(stmt)
+                except aiosqlite.OperationalError:
+                    pass
             await db.commit()
 
     async def create(self, *, target_spec: dict, regions: list[str], artifacts_dir: str | None = None) -> str:
@@ -66,6 +77,27 @@ class JobStore:
     async def set_status(self, job_id: str, status: JobStatus) -> None:
         async with aiosqlite.connect(self._path) as db:
             await db.execute("UPDATE jobs SET status = ? WHERE id = ?", (status.value, job_id))
+            await db.commit()
+
+    async def set_artifacts_dir(self, job_id: str, artifacts_dir: str) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            await db.execute(
+                "UPDATE jobs SET artifacts_dir = ? WHERE id = ?",
+                (artifacts_dir, job_id),
+            )
+            await db.commit()
+
+    async def set_phase(self, job_id: str, *, droplet_tag: str, phase: str) -> None:
+        async with aiosqlite.connect(self._path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute("SELECT phase_progress FROM jobs WHERE id = ?", (job_id,)) as cur:
+                row = await cur.fetchone()
+            prog = json.loads(row["phase_progress"]) if row and row["phase_progress"] else {}
+            prog[droplet_tag] = phase
+            await db.execute(
+                "UPDATE jobs SET phase_progress = ? WHERE id = ?",
+                (json.dumps(prog), job_id),
+            )
             await db.commit()
 
     async def attach_droplet(self, job_id: str, *, droplet_id: int, region: str) -> None:
@@ -114,4 +146,5 @@ class JobStore:
             "droplets": json.loads(row["droplets"]),
             "artifacts_dir": row["artifacts_dir"],
             "error": row["error"],
+            "phase_progress": json.loads(row["phase_progress"]) if row["phase_progress"] else {},
         }

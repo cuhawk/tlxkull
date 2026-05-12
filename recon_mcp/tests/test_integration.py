@@ -26,9 +26,19 @@ async def test_end_to_end_smoke(tmp_path, monkeypatch):
         "id": 1, "status": "active",
         "networks": {"v4": [{"type": "public", "ip_address": "9.9.9.9"}]},
     }
+    async def _fake_keypair(d, j):
+        return (d / f"{j}.key", "ssh-ed25519 AAA== test")
+
+    async def _fake_host_keypair():
+        return (
+            "-----BEGIN OPENSSH PRIVATE KEY-----\nAAAA\n-----END OPENSSH PRIVATE KEY-----\n",
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH+nope nope",
+        )
+
+    monkeypatch.setattr("recon_mcp.handlers.start._gen_ssh_keypair", _fake_keypair)
+    monkeypatch.setattr("recon_mcp.handlers.start._gen_host_keypair", _fake_host_keypair)
     monkeypatch.setattr(
-        "recon_mcp.handlers.start._gen_ssh_keypair",
-        lambda d, j: (d / f"{j}.key", "ssh-ed25519 AAA== test"),
+        "recon_mcp.handlers.start.asyncssh.import_public_key", lambda s: object()
     )
 
     with patch("recon_mcp.handlers.start.DOClient") as DO, \

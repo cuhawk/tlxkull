@@ -15,4 +15,5 @@ async def handle_status(inp: ReconStatusIn, *, store: JobStore) -> ReconStatusOu
         droplets=job["droplets"],
         artifacts_dir=job["artifacts_dir"],
         error=job["error"],
+        phase_progress=job.get("phase_progress") or {},
     )

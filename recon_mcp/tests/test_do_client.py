@@ -58,13 +58,36 @@ async def test_destroy_droplet(client):
 @respx.mock
 @pytest.mark.asyncio
 async def test_list_by_tag(client):
-    respx.get("https://api.digitalocean.com/v2/droplets?tag_name=recon").mock(
+    respx.get("https://api.digitalocean.com/v2/droplets").mock(
         return_value=httpx.Response(200, json={"droplets": [
             {"id": 1, "name": "a"}, {"id": 2, "name": "b"},
         ]})
     )
     res = await client.list_by_tag("recon")
     assert [d["id"] for d in res] == [1, 2]
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_list_by_tag_pagination(client):
+    """Follows `links.pages.next` across pages so >200-droplet runs don't silently truncate."""
+    call_count = {"n": 0}
+
+    def _handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return httpx.Response(200, json={
+                "droplets": [{"id": 1}, {"id": 2}],
+                "links": {"pages": {
+                    "next": "https://api.digitalocean.com/v2/droplets?tag_name=recon&page=2&per_page=200",
+                }},
+            })
+        return httpx.Response(200, json={"droplets": [{"id": 3}]})
+
+    respx.get("https://api.digitalocean.com/v2/droplets").mock(side_effect=_handler)
+    res = await client.list_by_tag("recon")
+    assert [d["id"] for d in res] == [1, 2, 3]
+    assert call_count["n"] == 2
 
 
 @respx.mock

@@ -31,6 +31,9 @@ class Droplet:
     max_wait_sec: float = 300.0
     droplet_id: int | None = field(default=None, init=False)
     ip: str | None = field(default=None, init=False)
+    # Pinned host keys from the first successful SSH handshake. Subsequent connects
+    # MUST present one of these — defends against MITM after TOFU.
+    _pinned_host_keys: list = field(default_factory=list, init=False)
 
     async def _provision_and_wait(self, poll_interval: float = 5.0) -> str:
         created = await self.do.create_droplet(
@@ -81,9 +84,17 @@ class Droplet:
     async def _connect(self) -> asyncssh.SSHClientConnection:
         if not self.ip or not self.ssh_private_key_path:
             raise RuntimeError("Droplet._connect: not provisioned (ip or key path missing)")
+        if not self._pinned_host_keys:
+            # Host key must be pinned (via cloud-init pre-provisioning) before connecting.
+            # Refuse to fall back to known_hosts=None — that re-introduces MITM risk.
+            raise RuntimeError(
+                f"Droplet._connect: no host key pinned for droplet {self.droplet_id}; "
+                "refusing unauthenticated connect"
+            )
+        known_hosts = (self._pinned_host_keys, [], [])
         return await asyncssh.connect(
             host=self.ip, username="root", client_keys=[self.ssh_private_key_path],
-            known_hosts=None, connect_timeout=20,
+            known_hosts=known_hosts, connect_timeout=20,
         )
 
     async def run(self, cmd: str, *, check: bool = True, timeout: float = 1800.0) -> tuple[int, str, str]:

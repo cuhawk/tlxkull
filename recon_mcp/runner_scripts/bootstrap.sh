@@ -14,8 +14,10 @@ apt-get install -y --no-install-recommends \
 export GOBIN=/usr/local/bin
 SUBFINDER_VER="v2.6.6"
 HTTPX_VER="v1.6.10"
+DNSX_VER="v1.2.1"
 go install -v "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@${SUBFINDER_VER}"
 go install -v "github.com/projectdiscovery/httpx/cmd/httpx@${HTTPX_VER}"
+go install -v "github.com/projectdiscovery/dnsx/cmd/dnsx@${DNSX_VER}"
 
 # amass
 AMASS_VER="v4.2.0"
