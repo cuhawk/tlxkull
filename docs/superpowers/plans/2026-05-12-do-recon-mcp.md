@@ -820,12 +820,13 @@ class DOClient:
         async with httpx.AsyncClient(timeout=self._timeout) as c:
             for attempt in range(3):
                 r = await c.request(method, url, headers=self._headers(), **kw)
-                if r.status_code == 429 and attempt < 2:
-                    delay = float(r.headers.get("retry-after", "1"))
-                    await asyncio.sleep(max(delay, 0.1))
-                    continue
-                return r
-            raise DOAPIError(f"429 after retries: {r.text}")
+                if r.status_code != 429:
+                    return r
+                if attempt == 2:
+                    raise DOAPIError(f"429 after retries: {r.text}")
+                delay = float(r.headers.get("retry-after", "1"))
+                await asyncio.sleep(max(delay, 0.1))
+        raise AssertionError("unreachable")
 
     async def create_ssh_key(self, name: str, public_key: str) -> dict:
         r = await self._req("POST", "/account/keys", json={"name": name, "public_key": public_key})
@@ -854,8 +855,6 @@ class DOClient:
 
     async def get_droplet(self, droplet_id: int) -> dict:
         r = await self._req("GET", f"/droplets/{droplet_id}")
-        if r.status_code == 429:
-            raise DOAPIError(f"429 after retries: {r.text}")
         if r.status_code != 200:
             raise DOAPIError(f"droplet get failed: {r.status_code} {r.text}")
         return r.json()["droplet"]
@@ -949,10 +948,12 @@ apt-get install -y --no-install-recommends \
     masscan nmap dnsutils whois jq curl wget git unzip ca-certificates \
     python3 python3-pip golang-go rsync
 
-# projectdiscovery toolchain
+# projectdiscovery toolchain (pinned — @latest breaks bootstrap silently when upstream churns)
 export GOBIN=/usr/local/bin
-go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+SUBFINDER_VER="v2.6.6"
+HTTPX_VER="v1.6.10"
+go install -v "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@${SUBFINDER_VER}"
+go install -v "github.com/projectdiscovery/httpx/cmd/httpx@${HTTPX_VER}"
 
 # amass
 AMASS_VER="v4.2.0"
@@ -1185,7 +1186,8 @@ class Droplet:
                 log.error("destroy_failed", droplet_id=self.droplet_id, err=str(e))
 
     async def _connect(self) -> asyncssh.SSHClientConnection:
-        assert self.ip and self.ssh_private_key_path, "not provisioned"
+        if not self.ip or not self.ssh_private_key_path:
+            raise RuntimeError("Droplet._connect: not provisioned (ip or key path missing)")
         return await asyncssh.connect(
             host=self.ip, username="root", client_keys=[self.ssh_private_key_path],
             known_hosts=None, connect_timeout=20,

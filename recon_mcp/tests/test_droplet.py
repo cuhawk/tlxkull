@@ -44,6 +44,22 @@ async def test_destroy_called_on_exception(fake_do, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_destroy_called_when_bootstrap_fails(fake_do, monkeypatch):
+    monkeypatch.setattr("asyncio.sleep", AsyncMock())
+    from recon_mcp import droplet as _dm
+    monkeypatch.setattr(
+        _dm.Droplet, "_wait_bootstrap",
+        AsyncMock(side_effect=ProvisionError("bootstrap timeout")),
+    )
+    d = Droplet(do=fake_do, name="t", region="nyc1", size="s",
+                image="i", ssh_key_ids=[1], user_data="x", tags=["t"])
+    with pytest.raises(ProvisionError, match="bootstrap timeout"):
+        async with d:
+            pass
+    fake_do.destroy_droplet.assert_awaited_once_with(111)
+
+
+@pytest.mark.asyncio
 async def test_provision_timeout(monkeypatch):
     do = MagicMock()
     do.create_droplet = AsyncMock(return_value={"id": 1, "status": "new"})

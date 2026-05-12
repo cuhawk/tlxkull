@@ -27,12 +27,13 @@ class DOClient:
         async with httpx.AsyncClient(timeout=self._timeout) as c:
             for attempt in range(3):
                 r = await c.request(method, url, headers=self._headers(), **kw)
-                if r.status_code == 429 and attempt < 2:
-                    delay = float(r.headers.get("retry-after", "1"))
-                    await asyncio.sleep(max(delay, 0.1))
-                    continue
-                return r
-            raise DOAPIError(f"429 after retries: {r.text}")
+                if r.status_code != 429:
+                    return r
+                if attempt == 2:
+                    raise DOAPIError(f"429 after retries: {r.text}")
+                delay = float(r.headers.get("retry-after", "1"))
+                await asyncio.sleep(max(delay, 0.1))
+        raise AssertionError("unreachable")
 
     async def create_ssh_key(self, name: str, public_key: str) -> dict:
         r = await self._req("POST", "/account/keys", json={"name": name, "public_key": public_key})
@@ -61,8 +62,6 @@ class DOClient:
 
     async def get_droplet(self, droplet_id: int) -> dict:
         r = await self._req("GET", f"/droplets/{droplet_id}")
-        if r.status_code == 429:
-            raise DOAPIError(f"429 after retries: {r.text}")
         if r.status_code != 200:
             raise DOAPIError(f"droplet get failed: {r.status_code} {r.text}")
         return r.json()["droplet"]

@@ -79,7 +79,8 @@ class Droplet:
                 log.error("destroy_failed", droplet_id=self.droplet_id, err=str(e))
 
     async def _connect(self) -> asyncssh.SSHClientConnection:
-        assert self.ip and self.ssh_private_key_path, "not provisioned"
+        if not self.ip or not self.ssh_private_key_path:
+            raise RuntimeError("Droplet._connect: not provisioned (ip or key path missing)")
         return await asyncssh.connect(
             host=self.ip, username="root", client_keys=[self.ssh_private_key_path],
             known_hosts=None, connect_timeout=20,

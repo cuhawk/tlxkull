@@ -10,10 +10,12 @@ apt-get install -y --no-install-recommends \
     masscan nmap dnsutils whois jq curl wget git unzip ca-certificates \
     python3 python3-pip golang-go rsync
 
-# projectdiscovery toolchain
+# projectdiscovery toolchain (pinned — @latest breaks bootstrap silently when upstream churns)
 export GOBIN=/usr/local/bin
-go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+SUBFINDER_VER="v2.6.6"
+HTTPX_VER="v1.6.10"
+go install -v "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@${SUBFINDER_VER}"
+go install -v "github.com/projectdiscovery/httpx/cmd/httpx@${HTTPX_VER}"
 
 # amass
 AMASS_VER="v4.2.0"
