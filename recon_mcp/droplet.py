@@ -102,3 +102,14 @@ class Droplet:
         async with await self._connect() as conn:
             async with conn.start_sftp_client() as sftp:
                 await sftp.put(local_path, remote_path, recurse=True)
+
+
+async def push_scripts(droplet: "Droplet") -> None:
+    """Upload all phase scripts to /opt/recon/scripts and chmod them."""
+    from pathlib import Path
+    script_dir = Path(__file__).parent / "runner_scripts"
+    await droplet.run("mkdir -p /opt/recon/scripts", check=True)
+    for phase in ("scan", "subdomains", "resolve", "httpx", "ferox"):
+        local = script_dir / f"phase_{phase}.sh"
+        await droplet.push(str(local), f"/opt/recon/scripts/phase_{phase}.sh")
+    await droplet.run("chmod +x /opt/recon/scripts/*.sh", check=True)
