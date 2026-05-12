@@ -46,3 +46,11 @@ def test_rejects_ipv6_cidr_for_now():
 def test_dedupes_input():
     result = parse_targets(["1.1.1.1", "1.1.1.1"])
     assert len(result) == 1
+
+
+def test_cidr_normalizes_host_bits():
+    assert parse_targets(["10.0.0.5/24"]) == [Target(kind=TargetKind.CIDR, value="10.0.0.0/24")]
+
+
+def test_wildcard_case_normalized():
+    assert parse_targets(["*.Foo.COM"]) == [Target(kind=TargetKind.WILDCARD, value="foo.com")]

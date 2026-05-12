@@ -285,7 +285,7 @@ class Target:
     value: str
 
 
-class InputError(ValueError):
+class InputError(Exception):
     pass
 
 
@@ -295,7 +295,8 @@ _DOMAIN_RE = re.compile(r"^(?:\*\.)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{
 def _strip(raw: str) -> str:
     raw = raw.strip()
     if "://" in raw:
-        raw = urlparse(raw).netloc or urlparse(raw).path
+        parsed = urlparse(raw)
+        raw = parsed.netloc or parsed.path
     raw = raw.split("/", 1)[0] if not _looks_like_cidr(raw) else raw
     return raw.strip().rstrip(".")
 
