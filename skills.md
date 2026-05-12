@@ -21,6 +21,20 @@ target <name>"; OR `status.json` missing.
 **Tools used:** none (pure parsing).
 **Result block:** `{ phase: "init", status: "done|error", scope: {...} }`.
 
+### `recon`
+**Trigger:** `status.json.phase >= init` AND `targets/<name>/recon/`
+empty; OR user says "recon", "port scan", "subdomain enum", "ferox" on
+a target. Multi-region geo check optional.
+**Reads:** `http.md` scope (IPs, CIDRs, wildcard domains).
+**Writes:** `targets/<name>/recon/<job_id>/` (per-phase artifacts) +
+`status.json.recon = {job_id, summary_path, finished_at}`.
+**Tools used:** `recon` MCP (`recon_start`, `recon_status`,
+`recon_results`, `recon_cancel`, `recon_list_jobs`,
+`recon_cleanup_orphans`). Spawns ephemeral DO droplets in parallel and
+tears down.
+**Result block:** `{ phase: "recon", job_id, hosts_alive: N,
+http_endpoints: M, subdomains: S }`.
+
 ### `js-harvest`
 **Trigger:** `status.json.phase >= init` AND no `raw/` dir.
 **Reads:** `status.json.scope`.
