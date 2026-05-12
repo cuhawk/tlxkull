@@ -66,6 +66,32 @@ version <3.11.
 6. **Caveman doesn't apply to artifacts.** Findings, reports, wiki
    pages, commit messages — write proper English. Caveman is for chat
    updates back to the user only.
+7. **External API keys — restricted whitelist.** `ANTHROPIC_API_KEY`
+   and Google Gemini API keys (`GOOGLE_API_KEY`, especially anything
+   using `gemini-2.5-flash-lite` or other Gemini chat models) may
+   ONLY be auto-used by these two code paths:
+   - **Callgraph analysis / chain audit** — `tlx/modules/js_analyzer/*`
+     (`claude_agent.py`, `exploit_agent.py`, `js_run_audit`,
+     `js_audit_status`, `js_consult_opus`). Uses `ANTHROPIC_API_KEY`.
+   - **JS source ingestion** — `tlx/modules/rag/` calls that embed
+     `targets/<name>/sources/` (post-`sourcemap-explode`) into the
+     per-target Chroma collection. Uses `GOOGLE_API_KEY` for
+     `gemini-embedding-001`.
+
+   Everything else — wiki ingestion/distillation, autoresearch loop
+   orchestration, hypothesis generation, judging, prose synthesis,
+   compaction, summarization — runs as **Claude Code (this
+   conversation)**. If a task cannot be done from Claude Code, say
+   "can't do it" and stop. Do NOT add new code paths or skills that
+   invoke `anthropic.Anthropic`, `google.genai` chat models, or
+   `GeminiEngine`/Flash-Lite to fill the gap. Existing whitelisted
+   paths are the only exception.
+
+   The wiki RAG `wiki` collection (3072d Gemini embeddings) is
+   grandfathered — re-embedding on update is allowed because the
+   collection is already provisioned and the cost is per-write only.
+   But do NOT add new pipelines that bulk-embed external corpora
+   into `wiki` without user OK per ingest.
 
 ## Skill discipline
 

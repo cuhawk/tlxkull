@@ -27,8 +27,9 @@ done
 count=0
 for vtt in "$VTT_DIR"/*.en.vtt; do
   base="$(basename "$vtt" .en.vtt)"
-  # Filename pattern: <YYYYMMDD>_<VIDEO_ID>_<title>
-  vid="$(echo "$base" | awk -F_ '{print $2}')"
+  # Filename pattern: <YYYYMMDD>_<VIDEO_ID_11chars>_<title>
+  # YouTube IDs are 11 chars [A-Za-z0-9_-] and may contain underscores.
+  vid="$(echo "$base" | sed -E 's/^[0-9]{8}_(.{11}).*/\1/')"
   out_txt="$OUT_DIR/${base}.txt"
   out_srt="$OUT_DIR/${base}.srt"
   audio_wav="$AUDIO_DIR/${vid}.wav"

@@ -18,7 +18,7 @@ dl_one() {
   local vtt="$1"
   local base vid
   base="$(basename "$vtt" .en.vtt)"
-  vid="$(echo "$base" | awk -F_ '{print $2}')"
+  vid="$(echo "$base" | sed -E 's/^[0-9]{8}_(.{11}).*/\1/')"
   local wav="$AUDIO_DIR/${vid}.wav"
   # Already transcribed → skip download
   if [[ -s "$TX_DIR/${base}.txt" ]]; then return 0; fi

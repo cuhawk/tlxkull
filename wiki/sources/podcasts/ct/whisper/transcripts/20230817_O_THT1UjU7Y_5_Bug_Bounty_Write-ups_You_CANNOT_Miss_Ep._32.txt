@@ -1,0 +1,688 @@
+Yo, yo, yo, sup, Critical Thinking listeners.
+This is Justin Gardner, aka Ryanorader, and I am rolling solo today.
+Joel got some conflu and is out.
+So I've got my water, and I've got a whole list of awesome news topics.
+It's been a couple weeks since we've been able to do any news or write-up coverage or anything like that.
+So we have an absolute doozy today.
+We have one, two, three, four, five, at least five awesome write-ups we need to cover.
+So I'm going to take a sip and we'll get started.
+Okay, first one up on the list today is, of course, and also for any of you that are listening that also want to watch,
+I've got my, because Joel isn't here today, I'm going to add a little bit of the visual stimulation that Joel normally provides
+and share my screen for those of you that are watching on YouTube.
+So hopefully you should be able to follow along there as well.
+All righty, so the first thing we were going to cover is, of course, if James Kettle ever releases anything,
+then we need to jump on that right away.
+And he does it once again this year at DEF CON.
+He does every single year, drops some crazy research.
+This year it's called Smashing the State Machine, the True Potential of Web Race Conditions.
+And this is a great read.
+It's actually not that long as opposed to, or as compared to some of his other research that he's released.
+And it's a really beautiful and simple technique to really improve upon race conditions.
+So to give you the TLDR of it, there's a couple things that we need to take away and talk about from this research.
+The first one is the fact that race conditions often take advantage of or abuse this thing called the state machine,
+which is why he's writing about it, why I made it into the title.
+So as the application is processing a request, it transfers between different states.
+And abusing those states is what makes the race condition.
+So he has a really great example here of a race condition, which is not a particularly hard to reproduce race condition
+or a particularly technically challenging race condition.
+But essentially, when you're signing up for an account, there would be a post to, this is an example he has here,
+a post to slash login, and then a post to, or a get to slash role.
+And he kind of maps out here the different states that the machine goes through.
+When you, you know, your login state, when before you do slash post to slash login is null.
+And then after you have logged in, you assume that because it redirects you directly to slash role,
+that, you know, your account goes into a pending state.
+That's what it looks like on the screen.
+That's what the user makes the assumption off of.
+And then after you select your role, it does a post to slash role and assigns you the role.
+However, you can only be assigned the role that you, you know, are allowed to select from the list on the slash get or on the slash role page.
+And so that's the way that that this sort of state machine flow went according to, you know, the natural progression of our thought.
+However, he noticed that when you are able to intercept the application before you hit slash role,
+by default, your account gets assigned admin permissions.
+And this is an example of the state machine doing something a little bit funky.
+And this is a multi-step race condition.
+You know, there's, if we just pause before slash role and then do a request somewhere else,
+then we have admin permissions and that's great.
+But, but, so this is a multi-step.
+This takes multiple requests.
+But the assumption then that he explores within the rest of the paper is that there are these sort of substates that happen within the processing of a single HTTP request.
+And then how can we abuse these substates to get us access to crazy cool functionality?
+So that's the first thing you need to understand this whole concept of substates.
+Let's say, you know, during the application, there's a line of code that says, okay, you know, users added by default, give them admin permissions or set, you know, the role to zero or something like that, which is also, you know, admin.
+And then later on in that same code flow, it says, okay, now update the role to staff in the example that he had here.
+How do we catch it at that, you know, at the timing between when we have the admin role and the staff role is assigned between that in order to exploit that?
+And so that's kind of what he talks about through the rest of the, the paper is this concept of substates and how to hit those.
+And due to race conditions being very tricky with, you know, distance between you to the target server and just, you know, the, the sequential nature of HTTP 1.1, race conditions have been very challenging.
+And in the past, James has talked about this whole concept of a, of a last, last byte sink, which allows us to get really, really fast and well-timed race conditions in HTTP 1.1.
+And this attack that is the second concept that we want to explore during this, this sort of summary of his research is the single packet attack.
+And that is sort of a way to do something similar, but a little bit better for HTTP 2.
+And the reason this is possible is because HTTP 2 is not a, a protocol that has to be sent synchronously, you know, or sequentially, excuse me.
+It can also be, it can be sent concurrently and it can be split across multiple TCP packets.
+And so, um, yeah, so the concept here is, and let's see if I can find the part of the, uh, applicator, the, uh, blog here so that you can see it for those of you that are watching along on YouTube.
+Um, yeah, so, uh, he said, you know, this concept essentially had, was already explored back in 2020.
+Actually, there's another reference to it up here, I believe.
+Uh, I can't, I can't find it.
+This is, this is the struggle with actually, you know, having the screen on, um, oh, here it is right here.
+Yeah.
+This is inspired by a presentation back in 2020.
+And if you look at this, um, timeless timing attacks presentation that he mentions in the blog, um, you know, this is, this is just another example of James going and finding research that was definitely undervalued and just reading a bunch of weird papers.
+And then being like, oh, wait, I can do something crazy with this.
+And then taking it, and this is what he's done for the past years.
+Um, so it really talks to the importance of, um, finding sort of way out there, you know, uh, not in the mainstream of, of InfoSec research, reading it just out of pure curiosity and then building upon it.
+So the whole concept for the single packet attack is, um, he, he talks about essentially sending the full body.
+Um, um, the headers, uh, if you have, if you have, um, a body in your HTTP request, sending the body except for the last byte.
+Um, and then having, taking advantage of something called Nagel's algorithm, which is a sort of a TCP optimization, um, that was made in order to solve something called the small packet problem in TCP.
+Um, but essentially what this allows you to do is build up a, a buffer of, of data, um, up to the maximum segment side, size MSS, and then send that all at once.
+And so what essentially he's abusing here is sending the last byte of all of these, um, HTTP requests that he wants to send in one TCP packet.
+And that will, using, using and abusing here, Nagel's algorithm for this.
+And what that will ensure is that all of these HTTP requests get, um, completed at the same time when that TCP packet is, is processed by the, by the server.
+Um, and that allows us to not only have, you know, all of them syncing within sub one millisecond, which is phenomenal, but also it allows, um, it allows us to delete any sort of network jitter.
+Um, where's the mention to it?
+I think it's up here.
+Yeah, you can see like normal requests will have network latency and jitter that you've got to, um, you know, accommodate for.
+But this single packet attack can literally get it to sub millisecond synchronization, um, across these, these requests, which is just amazing for race conditions.
+Uh, really great idea.
+Um, and I really like here how he also mentions, uh, has a section of the writeup called rolling your own implementation.
+Um, and this is, this kind of breaks down the HTTP two, um, configuration that you should use the way that you should, um, modify an HTTP two library in order to be able to roll your own implementation of the single packet attack.
+And it's surprisingly simple.
+Um, like he says here, you know, it can fit into one little screen segment.
+Um, and the TLDR of it is, um, if the request has nobody send all the headers, but do not send the end stream flag.
+Now the end stream flag is a flag that's attached to a HTTP two request, um, that indicates, uh, you know, something about that request.
+Right.
+And so if you don't add the end stream flag, it indicates that that, that that request is not complete yet.
+Um, and that this service should not start processing it.
+Uh, if the request does have a body send all the headers and the body data, except for the final bite, sort of like a last, uh, last bite sync attack from last year.
+Um, and what the reason for that is that it says you might be tempted to send the full body and rely on not sending the end stream, but he's done some, uh, experimentation with HTTP two servers.
+And some of them will just ignore the end stream.
+You know, the fact that the end stream flag is not present and just, um, start processing the request anyway, which breaks your race condition.
+So you can see he's really done his research here.
+Um, and it's a really simple and beautiful algorithm.
+And it should be, uh, it says right here, you should be able to verify that all of the packet, that all of the requests, um, landed in a single packet using Wireshark.
+So it should be pretty easy to validate that your attack is actually working properly using this.
+And of course they've integrated all of this stuff into burp as well, as per the usual flow with, um, with James in the, in the port swinger team.
+Um, the, the, the other shout out that I wanted to make here was, uh, I, I bounced over to the, um, HTTP two RFC.
+Uh, and this is actually like a pretty manageable size RFC, right?
+Like some of them are like really, really long and really, really, um, you know, hard to read, but this actually seems pretty manageable in size.
+So I think, um, I, I, I haven't done it yet.
+Just, just full disclosure.
+But I think after this, after this, I record this podcast, I'm going to go through here and just read through this because I think it could be really helpful to know, um, you know, what all of this looks like.
+And HTTP is such a core part of being a solid web hacker, obviously.
+Um, you know, you spend so much time in the requests, uh, and HTTP two is just going to continue to grow in popularity.
+So the more and more familiar we are with this, and I'm, I'm very familiar with HTTP 1.1.
+Um, so I think it might be time to take that deep dive and learn a little bit more about HTTP two.
+Um, yeah.
+And then the last thing that I wanted to highlight in this writeup with James, uh, was, um, his example here.
+Um, so he's talking about, uh, a vulnerability that he found.
+He always goes and tries to, you know, exploit this on bug bounties to show proof of concept, which I really appreciate.
+Um, and, uh, one of the ones that he found, one of the volumes he mentioned here, uh, also I'll back up really quick and say, you, you have to go and read this whole, you have to have to have to go and read this whole paper.
+Um, uh, and, and, and, and the, just the way he's thinking about finding these race condition vulnerabilities, that is really phenomenal.
+Um, and I'm actually not going to spoil it here so that you have to go and read it.
+Um, uh, but it, it changed the way that I look at race conditions and the way that I, I am able to identify race conditions when I don't have code.
+And it's, it's hard to do it even when you have code.
+So anyway, going back to the Git lab, um, he found a bug on Git lab and essentially what it was, was changing his email.
+And he noticed that when he race condition to the change email endpoint, what would happen is sometimes he would get a, um, an email containing the confirmation code for a different email.
+At his email.
+Okay.
+So let's say for example, he's, he does a race condition and he changes his email to, um, test one.
+And then he changes his test to really fast.
+Right.
+So he, he might get a, a, um, an email with the confirmation code for test one at the test to address or vice versa.
+The test one email at the test to address.
+And the reason for that was really cool.
+Um, and I, I appreciated the way he broke it down.
+Um, which was that, um, when you changed your email, a function was called and that function would, um, get passed into it as a parameter.
+So the email that the, that the email should be sent to the email address that, um, uh, the confirmation email should be sent to.
+And that would be, you know, and I feel like this is a pretty common, I feel like this is a pretty reasonable way of coding it.
+Right.
+Um, so pass that in as a parameter.
+And then, um, inside that function, this is a synchronously, uh, it would, um, generate the, the email body using a templating engine.
+Right.
+And that templating engine, the variable for the confirmation code would get, um, generated, uh, via, uh, templating of course.
+So it's pulling it straight in the way that it's, it's configured here is it's pulling it straight from the database.
+Right.
+So what would happen is you would send the first request, um, that email would get passed into the function, which would, you know, define the templating for, um, for the email and send out the email.
+And then by the time that templating engine was ready to in, to create the body of the email and insert the confirmation, um, the confirmation token that was associated with that account, that confirmation token will have changed because the second request will have already come in and generated a new confirmation token.
+Right.
+Right.
+So that token is getting inserted into the body of the, of the email.
+And that email is being sent to the original address, which is being passed in via that original, um, excuse me, by that, that original parameter to the function.
+So that's how a mismatched confirmation token can get associated with his, uh, you know, with a, with an email, uh, and sent to a different email.
+It's really cool.
+Really like that bug.
+And I think it's also really cool.
+I'll, uh, I'll see if I can find it in here.
+I'm so, so bad at finding things on the fly.
+Um, somewhere in this, in this writeup.
+Yeah.
+You can still view it on my profile.
+He says, so we can click on this and it says it still has his, this email, which is unconfirmed.
+And that, uh, is associated with his account.
+It's very cool.
+Um, all right.
+So that's all I had for, uh, James Kettle's writeup.
+Um, and I'm going to try to, you know, as I go through some of the deeper writeups today, I'm going to try to sort of pepper in a little bit less technically dense content, um, to kind of give your brain a refresher.
+Um, so, uh, the next thing that I wanted to talk about then is, uh, this tweet by, uh, Alex Chapman.
+And essentially what he's doing right now is he is creating, he's tweeting out, uh, an automation development diary.
+So as he is building his own, um, bug bounty automation over time, uh, he's tweeting out how it's going.
+And I think this is really insightful for those of you that, and Alex is a top hacker.
+We've had him on the podcast.
+He's, he's phenomenal.
+Right.
+Um, so for those of you that are, are a little bit bummed to like, oh man, my recon's going all weird.
+Just know Alex Chapman has spent over two days at this point on, on just getting the scope and stuff like that for, from all these different programs and getting it all into consolidate into one format in one spot.
+Um, and I'm sure there'll be lots of other raw, um, lessons learned and, uh, success, uh, successes and failures along the way.
+So definitely keep an eye out for his bug bounty automation development diary series on Twitter.
+Okay.
+Okay.
+Water time.
+All righty.
+Next piece of research.
+Super lit.
+Once again, Saroosh coming in, dropping some fire on IIS.
+Um, excuse me, I've got a little bit of nasal congestion as well.
+Um, yeah.
+So Saroosh, once again, dropping some crazy fire on IIS here.
+Um, this bug just, this is crazy to me.
+This is the cookie list, uh, duo drop IIS off bypass in app pool privest on ASP.net framework.
+Um, and this is a CV from this year.
+There's a newer, newer technique.
+Um, so the TLDR of this is essentially, um, in when you're, when you're using ASP.net, um, in, in IIS, um, you can send a.
+Open parentheses.
+S open parentheses.
+Any text close parentheses, close parentheses, or I'm sorry.
+Anyway, the slash in the, in the beginning as well.
+So slash open parentheses, capital S open parentheses, any text, close parentheses, close parentheses.
+This is the struggle of doing this on, on audio medium.
+Um, and essentially that will get processed as a cookie, um, in the.net framework.
+And then stripped out of the freaking, um, path.
+Right.
+So it's, it's like classically, excuse me.
+This is like a beautiful, beautiful way to circumvent any sorts of, um, uh, IIS restricted paths.
+Paths.
+Right.
+So it could be, you've got, I, I path restrictions in IIS itself.
+It could be that you've got, um, path restrictions in, uh, you know, an engine X proxy that's sitting in front of IIS.
+You know, whatever it is, um, there are times when you want to wall off a specific endpoint and it's, uh, it's very common to do that using a reverse proxy.
+And this just totally like destroys all of that.
+And, um, for those of you that are following along on YouTube, you can see right here, this, this just is crazy to me.
+So let's say we've got an endpoint.
+Um, called slash web form slash, uh, protected.
+Uh, and you shouldn't be able to access anything and protect it.
+Right.
+So what he does here is slash web form slash, and then that S, uh, parentheses X thing that I mentioned, and then slash pro pro T.
+Right.
+So the first couple, the first four characters have protected.
+And then he just inserts in there, the slash S X sort of combo thing.
+Right.
+And then he says, acted at the end of that.
+Now what's going to happen is that slash S X thing is just going to get totally deleted from the path.
+We can see it down here.
+He, he sites the code, um, this remove app, um, path modifier piece of code.
+And you can see right here that it returns, um, the path with, without the, the little, um, session cookie indicator in there.
+Um, and just strips it right out, which allows you to just perfectly bypass any sort of path based restrictions.
+Um, super awesome.
+Love this technique.
+And then there's this other thing down here called, uh, related to application pool confusion.
+And, um, um, I'm going to be perfectly honest with you.
+I didn't like super fully understand this, but from what it looks like to me is you can use this, um, cookie list session token injection in here.
+In order to get your path, um, or the code that you're running within a specific path, uh, uh, executed within a different context, which is an application pool in IIS.
+Um, which can allow for the isolation of privileges.
+Say for example, you don't have the ability to run, uh, ASPX code or whatever in a specific app pool, but you do in another.
+How can you get the code that's in that non executable path to run in the other application pool?
+And this is, is possible via this, um, cookie list injection.
+Once again, definitely worth a read.
+And, um, so definitely check out Soroush's blog.
+Um, we'll link it down below, but it's Soroush.me, um, for those of you that don't, don't know it already.
+Um, and so really cool, really cool research here.
+Um, I'll mention as well that at the beginning of this blog, he says, uh, for a deeper dive into security issues stemming from the use of cookie list sessions, consider these references.
+So, um, he lists, uh, uh, three other places where you can go and read about it.
+And I absolutely read this one right here, uh, the isec.pl blog, which is, um, excellent as well.
+And this guy, uh, Paveo, I believe is how that's pronounced.
+Um, he talks about, um, using this for XSS when a, a path is being resolved from a, a, a squiggly path, right?
+A, um, a tilde path, um, to a, uh, to a, an actual path, an arbitrary path.
+Um, and so for those of you following along, you can see right here that he's able to inject into that because that session token is, is an important part of what should be associated with that path and use that to get XSS.
+Once again, a cool XSS technique for any of those that are into automation, uh, XSS automation, this could definitely be something really cool to, uh, do mass scanning for.
+If you can find this, um, reflected in, into the, um, into the body of the request, then that would be really cool.
+Um, or the body of the response, that would be really cool.
+Um, the one thing that I wanted to highlight from this, which, ah, here it is right here, is that, um, it's not only open parentheses, S, open parentheses, any text, close parentheses, close parentheses, that works.
+But also you can, um, sub that S for an A or an F.
+The A is an anonymous ID and the F is a form authentication token.
+Now, being able to specify some of this stuff in the URL is also just kind of weird.
+Um, and I feel like could definitely be used for session fixation or, um, if you could get sort of like a, uh, client side path traversal of sorts, like you could inject your own session token into it.
+Right.
+If you get a client side path traversal, you could inject your own session into that request and then take the data that's in that request and associate it with your own account rather than with the victim's account.
+Um, which I think has a lot of potential there.
+Um, and then, yeah.
+Uh, so this is also just helpful for bypassing, uh, like WAFs or anything that might be, they might be catching on.
+Maybe they see Soroush's blog and they say, okay, all right, we got to block, you know, any of this cookie list stuff.
+And they block just the S, but then you've also got A and F you can use as well.
+So keep that in mind.
+Um, okay.
+Uh, that's all I had for Soroush's stuff.
+Definitely go check out the blog.
+Um, I will link it down in the description as always.
+Uh, we, the description might be a little long this time around, so we might have to host it somewhere else, but we'll figure that out.
+Okay.
+Um, unfortunately we're going straight into another highly technical piece right now.
+So bear with me.
+Um, and we'll, we'll, we'll hang in there.
+This is a really cool blog, so I think you'll like it.
+Okay.
+Um, next one is Ophion Security released a write up, um, customer account takeover in Shopify stores.
+Um, this is Rojan.
+Um, amazing bug as always.
+Shopify, uh, there's just so much cool stuff.
+So many, so many cool pieces of functionality to play around with on Shopify.
+Um, so, uh, it's always cool to see them as a target.
+Um, all right.
+So the way, let's see, what, what, what did I want to highlight here?
+Um, let me look at my notes really quickly.
+Yeah.
+Okay.
+So I, we won't go through every single step of this, of this write up, but I did want to, to, um, mentioned that this specific bug.
+It takes advantage of a couple, um, sort of quirks.
+Okay.
+So the first one is this concept of an unverified email address being associated with your account.
+Okay.
+Um, and I imagine on the backend, or any of you blue, blue teamers out there or devs, there's a couple of ways to implement this.
+Um, you could put the email unverified email as the actual email for the account and then add a flag, like is email verified true, false somewhere else in the user object.
+Right.
+Um, or you could put the email in its own unverified email attribute of the user object and, um, then move it to the verified email object.
+Whenever you do anything.
+Um, the latter is way more secure.
+And the former unfortunately is what we see here, which I think causes a massive vulnerability.
+Um, so, um, what happens is when you sign up for a shop account, you can, um, you can change your email address or you can specify an email address and, uh, they will send a, uh, a confirmation email to that email address.
+But for the time being, your email is still, you know, that email.
+Um, and so this is weird.
+This is weird.
+Um, and we always want to, whenever you have an unverified email, this sort of looks like this.
+This is specifically, um, interesting when there's only one email associated with your account.
+So this is not like a change email sort of feature.
+This is when you've signed up for an account and the only email they have associated with you is this unverified email.
+Right.
+Cause then, you know, there's a better chance that that email is actually the primary email associated
+with your account.
+Um, and so, uh, essentially what they do here is they take this unverified email account and they
+abuse the shop pay OAuth workflow to log into, uh, a different, uh, log into a store.
+Okay.
+So I have this one line highlighted right here that I really, I really want you to, to dial in on.
+Even though a store may not have the sign in with shop, uh, feature, I guess, fully enabled, uh, and displayed in their store.
+It is still possible to access the shop pay OAuth directly via this endpoint.
+Okay.
+So what they've done here is they've shown mastery.
+They've shown in depth knowledge of the product because they are familiar with this concept of there is a sign in with shop feature that can be enabled and disabled.
+And even when it's disabled, it's still there.
+It's just not in the UI.
+Right.
+Um, this is incredibly important for those of you that are looking to develop this sort of, um, spidey sense or this sort of understanding of how to find these more complex volumes.
+Any features that you can turn on or off or that are accessible part of the time, but not accessible the other parts of the time, you have to validate that because just because it's not in the UI or just because it's not a part of the normal flow doesn't mean you can't force navigate to it.
+And then, you know, insert yourself in the middle of this sort of, you know, crazy flow that, that they've, they've, you know, configured here.
+And so that's exactly what erosion and the Ofean security team do here.
+Um, they hit, they take their unverified email, um, shop account, and they use that to sign in with shop into a, into a Shopify store.
+Um, and in the end of the day, I think it's not as simple as just hitting that endpoint.
+I think they also have to, um, hit some end points to get the cookies that they need.
+And this also shows further mastery of the, of the application.
+They know which cookies need to be swapped for what and what cookies are providing authentication in the context of the Shopify store, um, which will allow them to, uh, gain access to, you know, a fully validated account.
+So this is, this is very important and it goes, it goes to the concept of, um, understanding, you know, anytime you look at a HTTP request, you're just going to see a block of cookies because of tracking, because of all this and that and the other thing.
+But it's very important to use something like maybe request minimizer, even just do this manually, removing all of the fluff and getting down to what is actually useful in the application.
+Figure out what is, what is, what is resulting in authentication, what is, uh, affecting the application directly.
+And once you've narrowed that down, you have a much greater chance of finding vulnerabilities in those components because there isn't so much fluff around.
+Okay.
+So, um, that's what they've done here and that's what results in the, uh, or the account takeover for them.
+Um, man, that had to be a crazy bounty, uh, because Shopify,
+Shopify I think has, I want to say they have 200 K crits max, and that is a arbitrary account takeover.
+So congrats to Rogen and the, um, the, um, the Ofean security team.
+All righty.
+Uh, next up, well, hold on, let me, let me get some water.
+I got to take water between every, every, uh, topic.
+Okay.
+Okay.
+Next one is, um, uh, a tool released by Monke, uh, a great hacker and hack one ambassador.
+Um, uh, this is called short name guesser.
+This is, uh, we talked about this, something similar to this a couple of weeks ago, but essentially, uh, with IIS, there is a way for you to specify short names and get a true or false, uh, window short names.
+So I want to say it's the first six characters, um, that you can enumerate in the last three characters of any given file in a, in a directory.
+Um, so, but oftentimes files are longer than six characters.
+So, excuse me, you've got to, um, you've got to figure out what the rest of that name is.
+Um, and I guess Monke decided that this is a, a perfect, um, use for GPT-3 and some of the AI capabilities that we've been, um, playing with lately, uh, thanks to OpenAI.
+Um, and I, I couldn't agree more.
+I think, um, essentially if you, if you know how LLMs work, they're actually just looking to develop the next token, right?
+The next, the next token in line, and that's how they, they simulate, um, all of this wonderful knowledge and comprehension that we've all been amazed by for the past, you know, six to eight months.
+Um, and so what he did here is he, he, uh, developed just a very short piece of code.
+You can see here, it's like 35 lines, um, to utilize, uh, uh, chat GPT or the OpenAI, um, API to get a list of potential file names, uh, associated with a, a given short name.
+I think this is a great tool and I will be using this the next time I'm doing, uh, IAS short name brute forcing.
+All right.
+I'm gonna have to take a big sip of water before this one.
+Um, Sam Curry has released something y'all.
+Um, for those of you that are not familiar with Sam Curry's work, essentially every couple months, Sam and team, uh, whoever it tends to be that, that time around releases some giant writeup that breaks the whole internet and destroys a whole industry normally.
+And it's a excellent read.
+And I think it's really unique content.
+Um, because not many people, not any other people that I know of are out here, um, addressing sort of industry wide issues like Sam.
+Um, and just kind of going after, you know, I, I like to, I'd like to talk it up, but it's really Sam just being like, you know, what would be the coolest shit I could hack?
+And then going and hacking that.
+And I just, I love that about Sam.
+Um, and then he does these writeups, which bless him for doing these writeups.
+They're so long and they're so detailed and they really, um, highlight the attacker mentality as they go through this.
+So, um, this is also a mandatory read.
+Um, the James Kettle read earlier was absolutely mandatory read.
+Um, this is also a mandatory read.
+So go read it.
+It's a Sam Curry's, uh, most recent writeup on points.com.
+It's entitled leaking secrets in unlimited miles, hacking the largest airline and hotel rewards platform.
+As you may have imagined, uh, this is Sam hacking points.com, which is a provider of points for all of these different vendors.
+Um, he has a, for those of you watching, you can see here, um, the list of vendors that he has, uh, but some of the top names include Delta, Emirates, uh, Marriott, um, I HG.
+So many different companies utilize points.com for their rewards programs.
+Um, and he does a high level overview in the beginning, which we're going to skip of course, because here at Critical Thinking, we do low level overviews.
+We talk about the technical details, the juicy, the juicy technical details, and we get hyped about that shit.
+So that's what we're doing.
+Um, essentially what I've done is I've broken down, um, each of the sections of the rest of this writeup.
+Um, and I've got some key takeaways from all of the various sections and I'm going to provide a short summary, but like I said, you're missing out on a ton of juicy data, um, and hacking mentality and just vibing if you don't go and read this.
+Um, so, uh, that's my, I've said my piece now.
+Okay.
+So first section is how does it all work?
+Um, this is kind of when he's, he's discovering how this whole points.com thing works.
+He's using Wayback Machine to, uh, read documentation and understand the details behind it.
+Um, and one thing that I wanted to highlight here is he, he gets to this, uh, console.points.com, which allowed public registration, signs up for an account.
+And he says, um, I just want to take a quote out.
+The next thing we did was to examine the JavaScript that powered the dashboard.
+We discovered that the website console.points.com appeared to be utilized by points.com employees for executing administrative actions concerning customer accounts, rewards programs,
+and managing components of the website itself.
+Anytime you see something like this, I've, I've done this a couple of times where you have public sign up to an account, a, a, a portal that is management for, um, all of these different, um, tenants that you'd be hacking.
+Uh, that's gold.
+Go in there, read the JavaScript files, figure out what it looks like to have those requests recreated in the background.
+Um, I've personally made six figures in bounties from this exact scenario as well.
+Um, so that's a big tape away there.
+I was also impressed, um, for those of you watching, you can see the graph here.
+For those of you not watching, um, essentially he has a graph where he's, uh, uh, outlined the way that the API, the rewards API does authentication.
+And unfortunately it's a, a Mac based authentication, which, uh, I'm not going to lie.
+Like if, if I was in Sam's shoes, I would have totally ignored this because I freaking hate Mac based authentication.
+Um, essentially how it works is you've got a key and you've got your message and every single message that you send, every single freaking request needs to be, um, run through this Mac algorithm and a, a message authentication code generated.
+And that code included with the message, um, to ensure that that message hasn't been tampered with and was sent from someone that has the key, um, in order to send that.
+So, um, that would be a pain in the butt, but that didn't scare Sam at all.
+Um, and they were able to do some really cool stuff.
+Um, not only despite of it, but abusing that.
+So props to them for that.
+Next section is called exploring the, uh, United Airlines point management website.
+So they take, they move away from points.com after they learned a lot about points, how the points API works.
+And they go to specifically mileage plus.com, uh, by miles dot mileage plus.com, which is a, uh, United product, um, which is infamously out of scope, uh, and the United program rip.
+Um, and essentially what they do here is they go through the registration process and sort of figure out what's going on.
+Um, and then they do something that, which we talk about all the time on critical thinking, which is they pay the freaking money to send miles to somebody else.
+Right.
+We always say, you know, bite the bullet, pay your, in the, in the picture that he's got right here.
+I just noticed he's has $6,584 worth of miles.
+He's sending somebody.
+I don't know that he actually sent that much, but if he did, that's, that's ridiculous.
+Um, but he bites the bullet and he sends some miles, pays the money and send some miles to somebody else.
+Right.
+So, you know, it's Ian or Shubs happy day or whoever he's hacking with this time.
+They get some miles from Sam, but also what Sam gets in return, uh, in the response of that, um, HTTP request that sends the miles is the person's points.com user auth token.
+And the membership authorization token, um, which is a big, a big L for points.com and the mileage plus United team.
+Um, and essentially what that allows you to do is by entering a person's first name, last name, and mileage, uh, a mileage plus number, which is their, you know, account ID.
+Um, essentially you would get back their auth token from that request and you could use that auth token to log into their account, send the miles back to yourself, um, and get a bunch of access to a bunch of PII.
+Huge, huge vulnerability.
+Um, great, great technique, um, in finding that out.
+So takeaway there, pay the money, just pay the frigging money.
+And, uh, and you'll find lots of volumes like that.
+If you see a place where you should, where you could pay money and it's like a reasonable amount of money, you should get really excited to pay that money.
+Like that is potentially some of the best money you'll have ever paid.
+You know, like you're going to get some serious ROI on that.
+So, um, that's what we always say.
+Whew.
+Halfway through a Sam, Sam Curry blog post.
+You got to take another sip of water.
+Okay.
+Um, so let's talk about the next section, escalating the issue to affect other rewards programs.
+Um, so at this point, what's happening is Sam is trying to figure out how exactly, uh, the points.com, uh, API is being integrated with all these other different providers that he did that with United.
+And he's trying to do that with other, um, providers as well.
+And he highlights, uh, in the post, this HTTP request right here, which, um, for those of you not watching, uh, it's, there's an HTTP request.
+With a path.
+And then in the body, it has two parameters, uh, MVP payload and LP ID.
+LP ID is a U U ID.
+Um, and MV payload is an empty, um, object and empty JSON object.
+So what he does here, it's very interesting.
+He appends a pound symbol to the end of that LP ID parameter.
+The reason he's doing that is he is looking for, uh, secondary context vulnerabilities.
+This is sort of a term.
+I feel like this term is actually coined by Sam himself.
+Um, uh, but this is sort of Sam's bread and butter.
+I've found multiple bugs with Sam where he exploits secondary context bugs and he's just a master at it.
+And essentially what's happening is he is assuming that this ID is getting taken and put into the points.com API on the backend.
+Um, that we were talking about earlier with the Mac authentication scheme and that sort of thing.
+Um, and he's trying to validate that by putting a hashtag in there, a pound sign.
+And what that will do is that will in the, uh, in the URL, it will create a hash fragment and truncate the rest of the, um, the data that comes after that, uh, that, uh, U U ID.
+And you can see from the response, he gets a 400, uh, bad request back, which, um, tells him that he can't process.
+It can't process type text HTML instead of application JSON.
+This is a great indicator that there is some sort of secondary context problems going on.
+Then Sam, uh, proceeds to do all the tricks in the book.
+He's adding slashes.
+He's path traversing.
+He's using the, the, uh, query parameter, the question mark to truncate and add additional query parameters.
+Um, he's doing all sorts of stuff.
+Um, and essentially what he does is he uses a path traversal sequence to back all the way up, um, to the document root, I believe, and specify, um, maybe it's not the document root.
+Maybe it's one above the document root, but you can specify cool, cool tip.
+You can find the document root.
+This is actually a tip that Sam taught me by traversing past the, the document root.
+And then you'll note that you'll get a 400 bad request on that.
+Um, so really, really helpful technique there that I've used several times.
+So for example, if the backend request is slash API slash get user slash user ID, and that ID is where you're injecting.
+If instead of the ID you put dot, dot slash, dot, dot slash, now you've gone back to the root slash.
+If you do one more dot, dot slash, you'll get a 400.
+That will allow you to identify the document root.
+Um, so, uh, what we've got going on here is that, you know,
+here is he traverses back and he hits an endpoint called slash V1 slash search slash orders.
+Um, and then it says missing query parameter needed.
+So then he starts fuzzing for query parameters in the get using the, um, what he assumed would be the get when he specifies the path via the LP ID.
+Um, but unfortunately nothing was working there.
+And he then decides to fuzz the MV payload section.
+Um, I'm going to start saying they instead of he, cause I know that this is a team working on this.
+So they decide to fuzz the MV payload section, uh, of that, their original request, right.
+That we mentioned in the beginning, the one that had an empty object.
+And it turns out you're able to provide, um, post parameters there.
+Um, and they provided the queue parameter.
+And then it dumped back a grand total of 22 million records, um, back to them.
+Um, leaking, uh, points transactions across all of the providers.
+It was a God token that was being used.
+Um, just magnificent, magnificent vulnerability.
+Um, key takeaways there, learn how to do secondary context hacking.
+I've also got up on the screen here, the wonderful presentation, legendary presentation by Sam attacking secondary context and web applications.
+I will link it in the description.
+Uh, this is also mandatory reading if you haven't already, if you have, I would also recommend going back and rereading it because, um, if you're not finding these volumes on a fairly regular basis, you probably should be.
+Um, cause I am, and Sam is, uh, so, uh, definitely check this out.
+Um, and, and if you want another really cool example of this, which is almost identical to this vulnerability, Sam and I in 2020 found a vulnerability on Starbucks, which does almost the exact same thing.
+You can see for those of you watching that, um, we traverse back here and hit a slash search slash v1 slash accounts function, which dumps all of the Starbucks accounts, um, that were, that were, uh, in the database.
+It was like 99 million records or something ridiculous like that.
+Um, so definitely, yeah, nearly a hundred million records.
+Um, so definitely these volumes are all over the place and you should definitely know how to exploit them.
+Okay.
+Um, let's see what else we've got.
+Um, the next little section that I wanted to talk about was, uh, this, uh, this is still within the Sam Curry blog post, um, is leaking credentials for the Virgin rewards program.
+Um, so this is still within that blog post.
+Essentially what he happens here is he's kind of going around to all the different, um, uh, sort of providers for that, that are using points.com.
+Um, and he's trying to figure out, you know, Hey, is there any quirks in the implementation here that we can exploit to attack points.com or attack their rewards program?
+Um, and, um, this is, this is another, and we see a very, a large variety of techniques, right.
+That, that have happened already.
+We've, we've seen, we've seen, you know, the exploitation of, uh, well, just understanding JavaScript, uh, understand reading the documentation through way back.
+Um, we've seen secondary context bones.
+Um, and right now in this one, we're seeing, uh, a content discovery vulnerability.
+So this is when Sam is just running or Sam and team, they're running, um, uh, just content discovery tools like Fuff.
+Um, and they hit the, they get a lucky hit on login one dot PHP and that login one dot PHP leaks the Mac, uh, key and Mac ID that we mentioned before that was used for, uh, authentication into the rewards API.
+Now, if you see this, um, normally you might not know what this is used for, but Sam and the team have developed a mastery of these, this product.
+They've read everything they can get their eyes on.
+You know, they've, they've, they've sorted through minified JS files.
+They understand what's happening here.
+So when they see that Mac ID and that Mac key, they know exactly what to do with that.
+So they were able to use that key to authenticate into the API as the Virgin rewards program.
+Um, and they were able to dump all of the, uh, orders, all of the transactions that have happened, um, which includes, it looks like actually plain text credit card information and over looks like 2 million instances of that.
+So that's real bad.
+Thanks for work, Sam and team.
+Um, the next, the next one that we wanted to, uh, talk about was, uh, this section right here, authorization bypass, uh, on widgets.unitedmileageplus.com.
+And this is, uh, once again, another technique, um, that varies from the other ones.
+So we're not just looking for IDORs.
+We're not just looking for XSS.
+We're not just looking for secondary context books.
+We're looking for all of it.
+Um, and it requires a, a, a large knowledge base of different techniques in order to be able to fully exploit some of this stuff.
+So it's really impressive to see what Sam does.
+And it's also a good lesson to us to stay, to stay mentally flexible, uh, on what kind of owns we're looking for and how we're looking for them.
+Um, so this next one that we're talking about here is, uh, this, so we're back to widgets.unitedmileageplus.com or unitedmileageplus programs.
+Um, and essentially what they're doing here is they're using GAU to, um, enumerate the, the subdomains and the different pages, login pages that there were, um, to log into this, uh, widgets.unitedmileageplus.com.
+And they're, they're identifying that sometimes there is a page where you can log in with just your mileage plus number, your last name and your first name.
+Sometimes it requires a username and password.
+Sometimes it requires, you know, um, a security question or, uh, let's see what else.
+
+Answer your security question.
+There was a bunch of variety there.
+And in that variety, you know, they were noting that, that, um, the responses to those were still returning a token that looked roughly the same.
+Right.
+So I'm just reading a quote here.
+Um, uh, we found that the token returned from each of the different authorization methods.
+Were identical in format to each other.
+So once again, showing application mastery, understanding what that token looks like.
+Um, first knowing that that token is important and understanding what it looks like, um, allowed them to understand that, Hey, maybe I can take the token from the less challenging authentication method.
+The first name, last name, and mileage plus number, um, and use that token in the other sections of the application where a more challenging, um, authentication method was supposed to be necessary.
+Um, and that's exactly what they did.
+And they were able to bypass off and get access to a PII disclosure, um, transferring miles, essentially arbitrary access to their mileage plus account.
+Um, through that, that one login that gave them an access token via first name, last name, and mileage plus number.
+Really cool technique.
+
+That's a business logic error and token swapping, right?
+Business logic error, identifying that there's, that there shouldn't be a way to authenticate with that information.
+And then token swapping, knowing that they can take that off token, put it somewhere else and access valuable information.
+Really, really great.
+Um, really great vulnerability there.
+Now the finale, they say, they say that they still, uh, let's see if I can find the, uh, so one of the things that I really appreciate about Sam and the team here, uh, as they're writing this up is that.
+Hmm.
+So he has a section named looking for something more critical, right?
+Like the bugs that he hasn't found that he's found already just not critical enough.
+You know, like we gotta go max criticality and they, they don't give up until they achieve it, which is really cool.
+Um, and they do achieve it, uh, every time.
+So way to go team, or at least every time that we're privy to, you know, maybe there are times when they've, they've quit out a little early, but, um, we get to see the highlights real.
+So that's really cool.
+Um, so they go back to hunting on points.com and then finally they pop it.
+And how do they pop it?
+Is it some crazy, some crazy technical exploits?
+That just kind of blows your mind and path traversally nonsense.
+No, it is the fact that the JWT token associated with the session for the, uh, console website was the word secret, all lowercase.
+Um, now this is, um, this is kind of crazy to see, to be honest.
+Um, this sort of vulnerability I've only found once.
+Um, but Ian Carroll has released a vulnerability or a, um, a tool called Cookie Monster to exploit this vulnerability.
+And essentially what it does is it allows you to try to brute force, um, and check defaults for session configurations in, uh, in various types of applications.
+I think this is a great vuln because, um, once you exploit this vulnerability, if you have the secret key to, uh, you know, JWT token, you can do whatever the heck you want.
+Cause you can sign the, the only thing they're using for authentication.
+
+Right.
+So in this scenario, I suppose they, they were looking at the, the session token a little bit more, um, in depth and they identify the fact that, um, I guess they ran it through Cookie Monster running a brute force against it.
+And if you sec, yeah, after that few seconds, we had a response.
+It popped that the secret, that the, that the, um, uh, secret for this JWT token was secret.
+Um, and so this is a reminder to me and to you and to every other reader that we need to be on the lookout for these sort of weak cryptography implementation vulnerabilities here.
+Um, cause they are all over the place and man, they dropped some awesome screenshots, um, in here of like literally just being able to arbitrarily select a program, you know, uh, uh, a reward for the
+rewards program and just assign, uh, points to them.
+And man, you could just literally, you could just walk around the whole world, you know, doing whatever you wanted with this pretty much because you just have unlimited access to all of these points.
+So really cool.
+Awesome that they got access to that and really cool techniques along the way as well.
+So props to Sam and the team.
+Um, nice bug.
+All right.
+Water time.
+Um, we're moving along.
+We are moving along.
+Okay.
+Um, so like I promised in between, uh, technical piece, we'll have an, uh, sort of less technically dense segment.
+Um, this time around, uh, another, another tweet from, uh, Alex Chapman saying I'm in desperate need of a platform feature browser plugin or something else.
+They can easily show a bug bounty programs, direct competitors who also run programs.
+Um, so many bugs from one company are directly applicable to others in the same industry slash niche.
+And then Rezo comes along and says, dude, this would be a sick product.
+Um, what if there were a way to like tag specific functionality as well on specific bug bounty programs?
+For example, you could, um, identify a bug bounty program and tag that, Hey, this has got a, a PDF generator in it or something like that, where there's specific technologies in place.
+This one's using flask, right?
+Cause like from the last scenario, we could go back and check the JWT, um, token implementation.
+Um, and, and so, uh, he, Rezo tagged me in there and said, Hey, shout it on the pod.
+Maybe someone will make it.
+And, um, we've had that happen before we shouted out this, uh, this concept for a CVSS advisor where you, which I've got up on the screen.
+Now, uh, you can find it at CVS advisor.com where you can just sort of select what, um, you know, different, uh, what, what your CVSS configuration is.
+And it will give you tips and, um, what sort of configurations needs to change for you to bump your bug to the next severity.
+Shout out to them again, appreciate them building that.
+And also, uh, this is my go-to CVSS tool now.
+So, um, definitely keep that in mind, but also if any of you guys are looking into, uh, are, are feeling programy or, um, wanna try to decide a way or figure out a way to tag, um, various book bounding programs anonymously, obviously, cause we've got private programs, um, with specific, uh, features or functionality.
+So, um, with specific, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, you know, uh, uh, you know, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh,
+uh, uh, also known as Lupin on Twitter.
+Um, and yeah, uh, essentially I think they're going to be producing bug bounty content and this is a great place to start.
+This write-up is on, um, this concept called the sandwich attack, which abuses, uh, version one UUIDs or UID version one.
+Okay.
+So, um, for those of you that aren't familiar with UUIDs, UUIDs are, for those of you that aren't familiar with UUIDs, thank your lucky stars because they're becoming more and more common
+all over the place and they're a pain in the ass.
+Um, but essentially they're, uh, an alternative for numeric IDs that should be associated with an object.
+So, user ID equals one.
+Instead of that, you've got user ID equals F887AA6, you know, blah, blah, blah, right?
+Um, and so these are very long strings randomly generated normally, but not in this case.
+Um, they contain five different sort of segments.
+Um, and the, uh, the segment that you should look to.
+Two for, uh, the version number is the third segment.
+So, um, for those of you that are, uh, have the following along on YouTube right now, you can see right here, the, the first character of the third segment of the UUID is a one in this scenario.
+Uh, normally it's going to be a four.
+If it's a four, that UUID was randomly generated and you have very little chance of being able to, uh, iterate across those, uh, UUIDs or enumerate them.
+Um, now if, you know, you got really lucky or, or you found a, a piece of technology that uses UUID v1, that third segment, the first character will be a one.
+And what that tells us is that this is not a randomly generated UUID.
+This is a UUID that is predictable, um, and is highly correlated with a timestamp.
+Um, so, uh, Lupin and, uh, Lupin and Holmes team here do a really great job in this write-up of describing how, uh, this concept called the sandwich attack.
+Uh, in the, in the scenario they define, there's a password reset endpoint.
+That password reset uses UUID v1 reset tokens in order to access, um, to reset the password.
+So the attack would be, excuse me, the attack would be, um, you reset your own account.
+That's the first, you know, first layer of bread.
+You reset the victim's account.
+That's the meat.
+And then you reset the, uh, your account again.
+And that's, that's the top layer of bread, right?
+So you have two reference UUIDs, um, V1 IDs.
+Those are the two pieces of bread.
+Um, and those will tell you the range of time, uh, uh, because, because UUIDs correlate, UUID V1 correlates directly to timestamps, um, the range of time you need to brute force for the middle ID, right?
+So then you use a tool to enumerate, uh, all of the possible UUIDs in that range.
+And then you, um, try those UUIDs in order to gain access to the victim's account.
+Um, by the password reset functionality.
+Great attack.
+I found something similar to this before.
+Um, and, uh, one of the things I will say is we can actually utilize this in conjunction with, uh, a race condition-ish sort of thing, um, that we mentioned, you know, earlier in the, in the, the pod, uh, with James Kettle.
+So to make sure that these sandwiches, you know, that this is a very thin sandwich, right?
+That you can, that your first request, the second request, and third request are all in a very small time period.
+Because as he mentions here, um, these are in millisecond timestamps, um, right?
+So for every second that these are off, you have 1,000 possibilities, uh, for what could, you know, that you're going to have to brute force.
+So you want to try to get these as tight as possible.
+Um, and you should be able to get an arbitrary account takeover in these sort of situations.
+All right.
+Um, I will also note that, uh, in, in conjunction with this write-up that we will be putting in the, in the description below, there's also this awesome video, uh, that Lupin put out on the, their YouTube channel, um, walking through the actual details.
+And he does a lot better job of explaining it than I did.
+So definitely check that out.
+Also, if you just like looking at things with your eyes, uh, this is a beautifully produced, um, video.
+So, uh, very high production quality here.
+Shout out to them for that.
+That takes a lot of work.
+I'm realizing that more and more as I, as I sort of go deeper and deeper into the content creation realm.
+So, um, great worth work Lupin and Holmes team there.
+Man, that's such a cool name.
+I love that.
+Um, all right.
+So that's it for today.
+That's all I've got.
+Um, definitely, uh, thank you for listening to this episode.
+Hopefully Joel will be, uh, back and kicking next week.
+So we can do a, a duo episode as usual.
+Um, if you guys wouldn't mind heading over to ctvv.show and dropping a subscribe on our newsletter, we'd really appreciate that.
+We're trying to grow that within the next couple months.
+Also, um, for those of you that have heard me talk about my real estate investments on the podcast before I have a big accomplishment.
+I'm done with the reno that I've been working on for the past, uh, six to eight months.
+So super hype about that.
+Should be able to drop more time into the pod and into Bug Bonnie hunting.
+Um, which you guys will hopefully see lots of.
+Um, so with that, have a great week and thanks for listening.
+Bye.
+Bye.
+
+
+
+
+
+
+Bye.
+
+Bye.
+
+
+

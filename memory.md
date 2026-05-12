@@ -74,6 +74,14 @@ technique-relevant. Technique items go to `wiki/techniques/`.)_
   audit chatter.
 - Don't auto-submit findings to HackerOne / Synack. Submission is
   always a human step.
+- Don't auto-invoke `ANTHROPIC_API_KEY` or Gemini chat models
+  (`gemini-2.5-flash-lite` etc.) outside the two whitelisted paths
+  in `CLAUDE.md` rule 7: (1) `js_analyzer` callgraph/chain audit,
+  (2) JS source RAG ingestion. Wiki distillation, autoresearch
+  orchestration, prose synthesis, summarization — all run as
+  Claude Code in this conversation. If a task can't be done from
+  Claude Code, say "can't do it" and stop. Never add a Python
+  shim that calls `anthropic.Anthropic` to fill a gap.
 
 ---
 

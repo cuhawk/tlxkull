@@ -305,6 +305,12 @@ class Kernel:
         from kernel.tools_builtin import register_builtin_tools
         register_builtin_tools(kernel)
 
+        from kernel.embeddings import make_embedder
+        try:
+            kernel.services.register("embedder", make_embedder(kernel.config))
+        except Exception as e:
+            logger.warning("kernel.embedder_init_failed", error=str(e))
+
         kernel.plugins = PluginLoader(paths=plugin_paths)
         kernel.plugins.discover_and_load()
 
@@ -363,12 +369,6 @@ class Kernel:
             },
             handler=_memory_write_handler,
         ))
-
-        from kernel.embeddings import make_embedder
-        try:
-            kernel.services.register("embedder", make_embedder(kernel.config))
-        except Exception as e:
-            logger.warning("kernel.embedder_init_failed", error=str(e))
 
         kernel.prompt_builder = SystemPromptBuilder()
 
