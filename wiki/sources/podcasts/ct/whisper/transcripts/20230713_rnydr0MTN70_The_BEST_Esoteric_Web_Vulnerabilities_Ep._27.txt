@@ -1,0 +1,816 @@
+ let me take a look at the code really quickly here you say off the pod research
+ and then you know we're going to do it right away yeah we're going to look right now
+ all right we're rolling okay cool that was a an interesting way to start yeah my phone i'm trying
+ to record on my phone today um because i'm i'm not at home and uh like my phone was overheating
+ and then it got like it went on vibrate mode but then it just didn't stop vibrating so it's
+ just a constant it kind of sounded like a like a razor yeah yeah it's crazy like right as we started
+ your phone just immediately like i could hear it just like just vibrating who knows it may explode
+ during this episode and then i'll switch to my other webcam but yeah i figured i'd give it a shot
+ awesome awesome dude how's it going you adjusted back to normal life from the live hacking event scene
+ uh not really no no i i've been i've been pretty still in the fall i was not yeah still in the fall
+ out not feeling uh super great yet i think my sleep is still like adjusting and uh it was weird because
+ when i was traveling i don't know if this happens to you but i'm sleeping like three maybe four hours a
+ night like oh my gosh for like two weeks straight and i was functioning like totally i would die like i
+ i would totally die even like looking back i was like in the moment i was like i have no idea how i
+ slept four hours last night because i don't feel like it and i was just like going through a whole day
+ like not sleeping until like 3 a.m and then i'd wake up at like 7 30 and like be fine and then i got home
+ and i've been sleeping more than i usually do like seven and a half hours and i feel like terrible i'm
+ like trying to like figure out i have no idea how you do that because i i mean i did that maybe one
+ night maybe i got like a six and i was still doing fine the next day and i was like all right you know
+ circadian rhythms hacked um but no if i get less than six i'm i'm done for my dude for sure yeah i mean
+ that's normally how i am like anything less than six and i'm i'm doomed even like i mean anything more
+ than six doesn't really seem to help me either um i generally like have pretty bad sleep so even if i
+ sleep like eight and a half hours in the night or something which never happens for me but i probably
+ just still feel the same wow so it kind of just takes like a couple hours for me to like fully wake up
+ and then i'm i'm like good to go i definitely need it's like a slow i definitely need more than six
+ though like six is like i'm skating by and then like seven or eight it's like all right i'm feeling
+ rested let's go let's go get it so i don't know yeah i was hoping that magically when i got home i
+ would like then be a night person and i would be able to stay up till 3 a.m and sleep four hours a
+ night and get a bunch more work done but no no i am immediately back to like ah it's nine o'clock it's
+ it's time for bed you've done a sleep study right yeah yeah and that really didn't like give me the
+ answers i was hoping for like i think for everybody it's a little bit different but when i got my sleep
+ study done they basically were like yeah you like you snore a little bit and you might want to look
+ into that i was like that's it they're like yeah that's it good luck i was like like what the heck
+ like what am i supposed to do with this so yeah i think for everybody it's a little bit different but
+ you know sleep study if you can get your insurance to cover it definitely i'd recommend getting
+ one done just to like have the have the analytical data and like the input from a sleep scientist about
+ what's going on for sure my dad had one done and he had uh you know got a cpap machine or whatever
+ and it like totally changed his life so yeah yeah yeah yeah cool anyways um security off the sleep
+ and into the security right um so yeah so the first link i had in the news section for today was
+ uh once again another banger from the asset note team and i'll give credit where credit's due this time
+ this is not shubs even though it has asset note written on it this is actually dylan pinder which
+ is a uh who is a security researcher researcher at asset note um and this is about the share file rce
+ which is actually a product that i've used fairly extensively so i was like oh what the heck is going
+ on here this is crazy how simple this rce was it's a beautiful exploit but um you know the other stuff
+ coming from asset note a lot of times has been a lot more challenging than this one looked
+ yeah yeah i mean it's always they're always anytime you see a blog post from asset note it's always
+ very high quality and it goes into a ton of detail about like their thought methodology and the path
+ that they took to get there and they do a really good job of explaining sort of like the attacker mindset
+ as they're coming towards something that like from the title you can tell is very severe um you know it's an rce
+ so i think that provides sort of a unique insight and oftentimes it's not like this super straightforward
+ type of like oh i put like id like semicolon id yeah in in a core parameter and it pops you know like
+ it's usually a little bit more in depth and it goes into like how they discovered it and yeah files
+ that they were looking for and the patterns and stuff and i think like that's really useful because
+ a lot of times you see sort of like the black box approach where it's like i was just fuzzing this
+ endpoint i saw an interesting parameter i tried a command injection and it worked and that's it and
+ you don't really get the understanding for like what that looks like on the on the back end or like
+ the engineering side or like if you were doing source code review how that might um how that might look
+ and so i think uh it's really awesome to see the blog posts that they put out because they go into
+ that level of detail for sure as always i love the methodology in the write-up they they talk about
+ they dump all the files they they talk about um this this uh i guess function that's getting called to
+ parse the cookie set current principle from session cookie um which you know if you were just kind of
+ looking through the code you might assume that that is going to be something that does you know
+ an authentication check and in fact the title of that section they they titled authenticated but not
+ really um because that once you double click into that that you know that call it just skips over it
+ if it doesn't find the cookie that it was looking for um and so it's like okay well sort of that was going
+ to be an authentication check and there's some other pieces down the line where um you know you would
+ assume our authentication was was um was necessary but they kind of you know weave around out of those
+ and eventually end up finding a path traversal not in um let me see if i can find the name of the
+ parameter it's not in the parameter that you would think um here it is right here yeah so it's it's not in
+ the parameter that allows you to specify the path it's a it's a in the upload id parameter um and that
+ gets concatenated with the path a little bit later and even though the path is actually um sanitized uh
+ the uh upload id is not which meaning which results in the path traversal which allowed them to get
+ arbitrary file right so that was a really i think that was a really good method and then this one also
+ sort of has a little bit of an a a twist to it which is you need to have a a valid parent id within the
+ application and so that parent id um you might assume would be something you might have to have
+ like a valid folder or a valid um you know id of a folder or something but really they found that
+ all you have to do is have a um string that does not fail when it gets aes decrypted and so it doesn't
+ matter what that string is it's not used anywhere but if it if it is if it gets uh you know if it passes
+ the aes decryption then you're able to to do the attack so they they outline really well um how aes
+ works how um the pkcs 7 padding works and how they were able to use that to um really reliably guess a
+ value for this um parent id i think it was only 128 or 256 um tries that it took to brute force and then
+ they find a a valid value that will pop and result in them getting a shell so once again you know big
+ round of applause to the asino team they they killed it yeah yeah i think it's um it's really interesting
+ because this is a something that we talk about in app appsec a lot where it's like validation versus
+ verification and like total like a textbook example is jwt tokens where they're just checking is this a
+ valid jwt token not is the contents inside of the jwt token valid and so those are two very different
+ things like if you're just checking that this is a valid jwt token it can decode properly and that's it
+ and you're not actually checking who signed it or is the key correct and is the person who they're
+ saying they are in the jwt token actually who they are who they are like if you're not doing those
+ checks then that's where these little like weird weird edge cases because you might read through this
+ and i'm sure it's like whoever wrote this like didn't think that this was going to be an issue they
+ probably were like yeah just you know check if this is valid and go forward and that's not enough
+ you need to like also just verify like do that extra step and that that pitfall i think hits in
+ a lot of different areas uh yeah and you know this is just another example of you know in a big product
+ as well like just that classic kind of case where they checked it but they didn't fully verify yeah i
+ don't know about on the jwt front i kind of feel like that's the whole cell of the jwt though is that
+ like you know it should be sort of self-authenticating because it's signed by the you
+ know by the person that that has the private key right so you know and obviously that doesn't always
+ work out to be the case but um you know these different technologies do have their different
+ pitfalls and that is you know in the jwt scenario as you mentioned that if somebody does you know find
+ a way to forge a token or get their hands on the private key or whatever then you're just totally
+ screwed so yeah yeah so much of that comes down to like which library you're using too like if you're
+ just using a library that separates out like validation and verification then that might just
+ like put you in a big pitfall where you're using the built-in library or something but it has an extra
+ function that you needed to call and you didn't know it or something like that and that oftentimes
+ is just either a documentation problem or something even stupider than that and you know it it happens
+ to everybody so i think it's just uh you know it's cool to see it in the wild and i think it's just
+ something that you should always keep keep an eye out for and just like you know check and see are
+ they are they actually verifying my my jwt contents can i just give it any sign jwt and will it work
+ yeah so um i guess bringing it back to the blog post i did have one more thing that i'll just try to
+ explain from you know without you having to go and read the blog post which is like i've done a couple
+ deep dives on aes and um and you know the padding portion of it for padding oracle attacks so for
+ those of you that have done that in the past and want a little bit of a refresher the way that the
+ uh pk cs7 padding works is that you've got your you know you've got your 16 uh byte blocks and then
+ when you don't have when your data does not sum up to 16 bytes the rest of that 16 bytes is filled by
+ the value that is the number of remaining bytes so if you've got 15 uh you know bytes in that in that
+ block and you need to get one more that last byte is going to contain the a byte that points to one
+ and if it's you know 14 then it's going to have two yeah zero zero two zero two right um and so that
+ that's something that i had back there you know in in the memory database and that but just doesn't
+ come you know sometimes when i need it to so there's your little refresher on on um aes uh padding
+ protocol for any of you that are interested in that that low level of cryptography yeah yeah yeah you
+ probably see this a lot in ctfc like if you decrypt an aes block and it's not exactly the block length
+ then it'll always have like trailing bytes that usually are not printable because it's from like
+ zero x zero one to zero x zero f and so oftentimes you'll be like oh what is that oh right i need to
+ unpad it and there's like a some copy paste function that i always use off stack overflow to do that in
+ python yeah yeah no python man this is just another great example because the exploit here is written in
+ python is like you really if you're going to try to get to this level of you know pro hacking you need
+ to be pretty handy with python or you know some sort of scripting language so that you can just write
+ out these pocs pretty quickly yeah 100 all righty so let's see what else we got on list for today
+ um so uh bavook jane pretty well-known hacker uh he tweeted out on twitter uh when was this a couple
+ days ago um originally that they had like a full read ssrf in a headless chrome instance they were
+ trying to escalate it somehow they were trying a bunch of different things they could access gcp
+ metadata but the creds were super restricted so they couldn't really escalate that they tried a bunch
+ of different internal and external subdomains again couldn't really find anything useful couldn't
+ really escalate it asked for some help on twitter and today they re they quote tweeted their own tweet
+ and they said solved nice so the solution was that they figured out that they could hit the chrome
+ debugger instance on port 9222 uh on slash json specifically i believe um which will dump but i i
+ guess a lot of data about what's going on i've never actually used this port so i'm not super familiar
+ with how it works but he did link to some docs that describes like what this what this api is used for and
+ the type of data that that is provided there um and he said that it allowed exfiltrating data from
+ other users who were hitting the chrome uh the headless chrome browser instance so it seems that
+ it basically gives like an overview of all the data and stuff that's happening within that chrome browser
+ instance and uh that's a really awesome creative way to escalate that i think that's a default port would
+ be my guess the 9222 yeah that is a default port and i i threw this in the news articles for this week
+ because we've mentioned this on the pod before the um the debug instance there and it's great to see
+ someone actually pop something with it and that's um you know when you hit that slash json endpoint um
+ on the on the dev tools protocol it dumps a list of all of the uh available sort of web socket targets
+ that you can connect to for the dev tools protocol um and some of that stuff will leak information about
+ any other tabs that are open in the browser right so if you have other people using that headless chrome
+ instance then that could absolutely leak information about you know what what what page they're looking
+ at or what user information would be in there um so that's that's something that i hadn't i was i thought
+ about that route a little bit more for like accessing sort of chrome internals and being able to pivot
+ around a little bit from there but i actually didn't think about it just from like the raw
+ you know data being leaked via that slash json endpoint about other users so it's got sort of
+ an application level uh you know use as well when exploiting uh headless chrome instances yeah super
+ interesting and i think like it's also like a kind of unique thing where we've we've talked about headless
+ browsers specifically as well but um like it's it's a unique attack scenario where it's not it's like more
+ than an srf because you're in the headless browser specifically and so this is the type of functionality
+ that only exists in like certain scenarios but i think it's a good thing to put in your word list and
+ and to check for for sure let me go see if i can find the episode where we talk about that it's i want
+ to say it was one of the earlier on episodes where um yeah it was episode nine headless browser ssrf so we
+ talked about that that was a fun episode because those are such cool that's it's such a cool bug class
+ yeah yeah and live overflow replied to his his follow-up tweet and linked a video that live over
+ posted um just almost two years ago now august 19 2021 uh that talks about hacking a screenshot
+ service so live overflow made a screenshot like a headless browser screenshotting challenge for the
+ cyber security uh challenge germany in 2021 and then made a follow-up video about like how it worked how
+ to exploit it a bunch of different uh information about how you could go about escalating it and all
+ that kind of stuff and um uh buvuk replied to that tweet and was like oh yeah this is exactly what i did
+ so so i think it's really cool you know this shows if you you know follow live overflow if you follow the
+ content creators who are making awesome awesome content in the cyber security space a lot of the
+ time that will help you later down the road even if it's a video from two years ago yeah for sure man
+ i i've just started recently to appreciate i think fully how awesome live overflow is they do a lot of
+ really awesome content and really good methodology stuff too so i think i think uh you know i think as
+ as a hacker that sort of i don't know i feel like at this point i'm a little bit more focused on um you
+ know doing the hacking and doing the research and stuff like that rather than um you know consuming
+ content on cyber security um but i think i'm missing out a good bit because there's a ton of awesome
+ content creators that have kind of sprung up since i started bug bounty that i've kind of missed out on i
+ kind of missed the the start of their you know uprise and uh i think i got to go back and kind of do
+ do a little you know indexing of how awesome those people might be yeah for sure i mean there's so many
+ people who are creating amazing stuff um recently i can't remember their names but there's like one or
+ two people who i've noticed a lot uh in oh by the way your camera's completely frozen yeah i think i think
+ it just died i think it's done it hit it's right dude yeah oh no all right okay well i'll just keep i'll
+ keep talking or should you want me to pause no no go ahead you're good you're good continue okay cool
+ yeah so um no i just think that there's a lot of really uh really interesting awesome new talent that's
+ popped up into the hacking space not even specifically within bug bounty but just sort of like across the
+ board um and i think a good example is there's a couple hackers who i've noticed recently and i wish
+ i could think of their names off the top of my head or find them quickly but they've been posting
+ a lot of like hardware security type stuff one of them has been doing a lot of mobile hacking
+ where he's been taking especially these iot devices like smart plugs or smart cameras and stuff
+ and looking at how the mobile app is collecting that data where is it sending to uh you know what other
+ data might it be collecting alongside of that with location data and that sort of stuff um and another
+ one of them has been doing similarly a lot of like hardware stuff but more on the hardware teardown side
+ where they've been taking popular hardware devices or like i love that stuff dude um alibaba type
+ alternatives and tearing those apart and seeing like how does this work on the inside is this vulnerable
+ and you know x y or z way um and i think you know just putting that data out there and having it
+ somewhere that's readable in this case generally it's twitter threads um it makes for an awesome addition
+ to the security like learning community where now you have additional resources that you can pull on and
+ you can look at real world examples of how this type of stuff works yeah for sure man yeah i i love that
+ you know we kind of talked about this before but like teardowns and stuff like that man those things
+ are so helpful whenever you're trying to like you know figure out how a device is working i know i
+ really heavily relied on some of those for some of the live hacking events we've done and you just go
+ online and you find someone who has like you know broken it out and like linked all the uh
+ you know fcc like pages and stuff like that i'm just like oh gosh i love you yeah exactly yeah it's uh
+ i mean i think oh i did find one of them um hacks rob he's the one who's been doing a lot of the like
+ software side with mobile apps and figuring out how um how the how the app is collecting data and
+ where it's sending to and all that kind of stuff h-a-x-r-o-b r-o-b on twitter hacks rob
+ uh and then i wish i could find the other guy i know it starts with an a
+ uh we'll link it we'll link it down below but yeah um you know any any info info that you can put
+ out there just i'd recommend trying to put it out there i personally am not the best at this honestly
+ it's hard i'm more of like a i see a cool tweet and i retweet it instead of creating my own unique
+ content but um i think you know i love to see that stuff uh out in the space and and hopefully i can do
+ a little bit more of it myself i did find the other the other person it's atc1441 uh i believe
+ they also have a youtube channel which i think is how i originally found them i was just like on
+ youtube and out of nowhere this like hardware like tear down hacking video like popped up on
+ my feed and i was like wow that's like not something i see every day and i saw his video and it was like
+ really cool and then he showed up on my twitter feed as well so yeah atc1441 he's more of like a
+ hardware uh focused hacker i would say um his most recent thread was a couple days ago and he went over
+ this it's a called a data frog handheld emulator whoa what the heck it's very cheap it's on aliexpress
+ and it's like you know like a game handheld like emulator gameboy knockoff type type device you know
+ very cheap um but you know it was a teardown of like how it works what the chips are and that kind
+ of stuff and again like this type of just it doesn't have to be vulnerability research so much as just like
+ informational knowledge and research and just sharing that out publicly is super useful for future research
+ i think a lot of the time you'll see um i i mean this happened to me multiple times where i'm tearing
+ apart a hardware device i see a chip number i google that chip number and the second link is a blog
+ post that's titled reverse engineering the oh my gosh it's like i'm like oh this is perfect this is exactly
+ what i was looking for so honestly just putting that info out there is so useful um and it's it's
+ so great for future hackers even if it's you know just some random thing that you're looking at yeah
+ like we said before even if you don't get anywhere just like you know having gone through the process
+ sharing your knowledge is is super helpful but like you said as well it's very hard to do that you
+ know it's not necessarily the easiest thing in the world to do so um yeah that that could definitely be
+ that could definitely be something that if someone wants to sort of ease into content creation
+ that could be a great way to go yeah for sure um all right so sort of along the lines of iot
+ devices slash apple application you know physical applications um this next piece that i had in the
+ note was a tweet by orange which anytime orange tweets anything uh for those of you that aren't familiar
+ it's orange underscore eight three six one um yeah orange sigh on twitter uh you know this is
+ bad news yeah yeah bad news bears if you're if you're the target bad if you're if you're just a researcher
+ good oh hell yeah exactly you wake up and you you roll over and you read that blog post right away
+ so that's what i did and um yeah he he wrote up a version of it um talking about how uh this specific
+ google search appliance which is actually sort of like a on-prem version of google search which i
+ didn't know existed um they they kind of bought one on ebay and uh and pulled figured out a way to
+ get the the firmware um from like some old google group like you know weird google group that shouldn't
+ be public right which is just like the most hackery thing like that is what we talk about all the freaking
+ time and he goes in there and he's like okay you know here's a link to it oh sweet i can just like
+ iterate through these numbers and download literally every single version of the firmware and what's
+ great is like this is something i think i've done like i tried this before and it's it's not worked like
+ it's really awesome that this worked um but like basically he was like looking on on this forum thread
+ from like oh when was this uh 2015 or something oh my gosh somebody linked and they were like hey
+ i was trying to download this here's like the link but it's not working and so they took that link and
+ they like went on web archive and they figured out the valid like version number ranges and then they
+ just brute forced every potential file version like with that formatting on the same host and you know it
+ came back with actual files which is also kind of crazy because this whole this whole product google
+ search appliance looks like it would be extremely deprecated by this point but oh yeah i'm sure
+ uh maybe it's being maintained to some extent or maybe they still just have like versions of the
+ files up there or something but it's really really crazy that i i mean i had never even heard of this
+ thing i didn't even know it was a thing i've never seen a photo of one uh i didn't know google made
+ hardware like this so uh i think as a hacker if i had known this would it would have existed i would
+ have been like oh i want to get my hands on that yeah if you scroll down to the very end he has a
+ timeline um and it says that google said the issue is not severe enough to qualify for a reward and i'm
+ like are you kidding me this is rce but you know i i think that's probably because this product is not
+ being used you know or not being actively used by a large user base and so the risk is just not there
+ but yeah the the the bug itself the bugs the the flow is really really interesting so definitely worth
+ a read if you're interested in tearing apart iot devices and figuring out exactly how he does it and
+ also i just kind of love oh actually now that i'm going through it he's got some of this stuff censored
+ yeah no no but some of the stuff is not censored but if you scroll halfway down
+ he he starts he starts doing like he writes in the post like all right this is the contents of etsy shadow
+ this is like the password to like you know this config you know sort of thing i'm just like oh my gosh he
+ just totally wrecked it you know when you're like writing plain text passwords of these like embedded
+ devices all over the internet um super badass and also i just wanted to shout out i really do like the
+ way that he broke down the various network services that are listening on various ports the ip tables rules
+ that you know show access to those um and that sort of thing too that's a great way to sort of uh take a
+ an attack surface and you know get it in front of you feel like you're actually able to work within and
+ understand all your different attack vectors in your routes which really shows how he you know
+ developed that methodology and why he is so good at what he does you know and this is the whole team so
+ it's not just orange but this is his the um the research team that he's associated with yeah and even
+ like in a recent live hacking event i'm not gonna name anything but we saw an example of this exact
+ type of thing where it's more of attacking like an appliance uh like or an os type package than it is
+ like even a hardware device i because i think and i might be mistaken here but it seems like
+ most of this was from software analysis like they got a firmware they pulled it apart they
+ started figuring out like how does this os work what types of services are running where what's the
+ the attack surface all that kind of stuff and we've seen that even like you know recently in the last
+ you know month or two where that same type of thing exists in modern companies um including google
+ obviously um and i think it's just a really interesting attack surface i always love that
+ type of stuff where it's like it's it's right there like in your hands and you just have to figure
+ out like how it works and like pull it apart and and once you can figure out how the secret
+ sauce works then that's usually where where all the vulnerabilities live but i also love that in
+ the timeline the first the first entry of the timeline is a cbe from 2005 oh my gosh which is
+ it's like a code like java code injection yeah java code injection and it's a cbe from 2005 that links
+ to a secular you know disclosure back in the wild west days when this used to be like a mailing list
+ he's got like an at metasploit.com email hd more this guy this is legit so cool so cool yeah so
+ that's a it's just a really cool really cool blog post i'd recommend you give it a read just to
+ again this is one of those rare glimpses into like who i would classify as an elite hacker oh yeah for
+ sure i'm just like understanding that mindset and the thought process and the exploitation process and
+ the whole start to finish path of how do you take something as abstract as like a google search appliance
+ or like a server box or an os image and take it all the way to a vulnerability that you can then
+ report and get a bounty for oh yeah hopefully well yeah i'm not yeah in this scenario he may be hoping
+ to get a bounty but uh it doesn't look like they google came through on that one but um just for
+ those of you that don't get to go and read the blog post um the summary of what ended up happening
+ here was after like dumping all of the source code and getting access to the the um the firmware for
+ this uh the the vulnerabilities which are you know being exploited are actually very simple we just
+ you've got a basic lf injection um you know something's getting it's an art it's a command
+ injection in a specific parameter um where you just put you know your your um uh what is it is it oa yeah
+ it's oa uh percent oa in the scenario and then add another command right after it so it's just like a
+ very standard shell you know injection and then um and later on they've just got a very textbook
+ um uh lfi or lfd technically um and so these are also vulnerabilities that they were able to discover
+ and uh exploit from a remote perspective rather than you know interacting directly with the physical
+ device um so from an exploitation scenario you know from an exploitation perspective the bugs were not
+ like blow your mind crazy stuff like you normally see with orange and his research team but the
+ approach was really cool to breaking down a iot device and that was what i really appreciated about
+ this article yeah same all right last one for the um for the news segment and then we'll jump into the
+ to the content for this episode um bit quark finally after four years after four long years of waiting
+ has released short scan um their tool for uh exploiting the uh tilde tilde you know enumeration method
+ with um windows short names um so that's really exciting for those of you that aren't familiar with
+ that technique uh for specific iis servers actually a lot of iis servers um this can help you enumerate
+ the first i want to say it's like six characters of um any file and folder and then the first uh you
+ in the file extension for that or the first three characters of the file extension for those files and
+ folders um and so that's it's really helpful for when you're doing recon on iis environments and this tool
+ utilizes some new techniques to try to uh get you the full uh path the full file name not just the short
+ file name um which isn't present in a bunch of other tools that we use for this so i'm definitely
+ excited to give this one a poke next time i'm going after iis uh targets yeah so i believe this is on any
+ is uh 8.3 and earlier or maybe it's only 8.3 but um but yeah something like that no it's it's a ton of
+ them yeah they're like almost all of them are vulnerable to it by default i think yeah yeah so
+ i mean it's still definitely out there it's funny because i was just looking back at the original repo
+ from ursdl i think we actually talked about last episode we did yeah um yeah and uh he has like the og
+ tool for this is what i would say like i think i've been using this same tool since at least probably
+ since the beginning of when i started using this i believe chubbs was actually the one who told me
+ about this this vulnerability even existing um and if you look at the tool like the first uh well not
+ the first commit but there is a commit in the root of it from ursdl that is from nine years ago from
+ from 2014 my gosh and the title of the repo is is short name scanner 20 2012 to 2023 and still giving so
+ it seems like this has been uh you know there for a very long time um it's good to see new tools pop up
+ that can do stuff either faster or better or in a different way um you know as much as i love using
+ tools that are written in java i think i would prefer one that's written in golang so uh but that's not to
+ say that the original scan yeah yeah yeah exactly that's that's the nice thing so like the original
+ tool um is still you know being actively maintained there was a commit two days ago um and they actually
+ ursdl actually linked to bit quark's short scan tool in the in the is short name scanner repo the
+ original one so um i think it's awesome um you know it's awesome to see you know people still maintaining
+ this stuff and making sure it works and adding new vectors to make it quicker and easier to scan and
+ exploit so i'm not a huge recon guy as i've talked about on the podcast like i don't do a bunch of
+ recon but this is one of the techniques that if you skip this you're really missing some gold because um
+ like it like you know if you're just if you get a really finely tuned list that's great but if you're
+ actually able to leak the contents of like arbitrary names that is like freaking gold huge
+ i mean there's so much hidden functionality like just that alone like hidden functionality
+ web configs like um path reversals knowing knowing what files exist like all that kind of stuff is
+ you know super super critical like 99 of the time just on its own and so being able to have
+ that leverage that you can then exploit and know a path name or um maybe be able to access a file that
+ you shouldn't be able to access or anything like that um you know this this type of info is super super
+ helpful to have and i i think anytime i see an iis server um i typically run it because it's a super
+ easy win if it works and if it doesn't work it is very low cost yeah so actually when i was in the
+ recon game like i i actually i'll give this one away for you that are doing recon stuff but i would
+ actually have an automation that was would detect iis and then run this on every iis server that was
+ vulnerable and then just take the output and like look at it for like sort of sketchy stuff like dot
+ back files right like um you know backups or old files and you know and there's there's a bunch of
+ other uh regex that i had and stuff like that that would kind of trigger weird stuff but um yeah you can
+ find some really easy wins with like web config dot back or something like that um and this this uh tool can
+ definitely tip you off to it so keep that in mind and definitely check out bit quark's new tool yeah
+ for sure all right should we get our esoteric web vulnerabilities let's do it man um let me take a
+ sip of water first because i've got a bit of a sore throat and then we'll get into it we're gonna have
+ to move pretty quickly because we do not have uh we've got a lot of of stuff to cover and not a ton of
+ time but um yeah first up config file injection so while i drink this water tell the people about it
+ cool yeah so config injection file injection pretty much what you would expect and we talked a little
+ bit about this during the hardware episode i think yeah um but basically this is uh if you're working
+ with okay actually actually hold on let me let me let me just stop you really quickly okay so i i just
+ want to i just want to highlight this before we jump right into this okay so these volumes what we're
+ talking about today like we said like he alluded to these are esoteric web phones these are volumes
+ that are at the top of my list and in joel's as well in some part um that of volumes that i feel like
+ you probably don't know about that you should probably know about because i see these a lot
+ at live hacking events and i see these um you know in the wild and bug bounty quite a bit and having
+ these sort of tools in your belt uh really really helpful um so make sure you're paying attention
+ especially do these first couple ones because they're they're really really helpful okay yeah
+ sorry i wanted to want to give that probably fine joel go go get it okay yeah yeah yeah no and i'll
+ actually i'll tee off on that and say that um some of them are more common than others um this first
+ one probably not as common but some of the other ones definitely a lot more common and definitely a lot
+ more uh instances of it out there that i think you could exploit so for config file injection typically
+ this is going to be a case where maybe there's a configuration endpoint a lot of times this is on
+ iot devices or hardware devices or something more local because that type of stuff doesn't really get
+ you know revealed externally for like a web service typically it's not going to be writing to like
+ it's dhcp config or something like that from just like an api endpoint on you know example.com right
+ i've seen it i've seen it yeah yeah it exists that's not saying it's not there but it's a lot less
+ common and i personally have seen it significantly more often in like routers and smart devices and iot
+ whatever's right like that's typically where you're going to see it is in the those type of more like
+ niche devices that are much closer to like an api that's talking directly with the os or the system
+ versus an api that's talking to a service that's running on an os within a system um so
+ config file injections is when you can write stuff into the config file um oftentimes this i think in
+ order to exploit it successfully oftentimes you're going to need to have an understanding of what the
+ config file actually looks like so some type of file read or file disclosure um or access to the os or
+ error yeah verbose errors anything like that just to get an understanding for what the format is and
+ what stuff looks like around it i think a lot of these cases typically rely on like weird types of
+ parsing behavior for you to be able to exploit it so um one example is dns mask where dns mask if you
+ write multiple instances of certain directives within the config file it will basically ignore
+ the first instance and only read the second instance but that's not true for everything some
+ of the directives can only appear one time and so understanding is your value being written multiple
+ times is it being written one time how long is the line that it's being written into all those types
+ of things really matter a lot and so that's why having some sort of information or verbose
+ errors or access to the file system or something like that is really really helpful when you're
+ trying to exploit these successfully but they exist i think in a lot more cases than you might expect
+ and typically it's really just understanding what sort of weird functionality is built in and exists
+ that you can then exploit to your advantage so dns mask for example has this thing called tftp i did not
+ even know this was a thing until we exploited it that one time so tftp is like a weird service it's
+ kind of like ftp and it runs on what is it port uh i think it's part 69 yeah exactly yeah so it's
+ like you know super weird um and yeah you can basically specify like a file path and it operates
+ kind of like an ftp server in that you can just like read files sometimes you can write files um there are
+ weird permission checks and stuff but if you can inject into you know the system config file depending
+ on who this is running as what user this is running as then you might have full root arbitrary file read
+ through a completely separate port that wasn't even open or exposed initially but because you've made
+ changes to the config file it's now listening on port 69 and now you can hit you know the file system
+ and you can read etsy password or whatever yeah um yeah so so like you said you know it's very it's
+ very dependent on getting a good grip on where you're at in the system which is why you see people like
+ orange and and um and uh the acid note team whenever they're breaking down a target they always always
+ always try their absolute best to get their hands-on source code because if you can get your hands-on source code
+ you just get such a better understanding of what's happening and you can craft these crazy bones that
+ have these amazing outcomes um and this config file injection piece kind of like you said it's a
+ little bit rare but i feel like it's not that rare in that um like a lot of systems that are interfacing with
+ other services so you know in in the scenario that that we were just talking about with dns mask you know
+ maybe you're spinning up a dns server right and uh and you know you want to have dns mask active and so
+ you're dynamically generating that dns mask configuration file and that's where the injection
+ happens because you need to uh you know spin up that dns mask server with um user input as the
+ configuration file and so um you know situations like that whenever you're interacting with other services
+ there's a there's a high risk for this you know oftentimes you're injecting it via a template
+ um and you know the templating doesn't necessarily have the right control characters to prevent you
+ from escaping the block that you're in in the code um and we can use comments and stuff like that to
+ clean up after us so um oftentimes it's pretty easy to um inject into that configuration file your own
+ malicious input um and that can result in some crazy vulnerabilities but it's also going to result in
+ some crazy exploitation scenarios where you are reading the documentation more than you ever thought you
+ would be reading the documentation um and getting very very familiar getting very intimate with this
+ uh with this application with the configuration that you're injecting into and that just makes for
+ some crazy interesting and fun bugs yeah and it's so much more satisfying when it pops too because
+ it's like it's like you've gone through a whole journey just to get to that point and then
+ finally everything works and your payload works and you pop it and you know it calls back or whatever and
+ it's awesome it's an awesome feeling somebody asked me the other day what is what my favorite moment
+ hacking was and i had to put some thought into it and it but it was i think it was one of the bugs i
+ collaborated on with you when finally we shelled this this iot device i was just like oh my gosh i love
+ this so much yeah yeah it was amazing it was like a super culmination of of so much time and effort and
+ yeah the payoff is is super worth it yeah for sure so let me see if there's anything else um here that
+ we wanted to talk about um yeah so we i guess i'll you mentioned dns mask we've also seen this in dhcpd
+ uh nginx and apache um configurations uh injections so definitely be on the lookout for anything that's
+ sort of interacting with these services and keep um file or config file injection in mind next time
+ you're doing your next assessment yeah yeah exactly like if you see a dhcpd server it doesn't mean that
+ you need a zero day in dhcp or dhcpd like it doesn't mean like oh they're running the latest version so
+ it's not exploitable move on to the next thing there's no cve or whatever it's totally up to
+ configuration and how this stuff is working because it can be a perfectly regularly validly configured
+ instance but they're doing something wacky somewhere else within the system and you can exploit that
+ behavior to natively get a shell or escalate your privileges within the system and that that's
+ like the real powerful thing is this isn't like a zero day or anything this is just how you can
+ configure it legitimately to do weird stuff that we can take advantage of as an attacker yeah great
+ summary um next one that i had on the list was client-side path traversal now this one's a little
+ bit weird because you think of path traversal normally as a you know server-side sort of thing you're you're
+ putting something in either a query parameter or a path um and you directly in your url and you're
+ getting to access to some path that you that you didn't previously have access to by using some
+ iteration of dot dot slash or combination of dot dot slashes right um client-side path traversal occurs
+ when you are able to inject via a query parameter or a hash or something in the user's browser so you
+ know the users click the link or you've redirected the user to a specific spot um and that page is uh loading a
+ resource based off of your attacker based input so let's say for example you redirect them to
+ google.com slash example slash one two three four and they try to load a css page that that's like
+ slash css slash one two three four dot css right so your one two three four from the path is being taken
+ and put into a resource that's being loaded then you know if it's url decoding it and stuff like that
+ you can try to use some um path traversal sequences to hit a different part of the application hopefully
+ hit a redirect and get yourself a full css injection on that page which as as we all know from listening
+ to other episodes of critical thinking can result in some very critical stuff um so uh that's sort of
+ what i had on client-side path traversal you got any other thoughts on that joel yeah i mean this
+ isn't a client-side path traversal but i think one of the things that's kind of closely related to this
+ that i really like as a class of bug and this is kind of it's not really talked about a ton but i think
+ it's like path traversal through id and oftentimes i see this with like there's a post request that
+ includes an id in it for example there's say it's a posting a json body one of the parameters is id in
+ the body and it's a uuid or something well oftentimes you can put uid slash dot dot slash some other
+ arbitrary path some arbitrary internal path or something and that just gets fully concatenated
+ into an internal request and it's it's like in the line of ssrf kind of srf slash path traversal
+ but it's a really really interesting technique and i see it exploited all the time like all over
+ the place it's something that i now regularly check for whenever i see an id being sent is
+ let me just try putting a dot dot slash and then like the same id after it and just see if that still
+ works because that's often a really good indicator of whether or not it's working and that's kind of
+ um i don't know it's it's not quite esoteric it's a little more common but it's like a weird um
+ route for exploiting like srfs and kind of a server-side path traversal if you want to call it
+ that um and i think it it deserves being mentioned alongside this yeah for sure man i i've seen those
+ all the time and excuse me they're very impactful bugs if you can get them to work especially if you
+ understand what api is being hit in the back end or you have some introspection into that through the
+ error or something like that those are some crazy crazy bugs so and and then just to clarify the
+ reason why you're saying put so let's say we've got id or uuid equals you know one two three four dash
+ whatever then you put a slash at the end you put a dot dot slash right so that would delete the id you
+ just put in right yeah and then you put the same id again so that that path is should be normalizing to
+ the same thing it was without having the any of the path traversals in there right right and you can
+ imagine this in the backend scenarios basically like one service is hitting another service the way it
+ does that microservices yeah yeah microservices hitting it through an http request and it goes
+ you know other internal service dot host slash id or whatever slash api slash get slash id or something
+ right however you want to imagine how it's being put in there and then if you're giving it a full value
+ and it's not being sanitized and that's just being chucked onto the end of that url your path traversal is
+ going to affect that internal microservice call and be able to hit other api endpoints and other things
+ within that other service that you may not have been intended to to hit and i i see so much impact
+ approved from these all the time it's really insane some of the biggest uh baddest vulnerabilities
+ i've ever seen are caused by this and it's something that seems so simple and straightforward so
+ if you're not checking for that be sure to check for that because it's it's again it's it's not quite an
+ easy win but it's it's it definitely gives you a lot of leverage yeah and i think it's systemic on
+ the targets as well normally because the target is using a microservices based architecture so if you
+ find one you're likely to find lots of other unique issues as well with their own unique fixes
+ um and so i'll actually also link in the in the notes for this episode um that uh there's a blog
+ post by sam curry and i uh that did let's see when did we i'm not sure this is a long time ago that we
+ had done this um yeah i mean sam is like the king of this type of yeah he's the one who i like learned
+ it off of and i see so many crazy impactful bugs that are that are shown by him using this uh i i
+ wasn't sure which ones i i should even talk about because i know like some of them are not public so
+ yeah well if you have a good example okay i do have the link it's public there's a blog post so
+ we'll link it in the description if you haven't seen it that's great but um joel you we we got off
+ topic there the one that i'm trying to talk about here is the client side path traversal which is
+ different very notably different so don't very notably different yes um this is something that
+ happens in the user's browser i mentioned yeah this happens in style sheets but it also happens in js
+ files and it can also happen just in in fetch and ajax requests right so requests that are being sent
+ by the page via javascript and those are very impactful as well because if you can traverse in a
+ context where it's trying to like let's say it's sending a post request to like you know load your
+ news feed or whatever right if you can control that path and you can hit it you know make it hit like
+ slash delete account and that delete account doesn't require any you know parameters then you can force
+ user to just delete their account i've found this bug before um and so definitely be on the lookout
+ there's a lot of different implications it can result in um css injection it can result in xss it can
+ result in um this sort of c surf sort of outcome um and then the other thing that i i don't know how much of an
+ issue this still is but um there used to be this thing called 401 injection where you can inject a
+ uh you know a prompt where it would pop up and they would ask the user to type in their credentials
+ right and then that prompt was actually coming from your website but it was on the page that
+ uh you know you injected into um that used to be a bug i don't i i didn't get a chance to check it
+ before this episode to see whether it's still active or not but um if that could also be a potential
+ outcome from these sort of uh client-side path traversal if you can find an open redirect and
+ redirect to your own site where you serve a 401 yeah i do wonder if that's still a thing i remember that
+ that class of vulnerability but i don't actually know know if it's still accessible that's that's with
+ like uh realm like authentication stuff right yeah yeah and i'm i'm pretty confident it's it's possible
+ in at least one of the major browsers i just can't remember which one it is so we'll have to check that
+ out i've got some good guesses and it's probably not chrome yes it's definitely not chrome cool all
+ right next one cookie bombing have you have you heard of have you heard of cookie bombing slash do you
+ do cookie bombing joel i i before i get put on the list here uh so i i hadn't real i the i'd heard of
+ the name and i understand like the concept um but until i actually read through file descriptors um
+ slides about this specifically now it definitely clicks and i would kind of tie it in with the next
+ one that we were going to talk about which is cookie jar overflow but basically these two classes are
+ um exploiting just like sort of native browser behavior around how cookies are set and sent and
+ so oftentimes there have been new security features that have been added to like how cookies work for
+ example http only um or site secure or whatever um and that make it so that they're only accessible
+ within certain contexts and they're only sent within certain contexts and you know if it's http only then
+ your JavaScript can't read and write it but that's fine because sometimes you control a web server
+ that is doing that over http instead of doing that over javascript and so with cookie bombing for
+ example you can set multiple cookies for the same host on different paths and when they get sent the
+ browser doesn't distinguish whether or not you know oftentimes well maybe it does well i mean i mean
+ it's supposed to the paths the paths piece um you can use the different paths to bomb specific
+ endpoints so like you said you know the the this is abusing a sort of browser level problem with cookie
+ management which is if you send too many cookies uh it the browser will still send them to the to
+ the server but the server will sort of i guess this is sort of a server-side issue then the server is
+ going to freak out and be like okay whoa whoa this request is way too big please please stop right and
+ it's gonna i forget what status code it sends it's it's some 400 status code um but it freaks out and
+ it doesn't like that right um and so you can set you know you can set enough cookies that the browser
+ will happily send along which essentially das is your access to a specific website until you delete your
+ cookies right um and you literally do that just by setting all right cookie one equals 9999 a's cookie two
+ equals 999 a's you know and then like do that until you've blown up the whole request right and um and
+ that will result in the whatever user's browser you're you're setting this in uh not being able to
+ access the target the target website until they clear their cookies um and this can be particularly
+ tricky here's here's a here's a fun one here if you do this on a sub part of a website that is not the top
+ url because what people will do sometimes is they can't access the website they'll delete the cookies
+ for the specific website that they're on right which is their top url but let's say use for example
+ you cookie bombed the api.domain right the api.domain.com the that's never in the user's top level
+ browser so if they try to delete their cookies for that website then they can't do it right without
+ without going in there and actually deleting all of their cookies which is kind of a pain in the ass because
+ it it logs you out of literally every single website yeah um so this is this is a really cool
+ vulnerable and you can do this with just a gadget that sets allows you to inject a cookie on the
+ website which is fairly common um and this is also a great way for you to um show uh an effect to
+ availability uh which ups your cbss score um and it really helps with like stuff like subdomain
+ takeovers to show impact yeah yeah there's actually a cool tool idea just thought of right now as we're
+ saying that which would be something that basically you could plug in your existing cbss score or maybe like
+ say you have a bug and it meets certain criteria within cbss and then the tool would tell you if
+ you could get that if you could change this one factor it would take your bug from a medium to a
+ high or a medium to a crit or something that's a great idea so so you'd have you could put in your cbss
+ score and then it'll tell you okay your easiest escalations are going to be all right if you can
+ figure out how to affect availability just a little bit you know maybe try cookie bombing or something like
+ that dude that's a great idea someone's got to build that yeah yeah uh not us though yeah i got too
+ much going on yeah critical thinking community please please take that and run with it somebody make
+ that too even if it takes four years big work yeah at big work uh no that's great um and the other
+ thing that i was going to say um specifically on app cache i mean um on cookie bombing is you can use
+ it with stuff as well like like app cache um because what will happen if you define an app cache on a
+ specific page uh if there's an error that occurs at the browser level uh it will sub in a different
+ content so it's perfect for cookie bombing and i've seen this i've seen franz abuse this i've seen
+ file descriptor abuse this and he actually mentions it in his talk entitled the cookie monster in your
+ browsers which i think was the talk you were mentioning earlier um and he also mentions how
+ you can use it to get it to not consume a loth tokens because you can cookie bomb the specific a loth
+ end point right yeah that was like such an interesting attack vector so yeah i guess if you basically
+ cookie bomb and it sets too many cookies the request will fail but the request the outbound request will
+ still contain like the credentials or whatever in the url and so you can because it's like a failed
+ request it doesn't hit like iframe options i guess is that correct well so there there's some there's
+ some intricacies like that but the one the one that's really you know how helpful in this scenario is
+ like and it can help you avoid iframe options and some csp stuff as well but in this scenario you you're
+ when as soon as that that code lands on the page where the callback is it gets used and consumed
+ right so even if you have a reference to that window and within xss or something like you can't
+ consume you can't get to that token in time because it's gonna you're gonna lose the race every time
+ and it's gonna consume the last token and you can't get account takeover but if you cookie bomb the
+ endpoint where that oauth code is getting returned to when it goes to that page it's gonna fail
+ but you because you're the same origin you can still reach into that page grab the you know um
+ window location dot href and pull the code out of there which would allow you to get escalate your
+ xss to atl it's just such a great technique i love it yeah that's awesome yeah yeah um on cookie so
+ then like tendential yeah the cookie jar overflow which is kind of similar in like sending too many
+ cookies or like yeah sort of overflowing how the browser is behaving but you actually have a whole
+ tool for this which i did not know about called check cookie jar overflow i yeah i don't know what
+ it's what you call it but it's a link on your on your domain yeah it's a link apps.renorator.dev you
+ guys can check it out this is just kind of it's just kind of like if you click on it it's kind of
+ like just a scrappy little website with like a freaking um apache you know yeah it's it's literally
+ 20 20 lines of html including the script and essentially um what it allows so i actually before
+ prepping for this episode i was like all right let me you know i was for this episode i'm like you
+ know i i'm gonna drop some knowledge i'm gonna you know show them all these cool like weird esoteric
+ web bones and then i get in there and i and i was researching for cookie bombing and i find this
+ cookie jar overflow thing i'm like what the heck is that i've never even heard of that and so i found
+ it and i think it was on the site hacker yeah hack tricks that tricks which is really cool like
+ that's a great website by the way um yeah did we talk about this last episode too we might have but
+ what hack tricks yeah yeah but again this is like one of those like informational type documentation
+ websites that we talked about where this type of resource is something that like keep it in your
+ bookmarks and just like if you're ever stuck on something check all of the ones that you have bookmarked
+ because oftentimes there'll be some like weird edge stuff or just some like really interesting
+ techniques that somebody has documented somewhere that you can take advantage of to escalate your
+ vulnerability to the next level yeah there's so many awesome like just weird things in this hack
+ tricks dot xyz um website so i'll do my best to sort of go in and digest some of that and and put it up
+ back into the podcast um in an auditory format but when i was prepping for the the
+ the like for the cookie bombing i ran across this cookie jar overflow which is really cool and i
+ actually um had i known about this um at the last life hacking event i would have been able to save a
+ friend a lot of time because he had to go uh down this this path to get rid of this cookie that he needed
+ to be gone um and uh he could have just used this technique um and it would have just he would have
+ been able to get it gone in just a second so the technique just to be clear is um you essentially
+ just set a bunch of cookies in the browser for a specific domain and each domain has a limit on how
+ many cookies can be associated with it in the browser that's the cookie jar and the cookie jar limit
+ um and so if you if you exceed that limit cookies start getting deleted oldest first so you can edge
+ out the other cookies in the user's browser even if you don't know the name of that cookie so let's
+ say for example you have a cookie um you know session uh auth session xyz random string equals whatever
+ their session token is right you don't know what that random string is so you can't overwrite that cookie
+ and if it's hdp only cookie you can't access it from the javascript side even if you can set cookies right
+ so you need that cookie gone so you can do a session fixation um and how do you how are you gonna get
+ rid of it because you don't know the name of it right so um this is a cool technique you can use to
+ do that by setting a bunch of cookies overflowing the cookie jar and then being able to use your own
+ values um and one of the things i thought was really interesting is you can edge out http only cookies
+ even from a non-htp only context which i think is really cool and seems like a little bit of an issue right
+ yeah well i mean and again this is like weird behavior that's kind of intended but also not
+ intended like yeah you know it it abuses like one two functionalities that both need to exist at the
+ same time and they kind of collide with each other tangentially right where it's like http only
+ shouldn't be able to be set by javascript but if you set a bunch of other cookies with javascript
+ eventually you'll have too many cookies and the http only cookies will just get removed and like yeah you
+ know that what the browser is going to just have an infinite memory no like you can't right so like
+ these two things have to both exist and there's no real easy compromise there so it's super super
+ interesting behavior and one of those things that you know have it documented keep it in the back of
+ your brain and then when you need it you'll have it yeah for sure so we'll add some links down below the
+ little um sort of tool that i that you mentioned before that you saw in the doc that was just something that i
+ sort of scraped together to help people understand where their cookie jar overflow limit is in the browser
+ so you guys can check it out we'll link it down below it's apps.rionrader.dev/cookie
+ or slash check cookie jar overflow.html in camel case of course so you know probably easier to just
+ click the link you're welcome just click the link in the description yeah um but essentially if you go to
+ that and you click on it it will set a bunch of cookies and tell you where your cookie jar limit
+ is in your browser um i ran it in chrome in prep for this episode and it puts it at 180 cookies
+ um the range for this is between i think 150 to 180 but every time i've run it i've gotten 180.
+ so um yeah you know you should be able to do it pretty easily yeah and maybe as some off off the
+ pod research i would be curious if this matters more uh like the length of the cookie if that matters
+ at all or if it's just purely number of cookies do you know i think it's just pure number of cookies
+ because i was just setting let me take a look at the code really quickly here you say off the pod research
+ and then you know we're gonna do it right away yeah we're gonna look right now yeah no it's just
+ it's just you know check and then the index equals the index so i'm just saying check one equals one
+ check two equals two and that sort of thing and it's overflowing at 180 so i i think i think it's just
+ a number of cookies thing cool cool yeah awesome all right next one dude um this one is cross-site leak
+ um yeah sort of similar to c-surf um it's a little bit less common um and i think it is going to be
+ a uh i think it will be an increasingly um common vulnerability over the next couple years um i've
+ seen a couple people exploit this uh successfully at live hacking events and i've seen it result in a
+ critical once um and essentially the concept of it is well it's sort of like a c-surf right in that
+ you're forcing the user to have uh may have their browser make a request but instead of having an
+ action performed on behalf of the user using some sort of side channel whether it be the number of
+ frames on the resulting page or an error you know 200 or 404 you can determine whether or not the user is
+ uh in some sort of state some state um and so you can determine you know something about the user's
+ presence in the application uh based off of that um and so there's a couple techniques that you can use
+ for this here um one of the ones that i think is really cool is frame counting so essentially you can
+ open up a a new tab in in a window and one of the few things that you can access cross um cross uh
+ origin right when you're reaching into a different frame um is the uh frames length uh attribute on a
+ window so you can see how many sub sub frames are in the application so let's say you submit a um a
+ search into some sort of cross-site search functionality where you've got a query parameter
+ you know equals whatever and if there are results then there will be another iframe on the page maybe
+ they'll show you like a preview of the results or something like that if there aren't results then
+ there won't be an iframe and you can use that difference along with the frame length trick to
+ determine whether or not that user has access to whatever thing you're searching for in the browser
+ which can result in a in a pretty interesting leak of information i think yeah yeah it's super
+ interesting i had never heard of this technique at all um there's a whole domain for it xs leaks.dev
+ and it basically just goes over like a lot of the different like browser features and tricks
+ and nuances and defense mechanisms for the other side as well um and yeah this is a really useful
+ research i'm gonna i definitely put this in my bookmarks um and i was just really you know it's
+ cool to see this type of again this type of more like informational research that's documenting like
+ strange behaviors things that exist things that you might be able to use to chain with your existing
+ vulnerabilities to make them more impactful um yeah it's really interesting i think a lot of
+ companies care about leakage of data even if it's an oracle type thing like this is yeah and it's
+ definitely a useful i've had some companies say no to that before you know i've had like some oracle
+ related stuff like you know is this user an admin or is this user you know a member of a specific
+ organization or something like that um i think those i think those could definitely be helpful in attack
+ chains but you definitely got to realize when you're submitting these sort of bugs that um it is
+ sort of a risk you know um so definitely keep that in mind um one of the things that i did think of
+ well first let me let me talk about some of the ways you can exploit this so we talked about frame
+ counting right that's that technique where you can um determine the number of sub excuse me sub frames
+ on a window object there's also another one that this is really cool uh joel i thought you'd appreciate
+ this one because i had never seen this one before um you can actually count the history dot length
+ um and it can release information so what happens is you're on an attackers page user clicks a button
+ you open up a new tab right the user is in that new tab you're distracting the user in the previous tab
+ um you can iterate through um some you can go to some url and if that url redirects it will take you to a
+ third url right and then you can redirect back to using the window object you can redirect back to the
+ the main page so now you're on the same origin between the two pages and you check the history dot length
+ and it will tell you how many you know changes in the history have occurred since you know you you
+ check the history dot length um and so that's another way that you can sort of leak really cool
+ um sort of side channel stuff and i'm not sure how like how this could be used um this could definitely
+ be used in a way to tell if a user is a part of an organization or not that's definitely something
+ that's possible um uh but yeah i'm really interested to hear you know what other stuff people comes up
+ with uh using this technique because i think i think there are definitely possibilities for it
+ yeah yeah i think as browsers get more hardened we're gonna have to get a little more creative with
+ these types of techniques that we're talking about because some of the things that we took for granted
+ as way ways to easily escalate bugs like before http only just being able to read all the cookies
+ from javascript right like that's not a thing anymore so now you have to figure out more
+ creative ways to get information about the user or infer different states and and all that kind
+ of stuff so yeah um it's really awesome to see this type of research and even in the era of same
+ site cookies as well you know we've had that restriction come in place now um yeah there's
+ we're even having to get more more creative using window.open rather than using iframes and such
+ so we're losing some of this flexibility but um the last one that i think is really interesting
+ sort of a cross-site leak technique that i found out was if you open up
+ a pdf in chrome okay it will provide you with a post message based interface
+ for that pdf even cross origin so i was thinking this would be a really cool technique um an attack
+ vector okay let's say you've got an application that has a customer um you know you can in click you
+ know go to a specific url and it will load up a pdf for that specific customer right and that's a numeric id
+ so you know once again you do the window.open trick and then you start iterating through customer ids
+ right if and you can tell whether it's a pdf or not via this post message interaction so now you're
+ iterating through iterating through iterating through and you can tell how many customers a given person
+ has by whether the response is a pdf or not via this cross-site leak and i think that's definitely some
+ impactful stuff um for sure you know being able to tell whether or not you know their customer how
+ at what pace their customer base is increasing um yeah so that's another cool technique there that i
+ didn't know about the the pdf thing uh exposing a post message listener that's kind of crazy yeah yeah
+ that that competitive intelligence stuff is is pretty valuable to a lot of companies yeah cool
+ all right sorry for ranting on that one no no no that's totally fine i love cross-site leaks i think
+ that's such a cool type of vulnerability i don't even know where you found this domain it's it's really
+ cool yeah yeah all right so the next one unc path leaks you want to take that or should i
+ oh yeah i can talk a little bit about it but um so unc what is the universal network convention naming
+ convention um basically it's like the paths that you see on typically on windows where it's like
+ backslash backslash something um and so oftentimes you can inject into these in like a ton of different
+ places um it'll be maybe in like a file inclusion or maybe it'll be a path traversal or a desktop application
+ yeah desktop application or something like that that has that's running again typically on windows
+ um but it's a really good way to escalate and sort of pivot and navigate horizontally within a system
+ that maybe you can escalate that vertically but oftentimes it's going to be pivoting to other
+ services or systems or network drives or something like that that are accessible within the host that you
+ can then take to your advantage to really prove the impact of your of your bug and just showing that
+ you can interact with stuff outside of that application or within other parts of the network
+ is already like a really big impact provider so um you know yeah very very along the same lines as
+ like path path traversal path injection that type of stuff but yeah was there specific things you wanted
+ to mention yeah well the other thing that i wanted to mention is like the use of repeater with this
+ so let's say for example you have a um a deep link you can provide to a windows desktop app and that will
+ open up you know some file of your choice right you can provide it with a unc path there um which is a
+ path to link to us to a specific server and a share you on that server right so what will happen by default is
+ windows will try to authenticate into that share and it will send your ntlm v2 hash um to that server even
+ though it's not in the local network it doesn't happen you know it could be anywhere um and you
+ can use a tool called excuse me a tool called repeater to catch that and pull the hash um that'll leak a
+ couple things to you one it'll leak the username of the um server whoever's uh you know using that
+ specific whoever's making that connection so if on the desktop app it would be you know the user of the
+ of the pc on an actual server when you've got like an ssrf sort of thing that would be the server username
+ and then also the ntlm v2 hash of that user which one is a password hash um that you can crack offline
+ so that could definitely be helpful for proving impact um and i believe there are some cool things
+ you can do with ntlm v2 hashes as well that's beyond just password cracking but i have to research into
+ that but i know for sure that you can then take that password and crack it offline which is a pretty
+ helpful way to increase your ability to pivot within that network yeah totally this is one of those
+ things that's a little bit outside of my realm of like familiar knowledge like network pen testing stuff
+ yeah exactly it's more like uh you know you're doing like a network pen test and you know you
+ found some vulnerable windows image or instance or something like that um more kind of on the like
+ the metasploit type route not that that's like a bad thing but like more like there are there's
+ lots of tools and stuff that are built around this type of stuff and typically the type of hacking
+ that we're doing is like web hacking or like yeah mobile hacking maybe hardware hacking but generally
+ not like internal pen test type stuff where the ntlm hashes are going to be leaked um but i think
+ there's a huge body of resource uh resources and research out there that covers this type of
+ information and how to exploit um ntlm hashes and what to do with them i know mimi cats is a pretty
+ popular tool um for that type of stuff so yeah the um so i think it's it's very important to have this
+ sort of cross-discipline um yeah knowledge though because you know we've seen especially in the
+ desktop app exploitation arena which is something we see in bug bounty a decent bit still um i've seen
+ this bug you know result this little quirk result in uh much higher bounties for some of the desktop
+ level applications um because you know uh understandably uh software providers don't
+ want to be responsible for leaking their users ntlm v2 hash to whoever um so keep that in mind if
+ you're doing any desktop level hacking whether it be you know um electron based stuff for native
+ clients or whatever yeah because again like this is like a pivot from application vulnerability to os
+ problem right where like if your application is leaking a hash to the os user you've now compromised
+ that whole user within the entire os it's no longer about your application it's about the entire user
+ and if their system is exposed at all now you can use those credentials to gain access to their system
+ even further and like totally exploit the user beyond the application and the implications of just that
+ application so i think it's a huge impact provider if you can figure out a way to exploit it effectively
+ yeah absolutely okay um let's let's have this next one be the last one here um i entitled this one
+ impactful link hijack um because we've seen some link hijacking vulnerabilities and stuff like that pop
+ up on the activity you know in the past that are kind of crappy that are just like yeah you know you're
+ you're looking over your instagram on your home page yeah oh somebody forgot to you know refresh this
+ domain or whatever and that that's kind of like okay you know i feel like that's more of a qa issue or
+ like a web design team issue you know it's less of a security issue but there is a specific um
+ subset of these issues call that i i just deem impactful link hijacking um which um when is when
+ this sort of thing happens in the ci flow within within source code excuse me man this cold is really
+ getting the better of me yeah it's funny because over the last like 55 minutes or so you've progressively
+ gotten more and more like someone who smokes six packs of cigarettes a day yeah dude yeah that's the
+ struggle with having a podcast is like oh man i gotta get on here and talk every single week with my
+ voice um finally all those meetings are are putting me to good use yeah exactly so so yeah just the thing
+ that i wanted people to take away with this one thing is like if you can go to a github repo and like
+ find a script that's being curled or or um find a a old domain that's being reached out to or like an
+ s3 bucket s3 buckets are really common heroku instances that sort of thing and you're able to inject
+ yourself either in the ci pipeline or in the source code um uh you know context then there can be some
+ really impactful vulnerabilities there um yeah i am not doing as much github scanning anymore i used
+ to be pretty big on the github scanning because uh but since they sort of started cracking down on that
+ sort of thing i i've i you know various secrets being linked and that sort of thing i've i've spent less
+ time there but i know for a fact that people are still finding very impactful vulnerabilities
+ via you know finding um expired domains or s3 buckets or hogan instances or whatever inside of
+ source code and ci pipelines yep yeah and in addition to that um it doesn't have to be within
+ like a script automatically if you want to provide an impact so like who i was hacking with a couple
+ weeks ago um he found a really interesting bug that was basically exactly this where there was a set of
+ instructions that were in a github repo for how to set up a tool and those instructions included a bunch of
+ set of commands and in those set of commands it was pulling down a resource from an s3 bucket
+ and that s3 bucket didn't exist and he was able to take over the s3 bucket and prove impact by saying
+ look this is in the readme if somebody were to copy paste this which is completely a plausible scenario
+ they would be pulling resources down from my bucket and you know it was accepted so i think like
+ that's just like a great example of like one it doesn't have to be directly in a script but like
+ just the fact that they're using it and they're advocating for you like the user to be pulling
+ something from that resource if that resource doesn't exist anymore that's direct impact because they're
+ they're explicitly telling you hey use this domain well that domain is no longer safe so i think like
+ anything like down that sort of path is a is a good way to to have impactful link hijacking right it
+ doesn't always have to be like i took over your instagram username or whatever like i think that
+ stuff exists as well for uh open source code and open source scripts and all that kind of stuff that you
+ that you mentioned yeah for sure man all right i think that's that's a wrap that's seven um you know
+ esoteric web vulnerability types hopefully y'all learned something from that i i definitely did
+ while researching for it um if you guys wouldn't mind definitely head over to ctbb.show
+ drop your email in the newsletter subscription there that would be a big help to us and uh yeah anything
+ else you got joel before we sign off no i think that's it i'm uh i've got a bunch of new bookmarks and
+ tools to download yeah so same the same man i'm gonna go play around with that big park
+ short skin tool right after this yeah awesome all right hopefully hopefully your your voice
+ and your your cold goes away and uh hopefully you feel a little better but i'll see you next week
+ thanks man yeah hopefully i'll be recovered for next week all right cool peace peace

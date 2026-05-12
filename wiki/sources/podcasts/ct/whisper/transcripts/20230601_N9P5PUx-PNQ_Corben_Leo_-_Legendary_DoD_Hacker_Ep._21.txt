@@ -1,0 +1,6491 @@
+ Yo, what's up, everyone? Welcome to this latest episode of Critical Thinking Bug Bounty Podcast.
+ As always, I'm your host, Justin Gardner, and co-host Joel Margolis is currently not here today.
+ So we brought on a great guest, Corbin Leo, amazing hacker, wonderful methodology.
+ So I think you'll really enjoy what he's got to say this episode.
+ But before we dive into it, I wanted to ask you to head over to criticalthinkingpodcast.io
+ and subscribe to our newsletter.
+ What that's going to do is it's going to give you access to a text version of the content
+ that we've been producing here, produced by none other than Jesse Rivera himself.
+ So during the nice little intro song that we've got here,
+ pull out your phone, head over to criticalthinkingpodcast.io and drop a subscribe.
+ Hope you enjoy the episode.
+ Yo, yo, yo. Welcome to the pod, Corbin.
+ Thanks. Thanks for having me. Excited to be here.
+ Thanks for stepping in last minute.
+ We had Joel disappear on us this week.
+ He had some family stuff coming up.
+ So I texted Corbin yesterday at like 9 p.m.
+ and be like, yo, can you get on the pod tomorrow morning?
+ So appreciate you stepping in, man.
+ Of course.
+ All right.
+ So I've got a bunch of questions for you.
+ And I hope...
+ Did you grab a report, by the way?
+ Yeah, I have one in mind.
+ Okay, cool.
+ Nice.
+ I was going to go to my collaboration stuff
+ and see if we could find one that we worked on together.
+ But yeah, if you've got one, that works too.
+ Okay.
+ So first, let's go ahead and do the news section.
+ So how this works, Corbin, is we...
+ First, we do the news.
+ And then I ask you a bunch of questions
+ that I've got in the doc about your life and your hacker vibes.
+ But since we've got no Joel today,
+ you're stepping in and you're doing the news with us.
+ All righty.
+ So first thing that I had on the list here,
+ and this is pretty cool.
+ I really like just DNS rebinding as a concept.
+ But there was an article that came out earlier this week
+ called State of DNS Rebinding in 2023.
+ And actually, I think it got released
+ actually about a month ago now,
+ but it just came across my feed.
+ This was by an NCC group.
+ And essentially, it's exactly what it sounds like,
+ a State of DNS Rebinding article.
+ And it talks about all of the different
+ restrictions that they have in the space.
+ There's local network requests,
+ which is a new restriction that's coming into place.
+ Unfortunately, in this upcoming version of Chrome,
+ we're about to lose access to a bunch of local network stuff.
+ But just to sort of summarize it,
+ there's going to be some core stuff that's going to start coming into play
+ on local network access.
+ And this is already in what is called a Chrome depreciation trial,
+ which essentially allows for us to have a developer token
+ that you request if you still need this feature
+ so that they can still sort of gradually roll it out
+ and not break everything.
+ So that was something I'd never heard of before
+ and I thought was pretty interesting.
+ Let's see.
+ What else is there here?
+ Yeah.
+ Good thing all these bug bounty programs
+ aren't outdated versions of Chrome still, right?
+ Yeah, I know, right?
+ Yeah, they still have, like, you know,
+ a lot of times what you run into in those sort of situations
+ is, like, super mega old Chromes
+ and that becomes the problem, right?
+ It's like, oh, man, how do I hack this thing
+ that doesn't have any of the features
+ I've been used to for the past, you know,
+ six or seven versions?
+ Let me see what else I had here on the notes.
+ So, yeah, this is something that we talked about
+ when we did the episode on rebind multi-A.
+ And that is that Chrome can...
+ There is a rebind that you can do in Chrome
+ that's instant with using a record
+ that has multiple IP addresses that it resolves to
+ and that can rebind only to 0.0.0.0,
+ which is, like, sort of a private IP address.
+ I mean, technically, you can access local services,
+ but it's not necessarily specifically a loopback
+ or local IP address space.
+ So there's a Chrome issue
+ that we'll link in the description
+ saying specifically, you know,
+ tracking that specific vulnerability.
+ But as of right now,
+ the takeaways from that article
+ are that you can still attack services
+ on 0.0.0.0 using Singularity
+ or my DNS rebinding tool.
+ And then the other thing that I didn't know
+ was that the WebSocket port scanner still works.
+ So you can still do timing attacks
+ against local services
+ and services on the local network
+ using a WebSocket port scanner,
+ which I thought was pretty rad.
+ That's cool.
+ Makes sense.
+ Yep.
+ Let's see what else we got here.
+ Yeah.
+ So let's see.
+ Douglas Day,
+ Archangel D-Day,
+ is his Twitter handle,
+ posted a Twitter thread,
+ which I know Corbin loves, right?
+ It's been a while.
+ Yeah.
+ Yeah.
+ And he dropped 100
+ very short bug bounty rules.
+ And I think at the end of the tweet,
+ he kind of linked to
+ a Ryan Holiday tweet
+ where he got that sort of
+ flow from.
+ But this is a really cool tweet
+ that has a bunch of really nice advice
+ for what you would do
+ if you were, you know,
+ 100 different rules for bug bounty
+ and what kind of stuff
+ you should try to approach.
+ So I figured let's go ahead
+ and take a peek at these real quick,
+ Corbin,
+ and read through some of these
+ and give these a talk.
+ So one of the ones
+ that popped out to me
+ was give yourself
+ a no bug limit.
+ I do three hours.
+ So he said that like,
+ if you don't find a bug
+ within three hours
+ on a specific part
+ of the target,
+ you move along.
+ What do you think about that, man?
+ I mean,
+ I think that's,
+ I think that makes sense.
+ I mean,
+ I don't think I'd,
+ I don't do three hours.
+ Maybe I should,
+ but it's just like,
+ okay,
+ I'm kind of sick of looking at this.
+ I'm going to look at something else.
+ So you move along pretty quickly.
+ Yeah,
+ I move on decently,
+ decently quickly.
+ Okay.
+ Gotcha.
+ Especially when it's like
+ a really big app.
+ If it's bigger,
+ then it's like,
+ okay,
+ I don't see anything.
+ I don't know.
+ I tend to,
+ like some people do more
+ of like the pen tester methodology
+ where it's like,
+ okay,
+ I'm going to test this specific thing
+ for literally everything.
+ Whereas it's like,
+ okay,
+ I'm going to like,
+ just check out
+ the different functionality
+ and then I'm going to like,
+ I don't know,
+ go where like my Spidey senses
+ like are tingling in one area.
+ So like,
+ I'm going to go look at this
+ and then,
+ okay,
+ I don't see anything here
+ and I just kind of do that.
+ I feel like you have
+ a pretty strong hacker Spidey sense,
+ which I think,
+ you know,
+ we'll touch on a little bit later
+ in the flow,
+ but I'm definitely interested
+ in trying to crack that nut
+ a little bit
+ because when I read
+ through your threads
+ and just when I've seen you,
+ you know,
+ at the live hacking events
+ and such,
+ I feel like you find bugs
+ that are pretty different
+ from what I find.
+ So I think our methodology
+ sort of deviates
+ a little bit there
+ and you're a little bit,
+ a little bit more recon heavy,
+ which is cool.
+ Let's see what else we got here.
+ Oh, okay.
+ So this is another one
+ that I thought was pretty cool.
+ 24.
+ It says six,
+ six 1k mediums
+ pay more than one 5k crit.
+ Don't ignore any bugs.
+ And I think this one
+ is kind of like once
+ because there's a certain
+ brand of hacker
+ that just kind of
+ only reports highs
+ and crits
+ and that's great.
+ But I totally agree
+ with Douglas here
+ that there are a lot of people
+ and even ignoring lows
+ I think is a mistake
+ because one,
+ that's value
+ you could have
+ in your pocket
+ and two,
+ if the company
+ is going to pay for it,
+ it's something that they want.
+ It's something that they think
+ would secure up
+ their attack surface.
+ So I would say
+ never, never
+ don't report a bug
+ that you think might be valid.
+ Yeah, and I agree with that.
+ I mean,
+ there's sometimes,
+ I guess it kind of depends.
+ Like if you find
+ a stumble across
+ medium or low bug,
+ why would you not report it?
+ Because it's just like,
+ yeah, you might get duped,
+ but hey,
+ there's a chance you're not
+ and I guess that's like
+ free money.
+ But yeah,
+ then there's other people
+ that just don't even
+ look for mediums
+ or anything like lower
+ than that too.
+ Yeah.
+ I don't know.
+ I feel like I stumble
+ across mediums or lows
+ when I'm looking
+ for higher impact bugs.
+ Yeah, same here.
+ That's the kind of thing
+ that I like,
+ you know,
+ when I'm,
+ and I've talked about this
+ on our episode,
+ I'll have to pull it up
+ right here,
+ the episode where we talk
+ about how to find
+ a good program,
+ episode 13.
+ I kind of talk about this,
+ you know,
+ whenever I'm choosing
+ a program,
+ I always try to pick
+ a program that has
+ good payments for lows
+ and mediums as well.
+ Because as you're going
+ after those highs and crits,
+ you're always going to
+ stumble upon the lows
+ and the mediums.
+ And it's just nice
+ to have a good consistent,
+ you know,
+ influx of bounties
+ coming in to keep you
+ motivated and to keep
+ your, you know,
+ wallet full if you're
+ a full-time bike bounty hunter.
+ Yep, exactly.
+ I think like the,
+ the inverse of this problem
+ too is like when you're
+ only looking for like
+ lows and mediums
+ and other people who like,
+ I guess I don't know
+ like anyone specifically
+ who does that.
+ But I mean,
+ I guess that's a mistake
+ too is,
+ I guess that might just be
+ like kind of like
+ a beginner thing as well.
+ Yeah, I think it's just
+ a beginner thing too.
+ It's trying to like crack
+ to find like bigger
+ and bigger things.
+ So, yeah.
+ Yeah, I don't know.
+ I think it,
+ I think it,
+ I think it can,
+ I think it can go,
+ you know,
+ if you're just not
+ dreaming big enough
+ in your attack vector
+ mentality as well.
+ Like if you're never
+ thinking,
+ like for example,
+ I,
+ I very rarely,
+ I used to very rarely
+ look for arbitrary
+ account takeover,
+ right?
+ Because I was like,
+ this bug is just kind
+ of like a myth,
+ right?
+ Like does this really
+ exist though?
+ And then like,
+ you know,
+ I see you
+ and OXACB
+ and some of the other
+ hackers out there
+ that just kind of
+ have a different
+ mentality start popping
+ some of the stuff
+ at live hacking events
+ and I'm like,
+ oh, wow.
+ Literally,
+ OXACB,
+ like I love it,
+ man.
+ He literally,
+ I think you know
+ the one I'm talking
+ about.
+ Yeah,
+ I know exactly
+ what you're talking
+ about.
+ That one was
+ actually insane.
+ That was absurd.
+ I thought that
+ couldn't be done.
+ Like literally
+ 15 year legacy
+ code where he
+ popped an arbitrary
+ account takeover
+ just because it was
+ like a,
+ it was like a
+ string contains bug
+ rather than a
+ string equals bug,
+ which is crazy.
+ So that one was,
+ yeah,
+ that one blew my mind.
+ I think keeping,
+ keeping the attack
+ vector mentality high
+ is another really
+ good solid tip.
+ Well,
+ yeah,
+ and also don't like
+ put restrictions
+ on ideas before
+ you try it too.
+ It's like,
+ oh,
+ there's no way
+ that could work.
+ It's like,
+ you'd be surprised
+ by how much
+ code is just
+ like strung
+ together with
+ who knows what.
+ Devs do crazy
+ shit sometimes.
+ They really do.
+ And there's just
+ weird services that
+ interpret things
+ differently.
+ Like,
+ you never know.
+ Yeah.
+ So I knew,
+ I know I kind of
+ threw this on you
+ last second here
+ with the tweet,
+ but you see any
+ of these that
+ stand out to you
+ in particular?
+ Um,
+ let me see.
+ I mean,
+ I think
+ let's see.
+ Um,
+ let's see,
+ 36.
+ You find a bug
+ that's out of scope.
+ Like,
+ this is a whole
+ another,
+ this 36,
+ you could talk
+ about so much
+ more too,
+ is like,
+ what is it?
+ If you find a bug
+ that's out of scope,
+ still ask the customer
+ if they care.
+ Um,
+ I've,
+ I don't know,
+ that's a really
+ tough,
+ tough one
+ because like,
+ there's obviously
+ reasons you have
+ scope sections
+ in,
+ you know,
+ programs have scope
+ sections.
+ You don't want them
+ hacking,
+ you know,
+ like third party.
+ Um,
+ obviously there's like,
+ you might have to find
+ an RC on something,
+ but like it,
+ it's contained as a
+ sandbox.
+ It has like,
+ access to nothing.
+ There's plenty of
+ still like out of scope
+ things that have like
+ an insane impact
+ that the customer
+ might not know
+ about too.
+ Um,
+ yeah.
+ So you say don't ask
+ the customer if they
+ care,
+ just submit the bug
+ or what do you,
+ what are you saying?
+ Not necessarily.
+ It's like,
+ I don't know.
+ It's,
+ it's really difficult
+ because,
+ um,
+ like you shouldn't
+ just go like
+ hacking out of scope
+ stuff just for the
+ sake of hacking
+ out of scope
+ stuff.
+ Um,
+ but at the same
+ time,
+ I don't know.
+ I don't want to get
+ into this.
+ I feel like you do
+ that Corbin.
+ Yeah.
+ I mean,
+ there's lots of times
+ I've had some pretty
+ good bugs by going
+ a bit out of scope
+ and to be fair,
+ it's a program that
+ has like,
+ that has had a
+ VIP section
+ where they have
+ only a certain
+ number of
+ assets that are in
+ scope for the
+ VIP pain program.
+ They also have a
+ VDP.
+ It's like with that
+ program,
+ um,
+ it's a lot easier
+ to do this.
+ Um,
+ but I've had like
+ instances of like
+ a domain that
+ isn't even related
+ to that company.
+ Um,
+ and it was actually,
+ it turns out
+ it was owned by
+ them.
+ Um,
+ it was somehow
+ linked to this
+ like one asset,
+ this like production
+ database of all
+ their like customers.
+ And it was like,
+ um,
+ this huge like
+ information leakage
+ that was by some
+ like,
+ it was way out of
+ scope.
+ I don't even think
+ it was listed in
+ their like VDP
+ program,
+ but it was still
+ owned by them.
+ Um,
+ and so like that
+ one was paid for
+ their max,
+ uh,
+ like a max crit
+ inside their VIP
+ program,
+ even though it
+ wasn't even like
+ listed in scope.
+ Wow.
+ Um,
+ but then I've also
+ had like,
+ um,
+ and other companies
+ will have like
+ internal host names
+ that they use
+ for networking,
+ you know,
+ inside like Kubernetes
+ pods just within
+ their like corporate
+ network.
+ Um,
+ and there'll be
+ times that there's
+ like assets that
+ are still on the
+ internet with like
+ SSL certificates
+ linked to those
+ and you can still
+ hit those and
+ like there's like
+ vulnerabilities on
+ those apps that
+ like,
+ okay,
+ it's not listed in
+ scope,
+ but hey,
+ this is like
+ really bad.
+ This is like
+ internal like
+ infrastructure.
+ There's like
+ lots of like
+ sensitive information.
+ I don't know.
+ You can find
+ like bugs in
+ these apps that
+ where it's like
+ really bad
+ and they still
+ care about that.
+ I feel like
+ that's kind of
+ crazy,
+ you know,
+ right?
+ Because like
+ if they list
+ something and
+ you never really
+ know for sure
+ unless you
+ know,
+ unless you're
+ internal,
+ but if they
+ list something
+ like,
+ okay,
+ www
+ is in scope
+ and www
+ is just
+ reverse proxy
+ to this
+ back-end,
+ you know,
+ API that
+ they have
+ that is on
+ a different
+ domain.
+ And so
+ literally
+ everything that
+ www,
+ every piece
+ of functionality
+ that www
+ has,
+ you know,
+ is getting
+ routed through
+ this API,
+ but that
+ back-end piece,
+ if you access
+ it directly,
+ it's not in
+ scope,
+ that doesn't
+ really make
+ any sense.
+ Yeah,
+ it's like
+ example.com
+ forward slash
+ API is
+ actually just
+ reverse proxy
+ into api.example.com
+ that's not listed
+ in scope and
+ it's just like,
+ I don't know,
+ it gets weird.
+ It does get
+ weird.
+ It gets weird
+ fast there.
+ I think,
+ and I think
+ one other one
+ that just popped
+ out to me
+ and then we'll
+ move along
+ to the next
+ little thing
+ here is
+ if an app
+ is number
+ 28,
+ if an app
+ uses UUIDs,
+ you can still
+ look for IDORs,
+ just set AC
+ to high.
+ And I think
+ this is one
+ of the mistakes
+ that I made
+ early on
+ is not realizing
+ that,
+ is that,
+ you know,
+ some programs
+ will say,
+ hey,
+ UUID IDORs
+ aren't going
+ to be a thing,
+ but that's
+ literally what
+ the attack
+ complexity high
+ metric was made
+ for.
+ It's like,
+ hey,
+ there's some
+ piece of this
+ attack that
+ requires some
+ state to be,
+ the application
+ to be in some
+ state or some
+ piece of information
+ that I don't
+ know,
+ but it's
+ reasonable for
+ me to get.
+ And so,
+ you know,
+ these sort of
+ IDs in these
+ IDOR scenarios
+ aren't really
+ being treated
+ as sensitive
+ information.
+ so it's
+ definitely,
+ I think,
+ falls within
+ the scope
+ of AC
+ access control
+ high to
+ report that.
+ To be fair,
+ I wouldn't
+ really even
+ call it,
+ I don't know
+ if I'd call
+ it an IDOR
+ or if I'd
+ just call it
+ an access control
+ bug.
+ Oh,
+ really?
+ I don't know.
+ Yeah.
+ Maybe not.
+ I mean,
+ I guess it's
+ still,
+ I guess,
+ an IDOR.
+ I just think
+ like,
+ when people
+ think of IDORs,
+ because I mean,
+ it's like,
+ you're still,
+ you're just
+ referencing another
+ object,
+ but I mean,
+ I don't know,
+ I guess with
+ a lot of
+ programs,
+ like a lot of
+ people just
+ when they think
+ of IDORs,
+ they think it's
+ like,
+ okay,
+ I can just
+ increment,
+ decrement a number.
+ And sometimes
+ I've had success
+ where I just say
+ like,
+ hey,
+ it's an access
+ control bug
+ and it kind
+ of clicks
+ for them
+ because they're
+ like,
+ oh,
+ wait,
+ you can't
+ just easily
+ get this
+ UID,
+ but you can
+ find ways
+ to leak it
+ still.
+ And you still
+ shouldn't be able
+ to access it,
+ so sometimes
+ just framing
+ it,
+ access control
+ issue or lack
+ of access
+ control or
+ something like
+ that.
+ It's just
+ like an easier
+ way to present
+ it to someone
+ who might,
+ you know,
+ just not,
+ yeah.
+ Yeah,
+ not get the
+ full picture
+ for sure.
+ Yeah,
+ and that kind
+ of goes into
+ like 41
+ when it just
+ says like,
+ spend the extra
+ time making
+ your report
+ look or read
+ nice,
+ just write
+ well,
+ write clearly
+ because,
+ I mean,
+ this whole
+ thing is about
+ communication,
+ so.
+ Funny you should
+ mention that,
+ Corbin,
+ because I have
+ on my list
+ of notes
+ about,
+ you know,
+ about you
+ when I did
+ my little,
+ you know,
+ OS int
+ on Corbin
+ before this
+ episode.
+ I,
+ one of the
+ things that
+ really stood
+ out to me
+ a lot is
+ your propensity
+ for storytelling
+ and writing
+ and combining
+ that with
+ hacking.
+ And so,
+ tell you what,
+ let's finish
+ the news
+ section and
+ then I'll
+ come back
+ to that
+ real quick.
+ Okay.
+ No worries.
+ Real quick,
+ so definitely
+ check out
+ that tweet
+ by Arch
+ angle,
+ it's
+ arch angle,
+ arch,
+ please say
+ it for me,
+ Corbin,
+ please.
+ Like Arch
+ angel.
+ Arch
+ angel.
+ Thank you.
+ I couldn't
+ say arch
+ angle.
+ Arch
+ angel.
+ Geez.
+ Sorry.
+ Sorry.
+ You know,
+ like I get
+ that.
+ Arch
+ arch
+ angel
+ D-Day
+ is his
+ handle on
+ Twitter.
+ Go check
+ it out.
+ It's a
+ great,
+ great tweet.
+ Okay.
+ Next one
+ that I wanted
+ to talk
+ about was
+ the service
+ called
+ TalkBack.
+ This is
+ actually put
+ out by
+ LTAM,
+ one of the
+ companies that
+ we mentioned
+ before on
+ the pod.
+ And this
+ is just a
+ news aggregator
+ for cybersecurity
+ related,
+ infosec related
+ content.
+ And I've just
+ got this
+ favorited and
+ I'll pop this
+ open every
+ couple of
+ days and
+ just kind of
+ scroll through
+ the last
+ couple of
+ days of
+ news.
+ I just
+ wanted to
+ throw that
+ out there
+ because it
+ seems like
+ a pretty
+ good resource.
+ I don't
+ think it's
+ caught on
+ as much.
+ So I'm
+ hoping that
+ people will
+ start using
+ it a little
+ bit more.
+ And yeah,
+ it's not
+ necessarily
+ bug bounty
+ oriented,
+ but it is
+ infosec
+ oriented.
+ So for those
+ of you that
+ have a
+ little bit
+ broader
+ horizon than
+ just bug
+ bounty,
+ that's a
+ good place
+ to look.
+ Let's
+ see.
+ Last thing
+ on the news
+ item for
+ today was
+ PyPy
+ just released
+ recently that
+ they are
+ going to
+ enforce
+ mandatory
+ 2FA for
+ all software
+ publishers.
+ And I
+ think this
+ is a great
+ idea.
+ I think
+ that this
+ is something
+ that should
+ have been
+ implemented
+ a while
+ back.
+ And I
+ think this
+ will really
+ help with
+ the whole
+ it's not
+ necessarily
+ dependency.
+ Yeah,
+ exactly.
+ Supply chain
+ attacks.
+ Not necessarily
+ dependency
+ confusion,
+ but it's
+ like a
+ scenario
+ where you
+ can take
+ over the
+ account
+ of a
+ person
+ that
+ has
+ done,
+ you know,
+ is the
+ author of a
+ certain
+ PyPy
+ library.
+ So I
+ think
+ 2FA on
+ this is
+ really going
+ to make
+ a difference.
+ Yeah,
+ that would
+ be huge.
+ From just
+ like even
+ attacks where
+ someone's
+ social engineer
+ is a
+ domain
+ registrar.
+ That happens.
+ Yes,
+ this is
+ all sorts of
+ other things
+ besides that
+ too,
+ but that's
+ a really
+ good idea.
+ I'm surprised
+ it wasn't
+ implemented
+ before either.
+ That definitely
+ seems like a
+ no-brainer
+ thing.
+ But I do
+ wonder what's
+ going to
+ happen if
+ they don't
+ have that.
+ For example,
+ if somebody
+ just doesn't
+ update their
+ 2FA and
+ they just
+ never log
+ into their
+ PyPy
+ account,
+ are they
+ going to
+ prevent them
+ from pushing
+ updates to
+ it or
+ something like
+ that?
+ Could be
+ interesting to
+ see.
+ Yeah,
+ it would
+ be very
+ interesting.
+ I wonder
+ if does
+ NPM do
+ this?
+ I don't
+ know.
+ I feel
+ like they
+ should.
+ I think it's
+ not mandatory
+ but it is
+ something that
+ you can
+ configure.
+ I'm glad
+ PyPy has
+ taken the
+ first step
+ and moving
+ in that
+ direction,
+ setting the
+ industry
+ standard.
+ My beloved
+ language,
+ Python,
+ just happens
+ to be doing
+ everything
+ right.
+ I love
+ to see
+ that.
+ Dude,
+ I love
+ it,
+ man.
+ I really
+ do.
+ I still
+ write Python
+ every day.
+ It's the
+ best.
+ Okay,
+ so news
+ section
+ done.
+ Corbin
+ switches
+ from
+ co-host
+ to
+ guest.
+ So,
+ man,
+ we've been
+ hacking
+ together
+ for
+ probably
+ five years
+ at this
+ point.
+ And I
+ don't know
+ that I've
+ ever heard
+ the whole
+ how did
+ you get
+ into
+ bug bounty
+ story.
+ I know
+ we've run
+ into each
+ other at
+ live hacking
+ events,
+ but my
+ backstory
+ is
+ Tommy DeVos
+ just rolled
+ into my
+ cybersecurity
+ class and
+ just started
+ teaching about
+ bug bounty
+ randomly
+ without even
+ being invited
+ to the best
+ of my
+ knowledge.
+ Oh,
+ that's so
+ funny.
+ I know,
+ he just
+ showed up
+ one day
+ and I
+ was like,
+ hello?
+ But yeah,
+ what's yours?
+ How did you
+ hear about
+ bug bounty
+ and that
+ whole industry?
+ Well,
+ I didn't
+ know.
+ I'd gotten
+ into
+ hacking
+ when I
+ was a
+ freshman
+ in high
+ school.
+ But I
+ didn't
+ know
+ bug bounty
+ was a
+ thing
+ or that
+ you
+ could
+ even
+ do
+ ethical
+ legal
+ hacking
+ until I
+ was a
+ junior
+ in high
+ school.
+ And I
+ was on
+ Twitter
+ and I
+ saw
+ someone's
+ tweet.
+ I think
+ it might
+ have been
+ Tommy
+ too.
+ I think
+ he was
+ awarded
+ $10,000.
+ Why is
+ he such
+ everyone's
+ origin
+ story?
+ Yeah,
+ and so
+ he was
+ like,
+ I think
+ he tweeted
+ out a
+ big bounty
+ amount
+ that he
+ got from
+ Yahoo
+ or
+ something.
+ I was
+ like,
+ what?
+ That's a lot
+ money.
+ He
+ did
+ this
+ for
+ what?
+ And so
+ then I
+ clicked on
+ the link
+ that was
+ in the
+ tweet and
+ then I
+ came across
+ HackerOne
+ and I'm
+ like,
+ whoa,
+ you can
+ get paid
+ to report
+ vulnerabilities?
+ So I
+ signed up
+ for HackerOne
+ and gave
+ it a
+ test.
+ It was
+ a struggle
+ at first.
+ I thought
+ it was
+ like a
+ god
+ at
+ hacking.
+ That's
+ something
+ that will
+ humble
+ you
+ really
+ quickly.
+ And so
+ yeah,
+ then I
+ started
+ doing
+ bug bounties
+ kept
+ after it
+ and
+ yeah,
+ here I
+ didn't
+ really
+ know
+ any
+ other
+ in-person
+ bug bounty
+ hunters.
+ You just
+ kind of
+ found it
+ on Twitter
+ and then
+ kind of
+ rolled
+ into it.
+ I had
+ no idea
+ about what
+ it was.
+ I think
+ I followed
+ Tommy on
+ Twitter.
+ I found
+ some other
+ bug bounty
+ hunters
+ on Twitter
+ and just
+ started
+ following
+ them.
+ I just
+ signed up
+ HackerOne.
+ I read
+ through some
+ There's no
+ HackerOne
+ at that point
+ either.
+ No,
+ there wasn't
+ that.
+ There wasn't
+ any
+ Pentester.
+ I don't
+ think there
+ was Pentester
+ Lab or
+ any of
+ those
+ courses
+ and
+ stuff.
+ I had
+ taught
+ myself
+ to
+ hack
+ before
+ that.
+ A lot
+ of going
+ through
+ exploit
+ DB
+ stuff.
+ Oh,
+ yeah.
+ The
+ classics.
+ Yeah.
+ A lot
+ of
+ just
+ reading
+ tutorials
+ and
+ reading
+ people's
+ Twitter
+ posts,
+ blogs,
+ and
+ just
+ trying
+ the
+ trial
+ and
+ error.
+ I spent
+ a lot
+ of
+ time
+ on
+ the
+ DoD
+ program.
+ I started
+ on public
+ programs and
+ tried to
+ do bug
+ mounties and
+ I just
+ failed
+ miserably.
+ I tried
+ the Department
+ of Defense
+ and I got
+ tons of
+ dupes
+ from that.
+ It was
+ a really
+ good
+ experience
+ in
+ practicing.
+ It's
+ so
+ funny,
+ man.
+ I think
+ I'm
+ getting
+ notifications
+ right
+ now
+ from
+ four
+ years
+ ago
+ of them
+ closing
+ bugs that
+ I reported
+ four years
+ ago.
+ On one
+ hand,
+ that's
+ impressive
+ that you're
+ still tracking
+ this bug.
+ on the
+ other
+ hand,
+ why?
+ Four
+ years?
+ Do you
+ endorse
+ the
+ DoD
+ VDP
+ to
+ bug
+ bounty
+ as a
+ training
+ ground
+ for
+ actual
+ bug
+ bounty?
+ You
+ receive
+ a
+ bug
+ bounty
+ methodology?
+ Or would
+ you do
+ it
+ differently
+ if you
+ went
+ back?
+ Would
+ I do
+ it
+ differently
+ than
+ what I
+ did
+ originally?
+ If you
+ were advising
+ someone to
+ start now,
+ would you
+ say go
+ ahead and
+ start on
+ the DoD
+ program?
+ Or would
+ you try to
+ go straight
+ after bug
+ bounty?
+ That's a
+ hard one.
+ I would
+ say I
+ don't think
+ you can go
+ wrong with
+ either.
+ It took me
+ ten months to
+ get my first
+ bounty, but
+ that was okay
+ for me because
+ I was a high
+ schooler.
+ I was just
+ doing it in
+ my free
+ time.
+ hacking for
+ fun.
+ If you
+ have prior
+ experience,
+ for me I
+ didn't have
+ tons of
+ I was in
+ high school.
+ I didn't
+ have that
+ much
+ experience
+ with
+ computers.
+ Hacking.
+ If you
+ already work
+ as a
+ security
+ engineer,
+ why would
+ you not
+ go for
+ any
+ bug
+ bounty
+ program?
+ For
+ people who
+ are
+ wanting
+ to
+ work
+ on
+ fundamentals,
+ just all
+ that jazz.
+ I would
+ say work
+ on
+ recon,
+ all that.
+ Just get a
+ very good
+ solid
+ understanding
+ of different
+ vulnerability
+ classes,
+ different
+ technologies
+ and stuff.
+ I'd say go
+ for the
+ Department
+ of Defense
+ because they
+ have all
+ sorts of
+ stuff.
+ They do
+ have a
+ lot of
+ different
+ stacks.
+ I think
+ you can
+ see your
+ origin a
+ little bit
+ clearly in
+ your current
+ attack vector
+ methodology.
+ You almost
+ have a Jason
+ Haddix-ish
+ flow of
+ I'm going
+ to do
+ X amount
+ of recon
+ and I'm
+ going to
+ find these
+ weird ASPX
+ endpoints that
+ are like no
+ one ever
+ thought was
+ real.
+ It's not
+ necessarily
+ like,
+ don't get
+ me wrong,
+ I've seen
+ you pwn
+ new companies
+ and old
+ companies alike,
+ but I feel
+ like the
+ DoD having
+ such a wide
+ scope,
+ having such
+ an array
+ of technologies
+ and being a
+ little bit
+ more outdated
+ led you down
+ the path
+ to focusing
+ really hard
+ on recon
+ and having
+ that be a
+ key part
+ of your
+ methodology.
+ Would you
+ agree with
+ that?
+ Yeah,
+ I'd say
+ that.
+ And then
+ hacking a lot
+ with Naffy.
+ Naffy
+ mentioned me
+ a ton.
+ I have a lot
+ of Naffy
+ mentality when
+ it comes to
+ infrastructure
+ and stuff
+ like that
+ too.
+ Any tidbits
+ on that you
+ want to share?
+ I think
+ Naffy is an
+ interesting
+ character and
+ we'll probably
+ have him on
+ the pot
+ at some
+ point but
+ his hacking
+ methodology is
+ definitely
+ pretty different
+ from a lot
+ of what I've
+ seen.
+ Yeah,
+ no,
+ he finds
+ apps that
+ no one
+ would have
+ ever found
+ and just
+ completely
+ destroys them
+ once he's
+ found them.
+ That's what I
+ love about it.
+ It's like,
+ okay,
+ just like you
+ make new
+ opportunities for
+ yourself and
+ then,
+ yeah.
+ So,
+ I mean,
+ what does
+ that entail?
+ I mean,
+ I don't want to
+ give his away.
+ Okay,
+ well,
+ it's yours
+ now too.
+ I remember,
+ hold on,
+ I remember
+ this deal
+ though that
+ you had
+ with Naffy
+ a while
+ back and
+ if we have
+ to cut
+ this section
+ we can but
+ you know,
+ there was a
+ deal that
+ y'all made
+ about Naffy
+ working with
+ you and
+ him getting
+ a certain
+ percent of
+ your bounty
+ and you
+ guys were
+ working at
+ a life
+ hacking event
+ together and
+ that was
+ like what?
+ That was,
+ I think it
+ was that,
+ maybe it
+ was that one.
+ That was
+ probably like
+ four or
+ five years
+ ago,
+ right?
+ 2019-ish?
+ Yeah,
+ four years
+ ago.
+ So,
+ I feel like
+ the statute
+ of limitations
+ on that is
+ up.
+ I mean,
+ if you don't
+ want to
+ doss your
+ secrets,
+ that's fine
+ if you don't
+ want to
+ disclose all
+ that.
+ But,
+ yeah,
+ I think it's
+ really interesting.
+ I know that
+ Naffy's approach
+ is largely
+ a virtual host
+ enumeration
+ based in a lot
+ of scenarios
+ which is
+ something that
+ not a lot
+ of people
+ poke at
+ and I
+ think mapping
+ out the
+ internal
+ routing
+ on a
+ company
+ can result
+ in some
+ crazy
+ stuff.
+ Oh,
+ yeah,
+ absolutely.
+ Is that
+ still a part
+ of your
+ methodology?
+ Yeah,
+ I look a lot
+ at load
+ balancers.
+ I play a lot
+ with load
+ balancers
+ and just
+ like different
+ Ingress
+ endpoints.
+ I mean,
+ the nice
+ thing is
+ when you do
+ it for a
+ long time,
+ you can
+ kind of
+ start
+ noticing
+ how
+ apps
+ work.
+ And then
+ also,
+ if you've
+ been in
+ software
+ development
+ or
+ architecture
+ or whatever,
+ I guess
+ if you've
+ ever played
+ with Kubernetes
+ set up
+ infrastructure
+ on that,
+ you get
+ a pretty
+ solid
+ understanding
+ of just
+ how it's
+ made,
+ how everything
+ works,
+ and you
+ start poking
+ at stuff.
+ Welcome to
+ this episode
+ of How It's
+ Made
+ with Corbin
+ Leo.
+ How it's
+ made.
+ And so,
+ okay,
+ so how
+ are you
+ identifying
+ a load
+ balancer?
+ Is that,
+ are you just
+ doing virtual
+ host scans
+ and seeing
+ if multiple
+ stuff pop
+ up and
+ then assuming
+ that's a load
+ balancer?
+ It kind
+ of depends
+ on the
+ technology,
+ right?
+ So like
+ with Amazon
+ you'll have
+ like CNames
+ to like
+ ELB.
+ Nice.
+ I mean you
+ can look
+ at like
+ you can
+ look at
+ headers
+ like
+ response
+ headers
+ will make
+ it obvious.
+ What kind
+ of stuff
+ have you
+ seen in
+ response?
+ So just
+ to break
+ down what
+ he just
+ said just
+ a second
+ ago,
+ if there's
+ a CName
+ to a
+ on a host
+ to a
+ Amazon
+ endpoint
+ that has
+ ELB
+ in the
+ domain name
+ as a result
+ of the CName
+ and that's
+ elastic load
+ balancer and
+ that's going
+ to be clearly
+ doing some
+ load balancing,
+ right?
+ And then you
+ said in the
+ response headers
+ there's some
+ stuff that
+ might be
+ there.
+ Yep,
+ so like
+ you'll see
+ maybe like
+ let's see
+ like
+ for instance
+ like with
+ Kong you'll
+ see like a
+ header that
+ has like
+ Kong in it
+ and that's
+ like an
+ Ingress
+ you'll see
+ like SEO
+ so it'll
+ disclose the
+ technology
+ stack.
+ So like
+ it can
+ do that
+ then there's
+ other times
+ where like
+ headers aren't
+ and then you'll
+ just know
+ like
+ default
+ responses
+ like backend
+ not found
+ or something
+ like that.
+ Okay.
+ And then it's
+ just like
+ trying it on
+ a few apps
+ and seeing
+ like if
+ there's
+ like
+ header
+ like
+ you can
+ also just
+ like
+ kind of
+ think how
+ like
+ Fuff
+ does
+ or
+ Fuff
+ however you
+ say it
+ I hate
+ trying to
+ pronounce this
+ yeah if
+ you like
+ set
+ you can do
+ like how
+ Fuff does
+ like auto
+ calibration
+ so you like
+ send a couple
+ HTTP requests
+ to different
+ host headers
+ to get
+ a response
+ and if it
+ varies
+ like maybe
+ you'll try
+ fuzzy in there
+ but
+ nice
+ yeah it's
+ tricky man
+ I definitely
+ don't
+ don't
+ I started
+ doing that
+ a little
+ bit
+ on some
+ apps
+ on some
+ specific
+ targets
+ that I
+ know
+ are
+ vulnerable
+ to it
+ and
+ it's
+ it's not
+ and I even
+ tried to
+ build some
+ automation
+ around it
+ at some
+ point
+ starting
+ and this
+ is something
+ that I'll
+ tell people
+ that are
+ building out
+ the recon
+ flows
+ nowadays
+ is like
+ you know
+ if you
+ have a
+ bunch
+ of hosts
+ that map
+ you know
+ those hosts
+ are not
+ necessarily
+ only going
+ to map
+ to the IP
+ addresses
+ that they
+ resolve
+ to
+ so
+ in your
+ in your
+ sort of
+ recon
+ framework
+ in your
+ recon
+ architecture
+ you should
+ be
+ building in
+ this
+ functionality
+ that is
+ going to be
+ allowing you
+ to map
+ domains
+ to IP
+ addresses
+ right
+ and I
+ think that
+ that makes
+ a big
+ it makes
+ a big
+ difference
+ because you
+ can find
+ you know
+ different
+ domains
+ are accessible
+ on different
+ IP addresses
+ than the
+ things they
+ resolve to
+ which could
+ give you
+ different
+ access
+ you agree
+ yeah
+ and I
+ mean
+ like
+ a lot
+ of it
+ yeah
+ a lot
+ of it
+ isn't even
+ like
+ vhosting
+ too
+ it's just
+ like
+ okay
+ this
+ this host
+ name might
+ point to
+ like
+ Akamai
+ or
+ some like
+ IP
+ that isn't
+ resolved
+ but like
+ the chances
+ are
+ is that
+ that
+ IP
+ might
+ still
+ be
+ exposed
+ and
+ it's
+ just
+ like
+ the way
+ they're
+ routing
+ it
+ is
+ defined
+ this
+ way
+ but
+ this
+ host
+ is
+ still
+ here
+ and
+ you
+ just
+ access
+ it
+ this
+ way
+ so
+ that's
+ some
+ good
+ tips
+ if
+ you're
+ trying
+ to
+ keep
+ an
+ eye
+ out
+ for
+ the
+ vhost
+ realm
+ and
+ enumerate
+ some
+ internal
+ assets
+ using
+ that
+ so
+ you
+ started
+ off
+ in
+ bug
+ bounty
+ you
+ just
+ signed
+ up
+ for
+ the
+ website
+ took
+ 10
+ months
+ to
+ get
+ your
+ first
+ bounty
+ and
+ then
+ you
+ started
+ rolling
+ how
+ did
+ you
+ land
+ in
+ the
+ live
+ hacking
+ event
+ circuit
+ that's
+ a
+ good
+ question
+ I
+ think
+ it
+ was
+ after
+ I
+ started
+ getting
+ more
+ comfortable
+ with
+ bug
+ bounties
+ I
+ started
+ looking
+ at
+ yahoo
+ and
+ so
+ I
+ started
+ hacking
+ on
+ yahoo
+ a bit
+ and
+ had
+ some
+ xxcs
+ I think
+ I had
+ an xxc
+ a couple
+ SSRFs
+ and
+ then
+ I think
+ my
+ first
+ event
+ might have
+ been
+ there was
+ one in
+ New York
+ and it
+ was a
+ team
+ event
+ it's
+ like
+ the
+ only
+ team
+ event
+ that
+ was
+ your
+ first
+ event
+ I
+ think
+ it
+ was
+ my
+ first
+ event
+ I'm
+ fairly
+ together
+ before
+ then
+ at
+ that
+ point
+ then
+ because
+ I
+ feel
+ like
+ I
+ knew
+ you
+ at
+ that
+ point
+ yeah
+ because
+ I
+ think
+ like
+ I
+ knew
+ you
+ I
+ knew
+ Sam
+ yeah
+ I
+ think
+ that
+ yeah
+ I'm
+ pretty
+ sure
+ that
+ I
+ can't
+ remember
+ what
+ other
+ event
+ would
+ have
+ been
+ oh
+ no
+ my
+ first
+ live
+ hacking
+ event
+ I
+ was
+ not
+ a
+ hacker
+ that's
+ when I
+ was
+ triaging
+ a
+ hacker
+ one
+ that's
+ right
+ okay
+ now
+ it's
+ starting
+ making
+ yeah
+ making
+ more
+ sense
+ to
+ me
+ so
+ I
+ had
+ been
+ hacking
+ on
+ yahoo
+ for a
+ bit
+ and
+ then
+ I
+ had
+ done
+ a
+ semester
+ of
+ college
+ then
+ I
+ dropped
+ out
+ of
+ college
+ and
+ was
+ triaging
+ at
+ hacker
+ one
+ for
+ like
+ six
+ or
+ seven
+ maybe
+ eight
+ months
+ I think
+ it was less
+ than that
+ but
+ I
+ was
+ triaging
+ at
+ one
+ of
+ the
+ first
+ or
+ my
+ first
+ live
+ event
+ I
+ was
+ the
+ one
+ of
+ the
+ Vegas
+ events
+ at
+ 702
+ so
+ I
+ was
+ doing
+ triage
+ there
+ that
+ tracks
+ I'd
+ already
+ known
+ people
+ from
+ hacking
+ with
+ them
+ as
+ well
+ so
+ yeah
+ that
+ that
+ definitely
+ tracks
+ so
+ that's
+ an
+ interesting
+ path
+ like
+ I feel
+ I feel
+ I've
+ sort
+ of
+ recommended
+ this
+ to
+ some
+ of
+ my
+ friends
+ that
+ are
+ trying
+ to
+ get
+ into
+ bug
+ bounty
+ and
+ are
+ also
+ not
+ necessarily
+ in
+ love
+ with
+ the
+ fact
+ that
+ bug
+ bounty
+ doesn't
+ have
+ consistent
+ income
+ is
+ that
+ hey
+ if you
+ get
+ started
+ you
+ get
+ rolling
+ you
+ start
+ understanding
+ how
+ vulns
+ can be
+ reproduced
+ and
+ you
+ start
+ understanding
+ you know
+ it'll
+ add a
+ little bit
+ more
+ technical
+ level
+ and
+ you
+ jump
+ into
+ a
+ triage
+ role
+ that
+ can
+ really
+ boost
+ your
+ game
+ yeah
+ I'd
+ agree
+ you
+ would
+ agree
+ with
+ that
+ it
+ definitely
+ also
+ helps
+ you
+ like
+ learn
+ even
+ how
+ to
+ write
+ better
+ reports
+ down
+ the
+ line
+ yeah
+ definitely
+ definitely
+ I would
+ also
+ recommend
+ that
+ to
+ people
+ who
+ are
+ yeah
+ in
+ that boat
+ as an
+ ex-triager
+ here
+ what
+ is
+ some
+ of
+ the
+ stuff
+ that
+ we
+ do
+ that's
+ hella
+ annoying
+ from the
+ triager
+ side
+ from the
+ triage
+ side
+ it
+ would
+ be
+ like
+ there's
+ people
+ who
+ just
+ give
+ you
+ the
+ URL
+ or
+ they
+ just
+ write
+ the
+ most
+ basic
+ report
+ with
+ no
+ information
+ I think
+ it's
+ gotten
+ a bit
+ different
+ I don't
+ know
+ how
+ like
+ this
+ is
+ like
+ four
+ or five
+ years
+ this
+ was
+ five
+ this was
+ in
+ 2018
+ yeah
+ yeah
+ so
+ five years
+ ago
+ now
+ math
+ yeah
+ yeah
+ so
+ I think
+ yeah
+ one of the
+ biggest
+ erks
+ I guess
+ was just
+ like
+ the lack
+ of
+ writing
+ some
+ people
+ did
+ it
+ like
+ just
+ give
+ you
+ this
+ at
+ that
+ point
+ in time
+ did you
+ have
+ to
+ rewrite
+ the
+ report
+ for
+ the
+ customer
+ yeah
+ okay
+ so
+ we had
+ our own
+ internal
+ templates
+ and
+ internal
+ expectations
+ of
+ what we
+ had to
+ write
+ and
+ provide
+ so
+ people
+ would
+ also
+ write
+ 10
+ pages
+ in
+ that
+ and
+ then
+ we
+ had
+ to
+ condense
+ that
+ to
+ we
+ got
+ to
+ pick
+ every
+ the
+ important
+ parts
+ out
+ and
+ give
+ a
+ clear
+ concise
+ stuff
+ like
+ that
+ HackerOne
+ needs to
+ start
+ training
+ their own
+ offline
+ model
+ LLM
+ model
+ to be
+ able to
+ do that
+ because that
+ would be
+ pretty nice
+ to just
+ be like
+ okay
+ here's
+ this
+ Alex
+ Chapman
+ 25 page
+ report
+ and I
+ need to
+ condense
+ this down
+ to a
+ page
+ or two
+ for the
+ customer
+ that would
+ be pretty
+ good
+ yeah
+ or like
+ a
+ HackerOne
+ Grammarly
+ yeah
+ right
+ that would
+ be really
+ good
+ I'm sure
+ you can't
+ use actual
+ Grammarly
+ at HackerOne
+ yeah
+ probably not
+ yeah
+ that makes
+ sense
+ that's one
+ thing I said
+ is I could
+ be really
+ cool to
+ have like
+ a language
+ model
+ like fine
+ tuned
+ to my
+ specific
+ writing
+ style
+ that would
+ be
+ amazing
+ yeah
+ well you
+ can train
+ it a little
+ bit
+ I've done
+ some of
+ the stuff
+ for the
+ pod
+ just sort
+ of taking
+ the writing
+ that we've
+ done
+ you know
+ with descriptions
+ and titles
+ and stuff
+ like that
+ and then
+ just takes
+ the actual
+ content of
+ the podcast
+ and then
+ you know
+ it says
+ all right
+ you know
+ here are
+ six suggestions
+ for the title
+ or you know
+ here are three
+ different rewrites
+ of the description
+ and stuff like that
+ and I think
+ that just provides
+ a nice little
+ you know
+ jump off point
+ and I trained
+ it with
+ the previous
+ you know
+ titles and
+ descriptions
+ and stuff like that
+ too so it still
+ has the same
+ sort of voice
+ and that sort
+ of thing
+ and I think
+ LLMs do a
+ pretty good job
+ of keeping
+ the voice
+ consistent
+ across
+ you know
+ multiple bodies
+ of text
+ so that's
+ pretty rad
+ solid
+ okay
+ so I guess
+ as you left
+ triaging
+ eight months
+ you know
+ max
+ after you
+ started
+ why did you
+ do that
+ and how do
+ you feel
+ about the
+ triage realm
+ nowadays
+ no I
+ it was a good
+ experience
+ but I was
+ getting kind
+ of burnt
+ out of it
+ and my
+ parents wanted
+ me to go
+ back to school
+ they wanted
+ me to go
+ to college
+ I didn't
+ really want
+ to go to
+ college
+ but I was
+ like screw
+ it it's kind
+ of fun
+ just to I
+ guess be a kid
+ not have
+ responsibilities
+ yeah for sure
+ and so
+ yeah I decided
+ to transfer
+ to a school
+ out in South
+ Dakota
+ and yeah
+ I mean it was
+ it was a good
+ experience
+ but I'm really
+ glad I went
+ back to school
+ not necessarily
+ just because
+ like I needed
+ the education
+ but it was just
+ like a fun
+ experience in
+ general
+ where I just
+ got to meet
+ friends
+ so you
+ you went
+ you grew up
+ in was it
+ Minnesota
+ yep
+ Minnesota
+ Minnesota
+ and then you
+ went out
+ of state
+ I went
+ out of state
+ to South
+ Dakota
+ so
+ South Dakota
+ for those
+ of you that
+ are not
+ in the U.S.
+ South Dakota
+ is like
+ there's like
+ there's nothing
+ in South
+ there is
+ there's Mount
+ Rushmore
+ I think
+ is in part
+ of South
+ Dakota
+ but like
+ like
+ South Dakota
+ is like
+ one of
+ the least
+ popular
+ and populated
+ states
+ in the U.S.
+ so what
+ made you
+ move from
+ Minnesota
+ and instead
+ of going out
+ of state
+ to any other
+ state
+ what made
+ you land
+ on South
+ Dakota
+ yeah so
+ it was
+ not trying
+ to diss
+ your new
+ state here
+ I'm just
+ saying
+ no I know
+ I know
+ gotta provide
+ the context
+ it's pretty
+ unique
+ it's super
+ yeah super
+ super unique
+ and like
+ whenever
+ I tell
+ someone I'm
+ from South
+ Dakota
+ I'm just
+ like super
+ confused
+ and I'm like
+ wait
+ and I think
+ like North
+ Dakota
+ or there's
+ two Dakotas
+ like where's
+ that
+ yeah exactly
+ but
+ yeah so it
+ was July
+ when I decided
+ I wanted to
+ be done
+ with
+ triaging
+ I believe
+ and I had
+ thought about
+ going to
+ either a school
+ in Minnesota
+ but it was so
+ late that
+ a lot of
+ schools didn't
+ have transfers
+ open anymore
+ and so there
+ was one school
+ I'd heard of
+ in South Dakota
+ that was known
+ for cyber
+ security for some
+ reason
+ oh cool
+ and that's
+ not what I
+ was gonna
+ go for
+ like I went
+ for computer
+ science
+ but I was
+ like hey
+ these people
+ like at least
+ will like
+ hacking
+ like I like
+ hacking
+ or at least
+ I'll find
+ some people
+ that are at
+ least interested
+ in the same
+ topic
+ and they had
+ applications
+ open super
+ late
+ so I just
+ like applied
+ to transfer
+ and they
+ yeah
+ accepted
+ nice
+ yeah and
+ then so
+ then I
+ just
+ yeah
+ went out
+ there
+ on a whim
+ just kind
+ of last
+ second
+ like why
+ not
+ I guess
+ yeah
+ close enough
+ to home
+ but also
+ new
+ how did
+ you enjoy
+ that
+ like
+ I feel
+ like
+ that's
+ one of
+ the things
+ that I
+ I don't
+ really
+ endorse
+ nowadays
+ is like
+ going to
+ college
+ for the sake
+ of going
+ to college
+ but I think
+ lately
+ my my
+ opinions
+ have been
+ kind of
+ coming back
+ around
+ of like
+ you know
+ while you're
+ young
+ you don't
+ have to
+ grind
+ grind
+ grind
+ you know
+ and yeah
+ you know
+ go hard
+ on the
+ career stuff
+ you can
+ actually
+ just go
+ and enjoy
+ and college
+ is you know
+ a great place
+ to meet
+ other friends
+ participating
+ club
+ activities
+ that sort
+ of thing
+ so if you're
+ still looking
+ to grow
+ as a person
+ college might
+ be a good
+ place to do
+ it
+ yeah
+ no I would
+ agree with
+ that
+ I mean
+ it's hard
+ too
+ because it's
+ I guess
+ it can be
+ expensive
+ yeah
+ for sure
+ I mean
+ I
+ I definitely
+ enjoyed it
+ I don't think
+ I like
+ the computer
+ science stuff
+ I didn't
+ really
+ I don't
+ think I
+ ever needed
+ like the
+ education
+ I think
+ it was
+ good
+ I wouldn't
+ rely on it
+ just to get
+ to where you
+ want to be
+ like I would
+ never just go
+ through courses
+ and expect
+ you know
+ to
+ to pop out
+ the other end
+ yeah
+ to like
+ come out
+ like oh yeah
+ I know
+ everything
+ I'm ready
+ for this
+ I think
+ if you really
+ want to learn
+ or get
+ anything
+ that you
+ have to
+ spend
+ the time
+ doing it
+ yourself
+ personally
+ totally
+ especially
+ in the tech
+ space
+ is like
+ things move
+ so quickly
+ and technologies
+ change
+ so yeah
+ I mean
+ I think
+ if you want
+ to grow
+ as a person
+ meet some
+ really great
+ friends
+ and just
+ like really
+ I guess
+ enjoy your
+ life
+ like I
+ definitely
+ would recommend
+ college still
+ because
+ I mean
+ you have your
+ entire life
+ to grind
+ you might
+ as well
+ you know
+ enjoy some
+ time
+ going from
+ that like
+ you know
+ younger
+ like high
+ schooler age
+ where you
+ think you're
+ an adult
+ but then
+ you like
+ finish college
+ and you're
+ like wow
+ I'm a totally
+ different person
+ than I was
+ back then
+ so I think
+ it's good
+ for like
+ I guess
+ character
+ development
+ for
+ yeah
+ for sure
+ it definitely
+ is
+ and yeah
+ I think
+ that is
+ something
+ that I
+ you know
+ from an
+ early age
+ was also
+ very career
+ oriented
+ and so
+ I think
+ that having
+ that extra
+ you know
+ time to
+ to grow
+ figure out
+ who you are
+ not a bad
+ not a bad
+ not a bad
+ route
+ just to say
+ the least
+ well yeah
+ and it gives
+ you a lot
+ of times
+ to like
+ I guess
+ experiment
+ with what
+ you really
+ want to do
+ too
+ right
+ so
+ that's true
+ like for
+ instance
+ for me
+ like
+ it gave
+ me so much
+ time to
+ do bug
+ bounties
+ and also
+ like
+ just like
+ develop my
+ skills in
+ that
+ like
+ you can
+ learn
+ I guess
+ whatever
+ you want
+ you have
+ plenty
+ of like
+ free
+ time
+ to
+ you know
+ explore
+ hobbies
+ or I guess
+ what you want
+ to do with
+ your life
+ yeah yeah
+ for sure
+ so I know
+ I know
+ you did
+ you just said
+ you did
+ comp sci
+ as well
+ yeah
+ yeah
+ so I did
+ comp sci
+ as well
+ I have to say
+ you know
+ from a hacker
+ perspective
+ I feel like
+ a lot of the stuff
+ that I learned
+ in comp sci
+ isn't incredibly
+ relevant
+ like if I want
+ to go and do
+ software engineering
+ and I want to like
+ really optimize
+ this algorithm
+ and get like
+ the
+ you know
+ complexity
+ down
+ you know
+ whatever
+ then it'd be
+ really great
+ to have
+ computer science
+ background
+ but a lot
+ of
+ a lot
+ of
+ hacking
+ isn't really
+ about that
+ and it's
+ more about
+ understanding
+ the full
+ flow of
+ everything
+ right
+ and I think
+ that's why
+ comp sci
+ is better
+ than a
+ cyber security
+ degree
+ right
+ it's like
+ I don't
+ think
+ you don't
+ really need
+ like that's
+ that's why
+ I'd always
+ recommend
+ like comp sci
+ if someone
+ doesn't know
+ exactly what
+ they want
+ to do
+ because it's
+ just like
+ it lays
+ down a very
+ solid
+ like baseline
+ but
+ again
+ it's like
+ I don't think
+ you even
+ need a
+ degree
+ yeah
+ it's just
+ more so
+ as like
+ I like
+ if we're
+ going to
+ like talk
+ about degrees
+ and like
+ getting one
+ I'd say
+ computer science
+ just because
+ of like
+ the fundamentals
+ rather than
+ like oh
+ we're just
+ gonna learn
+ how to
+ hack
+ and it's
+ like wait
+ you still
+ need all
+ these
+ fundamentals
+ to get
+ good at
+ it
+ right
+ yeah
+ I totally
+ agree
+ with that
+ I think
+ unless you're
+ going to a
+ really
+ reputable
+ cyber security
+ institution
+ then I think
+ it may be
+ better for you
+ to focus
+ specifically
+ on comp sci
+ and then
+ supplement
+ with your
+ own
+ you know
+ certificate
+ based training
+ towards
+ cyber security
+ but actually
+ Corbin
+ I'm gonna
+ disagree with
+ you on this
+ one because
+ I think
+ personally
+ this is the
+ hierarchy
+ right here
+ you've got
+ you've got
+ cyber security
+ degree
+ you've got
+ computer science
+ degree
+ and you've
+ got computer
+ engineering
+ degree
+ and I think
+ okay
+ so I think
+ all of the
+ people that
+ I like
+ for example
+ Joel
+ and Sam
+ Erb
+ and like
+ some of the
+ other really
+ like just
+ I feel like
+ I talk to
+ these guys
+ and they're
+ like yeah
+ man I
+ remember
+ like
+ you know
+ when I was
+ desoldering
+ this thing
+ from this
+ board
+ in college
+ I'm like
+ what
+ like
+ you know
+ my school
+ didn't have
+ computer engineering
+ yeah
+ that would
+ have been
+ fun
+ and I feel
+ like even
+ the people
+ that I met
+ at my school
+ that were
+ doing computer
+ engineering
+ instead of
+ computer science
+ I was like
+ man these
+ guys just
+ have a little
+ bit of a
+ deeper
+ understanding
+ of like
+ just like
+ lower
+ level
+ concepts
+ you know
+ even lower
+ yeah
+ and I think
+ an even better
+ baseline
+ exactly
+ an even better
+ baseline
+ so I was
+ going to say
+ you know
+ if people
+ are going to
+ go into
+ college
+ and get a
+ degree
+ I think
+ I would
+ actually
+ push
+ computer
+ engineering
+ over
+ comp sci
+ or even
+ cyber security
+ yeah I'd agree
+ with that
+ I don't
+ disagree
+ with that
+ yeah
+ that's good
+ okay
+ getting back
+ over to the
+ list over here
+ so I guess
+ let's go
+ let's talk a
+ little bit
+ about your
+ combination
+ of writing
+ and hacking
+ right
+ so I know
+ we talked a
+ little bit
+ about sort
+ of copywriting
+ and like
+ uh
+ just this
+ whole concept
+ of trying
+ to develop
+ yourself
+ as a writer
+ um
+ and then
+ you know
+ you kind
+ of wrote
+ all these
+ twitter threads
+ that went
+ mega viral
+ a while back
+ so any
+ any tips
+ or tricks
+ to share
+ with the
+ hacker
+ community
+ about
+ the importance
+ of writing
+ or how
+ to write
+ well
+ as a hacker
+ yeah I mean
+ when I was
+ writing those
+ twitter threads
+ I got so
+ much flack
+ from people
+ about like
+ oh you
+ oversimplified
+ this
+ or like
+ did you
+ really
+ I got
+ a lot
+ oh yeah
+ there was
+ lots of people
+ that were like
+ making fun of me
+ or um
+ not necessarily
+ making fun of me
+ just like
+ give me crap
+ or just saying
+ oh like
+ oh did the
+ intern write
+ this
+ like
+ um
+ like
+ people were
+ very
+ um
+ dang dude
+ I don't know
+ I guess being
+ uh
+ what's
+ I don't even know
+ what the word
+ describe that is
+ but that was
+ totally fine with me
+ because like
+ that's
+ not who
+ I was writing
+ for
+ right
+ so like
+ you have all
+ these people
+ who write
+ like these
+ like immaculate
+ like technical
+ um
+ writing
+ that's kind
+ of just like
+ a
+ I don't need
+ to stroke
+ my own ego
+ and try to
+ sound as
+ technical as
+ possible
+ because like
+ okay you
+ write that
+ you're making
+ your audience
+ you're alienating
+ people who can
+ understand that
+ you're alienating
+ first off
+ you're alienating
+ a huge audience
+ and you're also
+ only writing
+ for like
+ a really small
+ number of people
+ who might be
+ on the same
+ level as you
+ yeah
+ and like
+ my whole purpose
+ of writing
+ these twitter
+ threads
+ were to
+ um
+ I guess
+ figure out
+ how to explain
+ things clearly
+ and um
+ yeah and simplify
+ it too
+ reach a larger
+ larger audience
+ maybe get people
+ interested in bug
+ bounties
+ get them interested
+ in hacking
+ and like also
+ have them still
+ be able to like
+ understand it
+ and get like
+ intrigued in it
+ and maybe want to
+ try and learn
+ some of this
+ right
+ and
+ yeah and I think
+ you didn't simplify
+ it you know
+ too much
+ it's not like
+ okay
+ I went to
+ you know
+ the internet
+ and found this
+ directory
+ you know
+ it's like
+ no
+ here's the
+ you know
+ here's the exact
+ like subfinder
+ command I used
+ here's the exact
+ gao command I used
+ here's the
+ you know
+ yeah
+ and it's like
+ and so I think
+ it's a really nice
+ balance of like
+ um
+ technical content
+ and storytelling
+ which is
+ you know
+ until you've
+ tried it
+ you don't really
+ know how
+ difficult it is
+ because it's
+ it's very
+ challenging
+ yeah
+ I spent a lot
+ of time
+ writing those
+ threads
+ like I think
+ the fastest
+ one I wrote
+ was like
+ 55 minutes
+ um
+ which was like
+ probably
+ maybe like
+ a waste of
+ time
+ but no
+ it was like
+ really good
+ to practice
+ um
+ because it's
+ such like
+ technical writing
+ but still writing
+ in a way
+ that's
+ intriguing
+ and
+ you know
+ like
+ yeah
+ I think
+ that's a great
+ I think that's
+ a great skill
+ I mean
+ being able
+ to captivate
+ an audience
+ is really
+ powerful
+ and it's not
+ something
+ it's not a skill
+ that's
+ that's very
+ commonly
+ you know
+ paired with
+ a high level
+ of technical
+ ability
+ and so
+ um
+ I think
+ that's
+ you know
+ one of the
+ one of the
+ podcasts that I
+ listen to on a
+ regular basis
+ is my first
+ million
+ and it was
+ talking about
+ how
+ I love that
+ pod
+ and um
+ one of the
+ things that
+ they've talked
+ about just
+ from a framework
+ perspective
+ is like
+ you don't
+ have to be
+ the best
+ at hacking
+ or the best
+ at blockchain
+ or the best
+ at any of
+ these other
+ things
+ you just
+ have to
+ take
+ you know
+ a above
+ average
+ ability
+ here
+ and combine
+ it with
+ an above
+ average
+ ability
+ over here
+ and now
+ you've got
+ a mixed
+ skill set
+ that's really
+ unique
+ and marketable
+ yeah
+ and I think
+ your ability
+ to do
+ something
+ like that
+ with this
+ writing
+ is really
+ I think
+ that's
+ amazing
+ so
+ nice stuff
+ there
+ and so
+ I mean
+ do you
+ really
+ largely
+ credit
+ Sampar's
+ copy this
+ or whatever
+ it is
+ writing course
+ or copy that
+ yeah that course
+ was really
+ good
+ so yeah
+ that's
+ that's
+ a big
+ reason
+ why
+ yeah I
+ took that
+ course
+ and then
+ I wanted
+ to try
+ applying it
+ to something
+ pretty technical
+ and so
+ yeah I mean
+ that was
+ that was a
+ pretty
+ yeah it's a
+ great course
+ I still go back
+ and go through
+ it
+ or at least
+ like pieces
+ of it
+ to kind of
+ just like
+ refine writing
+ skills
+ I think
+ everyone
+ should
+ take a
+ course
+ on
+ copywriting
+ just because
+ it's like
+ just writing
+ effectively
+ I guess
+ like you
+ don't need
+ to be
+ super
+ long-winded
+ yeah
+ I think
+ it's
+ I think
+ it's a
+ good
+ a good
+ course
+ but at
+ the same
+ time
+ it's like
+ this is a
+ problem I have
+ with Twitter
+ right now
+ is that
+ everyone's
+ becoming
+ marketed
+ market
+ market
+ market
+ marketery
+ yes
+ everything's
+ like a
+ marketing
+ thread
+ now
+ and it's
+ like
+ you have
+ to have
+ this
+ good
+ combination
+ of
+ like
+ effective
+ writing
+ but
+ like
+ actual
+ substance
+ genuine
+ content
+ yeah
+ yeah
+ because
+ I've
+ seen
+ so
+ many
+ like
+ oh
+ bar
+ just
+ killed
+ GPT-4
+ like
+ oh my
+ gosh
+ it's
+ everywhere
+ here's
+ 10
+ prompts
+ you
+ can
+ use
+ it's
+ just
+ like
+ all
+ this
+ noise
+ of like
+ you don't
+ really
+ like
+ everything's
+ supposed to
+ be
+ like
+ when everyone's
+ doing the same
+ thing
+ it's just
+ I don't know
+ it's just so
+ you can tell
+ marketing
+ material
+ versus
+ like
+ you know
+ actual
+ substance
+ material
+ substance
+ is still
+ like
+ captivating
+ I guess
+ yeah
+ lots of
+ bloat
+ out there
+ I think
+ and so
+ taking this
+ ability
+ to do
+ copywriting
+ or
+ you know
+ effectually
+ tell a story
+ and convey
+ and captivate
+ an audience
+ and transporting
+ this into
+ report writing
+ so
+ you know
+ I'm
+ interesting
+ to see
+ how
+ I'm
+ interesting
+ to hear
+ your opinion
+ on how
+ that's
+ affected
+ the severity
+ of your
+ reports
+ and I will
+ just before
+ I let you
+ answer that
+ I will say
+ Nogli
+ is a big
+ proponent
+ for this
+ as well
+ and you
+ you just
+ you gotta
+ I've collabed
+ with Nogli
+ on a couple
+ of reports
+ and I'll write
+ some stuff
+ down
+ and he's
+ like
+ no
+ no
+ no
+ no
+ how do
+ you ever
+ how do
+ you
+ exactly
+ no
+ no
+ no
+ no
+ no
+ how do
+ you
+ what are
+ your thoughts
+ on you know
+ the value
+ of copywriting
+ and storytelling
+ in the context
+ of a technical
+ report
+ yeah
+ so like
+ for me
+ I don't
+ really do
+ like
+ it's not
+ storytelling
+ in my report
+ it's like
+ very technical
+ but
+ oh it's
+ technical
+ where it needs
+ to be
+ right
+ so like
+ the summary
+ might not be
+ as technical
+ like okay
+ I found
+ this bug
+ blah blah blah
+ this is what
+ it does
+ this is
+ I guess
+ how it works
+ and that's
+ like
+ pretty technical
+ but like
+ the summary
+ and then the
+ impact
+ are
+ not maybe
+ like
+ more like
+ copywriting
+ but it's just
+ more
+ just very clear
+ straightforward
+ to the point
+ writing
+ where it's like
+ this is the
+ impact
+ this is what
+ you can do
+ xyz
+ where you're
+ listing
+ explicitly
+ why
+ this is a
+ critical
+ and what
+ your specific
+ views are
+ on that
+ because
+ like
+ this is why
+ I think
+ I talked
+ to someone
+ about this
+ or we had
+ a whole
+ like talk
+ at
+ I think
+ it was one
+ of the
+ hacker
+ advisory board
+ about the
+ impact section
+ and the purpose
+ of the impact
+ section
+ people were like
+ oh well
+ like
+ it doesn't make
+ sense to me
+ because like
+ I just write
+ my impact
+ in the summary
+ and like
+ well for me
+ in my impact
+ section
+ like
+ I'll write
+ either like
+ I'll just
+ okay maybe I'll have
+ if I'm lazy
+ I'll just write
+ basically what I had
+ in the summary
+ otherwise
+ like if it's
+ like an actual
+ a critical report
+ I will list out
+ every single metric
+ in the CVS
+ piece
+ yeah
+ yeah piece
+ that I've
+ like selected
+ I'll explain
+ why I have it
+ set to that
+ and why it
+ should stay
+ set as that
+ and then
+ if the program
+ disagrees with me
+ they'll at least
+ have an exact
+ very clear
+ response back
+ of why they
+ disagree
+ or why that
+ should be changed
+ and that
+ leads
+ that helps
+ a lot
+ with like
+ disagreements
+ on severity
+ great tip there
+ I mean
+ I rarely go
+ to that level
+ of detail
+ but in the times
+ that I have
+ it's really made
+ those triager
+ misunderstandings
+ that sometimes
+ get your report
+ downgraded
+ or program
+ misunderstandings
+ that sometimes
+ get your report
+ downgraded
+ it's really
+ minimized those
+ so I'm actually
+ going to write
+ myself a note
+ right now
+ to go in
+ and do that
+ for the next
+ live hacking event
+ because especially
+ when you're at
+ the live hacking events
+ and like reports
+ are flying all over
+ the place
+ and triagers
+ are adjusting stuff
+ and you know
+ it gets really
+ it gets really
+ tricky to have
+ those you know
+ complex CVSS
+ conversations
+ and if you provide
+ justification
+ for each metric
+ that's the word
+ we're looking for
+ metric
+ yeah
+ metrics
+ thank you
+ English
+ yeah
+ and if you provide
+ explanations for each
+ one of those
+ metrics
+ then I think
+ it could really
+ provide a lot
+ of clarity
+ yeah
+ yeah
+ yeah
+ and it also
+ like it forces
+ the program
+ to really
+ to really
+ like dive deep
+ and like actually
+ consider your report
+ rather than like
+ okay yeah
+ we have this bug
+ I don't know
+ like really forces
+ them to think
+ through all the
+ different aspects
+ that maybe
+ they haven't
+ thought through
+ before so
+ yeah for sure
+ um
+ solid
+ uh
+ let's talk a little
+ bit about more
+ about your
+ hacking methodology
+ and then I also
+ want to talk about
+ some entrepreneurial
+ pieces as well
+ because that's
+ something you and
+ I have sort of
+ bonded over
+ being hackers
+ and entrepreneurs
+ at the same time
+ so um
+ that's something
+ that I'd like
+ to talk about
+ as well
+ um
+ so
+ I guess
+ just talking a little
+ bit more about
+ the recon
+ flow
+ we touched on
+ this a little
+ bit earlier
+ but you know
+ you're going out
+ there you're doing
+ recon and
+ this is a quote
+ that we quote
+ almost every episode
+ I love this quote
+ from Jay Haddix
+ the whole point of
+ recon is to find
+ more applications
+ to hack
+ right
+ and so when
+ do you
+ stop
+ and actually
+ intentionally
+ hack an
+ application
+ versus continuing
+ your recon
+ and um
+ yeah
+ we'll break
+ that question
+ off there
+ yeah
+ because that's
+ a really hard
+ I think that's
+ a hard skill
+ to learn
+ for beginners
+ is when to
+ stop doing
+ recon
+ and when to
+ start hacking
+ because it's
+ really easy
+ to get into
+ the like
+ pattern of
+ like okay
+ I'm just gonna
+ run subfinder
+ I'm gonna write
+ ff and everything
+ totally
+ um
+ and just like
+ keep finding
+ until like
+ maybe you
+ like somehow
+ find like
+ a git directory
+ on some host
+ or something
+ right
+ right
+ right
+ right
+ um
+ so
+ uh
+ I guess
+ it's pretty
+ difficult
+ um
+ to define
+ like
+ what exactly
+ will make me
+ stop
+ but a lot
+ of times
+ it's just
+ like
+ intuition
+ sure
+ so you
+ see
+ like
+ I'm doing
+ like
+ directory
+ brute forcing
+ um
+ I've used
+ like three
+ word lists
+ not finding
+ much
+ um
+ uh
+ maybe I'll
+ just like
+ hop to the
+ next host
+ um
+ oh I found
+ an interesting
+ directory on
+ this
+ like maybe
+ it's like
+ um
+ like a
+ react app
+ on this
+ like subdirectory
+ and then you
+ can go through
+ the javascript
+ files and start
+ actually hacking
+ and doing
+ like normal
+ um
+ actual
+ like
+ hacking
+ your hacking
+ methodology
+ or I guess
+ more like
+ pen testing
+ methodology
+ I guess
+ yeah
+ um
+ and then
+ yeah
+ it's just
+ kind of
+ just this
+ like intuition
+ flow that I have
+ kind of nailed
+ down
+ um
+ sometimes I'm lazy
+ and it's like
+ okay I don't
+ I'm just gonna run
+ ff on a bunch
+ of different hosts
+ and just do it
+ that way
+ or I can just
+ do it in the
+ background while
+ I'm looking at
+ something else
+ too
+ well that was
+ the follow-up
+ question to this
+ was like
+ okay so
+ you know
+ you found a
+ couple things
+ or you know
+ you found
+ you know
+ your 40 or
+ 50 hosts
+ you're gonna
+ assess
+ and you
+ you go to
+ each host
+ and you
+ kind of do
+ smart ff
+ instead of
+ like normal
+ ff
+ where you
+ you go to
+ the host
+ you know
+ you're not just
+ brute forcing
+ on slash
+ you know
+ always
+ sometimes you're
+ going to the
+ host
+ and you're
+ saying
+ okay well
+ the index
+ page redirects
+ to slash
+ you know
+ dashboard
+ but then it
+ gives an error
+ or something
+ like that
+ so you
+ actually
+ brute force
+ slash dashboard
+ yeah
+ it's not like
+ oh it's an
+ images directory
+ I'm gonna key
+ right
+ you know
+ something like
+ you don't
+ you don't want
+ to waste
+ your bandwidth
+ doing that
+ so but like
+ how many
+ would you say
+ like
+ you know
+ you described
+ two extremes
+ there
+ you say
+ you described
+ you know
+ finding a specific
+ application
+ and then just
+ really
+ sort of going
+ deep on that
+ based off of
+ your intuition
+ and you also
+ described just
+ sort of
+ brute forcing
+ everything
+ you know
+ where do you
+ think the
+ average sits
+ like of like
+ all right
+ I'm normally
+ brute forcing
+ like three to
+ four applications
+ at a time
+ or 10
+ or 20
+ or one
+ at a time
+ and really
+ just reading
+ all the
+ javascript
+ files while
+ it's running
+ yeah I
+ typically just
+ do one at
+ a time
+ really
+ okay
+ for the most
+ part
+ yeah so I
+ will
+ I think
+ focus is also
+ really important
+ yeah
+ and that's
+ dangerous when you
+ try to go
+ after too many
+ things at too
+ many times
+ you're just
+ going to
+ miss
+ things so
+ typically I
+ can get a
+ pretty good
+ feel for
+ you know
+ like what
+ I want to
+ hack on
+ so it's
+ like I'll
+ do my
+ reconnaissance
+ and it's
+ kind of just
+ this process
+ of like
+ filtering all
+ this data
+ down to
+ like a
+ single thing
+ at a
+ time
+ and so
+ I will
+ typically
+ do recon
+ until I
+ find a
+ host
+ that's
+ interesting
+ then I'll
+ do recon
+ on that
+ host
+ and so
+ I'll do
+ like
+ directory
+ brute
+ forcing
+ if
+ there's
+ like
+ dashboard
+ on it
+ then I'll
+ start like
+ reading through
+ javascript files
+ and just start
+ like hacking
+ it
+ solid
+ then when I'm
+ sick of that
+ single one
+ I'll go hop
+ to something
+ else
+ that's cool to hear
+ because I
+ definitely didn't
+ see your methodology
+ that way
+ I figured you'd
+ be doing
+ you know
+ directory
+ brute forcing
+ across multiple
+ hosts
+ you know
+ 10-20 hosts
+ on a regular
+ basis
+ but for you
+ and I think
+ this is something
+ really cool
+ to highlight
+ with Corbin's
+ methodology
+ here
+ is that
+ he's a
+ he's a
+ little bit
+ of a recon
+ hacker
+ but he also
+ is like
+ sort of a
+ deep recon
+ hacker
+ right
+ because
+ you're
+ going
+ you're
+ going to
+ a host
+ you're
+ doing a lot
+ of directory
+ brute
+ forcing
+ you're
+ doing a lot
+ of
+ you know
+ enumeration
+ but also
+ you're doing
+ that in a
+ smart way
+ you know
+ you're
+ reading the
+ JavaScript
+ files
+ you're
+ you know
+ recursively
+ brute forcing
+ on folders
+ you've found
+ that sort
+ of thing
+ and
+ and keeping
+ your attention
+ on one
+ host
+ which I think
+ is really
+ I think
+ that's key
+ yeah
+ or also
+ like adjacent
+ hosts as well
+ so like
+ JavaScript file
+ might reference
+ some other
+ APIs
+ and like
+ working on
+ those too
+ because it's
+ all a part
+ of this
+ like one
+ bigger
+ application
+ so
+ so you're
+ taking
+ you know
+ you're breaking
+ apart the JS
+ file
+ you're saying
+ okay
+ these are the
+ adjacent hosts
+ to this
+ the hosts
+ that work
+ on this
+ specific
+ or that
+ power
+ this
+ specific
+ website
+ and you're
+ using
+ you know
+ text from
+ the other
+ page
+ using
+ references
+ from that
+ JS file
+ to enumerate
+ stuff on the
+ APIs as well
+ yeah
+ exactly
+ yeah
+ so that's
+ that's pretty
+ huge too
+ because there
+ will be so
+ many like
+ API endpoints
+ you'll never
+ be able to
+ guess
+ yeah
+ almost out
+ you know
+ all this
+ other like
+ contextual
+ all these
+ all these
+ other contextual
+ pieces
+ so
+ man I got
+ I got to
+ find this
+ this tweet
+ from
+ from you
+ I was just
+ reading through
+ some of your
+ tweets that you
+ that you put
+ out
+ previously
+ and
+ and
+ he was like
+ oh here it is
+ right here
+ I'll link it
+ to you
+ hold on
+ I'm going to
+ send it to
+ you in
+ discord
+ scroll down
+ and we'll put
+ this tweet
+ in the description
+ as well
+ this is
+ Corbin's
+ Corbin's
+ tweet on
+ hacking the
+ military
+ but scroll
+ down to
+ like
+ scroll down
+ to like
+ the fourth
+ or no
+ it's the
+ third tweet
+ and it says
+ yeah
+ after reading
+ the JS
+ files in
+ directory
+ brute force
+ I came
+ across
+ this
+ endpoint
+ squirm
+ 2004
+ upload
+ course
+ dot
+ ASPX
+ and I'm
+ like
+ what do you
+ what is that
+ was that
+ you're brute
+ forcing
+ like
+ no
+ how did
+ you
+ so
+ but
+ you got
+ that
+ ASPX file
+ from reading
+ the JS
+ file
+ and then I guess
+ maybe you found
+ the full path
+ by like
+ brute forcing
+ some directories
+ and such
+ yeah
+ and so
+ like
+ I
+ one thing
+ that I do
+ that I don't
+ know if
+ anyone else
+ does
+ is
+ I'll find
+ a
+ like
+ a directory
+ called like
+ JavaScript
+ and I'll
+ just
+ I'll brute
+ force
+ for JavaScript
+ files
+ that's
+ big
+ so
+ I've done
+ that
+ and also
+ I've tried
+ to find
+ CSS files
+ because
+ sometimes
+ I'll do
+ like
+ import
+ like
+ image
+ from
+ like
+ this
+ and it'll
+ be like
+ super long
+ directory
+ that you might
+ not be able to find
+ but yeah
+ I think I was
+ I was
+ brute forcing
+ through
+ four JavaScript
+ files
+ and I
+ I had
+ like come
+ across a new
+ directory with
+ like JavaScript
+ files and I
+ brute forced
+ some in there
+ then that's
+ when I came
+ across that
+ ASPX file
+ so you
+ you actually
+ brute forced
+ for the JS
+ files
+ which led
+ you to
+ this more
+ complex
+ ASPX
+ endpoint
+ yep
+ yep
+ so it's
+ like going
+ through
+ JavaScript
+ files
+ to find
+ some
+ endpoints
+ and then
+ brute forcing
+ those
+ and then
+ in one
+ of those
+ there's
+ like a
+ reference
+ to that
+ nice
+ that's
+ a great
+ takeaway
+ I like
+ that
+ nice man
+ well that's
+ so
+ we're
+ at about
+ an hour
+ now
+ I did
+ have
+ one
+ other
+ sort
+ of
+ status
+ of yours
+ that
+ or
+ post
+ of yours
+ that I
+ wanted to
+ look at
+ you know
+ what
+ I think
+ we're going
+ to save
+ this one
+ for a
+ different time
+ because I
+ did want
+ to follow
+ up on
+ some
+ entrepreneurial
+ stuff
+ as well
+ so
+ currently
+ so
+ okay
+ a couple
+ months
+ back
+ you
+ announced
+ breachless
+ AI
+ and
+ and
+ I
+ kind
+ of
+ want
+ to
+ hear
+ about
+ some
+ lessons
+ learned
+ from
+ that
+ because
+ it
+ seems
+ like
+ you
+ pivoted
+ over
+ to
+ boring
+ mattress
+ co
+ now
+ which
+ I
+ love
+ and
+ I'll
+ hold
+ up
+ my
+ phone
+ for
+ the
+ YouTube
+ video
+ I've
+ got
+ boring
+ mattress
+ co
+ on the
+ back
+ of my
+ phone
+ and I've
+ actually
+ had a couple
+ people
+ ask me
+ about
+ it
+ already
+ so
+ you're
+ getting
+ free
+ marketing
+ off
+ of
+ this
+ yes
+ thank you
+ but
+ you know
+ what
+ happened
+ to
+ breachless
+ AI
+ and
+ what
+ what
+ kind
+ of
+ lessons
+ did
+ you
+ learn
+ from
+ that
+ yeah
+ so
+ I'll
+ first
+ introduce
+ it
+ too
+ because
+ people
+ may
+ not
+ know
+ yeah
+ yeah
+ so
+ breachless
+ the idea
+ behind
+ that
+ was
+ that
+ I
+ was
+ going
+ to
+ use
+ artificial
+ artificial
+ intelligence
+ artificial
+ intelligence
+ artificial
+ intelligence
+ to
+ basically
+ the idea
+ was
+ to
+ do
+ analysis
+ of
+ incoming
+ emails
+ and
+ adding
+ well
+ to take
+ a step
+ behind
+ the
+ currency
+ it was
+ like
+ it was
+ to help
+ prevent
+ social
+ engineering
+ attacks
+ right
+ and so
+ like
+ you have
+ companies
+ like
+ know
+ before
+ like
+ all these
+ different
+ companies
+ that are
+ doing
+ these
+ what are
+ they
+ called
+ so
+ security
+ awareness
+ trainings
+ yeah
+ yeah
+ and so
+ it's like
+ you force
+ employees
+ to go
+ through
+ really
+ boring
+ outdated
+ videos
+ that are
+ like
+ 20 years
+ old
+ or
+ they're
+ just
+ like
+ really
+ like
+ irrelevant
+ to
+ like
+ the average
+ person
+ like
+ a hacker
+ might think
+ oh wow
+ these are
+ like
+ really funny
+ these are
+ really cool
+ and you have
+ your average
+ Joe
+ is like
+ this is
+ the stupidest
+ thing I've
+ ever had
+ to watch
+ what if
+ to watch
+ this
+ and the
+ problem
+ too
+ is like
+ okay
+ yeah
+ you watched
+ a video
+ four times
+ a year
+ and you never
+ remember it
+ in the moment
+ and so
+ my idea
+ was to
+ add
+ context
+ to
+ actual
+ emails
+ in like
+ the form
+ of a banner
+ to help
+ people identify
+ social engineering
+ attacks
+ or potential
+ social engineering
+ attacks
+ just like
+ write in each
+ email
+ and so
+ that was
+ the idea
+ there
+ it didn't
+ go very
+ far
+ I had
+ actually
+ had a
+ pretty
+ sizable
+ wait list
+ I think
+ I had
+ like
+ 200
+ to
+ 300
+ nice
+ dude
+ companies
+ on that
+ wait list
+ that's a lot
+ actually
+ yeah
+ yeah
+ it was
+ actually
+ pretty decent
+ there were
+ some pretty
+ decent sized
+ companies
+ on that
+ but what
+ made me
+ move away
+ from it
+ was I
+ wanted to
+ bootstrap
+ the company
+ I didn't
+ want to
+ raise
+ venture
+ capital
+ and
+ it was
+ also a
+ pretty
+ crowded
+ space
+ just
+ phishing
+ anti-phishing
+ stuff
+ yeah
+ just like
+ email security
+ stuff
+ I don't
+ think that
+ necessarily
+ should have
+ like
+ maybe
+ turned me
+ away so
+ much
+ but I
+ think the
+ biggest
+ issue
+ was
+ the
+ requirements
+ for a lot
+ of companies
+ have for like
+ SOC 2 audits
+ so
+ what is that
+ it's like
+ basically
+ companies
+ when they
+ want
+ to use
+ let's see
+ like I don't
+ want to mess
+ it up
+ sure
+ while you're
+ looking that
+ it's like
+ it's a
+ compliance
+ it's like
+ a compliance
+ standard
+ which is
+ like how
+ organizations
+ manage
+ like
+ data
+ yeah
+ and so
+ like you
+ have to go
+ through this
+ like compliance
+ process
+ and be able
+ to like
+ provide this
+ to each
+ customer
+ that like
+ asks for
+ it
+ gotcha
+ and so
+ that costs
+ at least
+ like $150,000
+ and I didn't
+ really want to
+ pay that
+ out of pocket
+ with
+ and
+ you know
+ without VC
+ develop an MVP
+ and then have
+ you know
+ have to pay $150,000
+ out of pocket
+ just
+ just for that
+ like that's a pretty
+ big expense
+ out of pocket
+ especially without
+ raising money
+ and so
+ that's a huge barrier
+ to entry
+ for new players
+ yeah
+ geez
+ yeah
+ it's a very
+ yeah
+ it's
+ it's big
+ and
+ there are people
+ I think that
+ I think you can find
+ an auditor
+ like you could
+ probably give like
+ equity to
+ and pay them
+ a lot less
+ but
+ yeah
+ with that
+ it was just
+ kind of like
+ a turn off
+ and
+ then
+ my co-founder
+ day
+ he was talking
+ about getting
+ back into
+ the mattress
+ industry
+ the mattress
+ space
+ yeah
+ and so
+ I jumped over
+ to that
+ and I was also
+ very intrigued
+ by you know
+ the consumer goods
+ so I thought
+ that would be
+ a cool thing
+ to tackle
+ is such a cool
+ thing to go
+ after too
+ like I feel
+ like that
+ is
+ such a
+ traditional
+ industry
+ yeah
+ yeah
+ yeah
+ so
+ hopped over
+ to that
+ I still think
+ the Breachless
+ product
+ the idea
+ there is
+ pretty cool
+ if someone
+ can like
+ I can see
+ the gears
+ turning in your
+ head still
+ like as you're
+ talking about
+ I know
+ I still love
+ it
+ yeah
+ I know
+ I still
+ love the idea
+ and I don't
+ think it's a bad
+ idea
+ it's just
+ like
+ you know
+ maybe someday
+ yeah
+ would you consider
+ selling or handing
+ off that
+ email list
+ or wait list
+ of companies
+ to somebody
+ who wanted to
+ take a stab
+ at Breachless
+ yeah
+ I mean
+ I'd still be
+ interested in
+ like being
+ involved with it
+ somewhat
+ but it's just
+ like do you
+ want to raise
+ venture capital
+ it's just like
+ a whole nother
+ completely different
+ than you know
+ just a good
+ well there you go
+ if any of you
+ other hackers
+ out there
+ are interested
+ in an
+ entrepreneurial
+ opportunity
+ I love the
+ product
+ I think
+ it would be
+ really
+ I think
+ it's a really
+ good fit
+ you know
+ having a
+ email banner
+ having some
+ sort of add-on
+ for G Suite
+ or for Outlook
+ and you know
+ who knows
+ Microsoft might
+ just have this
+ and there's now
+ with GPT-4
+ they'll be able
+ to do that too
+ yeah
+ well that's
+ the other thing
+ is I feel like
+ maybe my
+ timelines are
+ a little off
+ but did you
+ launch this
+ before
+ chat GPT
+ blew up
+ I think it was
+ I think it was
+ about
+ I think it was
+ about
+ yeah
+ or at least
+ it was very early
+ just before
+ yeah
+ it was really early
+ I don't
+ it was before
+ chat GPT was released
+ yeah
+ and so
+ that's
+ man
+ they had GPT-3
+ yeah
+ the API for that
+ and that was it
+ that was a great timing
+ of the market
+ I think
+ you know
+ like
+ you know
+ that before that
+ whole thing blew up
+ you know
+ you had already
+ launched this
+ and so
+ yeah
+ yeah man
+ I've still got
+ I've still got high hopes for it
+ I would love to see it
+ at some point
+ pop up
+ so definitely let me know
+ if you're getting back
+ into it again
+ because I think
+ that'd be really
+ I think that'd be a really cool
+ thing to be involved with
+ and also
+ you know
+ I hope
+ you find someone in the industry
+ who's got the bandwidth
+ to take it on
+ because I would love to use it
+ in an organization
+ yeah
+ all right
+ I guess
+ the other question
+ that I have
+ is like
+ what
+ what
+ what sort of
+ hacker
+ entrepreneurial
+ takeaways
+ did you
+ did you have
+ from that experience
+ of pivoting
+ like
+ did you
+ was that a hard move
+ for you to pivot
+ away from it
+ I could see a little bit
+ of
+ cognitive dissonance
+ I think
+ in your eyes
+ yeah
+ I mean
+ it wasn't
+ it's different
+ because
+ like
+ it's still
+ I still like the idea
+ but
+ I'm also
+ like
+ I don't know
+ where
+ I
+ like I'm still optimistic
+ but I'm like pessimistic
+ in other ways
+ because
+ like yeah
+ the cybersecurity
+ field
+ is like
+ extremely saturated
+ from where it used to be
+ but at the same time
+ I like the idea
+ a lot
+ and I think
+ it could be
+ very helpful
+ but then
+ I'm also like pessimistic
+ about like
+ okay why can't
+ Microsoft just add that
+ yeah
+ which I think
+ they very well could
+ now
+ I think they probably
+ will
+ I think
+ with all their
+ integrations
+ it's probably
+ a good thing
+ I did
+ step away from it
+ but
+ you know
+ there's definitely
+ market risk there
+ I think
+ you know
+ because
+ you could easily
+ get replaced
+ by a big player
+ or
+ you could get acquired
+ by a big player
+ you know
+ that's the other thing
+ yeah
+ for someone who wants
+ like a quick
+ quick integration
+ yeah
+ so
+ I mean
+ I
+ I'm not like
+ I guess
+ worried about it
+ it was actually
+ relatively easy
+ for me
+ to
+ to pivot
+ jump away
+ it was
+ first it was like
+ it's a little
+ a little sad
+ because I liked the idea
+ but at the same time
+ I was like
+ I had all these other
+ kind of
+ had some doubts
+ but
+ yeah
+ I knew
+ it's
+ where I needed
+ to go next
+ and
+ I guess
+ I had to just
+ trust my gut
+ on that
+ yeah for sure man
+ well I'm
+ glad to see
+ that you
+ you know
+ were able to
+ successfully assess
+ the
+ the
+ difficulties
+ of that
+ specific challenge
+ and pivot
+ and
+ I'm excited
+ to see where
+ Boring Mattress Co
+ is headed
+ do you have any
+ update on that
+ last I heard
+ you
+ you got your
+ prototype out to the house
+ yes
+ it's super comfy
+ I've been sleeping
+ on it for
+ a while now
+ I love it
+ it's super
+ super amazing
+ so I mean
+ are you going to
+ make a lot more
+ are you going to
+ make much
+ modification to that
+ mattress
+ or are you guys
+ going to just
+ move forward
+ with it
+ not to the
+ mattress itself
+ I think we're
+ still iterating
+ on the covers
+ that's like
+ the outside
+ of it
+ that's like
+ you have like
+ all your foam
+ there's like
+ fire stock on it
+ and then
+ the cover is like
+ the outside
+ like the aesthetic
+ we're still
+ figuring out
+ that
+ that piece
+ of it
+ gotcha
+ we're not going
+ to take any
+ I think
+ let me just
+ go ahead
+ and add
+ my two cents
+ to the mattress
+ industry here
+ I got these
+ bed sheets
+ and this is bed sheets
+ it's a different
+ arena
+ but who knows
+ maybe you could do
+ a package deal
+ or something
+ no we will
+ probably at some point
+ and so
+ I've got these bed sheets
+ and for one
+ there's like
+ these bamboo
+ bed sheets
+ that are just
+ super
+ like
+ cool
+ and
+ cool meaning
+ like
+ you know
+ not
+ like the opposite
+ of hot
+ not like
+ cool as in
+ amazing
+ they're very cool
+ you know
+ and they're awesome
+ and I love them
+ and it really helps
+ me sleep better
+ but also
+ they have this
+ little pocket
+ on the side
+ of the bed
+ it's built into
+ you know
+ the side of the
+ mattress
+ the fitted sheet
+ or the fitted sheet
+ that goes on the
+ mattress
+ and it's perfect
+ size to like
+ put your phone in
+ and it's just like
+ such a nice
+ little thing
+ you know
+ you're in bed
+ you got your phone
+ and then you just
+ slide it right into
+ his pocket
+ so anyway
+ there's your little
+ tidbit
+ you know
+ cut me in
+ whenever you make
+ millions off of
+ that
+ and yeah
+ we'll be good
+ cool
+ well dude
+ thanks for coming
+ on to the pod
+ I tried to
+ you know
+ dedicate this
+ last section
+ to the
+ boring mattress
+ company
+ but
+ you got any
+ other shoutouts
+ you want to
+ make
+ not really
+ solid
+ shoutouts
+ everyone
+ hacking out
+ there
+ yeah
+ well
+ you can find
+ Corbin at
+ twitter.com
+ slash
+ hacker underscore
+ and then
+ boring mattress
+ company is
+ twitter.com
+ slash
+ boring mattress
+ which somehow
+ you got
+ that's awesome
+ that's because
+ no one in the
+ industry is going
+ to admit
+ that mattresses
+ are boring
+ yeah
+ that's true
+ they've got
+ that's
+ also why
+ I like
+ the brand
+ that's a great
+ mark
+ yeah
+ and I love
+ the copy
+ as well
+ on the
+ on the
+ description
+ for the
+ for your
+ twitter page
+ so I'll
+ I'll let
+ I won't even
+ read it out
+ loud
+ I'll just
+ say
+ for those
+ listening
+ yeah
+ go
+ go to the
+ page
+ follow the
+ account
+ and read
+ the
+ description
+ because
+ I think
+ it's a
+ great
+ example
+ of
+ engaging
+ copy
+ so
+ all right
+ man
+ well thanks
+ for coming
+ on
+ appreciate
+ it
+ yeah
+ thanks for
+ having
+ me
+ that's
+ the pod
+ that was
+ a great
+ episode
+ with Corbin
+ always love
+ having him
+ on the
+ pod
+ if you
+ enjoyed
+ this
+ content
+ please
+ head over
+ to
+ youtube.com
+ slash
+ at
+ critical
+ thinking
+ podcast
+ drop a
+ like
+ and
+ subscribe
+ and also
+ don't forget
+ to stay
+ engaged
+ on your
+ podcast
+ app of
+ choice
+ via
+ subscribing
+ or following
+ or whatever
+ it is
+ you do
+ the podcast
+ around was a
+ little weird
+ so just
+ I'm sure
+ you'll figure
+ it out
+ thanks
+ see y'all
+ next week

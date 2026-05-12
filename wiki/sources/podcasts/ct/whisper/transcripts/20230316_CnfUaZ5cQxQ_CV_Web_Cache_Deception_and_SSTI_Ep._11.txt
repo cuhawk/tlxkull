@@ -1,0 +1,1146 @@
+ You may be able to make a valid argument for that bug by setting AC to high and then moving forward.
+ So what you're telling me is all of my blind XSSs that haven't popped are attack complexity high.
+ No, Joel, that's not the system being vulnerable is not one of the conditions.
+ They just haven't clicked it yet, dude.
+ Oh my God, Joel, please.
+ Yo, what's up, everyone?
+ This is Ryanorator popping in to remind you to set your CVSS integrity to high by subscribing to our YouTube channel at Critical Thinking Podcast.
+ Drop us a follow on Twitter at ctbbpodcast and like, subscribe, whatever it is you do on your podcast app of choice so you never miss an episode.
+ Hope you guys enjoy the show.
+ All right.
+ Well, I guess we'll start off with news today then, yeah?
+ Yeah, yeah, let's do it.
+ All right.
+ Let's see.
+ We got let's let's start with the NTLM hash leaking thing.
+ So MDSEC, MDSEC Labs, which I have not actually heard of before, released a write-up for a CVE that they found in Outlook.
+ I almost said Exchange, but it's Outlook.
+ For once.
+ Yeah.
+ And this is not particularly relevant to BookBounty, I don't feel, but also it I think is just a really good example of an attack vector for looking at actual desktop applications and looking at Microsoft Outlook.
+ So from the perspective of you're hacking on Microsoft's program, I think it could be a really good, a really good, you know, write-up to read.
+ Essentially, what happened here was they were reading.
+ And I love how if you look at this write-up, like literally in the docs, it's like they're in the write-up.
+ They have like a screenshot from the docs that says specifies the file name of a sound that the client should should should play.
+ Anyway, and this just goes back to the precept that we've talked about time and time again of like, you got to read the freaking documentation because sometimes there are bugs just sitting in there waiting to be found that you could literally just control F for.
+ Yeah.
+ Like, I mean, it's so funny.
+ It's like literally written in the docs.
+ Like, it's.
+ Yeah.
+ Yeah.
+ I remember, I remember the first live hacking event I went to.
+ There was 20 minutes left in the live hacking event.
+ This was Washington, D.C.
+ And Schmeagles, a legend, was like, you know what?
+ I'm going to go read the documentation with the last 20 minutes left.
+ He literally went to the documentation for the target we were looking for.
+ Control F'd for URL.
+ Found the first one, put it in there, and it was an SSRF, a full read SSRF at the event.
+ And he submitted it within the, you know, last 20 minutes of the event.
+ So crazy.
+ Definitely bugs to be found there.
+ This one I don't, I don't think is particularly, like I said, applicable to the bug bounty world.
+ It's normally frowned upon to send an email at all in the bug bounty world.
+ So please do not do that.
+ Just to be clear, everyone, do not do that.
+ This is an exercise of what it looked like to find a cool bug on Outlook.
+ Read the documentation.
+ They used a .NET message kit library to craft the correct file that they would need to exploit this
+ and then send that message along.
+ And then when opened by Outlook, it would trigger the UNC path, which is an attack factor that we talked about before
+ because it came up in a past live hacking event.
+ It's like, if you have any way to make a desktop application open a specified file path on Windows,
+ then you can leak the NTLM v2 hash.
+ And I think that's, I think, I personally think that that's quite impactful.
+ It's certainly, from a CVSS perspective, it affects confidentiality.
+ And also, there's lots of other attack directors if you're on the internal network
+ because you can just relay that authentication to a different system
+ and then, you know, gain access to further credentials or gain access to that system.
+ So, definitely a cool attack factor to be thinking of if you're looking at desktop applications.
+ Yeah, I mean, it's a super, super dope.
+ I feel like it's one of those books that you read through and you're like,
+ dang, I probably could have found that if I was looking at it.
+ In like 10 minutes, you know, like.
+ Yeah, but, you know, the key factor being you have to be looking at it.
+ You got to be looking, man.
+ And that's kind of what I'm telling everyone with the World Cup as well
+ is like, sometimes you just got to put in the time, man.
+ Tweeted about it earlier, but I've got some of the guys on my team that are great
+ and they're out there, they're looking for the right stuff, they're doing the right things.
+ There's no reason to justify, you know, them not finding bugs
+ besides the fact that they're moving on too quickly and not diving deep enough
+ and getting to those endpoints that are a little bit harder to reach.
+ And so, I told them, you know, let's dive, let's take another step deeper.
+ Let's put at least 16 hours into a specific part of an application
+ or a specific application before we move along.
+ And if you don't have anything interesting after 16 hours,
+ then maybe it's just not the target for you.
+ Yeah.
+ Yeah.
+ We can talk about World Cup in a little bit.
+ Let's finish the news and then we can definitely discuss that because we brought it up.
+ All right.
+ What do we got?
+ We got, let's jump down to the Snapchat report, yeah?
+ Yeah, sure.
+ I mean, yeah, I feel like Snapchat a couple years ago was definitely like really popping off
+ in the bug bounty scene because they had a couple different Jenkins instances
+ and stuff that were open that were paying some crazy bounties back in the day.
+ Yeah.
+ But they are in the HackerOne feed again because there was somebody found a really, really, really,
+ really simple IDOR where it's literally just a numeric IDOR and you're able to delete anybody's content
+ off of their spotlight.
+ Yeah.
+ No, very, very impactful.
+ I'm actually kind of, I'm looking at their bounty brief.
+ I'm kind of surprised I don't hear about them more often.
+ Like I feel like no one's looking at Snapchat and they've only got 32K bounties paid in the last 90 days
+ and 15K of it was that one bug.
+ So I think we might be sleeping on Snapchat and yeah, so there could be some good scope here for sure.
+ 4K minimum on mediums?
+ Yeah, it's pretty wild.
+ I mean, so the one thing I will say is that Snapchat security team is pretty strong.
+ Oh, yeah.
+ I'd say probably one of the biggest reasons that you don't see a ton of bugs on them
+ is that their mobile app is very, very hardened.
+ Oh, is it?
+ So as a result, you can do barely any like hooking or proxying or any of that kind of
+ stuff without throwing off their signature signing algorithm that happens on every single
+ request that goes out.
+ Oh, do they do that?
+ That's such a pain, man.
+ Yeah.
+ And it's signed in a native library and the native library does like anti-hook checks and
+ all sorts of stuff.
+ Oh my gosh.
+ I mean, Snapchat has a massive bot problem.
+ So they did a lot of anti-botting features, like anti-botting features and stuff that end up
+ stopping security users.
+ No, that makes sense.
+ Do you know if they're using safety net?
+ They were.
+ Yeah.
+ Yeah.
+ I mean, that's one of the reasons why I know so much about safety net is because yeah, back
+ in the day I used to write Snapchat bots.
+ So I was, I was, I was really surprised when, so I hit Joel up the other day.
+ Normally I can nerd snipe Joel real easy and just be like, Hey Joel, this looks impossible
+ to solve, you know, like, wouldn't it be crazy if somebody solved it and then Joel will just
+ like deep dive and come up with a solution.
+ So I was like, I think, let me go read the DM.
+ Hold on.
+ Let me see if I can pull it up.
+ I think I said something along the lines of like, Hey Joel, I think this is actually impossible
+ to, to hook with Frida or something like that.
+ And, and, and your response was like, yeah, yeah, it's real hard.
+ Yeah.
+ And I was like, what?
+ Yeah.
+ Yeah.
+ Yeah.
+ I mean, so all the safety net stuff is like, for those who don't know, safety net is essentially,
+ it's an attestation library tool that's built into Android and it allows you to generate these
+ attestations that are signed at a, like a kernel, like system level that have a lot of different
+ attributes about like the device.
+ And it's originally, I believe it was meant for like profile matching where basically like
+ you want a certain device profile to be able to use your app, meaning that it has access to
+ certain features and it's not compromised in certain ways.
+ And if it meets that criteria, then you allow them to log in by verifying the attestation
+ on the server side.
+ The problem is that that also gets used for like anti-rooting, anti-hooking, all that kind
+ of stuff, because it's, it's a very good library for detecting that kind of stuff.
+ And as a result, if you verified on the server side, there's basically no bypass because you
+ can't bypass the server side check.
+ So Snapchat has been using attestations for quite a while.
+ Like I said, I used to write Snapchat bots back in the day.
+ So that's how I'm so familiar with all this kind of stuff.
+ We, we did spend some time and we reverse engineered the safety net stuff down to like a level where
+ we could generate a lot of it programmatically.
+ And then it's just a cat and mouse game.
+ Like at a certain point, they just keep updating it and they keep adding more checks and you have
+ to keep trying to reverse engineer them and bypass those checks and you, they could do it way
+ faster than you can.
+ So yeah, it's a, it's definitely quite difficult.
+ They also use this, this mobile security company who used to be, I don't, I don't know what
+ they're called now.
+ I think they rebranded, but they used to be called arcs in and they were using them for
+ quite a while to secure their native libraries from hooking and tamper protection, all that
+ kind of stuff.
+ So I would guess that is probably why their submissions are so low is just because the
+ barrier to hacking is like really, really high to actually like find vulnerabilities without
+ triggering their anti-tamper stuff.
+ Um, but if you could get past that and you could get some requests going through your burp
+ without triggering their anti-tampering, then you'd probably find some cool bugs.
+ In this, in this specific report though, it, it's just, they go through their website, my,
+ my snapchat.com.
+ So maybe they're, they're expanding a little bit into the web, you know, scope a little
+ bit more.
+ And there might be some vulnerable endpoints out there because I'm seeing also, um, story.snapchat.com.
+ So there, it seems like there's some decent functionality in a, in a web app, not necessarily
+ like one of those programs where it's just a mobile app.
+ So it definitely could be something to look into.
+ Yeah.
+ Actually within the last, I want to say within the last six to 12 months, they announced
+ Snapchat web, which is literally, it's a, it's a web-based version of Snapchat.
+ Um, and you can do like a lot of the same features that you can on the app, but through
+ the web.
+ So my guess is that one, that attack surface is kind of right.
+ And two, they're probably not doing the same level of security stuff that they are on the
+ mobile app just because they can.
+ Um, so if you could figure that out again, you might find some really dope bugs, really
+ cool stuff there.
+ And, and one of the things I wanted to talk to you about this, uh, you know, on the same
+ topic was I got an email.
+ I signed up for, um, uh, the bug bounty explained, uh, stuff from, I'm going to butcher this guy's
+ name.
+ Yeah.
+ I'm not even going to try.
+ I'm sorry, dude.
+ Um, but the guy that does a bug bounty reports explained, and he dropped an email, um, outlining
+ IDORS.
+ And like, he went and analyzed 187 different reports, um, and like sorted them into different
+ categories, pulled statistics on bounty, pulled statistics on what type of ID was being used.
+ Um, you know, all that stuff and put it into this like newsletter that he sent out.
+ And I just, I love stuff like this.
+ I totally get off on stuff like this with all this data and like analytics on, on vulnerabilities.
+ So, um, that was the first, uh, newsletter of his that I actually sat down and read and
+ I was really impressed with it.
+ Um, so definitely, I think he's pushing out some really awesome content.
+ So go check that out if you're interested in, in getting that delivered to your, your inbox
+ every once in a while.
+ Yeah.
+ It's super cool to see that kind of data.
+ Um, I think like a really data driven approach to bug bounties.
+ It's kind of a good idea.
+ Just get an understanding for what are other people finding?
+ How are they finding it?
+ What are the common attack scenarios?
+ Cause you'll find that many, many times bugs are basically the same thing.
+ Just copy pasted on a different program.
+ Yeah.
+ Yeah, for sure.
+ Oh, dude, I actually just clicked back to the, uh, the IDOR and mandatory works for Snapchat.
+ He does.
+ Yep.
+ Oh, I didn't know that.
+ Okay.
+ Is that where he went from after Uber?
+ Uh, he went there.
+ Then he left.
+ He did a startup with some of my buddies and then he left the startup and he went back to
+ Snapchat.
+ Gotcha.
+ Gotcha.
+ Nice.
+ I'm good.
+ Glad to see his face back in the community there.
+ That's fun.
+ Did you notice that ape fifers there too?
+ Really?
+ Yeah, really.
+ I haven't seen that guy in a couple of years.
+ They do have a built team, don't they?
+ Yeah.
+ They have a pretty dope team.
+ I think I actually almost joined there too.
+ Jeez.
+ Yeah.
+ Then you could get on the inside and like see all the places where your, your, your, your
+ bots were getting foiled.
+ I know.
+ I know.
+ For real.
+ I was serious.
+ I should have just done it.
+ All right.
+ Cool.
+ So let's see what else we got on here.
+ Um, oh, okay.
+ This is just going to be a quick little rant.
+ So let me just talk about Jubob's tweet.
+ Um, talked about Jubob a couple of times on the, uh, on the podcast before he tweeted out
+ the other day.
+ In most cases described as user and enumeration, you can only ask, uh, yes or no questions centrally
+ about whether some email addresses exist in the system.
+ In such cases, I would encourage you to favor the term user existence oracle, which is more
+ precise.
+ Totally agree with this take.
+ I don't think a user existence oracle is a vulnerability.
+ Um, I do think a user enumeration vulnerability, which is one that allows you to either iteratively or just all in one big chunk, disclose all of the users signed up for a service.
+ I do think that is more of a vulnerability.
+ Um, what do you, what do you think about that, Joel?
+ Yeah.
+ I mean, I think it's one of those great bugs that you can use to chain with another bug.
+ So say you have a password reset bug or a count takeover, but you need to know the user's username or you need to know an account that exists, or you need to know an account that doesn't exist.
+ Um, that's a bug that I've had a couple of times.
+ This would be a great bug for proving that where the team could easily say, well, how do you know that an account exists?
+ How do you know an account doesn't exist?
+ Well, here's another bug that I found that shows it.
+ Yeah, absolutely.
+ And, and I think you can also use it in some cases, um, you know, to determine what, what kind of direction you want to go with, um, you know, like for example, if it leaks a user ID or something like that, um, that can be really helpful, uh, for, for, you know, validating.
+ Other attacks.
+ So definitely cool thing.
+ I don't, I don't know, man.
+ I feel like user existence Oracle is a little bit wordy.
+ I might just say user Oracle.
+ Um, but I like, I like the, the concept.
+ So I wanted to shout it out.
+ Yeah.
+ Yeah.
+ I think user Oracle is probably a little more concise, but, um, but either way, I think it's a good distinction to be making and it'll help improve your bugs and, and sort of let you chain that stuff together.
+ You've met now that you mentioned, I was actually thinking, um, I have seen in the past where if you get,
+ like an end point that you give like an email or something and it errors out and it'll be like, you don't have access to user ID.
+ And then they just put, yeah.
+ And the errors, sometimes it pops up like that.
+ Good to keep an eye out for, for sure.
+ Yeah.
+ Those error messages are always, always very leaky.
+ Yeah.
+ Another, another tweet that popped up this week that kind of caught my fancy was, uh, anytime James Kettle tweets anything, you know, I jump right on that.
+ I think he's one of the few people that, that like actually tweets.
+ Yeah, I do.
+ I have, I have tweet notifications turned on for him because he's not like, you know, there are some people out there that push out some really quality tweets, but they also like respond to every message, you know, and stuff like that.
+ So you can't, you can't, you know, put on tweet notifications for them.
+ But for James, uh, I definitely do.
+ And, um, and he posted, uh, he tagged hacker one bug crowd and integrity and said, Hey, why are we not regulating?
+ Why are we not standardizing what it looks like to have a HTTP header that, that, um, you know, identifies a specific, uh, ethical hacker to an organization.
+ Um, so that they can easily search that in the IP logs.
+ I thought that was a great idea.
+ And then Alex Chapman down below just kind of says, um, you know, uh, he, he dropped a take on one of the, one of the programs out there does, uh, you know, where you check in.
+ And I, I think that's another way to deal with the deal with the problem, but I really liked the, the recommendation further down in the comments that, that says this can also help with verification.
+ If you like put a, a, um, you know, uh, a key out there or you signed the header with something to prove that it's you.
+ Um, I think that could be really cool to prevent, you know, black hats from putting, you know, X dash ethical hacker colon runnerator in their header and, uh, and impersonating me.
+ And then also, you know, dodging some logs when they're actually doing some sketchy stuff.
+ Yeah.
+ I mean, I would love to see more standardization across the bug band programs in general or sorry, the platforms in general.
+ Yeah.
+ Um, I think that there's a lot of room where they could be working together instead of competing, um, and making things better for the whole community.
+ But I think a lot of it gets sort of caught up in corporate politics and whatnot.
+ For sure.
+ Yeah.
+ That definitely does happen, which probably brings us to our next topic, AKA CV, CVSS, right?
+ Let's talk about like improving structural parts of the bug bounty reporting process.
+ Like CVSS is probably one of the most flawed, uh, systems that they have.
+ I see so many programs that rely entirely on CVSS as like their, their entire system for paying out bounties and determining severity.
+ And it's like, what, I don't know a single company that has a threat model that's one-to-one with CVSS.
+ Yeah, yeah, yeah, yeah, for sure.
+ I don't know, man, I kind of like, I have a love-hate relationship with CVSS, like, like anything else.
+ It's got problems and thus we can hack it.
+ So there are some scenarios where it's like, all right, this attack, um, is largely a, let's say an availability based attack, right?
+ We're, we're, we're tossing an account or something like that, but it also like leaks a little bit of information, right?
+ Um, and so there's definitely ways, you know, and that, that would give a bump on the, on the CVSS score due to it affecting the confidentiality, um, metric.
+ And so I think there's also some other ways you can creatively sort of chain attacks together to try to gain higher impact, um, in the, in the CVSS scoring system.
+ So I think this is the company is like, yeah, I'll just shout them out because everyone knows already, uh, PayPal and, and Shopify, they, they stick very closely to CVSS.
+ Um, I think a lot of times you can work that to your advantage.
+ So I don't, I don't mind it quite as much when they do that, but also the, it's the, it's the times when the programs downgrade it below CVSS when they feel like it and then stick to CVSS when you can't get any higher.
+ That's, that's annoying.
+ Yeah.
+ A hundred percent.
+ Maybe this is one of those things that you have a little more context and insight on as a full-time hacker.
+ Yeah.
+ What are like the most like ripe areas that you can just like increase availability, for example, or something from like none to.
+ That's a good question, man.
+ Let me think on that.
+ Um, well, one of the ones that comes to, to mind is the privilege required.
+ So one, you can, a lot of times you can just, uh, argue with the team about that and say like, Hey, if it's a self signup account, it shouldn't be PR low.
+ Um, there is evidence for that in, uh, the standard.
+ If you read it, I had a long debate with a, uh, hacker one triager on Twitter one time about this, and I was pretty happy with the results.
+ I think, I think I found some, some evidence, you know, in the, in the standard that really supports my position of self signup accounts being PR none instead of PR low.
+ Um, so that's one way, but also if it is actually PR low and, and, um, you know, the, the company has already established, Hey, the self signup accounts are PR low.
+ Oh, we're not budging on that.
+ Then sometimes you can actually, um, fudge it a little bit and try to get your attack to be used.
+ So there are some hybrid States sometimes in web applications, which I think are really cool where like you're a guest, but they like issued you like this guest account so that you can check out or something like that.
+ Or like some ghost account somewhere so that it can save your preferences or something like that.
+ And then in the flow later, it converts it to a full account.
+ One, those are great spots to attack anyway, because anytime, you know, they're signing up for an account without actually having an account and you're getting a different account type, then that's a great place to look.
+ But also those ghost accounts, um, you may be able to weaponize those much easier.
+ You might be able to just get hit an end point and get a cookie and use those to hit some of the other end points that would result in your bug.
+ So that's definitely one way to do it.
+ Nice.
+ Yeah, no, I think that's, um, that's a super interesting way to look at it.
+ I feel like I totally agree with you.
+ Like self signup.
+ It's like, listen, I don't know why we're debating this anymore in the industry.
+ I really don't.
+ I mean, it's like nothing is stopped, like the same amount of nothing that's stopping me from doing an unauthenticated account is what's stopping me from signing up and then doing that request.
+ Like it's, there's no barrier.
+ The barrier is just one extra step that requires me to do something for free with no verification.
+ Right.
+ Like, yeah.
+ And there are some scenarios I think where companies will say, and this is, this is another one of the ones that you might be able to get around, but there are scenarios where a company will say, Hey, if you have to verify your email,
+ then that is PR low.
+ And so sometimes you can get PR none by signing up for an account with not a verified email and accessing the same functionality and then kind of rolling with it that way.
+ So there's definitely some ways to, to eke it out.
+ Um, one of the other things that I kind of wanted to shout out since we're talking about CVSS is the attack vector, um, uh, metric, which for most of my career as a bug bounty hunter,
+ I've just kind of been selecting network and moving on.
+ Um, but as I started looking a little bit more at like hardware devices and stuff like that, um, I noticed that there are these adjacent network, local, and then, um, physical, um, sort of, uh, sections as well.
+ And they don't actually decrease the impact of the vulnerability super much.
+ So if you have a, you know, a company that, that does CVSS, um, for their ratings and, you know, you have their physical devices that you can look at, um, you know, you can make a strong argument for a decently scored, um, vulnerability based off of, you know, selecting these metrics, realizing, you know, telling the company to realize that there are accommodations already made in the standard for this.
+ Um, and, you know, kind of selling it that way.
+ Um, cause, and that's something I, I mean, like I said, I've been doing their bounty for five, six years and I just found out about that within the last like year.
+ So, yeah.
+ Yeah.
+ I think that, um, it reminds me there's a, there's CVSS three extended, I think it's called, which is like, it's like extra layers on top of CVSS to try and make it more specific.
+ And it's one of those things that like, if you were to do it for every single bug, you would probably go insane because it's so much effort and work and being like, is this, which category does this fall under?
+ And like all that kind of stuff where it should be just like, look at what the impact of this bug is.
+ Is it a high or crit?
+ You know what I mean?
+ Um, but I don't know.
+ I just feel like it's trying to make something fit like every scenario that can't fit every scenario.
+ You know what I mean?
+ Just like leave it as it is.
+ And yeah, I feel that I, I, I also, um, I won't, um, I tweeted about the program.
+ So if you really want to be a sleuth, then you can go figure it out who it is, but there's a specific program that doesn't use a platform, um, that I hack on from time to time.
+ And, uh, they do not use this.
+ They use the OWASP rating system and I, it is impossible to get a critical vulnerability in that, in that system.
+ Like it literally is like, there's, there's just like, you could be holding, you know, you could be in their bank account, transferring money away.
+ And this would be a medium, like it's kind of nuts, man.
+ So, you know, I, I was a big hater on CVSS, um, for, for a while.
+ And then I, I went and saw the alternatives and I was like, you know what, CVSS ain't so bad now that, now that I come to think of it.
+ So, um, oh, this is super wild.
+ I'm just looking into this.
+ This is the first I've, I don't think I've ever heard of it.
+ Yeah.
+ Yeah.
+ No, it's not super popular.
+ Thank goodness.
+ But, um, yeah, I definitely like CVSS more.
+ Um, the other thing, let's see what, what else, what else are other ways to escalate the CVSS?
+ The, the other thing is the attack complexity, um, piece I think is, is misunderstood a lot.
+ And it's helped me make some pretty good arguments for vulnerabilities that are sort of, I believe are dangerous, but are also sort of on the fringe of whether they are, you know, accepted in a bug bounty program or not.
+ Um, and the whole concept behind, uh, attack complexity is this metric meant to impact the vulnerability score based off of whether there is some condition outside of the attacker's control that needs to be in place.
+ Um, and so for example, if you are missing, you know, a piece of the equation or something like that, you may be able to make a valid argument, um, for that bug by setting, um, AC to high and, and then, you know, moving forward.
+ So I see what you're telling me is all of my blind XSSs that haven't popped are attack complexity high.
+ No, Joel, that's not the, the system being vulnerable is not one of the conditions.
+ They just haven't clicked it yet, dude.
+ Oh my God, Joel, please.
+ Um, what, let me give an example for this so that the community doesn't misunderstand what I'm trying to say here.
+ Uh, okay, okay.
+ So actually this is a great, so, um, you may have seen on Twitter the, the, um, the, uh, Rezo talking about, uh, UUID IDORs.
+ Um, props to Rezo for that.
+ Thank you for taking the flag and leading the troops and making the case for UUID IDORs.
+ Because I do think that there is absolutely a, um, a large impact to those.
+ And we've seen time and time again on programs that use, um, UUIDs.
+ They've got like metric endpoints that like dump all of the UUIDs.
+ And then like once an attacker compromises that, if an attacker goes to that page once and, and sees that now they've got all the IDs and they can, I mean, those things don't expire, especially when it's, you know, you know, objects that are permanent in the system.
+ So they can go back and utilize those.
+ And yeah, so anyway, without going on a whole rant, if you're having trouble with a team, um, you know, about UUID IDOR, one way that you could approach that is by setting attack complexity to high.
+ Your severity will take a hit for that for sure.
+ Um, but I also think it's sort of fair because the exploitation scenarios for UUID IDORs are substantially less than, um, you know, innumerable IDORs, innumerable ID IDORs.
+ Um, so that's another argument that I've made, um, utilizing CVSS in my favor as an, an attacker, which that, that's kind of like the thing that I wanted to talk about with this, with this session was like how a lot of times when we submit a bug, we see it get downgraded and we get disappointed.
+ What are the ways that we can utilize CVSS to make a, a good argument for our bugs to be accepted in a bug bounty context?
+ So hopefully, um, some of the tips we drop, um, you know, we'll, we'll sort of help with that.
+ What, one of the things I will say though, and Joel, maybe you've got a better, um, perspective on this than I do, is I still don't fully understand scope.
+ Do you understand scope in CVSS?
+ Yeah, um, so I think it's meant to be like, does this breach across systems?
+ Meaning like, do I get like, if originally I would have access to one thing, does my scope of access increase as a result of this bug?
+ Like, do I get access to, um, like another user's bank account if I could only know they exist or something?
+ Yeah, like, like, I don't know, cause it says, and I quote, about changed in scope.
+ In this case, the vulnerable component and the impacted component are different.
+ And I've seen, and I know you're supposed to set scope to changed on XSS is, um, because it, you know, there's a browser component that's, that's the, the impacted component.
+ And then the vulnerable component is the web application.
+ Um, but outside of that, like, what if I've got like a bug that allows me to, or blind XSS is a great example.
+ You know, blind XSS would that, I mean, that would be scope changed for sure.
+ Right.
+ Yeah, for sure.
+ Cause like, if it's triggering on like an admin panel in the backend or something like that, then that's totally different.
+ Right.
+ Okay.
+ Gotcha.
+ Yeah.
+ I think that's the way that I would view it.
+ Um, yeah, I don't know.
+ It's like one of those weird things where it was probably created for a specific reason.
+ Like there was, I'm sure they had a specific something in mind when they were like, we need to add scope into the CVSS score.
+ I'm just not really sure what it was and why it was such a thing that made it so it's in like the main factors of a CVSS.
+ I don't know.
+ Um, yeah.
+ On the topic of UUIDs real quick.
+ Um, so Uber used UUIDs and that was something that came up a lot in our bug banning program when I worked there where oftentimes people would submit an ID or and it would be like, well, it's a UUID.
+ So do you have, uh, like a user ID or something on the receiving side of that message?
+ Yeah.
+ So I think like, I definitely see both sides of it.
+ I think from an engineering perspective, like it's very easy to argue, like you can't enumerate IDORS or so you can't enumerate UUIDs.
+ So you need some other way.
+ However, that being said, like we talked about user existence Oracle or a UUID getting leaked in an error message or, uh, email to UUID, like very simple ID or that doesn't give any info, but their ID, right?
+ Like any of those types of things you could chain into a much more severe bug by taking your ID or that has a UUID and now removing the UUID mitigating factor.
+ Right.
+ And now you've just raised your severity significantly.
+ Yeah.
+ Yeah, for sure.
+ And that's a great reason to keep, you know, these UUID enumeration, um, sort of IDORS in your pocket and be able to use them, you know, at different times.
+ The most convincing argument that I've heard though, for engineering in that scenario is, is that what if I took that UUID and I put it in an authorization bearer?
+ Or put it as your session token, right?
+ Then, then, you know, it would just be like you're swapping cookies and that's not a bug.
+ And I was like, okay, okay, wait, wait a second though.
+ Like that sort of makes sense, but it's not doing it for me.
+ Like, and the reason for that, and let me explain the reason for that.
+ Let me explain the reason for that.
+ The reason for that is that these IDs are not treated like sensitive material, right?
+ They're treated like IDs and they're put in URLs and they're put, you know, in logs and stuff like that.
+ So I don't necessarily think that this, you know, that, that, that argument follows all the way through because, you know, you, your threat model isn't surrounded around projecting IDs.
+ Okay.
+ There it is.
+ It came out.
+ That's what I've been meaning to say this whole time.
+ Your threat model isn't built around protecting these IDs and these being sensitive pieces of information.
+ So you shouldn't treat them like they are.
+ Does that make sense?
+ Right.
+ Right.
+ Yeah.
+ No, a hundred percent.
+ Like severity should be basically impact, right?
+ Yeah.
+ Like that, that's the way that I view it.
+ And I think that's how most programs should do it.
+ Like CVSS is a semi-proxy to allow you to determine like impact to some generic extent.
+ Yeah.
+ However, it should really be like, what does it mean within your company?
+ Yeah.
+ Like if you work at Uber, what does it mean for someone's UUID to be leaked?
+ Did like, can they access that full user's object?
+ Can they just log in as that user?
+ Like, what does it mean within the context of Uber?
+ It doesn't matter.
+ Like, is this a UUID?
+ Like, are UUIDs brute forceable?
+ Okay.
+ So what?
+ It doesn't matter, right?
+ Like, are your UUIDs brute forceable?
+ Right.
+ Like, is there an Oracle that makes it so I can ID or any account, regardless of the fact that you're using a UUID?
+ And it doesn't matter if the mitigating factor is there, if it doesn't actually do anything.
+ No, absolutely.
+ Yeah.
+ Man, I don't know.
+ Like, I think we've highlighted.
+ I hope we've done a good job of representing the highs and the lows of CVSS.
+ We're going to have 15 different programs that are emailing.
+ I know, man.
+ This is a very controversial topic.
+ I remember, you know, I'm not one to really, like, get in the Twitter wars.
+ But, like, when I did get in that Twitter war about CVSS, I was, like, in the weeds with it, man.
+ Like, I don't know.
+ There's definitely...
+ You were in the docs, like, pulling up the official definition.
+ Yeah, man.
+ I mean, it was like I was having a debate with my wife or something, you know?
+ But, no, one other.
+ On the topic of gripes with CVSS, I did have one more thing that I wanted to say, though.
+ I'm a little frustrated by the impact metrics, so confidentiality, integrity, availability, only having two settings, low and high.
+ I think there should be maybe two settings and then a modifier, and here's why.
+ Because, so, say you've got a scenario where you...
+ Let me pull an old bug that doesn't exist anymore out of the hat.
+ Say you've got an XSSI, okay?
+ You include a script.
+ That script is dynamically generated, and it leaks to you three pieces of information.
+ The user's name, email, and phone number, right?
+ Okay?
+ That is a user interaction required bug, so it's not something that, you know, affects...
+ ...users arbitrarily.
+ If it was an IDOR that leaked those same pieces of information, I would make an argument for confidentiality high.
+ Because it affects every single user in the system.
+ But it's confidentiality low.
+ Because it's just, you know, it requires user interaction, affects the one user, not mass exploitable.
+ Now, let's say you had a different bug.
+ A bug that was an IDOR that affected all users and leaked credit card information.
+ Right?
+ That's a, I think there should be, you know, that's a super high, that's a super, you know, high impact, confidentiality impact bug there.
+ And so I think there should be a modifier on these to be whether this component, this impact metric,
+ is impacted at a scale across the application or whether it's just localized to the specific user.
+ And yeah, I don't think user interaction required fully cuts that, you know, does that well enough to, you know, warrant all scenarios.
+ So it would be great if there was another modifier for those metrics, I think.
+ Yeah, I think it's one of those things that, like, you could certainly spin it to be, like, user interaction is required.
+ But you could also spin it so that it, like, what do you count as user interaction?
+ And, like, where do you draw that line?
+ Yeah.
+ Yeah.
+ Like, it's super fuzzy where it's, like, high, low, none.
+ Like, I don't know.
+ Yeah, and I was hoping to see some of these problems fixed with CVSS version 3.1, but, you know.
+ Is that when they added the extended fields or?
+ I'm looking right now.
+ I see.
+ So I think it's called, maybe we're talking about different things, but I'm seeing environmental score.
+ Is that the thing you're talking about?
+ I think that might be what it is.
+ Yeah.
+ Yeah.
+ So actually, maybe I should sit down and, you know, look at all these different things that they've added to the environmental score.
+ And stuff like that.
+ See if anything's changed substantially.
+ Because, yeah, I guess I have not super well acquainted with CVSS 3.1 because HackerOne uses CVSS 3.
+ Yeah.
+ It's the temporal and the environmental metric groups.
+ Those are the additional ones, I believe, that are, like, report confidence, confidentiality required, availability required, base metric modifications.
+ Yeah, man.
+ That would be a lot of forms to click.
+ I think even now, oftentimes, I just use the, you know, low severity, medium severity, high severity, critical severity rating on HackerOne and don't go through the whole thing for the CVSS just because it's really, I mean, it's a lot of buttons to click for sure.
+ It's a lot of buttons.
+ It's exhausting.
+ It's like, I shouldn't have to be the, like, it should be pretty obvious.
+ You know what I mean?
+ Like, this feels like a crit.
+ Why?
+ Because it's a crit.
+ I don't know.
+ What do you think?
+ It's leaking credit card information.
+ Yeah.
+ Like, this is a critical.
+ I think anybody who worked as a company would be able to be like, that's bad.
+ You know what I mean?
+ Yeah.
+ So, I don't know.
+ I feel very conflicted about it.
+ I see both sides for sure.
+ Yeah.
+ So, those are the takes on CVSS.
+ Just to summarize real quick, you know, we talked about using attack complexity to your advantage.
+ We talked about trying to pivot privilege-required low to privilege-required none through two techniques.
+ One, through talking to the team about what PRL actually means, and then also through using guest accounts or ghost accounts to pivot, you know, privilege-required into none rather than low.
+ We talked about what scope means, which is new for me.
+ I appreciated that little explanation there, Joel.
+ And, yeah, also we talked about the attack vector metric and, you know, using that to your advantage when you're hitting the physical applications or the physical devices.
+ So, definitely keep all those in mind when you're rating your vulnerabilities.
+ Yeah.
+ That's also something that comes and bites you a lot with mobile vulnerabilities, with, like, the access required is often, like, local or physical.
+ Yeah.
+ Because, like, you need, like, an app or something like that that's on the device, or, like, you have to pick up somebody's phone in a coffee shop.
+ And it's, like, they're really bad bugs, and they're not, like, outside of the realm of, like, possibility.
+ It's just that, like, when you start to put it into the system that isn't really designed for, like, all of these bugs, you get some kind of weird results.
+ Yeah.
+ And, like, from a mobile app perspective, what is your threat model for a mobile app?
+ I mean, besides, like, them coming to a page, clicking a link, and then, you know, using deep links, kind of like we talked about on the deep link episode, there's not really a network vector.
+ Because it's not like they have, like, public IPs or anything like that.
+ They're on a local network, or they're on a cellular network, or you need to get your hands on it or hit it by a Bluetooth or something like that.
+ Well, there is that bug that I talked about, right?
+ So, like, the Shopify bug that I found, where you have to intercept somebody's traffic on the local network.
+ That's kind of an instance.
+ But, yeah, a lot of the time, it would be, like, either no access or maybe, like, physical access with, like, a bank if you bypass their PIN or something.
+ You know what I mean?
+ Yeah.
+ Yeah, for sure.
+ All right.
+ I think that covers most of the news topics in the CVSS.
+ You want to talk about some reports?
+ Sure.
+ Yeah.
+ So, this is a – I teased you with this a little bit.
+ Yeah, dude.
+ I want to hear this.
+ I'm excited for this.
+ Okay.
+ So, here's the story.
+ Basically, Fisher and I, Fisher, Amazing Hacker, we were having a totally unrelated conversation.
+ I won't go into the details, but basically, I, like, had lent him some cash.
+ He paid me back by PayPal.
+ And when he sent me the payment back, he was, like, not a payload or whatever, like, in his message or whatever.
+ And he just put, like, you know, some curly braces and I saw it in my inbox and I was, like, oh, that's funny.
+ Okay, whatever.
+ And then, you know, hour or two later, I, like, go.
+ I'm, like, sitting on the toilet, just, like, scrolling to my phone.
+ I was looking through my notifications.
+ And I see a notification on my phone that says, you received, you know, X dollars from Fisher.
+ And underneath it, it says, not a payload, 66, instead of 33 times two.
+ And I was, like, oh, shit.
+ And so, like, literally in the report, the first image is me messaging Fisher going, dude, holy shit, it popped.
+ And I sent him two screenshots.
+ So, we pulled in, we were, like, really messing with this because we weren't sure where it was triggering.
+ We weren't sure if this was on the phone or if it was on the server.
+ Yeah, was it a notification, you said?
+ Yeah, so it was, like, in the notification on my, in, like, your notification center.
+ So, it would be, like, you received a payment.
+ And then underneath it with the message, there would be, like, your template injection.
+ And so, we were poking at it.
+ We were trying to figure out where it was.
+ And it turns out, yeah, it was a server-side template injection, SSTi.
+ Oh, nice.
+ And I actually found it today.
+ It was, apparently, it was a CVE.
+ Not one that we found, but it was one from a little bit earlier that I hadn't even heard of.
+ So, I guess they must have figured this out after the fact because I don't think we ever actually mentioned it in the report that it was a CVE.
+ But we were able to get local file inclusion.
+ We were able to, like, read Etsy password off of the server.
+ And, yeah, it was super dope.
+ We got $26,000 for it.
+ No way.
+ Dude, you guys made so much more money than that transfer from person to person.
+ That's crazy.
+ Yeah, no kidding.
+ And we actually pulled in Andre for, like, the final push because he was helping us exploit.
+ Like, the SSTi.
+ Yeah.
+ And, yeah, like I said, afterwards, I was just pulling up this bug.
+ And, sure enough, they have it linked to a CVE.
+ It's CVE 2020-12668.
+ And it's in...
+ 12668?
+ Yep.
+ And it's in JIN Java before 2.5.4.
+ It allowed you to inject into the template and load arbitrary Java methods passing in the context.
+ And that's how we popped it.
+ I don't...
+ Again, I don't think we actually knew that it was a CVE.
+ We kind of just built our own payload out of that, out of pure exploration.
+ So, yeah, super, super dope bug.
+ It's one of those instances where, like, definitely was not looking for a vulnerability or anything.
+ It just sort of showed itself out of nowhere in one of those really cool exploit scenarios.
+ Yeah, I totally love that, man.
+ You know, like, you...
+ Whenever you find an opportunity to hack on a product that you actually use, there's so much more understanding of the threat model, of the attack vectors, of...
+ Oh, my gosh, look at that.
+ You just sent me the payload.
+ That's crazy.
+ That's so funny.
+ Yeah, no, but there's so many, like, you know, different ways that you know the application better than just a tester, right?
+ So, I'm a bit...
+ And I told this to the people I'm working with on the World Cup as well.
+ Like, you know, if you can go after...
+ Of the targets that we've got, if you have any relation to any of the pieces of the target, you should go after that.
+ Because you understand that application so much better.
+ You understand the use cases.
+ You understand the fringe functionality.
+ As a user, you have a totally different perspective.
+ And that really should be one of the top priorities of an application tester, I believe, is to fully understand the user and what kind of things that they're going to be doing, what kind of things they're going to be prioritizing.
+ And try to, you know, align yourself with that as much as you possibly can.
+ That will definitely lead to some cool bugs like you guys found here.
+ So, that's sick, man.
+ Congrats.
+ Yeah, it was actually paid as a crit, too, which is super wild.
+ So, crit on PayPal.
+ Okay, okay, okay, okay, okay.
+ So, we're going back to the CVS thing here for a second.
+ Why do people think LFIs should...
+ Or LFDs.
+ Let me be clear.
+ LFDs.
+ Why do people think LFDs should be highs?
+ I feel like that is...
+ Except for crit?
+ Yeah, dude.
+ I think that's such a crit bug.
+ I mean, you basically have source code access, right?
+ Yeah.
+ It's like...
+ I don't know.
+ Like, I think it's one of those cases where maybe you get locked into CVSS or...
+ Yeah.
+ I don't really know.
+ Well, I use PayPal, right?
+ So, they do lock it into CVSS, but they gave you a crit anyway.
+ But I guess SSDI, you're actually running code on the server.
+ So, that's different.
+ That's true.
+ I'll actually tell you...
+ Okay, so here's the CVSS calculation.
+ Attack vector, network.
+ Attack complexity, low.
+ Privileges required, low.
+ Let me get the calculator up.
+ Okay.
+ So, network.
+ Okay.
+ Attack complexity, low.
+ Okay.
+ Yep.
+ Privileges required, low.
+ Okay.
+ So, they gave you low on that.
+ No, none.
+ That's interesting.
+ Yep.
+ User interaction, none.
+ Okay.
+ Scope, change.
+ Absolutely.
+ Confidentiality, high.
+ Of course.
+ Integrity, high.
+ Yep.
+ Availability, none.
+ Availability, none.
+ Okay.
+ So, that puts you at a 9, 6.
+ Yep.
+ Nice, dude.
+ Yeah.
+ No, that makes a lot of sense.
+ I would say...
+ I think it should be a 10 because I don't think privilege required...
+ Well, actually, let me...
+ I take that...
+ Hmm...
+ It's like, what stops me from creating a PayPal account and sending...
+ You know what I mean?
+ Yeah, but you have to put money on it.
+ So, you're going to have to link a bank account to it.
+ Yeah, but we were testing with one cent.
+ It's like...
+ Oh, were you really?
+ Yeah.
+ Yeah, that's true.
+ Yeah, but here's the other thing.
+ You actually...
+ Hmm.
+ Can you receive money on PayPal if you've not added a payment method if someone sends it to you?
+ Yeah, because it just goes in your PayPal balance.
+ Yeah.
+ So, I mean, that should totally be feasible to build a...
+ You know, pay someone in Bitcoin.
+ Get it...
+ Get sent to your PayPal account and then, you know, exploit it that way.
+ Yeah.
+ Yeah.
+ No, I disagree with the PRL on that.
+ And the other metric is that PayPal does, you know, get 20 bucks to sign up.
+ Or that was their whole gimmick, actually, back in the day when they first started was like,
+ if you sign up, we'll give you 10 bucks for free, which was a brilliant marketing gimmick, by the way.
+ Legendary.
+ But, yeah.
+ Free money if you sign up.
+ Yeah.
+ The Uber method.
+ Not as much money as you're getting after that, but...
+ Yeah, that's true.
+ That's true.
+ Yeah.
+ It's funny because you mentioned, you were saying, like, you should really focus, like,
+ as if you're the user on, like, those high impact areas.
+ Yeah.
+ And, like, I think that's how, as, like, a hacker, you should really view severity, right?
+ Yeah.
+ Think about it from the company perspective.
+ Think about it from the impact scenario.
+ Again, like, if I'm Uber, what are the things I care about the most?
+ User data.
+ Like, trip data.
+ Yeah.
+ Location data.
+ Location.
+ Right?
+ All these types of things.
+ So, as an attacker, what should I be focusing on?
+ User data.
+ Location data.
+ Sensitive data, right?
+ Yeah.
+ Yeah, it's tempting, too, because a lot of times I...
+ Well, and it's also, from the company's perspective, it's also a little bit interesting
+ because sometimes the employees aren't as aligned with...
+ The threat model isn't as aligned with the business's use cases either
+ because there have been some times when I've been like,
+ hey, literally this bug that I found invalidates your whole business model.
+ Like, there is no business model with this bug.
+ Like, you make no money, right?
+ But that, you know, it gets put as a low or a medium.
+ Put that as a 5.3.
+ Yeah, that says low to me.
+ And, you know, yeah.
+ So, I think there's...
+ I know you had unfiltered access to our admin panel, but...
+ Yeah, but...
+ But the CVSS put this as a medium.
+ User interaction really, really required.
+ No.
+ Okay.
+ Yeah.
+ So, all right.
+ We're done with CVSS.
+ CVSS, we love you.
+ CVSS, we hate you.
+ Which one is it?
+ You'll never really know.
+ Yeah, both.
+ Yeah.
+ Joel, you want to...
+ Actually, why don't you hit your second report right away as well?
+ We're going to talk a little bit now about webcash deception
+ because we told you guys on the podcast that we would be doing that in the future.
+ And so, we've got three reports today that we're going to talk through.
+ I don't know.
+ My two are kind of similar.
+ So, I'm not sure I'll do all the way through both of them.
+ But, yeah.
+ Why don't you drop that one from a while back?
+ Yeah, sure.
+ So, this was from a couple years ago.
+ I think it was at maybe a live hacking event.
+ Yeah, it was.
+ Yeah, I think it was a live hacking event.
+ I was working with...
+ Well, we were actually kind of all working together.
+ We were the big disturbance team.
+ But Andre and I were the ones who were primarily working on the specific bug.
+ And we found an endpoint that was basically doing caching incorrectly.
+ So, one of the API endpoints on TechCrunch allowed you to hit it with, like,
+ the specific parameter that would change how it was being cached.
+ And so, as a result, we could actually cache it for one user and it had this sensitive token in there.
+ And then you could hit it from somebody else's, you know, URL within the same data center.
+ So, we would hit one endpoint, get it to cache this user's token.
+ And then we would take that cached URL with, like, a unique parameter attached to it so that we'd know exactly what it is.
+ And then we would load it within an iframe and we'd pull that token out.
+ And then we could use it to pull, you know, PII.
+ We had their full address.
+ I think we had some credit card information.
+ Wow.
+ But, yeah, it was really cool.
+ It was actually a high.
+ And I think that was probably because there were some limiting factors where, basically, like I talked about,
+ it needed to be sort of within the same, like, data center suss location.
+ So, for this event, it was, you know, we were geolocated in the same area.
+ So, we were testing from the same server.
+ So, it popped easily for us.
+ But I think if you were somewhere else, you would probably have to hop on a VPN.
+ But, like...
+ Shouldn't have put that in the report, man.
+ You know, everyone was going to be in the SF area.
+ So...
+ That's true.
+ That's true.
+ This live hacking event, man, because, like you said, you know, we were both there, you know, seeing these reports come in from OXACB.
+ And this was the event that opened my eyes to Webcache Deception because there were, like, three really, really impactful bugs at this event from Andre and you on Webcache Deception.
+ And then, so, I left that event with one takeaway of, like, I need to know how to do this bug.
+ And it's super easy.
+ So, definitely, you know, keep an eye out for that.
+ So, let me just refresh it for the viewers here.
+ And you can correct me if I got anything wrong.
+ Sure.
+ So, you create a malicious page.
+ When the user goes to that page, you craft a URL.
+ And then you send that.
+ You make the victim's...
+ You force browse that in the victim's browser.
+ What will then happen is the victim's cookies will be used to generate that dynamic response.
+ And because of the way that you encoded something in the URL, in this case, what was it?
+ Did you put anything?
+ Oh, you didn't even really have to put anything in there, did you?
+ You didn't have to put...
+ Like, a lot of times, you'll have to put, like, .jpg or something like that at the end of the URL.
+ You didn't even have to do that in this scenario.
+ Oh, the cache prevention query parameter.
+ That's what it was.
+ Yeah, yeah, yeah.
+ And so, you know, you set up this cache prevention query parameter.
+ And then when the page is dynamically, you know, generated, it gets sent back to the victim.
+ And it gets cached on the edge server, right?
+ So now, that cached server, if you hit that exact URL from any, you know, IP address in the San Francisco area or whatever,
+ then it will load that user's page response, the response that was shown to the user in their session with their cookies,
+ to you without any cookies or anything like that.
+ Yep.
+ Is that right?
+ Yep, exactly.
+ Solid.
+ And then from there, you would take that leaked data and do something malicious with it.
+ Yep, use it to, like, fetch, yeah, exactly, PII.
+ Awesome, dude.
+ Yeah, no, standard web cache poisoning.
+ Actually, it's a little bit, this one's a little bit easier than normal because you don't even have to do any tricky stuff.
+ Yeah, it's really just, like, get them to cache this thing and that's it.
+ Solid.
+ I've got one that kind of takes a little bit of a different approach to it.
+ So this was a government target that I was working on.
+ And somewhere in the application, and so I will note as well, you guys have to look, when you're looking for this,
+ you're looking for the, a lot of times what you'll be looking for is the age header in the response,
+ which shows how old this page is, and something like a cache hit or, you know, a cache miss,
+ anything but a cache dynamic, right?
+ Yep.
+ And if you can see that, and it's on an asset that contains user, and that page contains user information,
+ then you've got a web cache deception vulnerability here.
+ So as I'm looking around in applications, one of the things I always map out is where in the application
+ this caching is occurring.
+ Because sometimes they'll set specific paths, like, okay, you know, slash assets is always going to cache
+ anything that ends in JavaScript or everything that ends in JS, right?
+ So then, you know, I might hit a URL that's, like, assets, slash, dot, dot, semicolon, slash, user, slash, user, slash, info, right?
+ And then, you know, dot JSON or dot JS or something like that.
+ And then that will trick the front-end system or the front-end, just to be clear, the front-end proxy,
+ so the caching server, into caching that asset.
+ And that's kind of what happened here.
+ This was a technique that I learned from Andre as well, is that at the end of...
+ And this actually happens a lot in ASPX sites.
+ I don't know why, but when you're dealing with an ASPX application, I see it quite often.
+ After you put the endpoint, you know, whatever, dot ASPX, you put a percent or a URL encoded question mark,
+ so percent 3f.
+ And then you put, you know, a random string and then the caching extension.
+ So if you're going to, you know, it could be a JS, could be a PNG, could be CSS.
+ It depends on their configuration.
+ That's something you've got to find out in the application.
+ Then, if you do see that come back with a cache miss or a cache hit, then, you know, you've got a vulnerability there.
+ And you can just generate a random string, throw it in the URL, force a victim to go to that,
+ and then visit that same URL from an unauthenticated perspective as the attacker and pull back that information.
+ So that's what I had here.
+ The one reason I wanted to highlight it is because of that percent 3f piece, putting that in the URL,
+ tricking the URL into thinking that the actual path ended in .js rather than, you know, .ASPX, which is what it was originally.
+ Yeah, that's a really cool one.
+ I mean, like you mentioned, caching is often used for assets, right?
+ It's for like JavaScript, images, the types of stuff that you don't want to be reloading, right?
+ It's like supposed to be cached, right?
+ And if they make a mistake and they're caching user data in some sense, whether that be a token or anything that's like specific, user-specific,
+ that's not like a generic asset, like that's definitely a huge risk for web cache deception and web cache poisoning where you can...
+ And so the origin of all this, the origin of the problem with this is it's caching, like you're saying, you know, content types essentially that it shouldn't be, right?
+ Right.
+ So, you know, most of the time, the reason why this configuration occurs is because the caching server is making a caching decision based off of the URL rather than based off of the response content type.
+ And so that's definitely, you know, if you can find a way to validate that, you know, changing...
+ Even if you can get an HTML page to cache anywhere, you know, that's a big red flag in seeing if you can, you know, try to trick the server into caching the wrong HTML page.
+ Yeah.
+ Now, the one thing I will say, because if you're like semi-obligated to mention this, if you're doing this sort of testing,
+ you make sure that you're putting like a random URL parameter or something on the end, because if you accidentally poison a production website using just like a regular URL that's used in production,
+ you're going to start leaking real people's data and that's not good.
+ Your program's not going to be happy.
+ So if you see something that's like using caching and you're like, I think I could probably poison this, put like question mark AAAA or something at the end, right?
+ Like make it a unique URL so that if it does cache, you can still test it with your like question mark AAAA at the end.
+ But just make sure that you're not using like the standard URL because you're going to get some angry program emails probably.
+ Oh, yeah, for sure.
+ And I think cache is one of those things like DNS where it's like, okay, is it DNS?
+ No, it's cache then for sure.
+ And so there's definitely ways to mess that up a lot and it's definitely possible.
+ I actually will shout out Loom, which is a company I use, by the way.
+ I really like Loom, but they had a caching problem recently and it caused a whole security incident, right?
+ Because I think people were getting...
+ Yeah, we talked about this last week, I think.
+ Yeah, yeah.
+ So that's another place where you can see that in place.
+ And if you don't test responsibly, you could cause that problem for these giant companies.
+ I've seen it happen time and time again.
+ It's kind of a really gnarly situation to put yourself in.
+ So just be careful when you're doing your testing and either don't test on prod or test very safely on prod.
+ Yeah, for sure.
+ I have one other one.
+ I'm looking at it right now.
+ I'm not even sure whether it's worth diving into, to be perfectly honest, because it's so similar.
+ Well, I'll just walk through it real quick.
+ So this is on an airline company.
+ This one's a little bit different because instead of having the %3F at the end, like I did last time,
+ which kind of tricked it into caching it because it appeared to the edge server, the caching server,
+ that the file type was JavaScript or whatever.
+ In this scenario, I actually just added on to the end of the URL.
+ Like it was index.aspx slash rhino reader poc dash random integer dot png.
+ Right?
+ Nice.
+ And so then I would generate a page that would have this random integer, and it would force the user to go to that page.
+ The response would be cached.
+ So there's lots of ways you can approach this.
+ Just to summarize it, like you said, if there's a caching parameter in there, that's a good indicator that there may be some weird caching issues in the URL.
+ The %3F to trick it, the path, they could be caching based off of different directories in the application.
+ And they also could just be caching by just, you know, they don't care if you have anything random at the end of the URL in the path.
+ So you could just add on slash whatever dot png and get it cached that way.
+ So those are some methods to try out.
+ Yeah, 100%.
+ Cool.
+ Real quick, you want to talk about World Cup and maybe the upcoming event?
+ Yeah, for sure, man.
+ Yeah, that's right.
+ Upcoming event.
+ I'll skip right to that one.
+ So we got, Joel and I both got an invite for, can we say?
+ I think we can say location.
+ Oh, yeah.
+ It's for LA, which I'm excited about because I have never been to LA.
+ So that's going to be fun.
+ We are going to be dealing with some hardware components, which I think we can also say.
+ So that should be lots of fun.
+ Really looking forward to it.
+ I mean, it's been only a couple of months since we last did some dope.
+ Hardware hacking bugs.
+ Yeah, man.
+ On this same target, actually.
+ It's about time, man.
+ So I think it's going to be cool.
+ Hopefully it's some new devices and some new attack servers for us to poke at.
+ I imagine we'll be getting that stuff pretty soon.
+ And, yeah, I'm excited to see you in LA.
+ I haven't been to an event in person in a long time because it's just scheduling and stuff.
+ And even this one, I'm flying by the seat of my pants to different flights and stuff, but I'm going to make it work.
+ I'm so glad.
+ I'm so glad you said you could make it.
+ You know, you said it was going to be real close.
+ And then, yeah, that's going to be awesome, man.
+ Yeah, I got to be on the other side of the country the day after the event, but I'm going to take a red eye and make it happen.
+ Oh, my gosh.
+ Are you serious?
+ Yeah, yeah.
+ Oh, my God.
+ All right.
+ We'll talk more about that off air.
+ I got to get the details on that.
+ Yeah.
+ World Cup.
+ How's it going for you, man?
+ It's been pretty good.
+ So I've been spending some time with a couple of our team members.
+ I don't know if we can say who's on the team, but I'll just say some of our team members.
+ And, yeah, we've been poking at some of the targets.
+ So for those who don't know, I think we can say who the targets are, right?
+ Yeah, they're public.
+ Yeah.
+ Stripe, OpenSea, Yahoo, Epic Games, and Shopify.
+ All very large, big programs, great bounties and everything.
+ Super challenging, super hardened targets.
+ But I know our team has already found a bunch of really cool stuff.
+ It's from you specifically.
+ And we've been poking hard to try and find some really, really dope bugs on some of those other targets.
+ But, you know, it's all about managing time and trying to spend your time and hacking energy efficiently.
+ You know what I mean?
+ Yeah, for sure, man.
+ I actually just got a message during the podcast that they fixed the bug already, you know, under 24 hours.
+ Wow.
+ So that's pretty impressive.
+ If that tells you how severe it is.
+ Yeah.
+ Yeah.
+ I'm excited.
+ I'm excited for that one, man.
+ It's the only bug I've got so far, though.
+ So, you know, nothing too crazy as of yet.
+ But I think we'll get there.
+ And I know some of the guys on our team have some really solid leads.
+ Got themselves access to some, let's just say, some advantageous scope.
+ And so I think we'll find some really good stuff there.
+ Yeah.
+ Yeah.
+ It should be really cool.
+ So I'm hoping to see.
+ I hope they do some sort of, like, recap or something afterwards.
+ Yeah, me too.
+ To, like, talk about everything that happened.
+ Yeah, for sure.
+ We'll definitely keep everybody in the loop about the World Cup happenings.
+ You know, it's been a really fun event so far to work with some of the newer hackers as well.
+ So for any of you that are looking to get into the bug bounty space, definitely feel free to apply next year when they do the World Cup.
+ It's definitely a great, great learning experience for everyone involved.
+ Yeah.
+ I know it's a little weird for, like, the U.S. because we're such a massive, massive country.
+ But I can imagine for the smaller countries, getting connected with other people who are, like, hackers within your region is, like, pretty cool and pretty awesome to get to know people.
+ Because, like, I mean, you could get connected with another U.S.A. hacker like me and Reiner.
+ We're, like, thousands of miles apart.
+ We are.
+ So it's, like, you know, it's not exactly like, oh, I'll just drive an hour and, you know, hang out.
+ We can do some hacking locally.
+ Yeah, not yet, man, until you get your ass over to Virginia.
+ Soon, soon.
+ All right, man.
+ Cool.
+ We need the Fed to lower the interest rates first.
+ Yeah, dude.
+ For serious.
+ Well, this is a Bug Bounty podcast.
+ I'm not.
+ Oh, yeah, my bad.
+ Sorry, sorry.
+ You almost just triggered me, Joel, about to start talking about the interest rates.
+ I'm baiting you in.
+ But we'll save the future.
+ You can nerd bait me, nerd snipe me, but I can finance snipe you.
+ There you go.
+ Nice.
+ Nice.
+ Cool.
+ I think that's all I got.
+ Is that a wrap?
+ That's it for me.
+ All right.
+ Peace.
+ Peace.

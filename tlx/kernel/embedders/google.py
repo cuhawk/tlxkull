@@ -1,9 +1,10 @@
-"""Google text-embedding-004 backend.
+"""Google Gemini embedding backend.
 
 Architectural exception: kernel/embedders/*.py may import google.genai
 (documented in CLAUDE.md, like kernel/engines/gemini.py).
 
-768-dim output. Sync genai client wrapped via asyncio.to_thread.
+Uses gemini-embedding-001 (text-embedding-004 retired on v1beta).
+Sync genai client wrapped via asyncio.to_thread.
 Batched in chunks of 100 to stay under per-call limits.
 """
 from __future__ import annotations
@@ -13,7 +14,7 @@ import os
 from typing import Any
 
 BATCH = 100
-MODEL_ID = "text-embedding-004"
+MODEL_ID = os.environ.get("TLX_EMBED_MODEL", "gemini-embedding-001")
 
 
 class GoogleEmbedder:

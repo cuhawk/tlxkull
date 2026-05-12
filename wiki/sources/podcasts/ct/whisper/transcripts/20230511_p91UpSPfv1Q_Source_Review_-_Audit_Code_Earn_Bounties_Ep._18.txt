@@ -1,0 +1,956 @@
+ Now you have me thinking, maybe we need to write some hacker fantasy books where you're just like late at night, just sitting by the fire.
+ You're just reading through, you're just fantasizing about awesome bugs and they're all hypothetical scenarios that just make you really like FOMO'd.
+ A post message knocked on the door. Who could it be?
+ It was unauthenticated bypass.
+ Yo, yo.
+ Yo, what's up my dude?
+ How's it going?
+ Pretty good, man. We have a ton of news articles to talk about this week that I am mega hype about.
+ Yeah, I don't know. It feels like all of a sudden in the last few weeks, there's been a ton of really interesting articles about this type of stuff.
+ So it feels like a really good opportunity to make an episode about it.
+ It just ebbs and flows, man. I feel like for a couple of weeks, there were no write-ups that were interesting at all around.
+ And then I want to say it was a Saturday too. I open up my Twitter and I'm like, whoa, whoa, whoa.
+ So the bookmark list for the pod got really long that day.
+ Yeah, I know exactly what you mean.
+ We'll talk about maybe some of the reasons why because I have some ideas as to why that might be happening.
+ But yeah, this is a really good week. We got a ton of really cool stuff to talk about.
+ Sweet. So you know what? Let me go ahead and start off with the first one since I've got a few more than you.
+ Okay. So this one was brought to my attention by none other than Shubs, Infosec AU, Shabam himself, the legend.
+ Killer hacker.
+ Yeah. Definitely go follow him on Twitter if you're not already.
+ This was a write-up by a company called L-TAM.
+ I always try to pronounce these things on stream and, you know, saying these things out loud.
+ It's crazy.
+ But I think this was a really good example and we'll link it down.
+ It's called Pwn Assistant, Controlling Homes via a Home Assistant RCE.
+ I think this is a really good example of, one, some of the stuff we're about to talk about today,
+ which is source code analysis and also just sort of attack vector mentality.
+ And like the way that they approach this code base is really good.
+ And the write-up here has a lot of really good information about how they approach the code base.
+ So we'll talk about this a little bit more as we get into the topic.
+ That I did on the Grafana SSRF years ago, which is essentially, you know, when you're approaching a code base,
+ you know, you want to decide whether you're open to finding unauthenticated bugs or unauthenticated bugs.
+ And, you know, and you got to make a decision based off of that.
+ Because if you're only going to be looking at unauthenticated bugs, then, you know,
+ you really need to get laser focused on where the authentication is and, you know, figure out a way around that
+ or figure out work within the parameters of the things that are intentionally scoped to unauthenticated,
+ which is what the attackers do in this specific post.
+ They're able to get RCE by essentially pivoting a reverse proxy and path traversing back up
+ and hitting endpoints that are supposed to be past authentication,
+ but through an endpoint that has authentication set to false.
+ So another classic example of path traversal destroying a target here.
+ It's really funny that this bug, because this bug is in Home Assistant.
+ I don't know if you realize, but this is, this is like that home automation software that I use.
+ Oh, no way. Is it really?
+ Yeah, this is that. Yeah, yeah, yeah.
+ So when I saw this, I was like, oh, uh-oh.
+ Yeah, luckily, it looks like they published this, like, um, a couple of months, like, after, you know, it was fixed.
+ Yeah, I'm looking for the patch right now.
+ So I'm definitely already up to date.
+ Okay, nice.
+ And mine is already, like, behind zero tier, which is another thing that we talked about.
+ So it's not even exposed to the public internet, but super, super interesting vulnerability.
+ It makes me wonder, like, what else is in there?
+ Because I honestly haven't, I've never looked at, like, you know, the code base of it myself.
+ But I can imagine that there's a lot of room for error.
+ Yeah, for sure.
+ In those types of systems.
+ And it was saying, I was reading through this.
+ Let's see if I can find, it's under the section called Finding Interesting Integrations.
+ It says there are around 150 internal quality integrations, including the HTTP integration.
+ And so those are a bunch of integrations that could be leading to attack vectors there.
+ And I think they also say a lot of those were HTTP later down and enabled by default later down in the article.
+ So definitely something to keep your eye on.
+ That's funny, though.
+ I love that I picked this one for the pod, and that's actually on your setup.
+ Do you, I mean, does it, it's got auto-patching on, or do you manually patch it, or what?
+ It sends me a notification, but you just click a button to update, and it does all of it on its own.
+ So it's, like, pretty much automatic.
+ I'm sure you could probably set it to automatically update.
+ The main risk being that, like, it might break some of your stuff if it does.
+ So that's just, like, one thing to keep in mind.
+ But I think systems like this, where there's a lot of, like, trust sort of, like, built into it,
+ where, like, you're kind of assuming, like, that you're already, like, at a privileged standpoint if you're doing stuff on here,
+ then it's kind of, like, a difficult scenario to, like, analyze whether or not this is something you should be worried about or not.
+ But it's easy enough for this.
+ You just update the version.
+ So it's super, super cool.
+ It definitely adds another layer of importance to having good network segmentation, even in your home setup.
+ So when your guests are coming over, you know, you're giving your contractor access to your, you know, giving anybody access,
+ because at the end of the day, their device could be pwned as well.
+ So giving them access to your home network, you're going to want to put that on a guest division of the network.
+ Yeah, or a separate VLAN or something.
+ Yeah, a separate VLAN for sure.
+ So, all right, cool.
+ Definitely check out that one.
+ We'll link it in the description of the episode, or you could just go get it from Shubs' Twitter.
+ That's where I got it, so.
+ Yeah, yeah, so the next one that I want to talk about, and these are all along, you know, the theme of basically source code analysis,
+ because that's today's topic.
+ This is a blog, I think we may have talked about it last week or the week before or something.
+ It was from Andre Zurex ACB and his company called Ethihack.
+ They are, you know, an automated security company that he started.
+ They're doing a lot of really cool, cool research.
+ And this most recent post that they made, it's talking about this Git, basically a configuration injection.
+ It was a bug within how Git is doing its configuration parsing.
+ I love a good, I love a good configuration injection, man.
+ Yeah, and leave it to Andre, of all the people, to find a bug in Git core, you know what I mean?
+ Yeah, oh my gosh.
+ So, yeah, this is a really cool bug.
+ It's very, very similar to something that we were working on for this last live hacking event.
+ Oh my gosh, look at that, yeah.
+ Wow.
+ Dang.
+ Yeah, super crazy.
+ So basically, the gist of this is that the Git, when it's parsing through like a Git config file,
+ it will parse the different sections according to, you know, different characters.
+ So it'll check, does it start with like an open bracket?
+ That would signify that it's a section, that type of stuff.
+ But what Andre realized is that as it's reading through this, it reads 1024 bytes at a time.
+ And basically, like, there's not a buffer overflow there because it's like checking how much it's reading.
+ However, the way that it's parsing it leads to other vulnerabilities.
+ So essentially, you can create a line that's over 1024 characters.
+ When it reads the 1024, it gets halfway through that line, very similar to the bug that we exploded.
+ Dang, this is very similar to the bug that we just exploded.
+ And then it starts again, like halfway through that line after 1024 characters and reads the rest of it,
+ which then lets you basically create like a bogus section within there that adds it in.
+ And so through sections, you can have it run different commands and all that kind of stuff.
+ So you basically overwrite like the core section and have it run a command when you do like a Git submodule update or something.
+ So it's a really, really cool bug.
+ It's very straightforward, simple blog post.
+ I'd highly recommend going in, reading it and checking it out.
+ And it's, again, it's one of those situations where I feel like I should be looking at this.
+ You know, like, why haven't I been looking at this?
+ I love how Andre makes it so simple too.
+ Like, you literally just like, this blog post is not even a page long of text.
+ Yeah, you get like the maximum amount of FOMO for not having found this yourself.
+ This man could fit this in like a Twitter thread for sure.
+ And so, yeah, that's amazing.
+ And I think we do see, this is a really interesting trick, this whole concept of like overflowing, not necessarily overflowing,
+ but dicing up the lines in a configuration file.
+ We just did this with a separate service and Git was also vulnerable to it.
+ So that's at least two in the past couple of weeks that have been vulnerable to this sort of thing.
+ So anytime you're looking at configuration file injection or anything with a configuration file that's being sucked up into a different context,
+ this could definitely be a cool trick to keep in your hat.
+ Yeah, dude, I love stuff like this.
+ This is the stuff that gets my blood pumping because it's like, now I've got now, from now on for the rest of my life,
+ whenever I come to these sort of situations, I'm going to have that trick in my pocket.
+ And I know it's going to work again, which is clutch.
+ Yeah, the config file parsing stuff.
+ I feel like we're very like gradually getting out of the phase of like buffer overflows, like use after free.
+ That stuff still exists, like don't get me wrong.
+ But I think it's now transitioning a little bit more into those things are so commonplace that they're not happening as frequently anymore.
+ And instead, you're getting to these other types of bugs, which are like they're parsing it safely, but they're parsing it wrong, right?
+ So like there's no buffer overflow, but they're not expecting like they were too focused on one thing to like recognize the other.
+ So it doesn't always result in RCE, you know, in the scenarios that Joel and I have been working on lately with configuration file injection,
+ which was a running theme in the bugs that we found at a certain live hacking event that happened lately.
+ You're limited to the application context, like you said, because it's not like a super duper low level vulnerability where you're like,
+ okay, let me just, you know, override this pointer and jump to my code, right?
+ It's more of a like, okay, now I am able to inject into this context that I shouldn't be able to inject to.
+ How can I use this application to break the, you know, authorization scheme and affect, you know, things outside the current scope?
+ So, yeah, I think that's definitely something to keep an eye out for.
+ Yeah, I mean, it's almost like the majority of the bug becomes like figuring out how to work within this like weird environment, right?
+ So like for our case, like we had to figure out like, oh, you can, you know, enter this directive in the config file multiple times.
+ And then the second one will overwrite the first one.
+ And it looks like Andre had a very similar type of discovery here, which is that like if you put the core section in your config twice as a result of the exploit,
+ the second one overwrites the first one and it does the second one's action.
+ So I think a lot of the challenge around this, yeah, you can probably find this pretty easily.
+ But then the challenge is how do I use whatever's available within the config file, whatever's available within this service or whatever that I'm, that I'm hacking to get RCE or get an LFI or whatever.
+ Like, yeah.
+ A classic, a classic case of this that I'll just do a little self-promotion here.
+ Now I'll do a little Sam promotion.
+ This is a Sam Herb talk.
+ I come in there for a couple minutes, but this is largely Sam Herb just doing the thing he rocks at, which is looking at code and finding vulns.
+ We did a talk at DEF CON last year called Crossing the Chasm, K-A-S-M.
+ And that's another really fun story of a configuration file injection that resulted in RCE, but not directly because you cannot get RCE very easily from Nginx configuration file injection, which we learned very well.
+ Which is surprising because you would expect that, like, of all the things that can probably, like, run a script automatically or something, like Nginx, like, yeah.
+ Yeah.
+ I mean, and there are some situations where you can, but our specific context, which I think I could see it being a context where, you know, configuration injection happens pretty regularly, we couldn't.
+ So definitely check that out.
+ Check that out for Sam Herb.
+ And, yeah.
+ We'll link that down below.
+ Yeah, for sure.
+ All right.
+ Let's see.
+ What do we got next?
+ You want to talk about Jubobz?
+ Yeah.
+ Okay.
+ Dude, let me just say, Jubobz is the man.
+ We have talked about them before, but they're killer hacker, always killing it, always creating awesome bugs, and this is just another example.
+ Rocking it.
+ So, literally, go turn on tweet notifications.
+ I have tweet notifications on for very few people.
+ This guy's one of them.
+ So definitely check them out on Twitter.
+ And also, check out this link that we'll put in the description called A Smorgasbord of a Bug Chain.
+ And, man, is that an accurate title.
+ Because he puts together a post message bug, a misconfigured JSON P endpoint, WAF bypass, DOM XSS, cores, and Csurf to pwn an application.
+ And this is the stuff that just makes me so happy, dude.
+ Like, this shows, this is the stuff that I'm trying to talk to my mentees about where it's like, it's not the stuff that you're going to find in the textbook, in the tutorial, or on the YouTube video.
+ This is what happens when you have a more comprehensive understanding of these, the ways that websites interact together.
+ And this is something, oh, man.
+ Here we go.
+ Go off.
+ Go ahead.
+ Pop off.
+ I'm going off, man.
+ Listen, I was going to hold myself back here, too.
+ But now you're getting me fired up.
+ So, dude, it's a thing, man.
+ Like, a lot of the education out there for Bug Bounty, and it has made very large leaps and strides over the past couple of years, right, since we started Bug Bounty even.
+ You know, it's great.
+ But I will say a lot of it is focused on how to get the bounty, a very specific, you know, how to find this specific vulnerability in this specific context.
+ And I think there's less talk about, wow, this is a restriction that's normally present in the browser.
+ If this restriction breaks down in some sort of way, if it degrades, or if there's a hole in it here and there, here's what that means, you know?
+ And here's what that means for the situation.
+ And I think this write-up, we can't go through all the details because it's a super long write-up, because it's a mega complex bug.
+ But you'll see how his attack flow changes.
+ He says, okay, you know, I want to find a C-Serve.
+ Okay, well, how can I get the C-Serve token?
+ Well, there's a permissive cores situation.
+ And okay, so maybe I can use that.
+ And then he finds, like, looks at the out-of-scope areas to find something that could interact with the main asset over through cores.
+ And then he finds a post-message bug, and then he bypasses some stuff.
+ And then he finds a JSON-P endpoint and breaks the, you know, and it's just an amazing tale that, I mean, like, if there was a, you know, almost like a novel version,
+ if there was hacking fantasy for me, this is what it would be.
+ Like, I just, I don't know, man.
+ I love it.
+ So, shout out to G-Bops.
+ Now you have me thinking, maybe we need to write some hacker fantasy books where you're just, like, late at night, just sitting by the fire, you're just reading through.
+ You're just fantasizing about awesome bugs, and they're all hypothetical scenarios that just make you really, like, FOMO'd.
+ A post-message knocked on the door.
+ Who could it be?
+ No, yeah.
+ It was an unauthenticated bypass.
+ No.
+ Oh, man.
+ I love it.
+ Yeah.
+ So, anyway, if that wasn't enough for you to just go read the freaking write-up, something's wrong with you.
+ So, definitely go check that out.
+ And then, also, I will shout out this as well, because he tweeted afterwards.
+ Let me pull it up, actually, right here.
+ He tweeted afterwards.
+ He's like, man, everyone really loved that article.
+ I'm so glad.
+ But, also, you should check out this other article that I wrote.
+ So, let me pull it up right here.
+ Fearless Coors, which is another article written by him.
+ And so, definitely go check that out and give some of his other work some love, too, even if it's not a direct FOMO write-up.
+ Yeah.
+ Yeah, that's super awesome.
+ Let's see what we got next here.
+ Cool.
+ Yeah, no, there's a couple posts.
+ There's this one from Ankur Sundara about cookie bugs.
+ Oh, okay.
+ Yeah, dude.
+ I freaking love this one.
+ You want to take this one or should I take this one?
+ Go ahead.
+ Go ahead.
+ Okay.
+ All right.
+ Cool.
+ Yeah.
+ And then, there's this other one later.
+ For the James Kettle?
+ No, the one after that.
+ Or the Carlson.
+ Okay.
+ Yeah, that one's a really good one, too.
+ But, I'll talk about this one first.
+ So, man, see, this is – okay.
+ So, this is another awesome, awesome piece of writing, of research done by this guy, Ankur Sundara.
+ I don't know this researcher, but I have a very high amount of respect for them now because of this post.
+ And this post is a great example of, like, the stuff that makes me really excited from a research perspective.
+ It's not necessarily like, here is this great new CVE that I've already released and patched.
+ And, you know, look at this cool bug that I found.
+ No, this is – literally, one of his sections is some interesting browser behavior.
+ Yeah.
+ And I just –
+ This is, like, the evolution of, like, an XSS cheat sheet.
+ You know what I mean?
+ Yeah.
+ And it just – it makes my pulse just go through the roof, man, because it's like, you know, this is the weird shit that you need to know about to be – to find crazy bugs.
+ You got to – and I didn't even know about a lot of this stuff.
+ So, some of the cool things I'll shout out in here is they do some research on subdomains and superdomains.
+ They do some research on underscore, underscore, host and underscore, underscore, secure prefixed cookies, which I've seen around and have just been too lazy to look into.
+ Those actually have a meeting and have some implementation in the browser, which means the name of a cookie that you set can determine some of its attributes, right?
+ Which is, like, what?
+ That's crazy.
+ Yeah.
+ And it's also, like, where does this fall apart in terms of, like, Chrome versus Firefox versus Safari?
+ Like, all that kind of – like, is this browser-specific?
+ Like, where is this standardized?
+ If so, like, where?
+ Right?
+ Like, reading through the RFCs and that kind of stuff.
+ So, I think it's really awesome that, like – there was another example I was thinking about.
+ There was a blog post we talked about early on in the podcast that was basically going through, like, all the different ways to get – I think it was to, like, get iframes or something in a page, right?
+ Oh, yeah, yeah, yeah.
+ Let me see if I can find that.
+ Yeah.
+ Very similar type of, like, research where this is basically – it's not so much, like – it's like what you talked about.
+ It's not, like – it's not news security research per se.
+ It's not, like, a CBE or anything.
+ Yeah.
+ It's just documenting somewhere –
+ Cool shit.
+ Like, how this stuff works that could probably be used later for some, like, really epic bugs, you know?
+ I just – I love this type of research, and you're absolutely right.
+ Like, that is – and I found the article as well.
+ I'm going to put that article in our description as well this time because you're absolutely right.
+ Like, what a – why can't I click on this?
+ It's crazy.
+ Yeah, I think a lot of hunters get really, like, uneasy about publishing this kind of stuff because it's almost like you're talking about the secret sauce and, like, the secret types of, like, knowledge-based stuff that you have.
+ But I think it's really important to publish this kind of information because so many times as a researcher, I've been exploiting a bug, and I'm trying to find this type of information about what I'm hacking on.
+ I'm trying to find the weird behaviors.
+ I'm trying to find, like, what we just talked about.
+ What's, like, a weird config entry that does something unexpected?
+ How can I run a shell script through a config file, right?
+ Like, those types of, like, weird behaviors or weird things to know about, often you have to find them in, like, much more convoluted ways where you have to search almost, like, as a developer, like, how do I do this thing?
+ And it primes the brain, too, you know, like, when you release research like this, even though it's not, like, groundbreaking RCE, you know, it lets me realize, hey, ah, I can influence, you know, a flag on a cookie using the name.
+ And I can influence, like, like, the browser via cookie ordering.
+ Like, this is another thing they talk about.
+ They do research on cookie ordering here.
+ And what happens if you set an empty cookie?
+ Like, this is so cool.
+ There's no name for this cookie.
+ And the browser thinks it's just one cookie, but when it gets sent, you can smuggle in other cookies.
+ And it's like, what?
+ And so, yeah, it's, this sort of thing is just so valuable.
+ So, big shout out to this guy.
+ Definitely read through the whole thing.
+ There's a way of breaking document.cookie in Chrome, which is just super cool.
+ There's cookie smuggling, cookie injection, like, such, so much good stuff here.
+ Yeah.
+ Yeah.
+ And he talks about, like, the RFCs and, like, ties it all back to, like, the original types of, like, documentation, like, how this stuff is supposed to be parsed.
+ And, like, I think he even mentioned that there's, like, a, like, basically a hard-coded bug within the RFC that, like, the jetty maintainer has, like, talked about, like, publicly.
+ So, there's just a ton of really interesting information and knowledge to be had from this article.
+ So, go give it a read.
+ Give it a bookmark.
+ And, you know, I'm sure you're going to end up using these things later.
+ Solid.
+ Okay.
+ I've got two follow-up little things on that.
+ And then you can talk about Carlson's thing.
+ Cool.
+ So, there's a comment under this Twitter, under this tweet, that says, nice post.
+ I have also found maybe a zero day in PHP, which will allow you to bypass this because of the use of underscores.
+ So, remember, there's that weird thing in PHP where, like, if you send a dot, it gets converted to an underscore or, like, vice versa.
+ And so, that's another piece is, like, anytime you see these underscores and dots, you can know that, hey, in PHP, there's some quirk there.
+ I love quirks.
+ Technical quirks just get me hype.
+ And then the other awesome comment that came from that was a post by James Kettle, which somehow had flown under my radar.
+ I don't, I normally religiously read everything that James Kettle puts out, but this web cache entanglement novel pathways to poisoning research that he published has a lot of the same sort of things.
+ So, like, here's some weird edge case stuff where you can do with, like, you know, parameter smuggling and a bunch of caching sort of gadgets or methodologies that you can use to chain stuff together.
+ So, definitely go give this one another read.
+ There's some really cool tricks in here that you can be aware of and use in different tacks as well.
+ Yeah.
+ Yeah.
+ I feel like it's, like, the sweet spot where we experience this a little bit where once you've been hacking on something for, like, a really long period of time,
+ you may, like, come out of it for, like, a week of straight hacking and not have any findings.
+ Yeah.
+ But what you do have is, like, a lot of learnings.
+ And those types of things are the types of stuff that is going into these blogs.
+ It's learnings.
+ It's, like, here's, like, weird behavior that I noticed.
+ Here's, like, strange functionality that exists that I'm not sure how to exploit, but I noticed and seems weird.
+ Right?
+ And, like, just putting that out there is so, so useful.
+ You see it in James Kettle's research as well.
+ You know, he's so familiar with, like, web cash poisoning and cash deception, and he's been doing it for so long that he just has this wealth of, like, weird things, you know?
+ Like, weird behavior that he just needs to write it down somewhere and just, like, be like, here, I don't know what to do with this, but somebody look at it.
+ It's crazy when you meet him in person, too.
+ I remember meeting him in person in the last London event and just, like, seeing him sit there and just sort of, he was sitting at the table with me one time and kind of talking through, like, oh, what if this and what if that?
+ And I was like, man, you just know so much weird shit, you know?
+ And so that was really cool.
+ And, yeah.
+ And speaking of London, da-da-da-da-da-da-da-da-da!
+ See you there in a month.
+ Yeah, next live hacking event is on the calendar.
+ Your boy Joel and I are going to be hitting up London for a live hacking event with Hack1.
+ Hopefully, James Kettle will be there.
+ It would be awesome to see him again.
+ If not, actually, I'm going to pop open his Twitter right now and send him a message, be like, yo, you should come to this, even if you're not, you know, if you're not hacking.
+ Just show up.
+ They're going to let you in.
+ Give me a hug.
+ And, yeah, so definitely excited for that.
+ Okay, what's the last one we got on the news?
+ Cool, yeah.
+ So this is just, like, this was something that was tweeted out by Johan Carlson, J-O-A-X car on Twitter.
+ Nice.
+ And, basically, this is a new feature within Chrome V112.
+ Yeah, Chrome, man, that's a lot of versions.
+ But, yeah, in the latest, I think the latest, you know, version 112 of Chrome or newer, they added a new feature to the dev tools where you may have noticed, for example, if you inspect element on something or you click on a link in your dev tools to, like, a JavaScript file,
+ it'll take you to this tab called Sources, and Sources will have, basically, a file tree on the left side of all of the, like, files and scripts and CSS and HTML and everything that's been loaded by the page within this, like, context, right?
+ And so you can click through that file tree.
+ You can, you know, view the source code of a JavaScript file that's loaded or whatever.
+ You can set breakpoints.
+ I think it's really meant for developers to do, like, debugging type of stuff, but it's there, right?
+ And one of the new features that they added to make this easier for developing, I guess, but it also makes this simultaneously a lot nicer for hackers is you can ignore files from that tree.
+ So you can totally, like, exclude them from, like, the list.
+ So you can even hide them if you want, but you can also make it so that they just, like, are, they, you know, are ignored.
+ And that, they have a checkbox in here that lets you automatically exclude all third-party scripts, right?
+ So depending on the type of hacking that you're doing, if you're really focused on, say, a webpack, like, source map or something, right?
+ You can ignore, you can just right-click, ignore all the third-party scripts, clean it up.
+ Now you know exactly what you need to look at.
+ It makes your life a lot easier.
+ Dude, that's so helpful.
+ Like, in DevTools, I have a love-hate relationship with DevTools because DevTools is really kind of crappy sometimes.
+ Like, it'll lag out and it'll, like, bug and you have to restart Chrome and it's like, ah, please.
+ And there's some bug that's going on right now where, like, even if you check deactivate breakpoints, it still does the breakpoints, which drives me nuts.
+ But, yeah, no, it's great to see them adding features like this, and this is definitely something I'll use because the less friction you have, the less, like, no, that's not it in your brain.
+ Even if it's just, like, quickly skipping over it, that is going to affect your flow because your brain is going to be able to focus better on the script at hand.
+ So, great feature.
+ Yeah, and it looks like it also will, basically, like, if you set a breakpoint and you're looking through the call frame, like, the whole call stack frame,
+ it will allow you to remove the ignored files from that stack as well.
+ So, it just, you know, cleans a lot of stuff up, makes your life easier, you know, and it's really awesome.
+ Really awesome feature that's just built in now.
+ All righty, man.
+ We are 27 minutes in already.
+ 27 minutes.
+ With the, yeah, with just the news.
+ So, we might have to keep this a little bit more concise than we thought.
+ But, we wanted to talk today with you all about source code review techniques and what kind of stuff we're using to do source code review,
+ how this is applicable in a bug bounty context, the ins and outs of it, you know, lead hacker techniques for that sort of thing.
+ So, that's what we're going to be talking about today.
+ Let's see.
+ Where do you want to start, Joel?
+ Yeah, let's just start with, like, the basics, right?
+ So, like, source code.
+ It's, the easiest way that I've found to view source code is one of two methods.
+ Visual Studio Code, which is a glorified text editor, and an IDE of some kind.
+ The IDE is really useful if you need more, like, fine-grained language level information.
+ So, I'm not even going to say, like, go to definition, like, the right-click, like, go to definition and all that type of stuff.
+ Because you can get a lot of that through, like, a Visual Studio Code or Atom or Sublime or whatever you want to use through plugins.
+ But that is a lot of what you'll get through an IDE.
+ Generally, most of the time, I'm going to say I'm using Visual Studio Code because it's just easier to navigate and search.
+ And it's fast and it's lightweight.
+ Yeah.
+ One of the things that I sort of picked on, so I'm, just for context, for those of you maybe that are listening for the first time,
+ I'm a full-time bug bounty hunter, and Joel is a Silicon Valley engineer, security dude, right?
+ And so, Joel's thing is that he actually does this for a living.
+ Yeah, I do review source code basically every single day.
+ And so, the last event that we did, you know, your boy's scrappy full-time bug bounty hunter over here was like,
+ all right, let me just open up all the source code in Vim and, like, ripgrap through all this stuff.
+ And Joel was like, no, no, no, no, no, good sir.
+ Like, let me introduce you to something called VS Code.
+ And he had before, and I had used VS Code before, but I will say, like, watching you use VS Code in this last event
+ really changed my opinions on, like, using VS Code versus using something like Vim plus ripgrap or something like that
+ for going through various files.
+ And so, yeah, and I think one of the main things, like you said, was, like, VS Code has the capability to do the stuff
+ like find definition and actually parse all of the, you know, code that you're reading here
+ and allow you to jump around using sort of logical flows like it understands the code, which is really cool.
+ And that was not something that I had installed.
+ I'm sad to admit.
+ So, and I got that.
+ You got that for me by just opening up the Visual Studios and then going to extensions, right?
+ Yep.
+ Yeah, so a lot of the time you'll notice that, like, the extensions are what make VS Code good.
+ And so, basically, what you'll find is that you might be working on some specific type of protocol or a file or something,
+ and it'll often recommend you, like, hey, do you want, I see you're working on a .py file.
+ Do you want to download the Python extension?
+ And you may ignore that, but what the Python extension is going to do, and typically it'll explain this
+ if you look at the extension in the marketplace within VS Code, it'll say, like, this adds IntelliSense
+ and it adds code completion and it adds, like, all these things that are really nice.
+ IntelliSense is basically just, you know, like, suggesting functions that exist, properties that exist.
+ It's intelligently, it understands your code base, so it knows, like, oh, you're working with this object.
+ This object has these available properties, and it will suggest those in a dropdown.
+ And that type of, like, information is super, super useful because, basically, that means your editor is working alongside you
+ to make your life easier.
+ So, if you're looking at a function and you want to know where is that function defined,
+ most of the time you can just either right-click and click, go to definition, or you can do a command or control click on the name of it,
+ and it'll take you right to where it's defined.
+ That just makes your life easier.
+ Instead of having to copy the name of the function, control F for it, look through all the options, find the definition, click on it manually,
+ like, go back and forth.
+ Instead, it's, like, you know, one click.
+ Yeah.
+ That was huge.
+ Yeah.
+ Yeah, the extensions are pretty huge.
+ I think without extensions, VS Code is kind of, you know, it's fine.
+ It's very usable.
+ I still would use it, but I think the extensions really make it much more feature complete.
+ Yeah.
+ And it's much more flexible.
+ I think even just having, you know, the built-in propensity for command line or keyboard shortcuts as well is really helpful.
+ Just control P, like, okay, I know that this file is going to be in this specific spot or this specific name,
+ so control P, type the name of the file, enter, boom.
+ You know, I've got it up, depending, no matter where it is in my directory structure.
+ Excuse me.
+ I didn't have to bounce around the folder, you know, expanding things, you know, collapsing things.
+ No, just control P, type of the name, boom, and it's open.
+ And it was also really helpful for me to see how, you know, we could trace the flow of code through various functions
+ and do that with, you know, dividing the screen into different parts.
+ So, okay, we're over here in this function, and then, you know, we call this line, and that jumps to a different file,
+ so I pop it open on a, you know, split the screen, pop it open, and I hop right over there.
+ And so, you know, having all of that in front of you at one time makes the friction of jumping in and out,
+ like you have to do for these sort of things, a lot less present and helps you trace the code a lot better, I think.
+ Yeah, yeah, I mean, that's, like, one of the amazing features about VS Code is that it's so modular in that sense,
+ where you can just split your window vertically or horizontally or into three sections,
+ or you can, you know, focus on one of those sections instead of all of them at the same time.
+ There's, like, so many options.
+ That control or command P thing that you talked about is super huge.
+ There are, like, two main versions of that.
+ There's command shift P, which they call it the command palette.
+ And basically, the command palette is everything, like, every, like, action, like, every command, so to speak,
+ that you can do within VS Code.
+ Yeah, so this is why I wanted to do this episode as well, is because, like, while we were hacking on stuff,
+ I didn't really want to, like, interrupt the flow and be, like, Joel, teach me how to use VS Code.
+ But that's what we're doing here today is actually my sneaky motive for this episode.
+ I was nerd-styped the whole time.
+ Control-shift-P, and now I'm, okay, I'm looking at all of the different actions I can do.
+ Okay, cool.
+ Yeah, yeah, let me pull it up, too.
+ So, yeah, command shift P, this is called your command palette.
+ You'll notice that there's, like, a right arrow at the beginning.
+ If you remove that, then that's equivalent to doing control P or command P, which is basically your file switcher.
+ So if you type an arrow in there, then that's all the available commands, and you'll see there's a huge list.
+ They're usually categorized by, like, there's, like, the built-in functions, and then there'll be, like, an extension.
+ So it'll be, like, extension name, colon, action, right?
+ And so there's a lot of different things that you can do.
+ For example, you can reset your Zoom from here.
+ You can format whatever file you have open from here.
+ You can open a terminal.
+ You can go to the matching bracket.
+ You can, you know, there's, like, a ton of, like, different options and things that you can do from here.
+ And it's very, very generic, right?
+ So this is, like, I don't want to overspeak by saying it's everything that you can do in VS Code, but it's very, very close to, like, basically all of the sort of actions and stuff that you can imagine that you can do within VS Code.
+ And in addition to that, it shows you if you have a keyboard, like, shortcut already assigned to that.
+ Yeah, I love that feature of it because then, you know, so you can press that, control, shift, P, and you can start typing.
+ You can use your words to describe the action you want to do, and then, boom, right on the other hand, the right-hand side, you see, okay, that's the keyboard shortcut for that.
+ Next time, I'm not even going to have to press, command, shift, P, I can just hit that shortcut.
+ Or this is one of my top used keyboard shortcut or things for this command palette is preferences, open keyboard shortcuts.
+ So I can reassign different shortcuts as well.
+ So, control, shift, P, open keyboard shortcuts.
+ That allows you to redefine your shortcuts, which is really helpful for, you know, gaining that traction in the application where you don't even have to think about using it.
+ Yeah, and you'll notice that, like, some of these, for example, open keyboard shortcuts, it'll say, control, K, control, S.
+ VS Code supports a very, like, this is in Vim and stuff, it's called chords, where basically you have, like, multiple step type of keyboard shortcuts.
+ So, like, in T-Mux, for example, you have, like, your control character, which is, like, control, B or control, A for screen, right?
+ So, like, if you do control, A, then something else, like control, A, D to detach in, like, a screen session, right?
+ That's the same as, like, control, K, control, S.
+ It's two separate, like, in a row.
+ So you do control, K, it says, okay, I'm waiting for the next thing.
+ Then you do control, S, and it goes, oh, okay, that's what you want.
+ So you can have more complex keyboard shortcuts that aren't, you don't have to, like, combine control, shift, alt, meta, like, everything all together.
+ You can just do, like, control, K, and then something else, and that gates it.
+ And I love that, too, because a lot of times I want to be able to do stuff with one hand.
+ So I want it to be predominantly my left hand.
+ So I want it to be, you know, control, A, something, you know, even the little tilde up at the top, left-hand corner, I use that all the time.
+ So I can just do things primarily with my left hands, and even if my right hand is coming back from the mouse, going over to the keyboard, we're getting a little technical here.
+ But, you know, even if my right hand is coming from the mouse to the keyboard, I can still be using my left hand to control the flow of the application.
+ So I like that a lot.
+ Okay.
+ Man, cool stuff there in VS Code.
+ Here's the thing.
+ I kind of put the sections in the wrong order in the doc.
+ So we just talked a bunch about VS Code.
+ Oh, yeah.
+ And I do actually have one more question, so I'm not even sure.
+ You know what?
+ Tell you what.
+ Screw the order.
+ I'm going to ask the question.
+ Okay.
+ So here's the thing.
+ This is a question for you, Joel, which you may answer on the spot, or this could be a question for the audience afterwards and see what, you know, everyone comes up with.
+ I would like, so after this last live hacking event, I realized that even with VS Code's amazing features for jumping around and, you know, popping open different tabs and all that great stuff,
+ I still get lost in very complex functions.
+ So I keep on having to go back to the source, you know, and then trace it all the way down and try to reach the sink.
+ But I kind of get lost in that flow.
+ So what I would really like to be able to do is define something that's sort of like a breakpoint, but it's like a logical flow indicator.
+ So, you know, we start in this function where we, you know, have the source.
+ And then we go down eight lines and then I have a little dot next to the line and something like that.
+ And that has one on it, right?
+ And then that goes into the next function, right?
+ And so I go to the next function and I say, okay, you know, here's the important line.
+ And then I press a button next to it and that has two, you know?
+ And then I want to be able to jump back and forth and say like, okay, go back to one, go back to two, go back to three so that I can just kind of trace in my mind the flow of the code.
+ I don't know if that's something like that exists, but if it does, I need it.
+ If it does, I'm not aware of it.
+ I can think of a couple of things that I've done for like similar behaviors.
+ So like very kind of related, oftentimes I use the forward and back function within VS Code very frequently.
+ So like I rebind those to either like control like square bracket, like open and close square bracket for back and forwards or like the mouse, like the buttons on my mouse,
+ like forward and back buttons on the side of my mouse.
+ Oh, interesting.
+ Okay.
+ And I'll use that because that basically takes you back to the last place that your cursor was like was.
+ So if I'm like clicking through stuff, then I can just click back and I can hop back a step.
+ But that kind of jumping between like steps one and four, for example, like that is very difficult.
+ A good way that you can do that, like in the meantime, there, I don't, let me see if I can find what it's called, but there's a to-do, yeah, to-do highlight.
+ It's called to-do highlight.
+ Yeah, yeah.
+ So this is an extension, right?
+ Like I talked about extensions add a ton of like functionality to VS Code.
+ This is called to-do highlight.
+ It's got three and a half million downloads, a hundred, a hundred ratings at four and a half stars.
+ And basically what it does is exactly what it says it does.
+ It highlights to-do comments.
+ So if you do like a comment with to-do, colon, whatever, it will highlight it and it creates a separate section at the bottom, like underneath your file explorer on the left side of VS Code called like to-do's tree.
+ And basically you can see all the different to-dos that are within your open project and then you can click to go between them.
+ So you could mark it the same way, like you could do like to do step one or something like that, and you could just mark it that way as like a temporary kind of hack, I guess.
+ Yeah, no, that might work.
+ That actually seems like it's the closest thing I've seen to what I'm looking for there because, yeah, I would love to have, like you mentioned, a little tree that says, okay, step one, step two, step three, step four, you know?
+ And then because sometimes there's stuff you have to bypass along the way, you know?
+ I think you know the thing that I'm talking about where we had that if statement that I was just like, oh, no, we're screwed.
+ And then you're like, no, we can just bypass this whole block of code by doing X, Y, Z.
+ And I'm like, oh, I love you, Joel.
+ And so, you know, that little block of code that we were talking about there was way, way deep, probably six functions deep in the call stack.
+ And we had to go all the way back up to one before we got to the sink.
+ And so having some sort of, you know, a way to mind map all that out would be really cool.
+ Definitely going to use the, let me copy this into the notes for the show too, the to-do highlight for VS code until I see something better for that.
+ Yeah, I really like that.
+ I mean, honestly, that should be like a pretty straightforward extension to create.
+ So I think that that might be something we could look into because that sounds quite useful.
+ It does.
+ Okay, so we kind of jumped the gun because we got excited about VS code.
+ But one of the things I wanted to talk about first was, so as a bug bounty hunter, sorry, I've got this little, I don't know if you heard it, but I've got this little like popper.
+ I can't even hold up the number of fidget toys I have sitting on my desk in front of me.
+ It's really nice to have little fidget toys around.
+ So if you hear popping in the background, it's me playing with this thing.
+ But, so let's talk about getting the source code because as a bug bounty hunter, you're not an internal, you know, you're not inside an organization.
+ So a lot of times you don't have access to source code.
+ So how do you get access to source code?
+ Well, there's a couple ways that I wanted to break down.
+ One, of course, we always have access to client-side source code.
+ So you always have access to the JavaScript.
+ You always have access to the HTML, CSS.
+ I heard somewhere that there's client-side Python that happens sometimes.
+ Yuck, for one, but for two, whatever, you're going to have access to that.
+ So do that.
+ One of the very few times I will say yuck to Python.
+ But, yeah, so you've always got access to that.
+ But there's also a couple other ways that you can get access to source code.
+ The first one that I wanted to talk about was demos slash free trials.
+ And this is something I think we mentioned on a previous pod.
+ But there's a lot of really amazing hackers that will go through a very long process to get access to source code.
+ Maybe I've heard of some people going as far as signing up for a demo with their company, with this company, going to the demo, talking to the salesperson and being like,
+ Hey, I really just need to get my hands on the product, I think.
+ Can you send me a demo?
+ And they're like, sure.
+ But at the end of the day, they get their hands on the code.
+ And a lot of times it's a Docker container.
+ Sometimes it's actual, like, you know, a zip file that has the code that you need to run in it.
+ But doing anything like that that can get you access to source code can be absolutely huge.
+ Because now you're not testing blind.
+ You know what you're doing.
+ And that's a game changer.
+ Yeah.
+ Well, and oftentimes, like, yeah, he's...
+ Oh, man.
+ I've stopped that before.
+ Here's the...
+ Joel's cat just jumped on his piano right behind him.
+ Yeah.
+ Yeah, no, so I think for, like, me, this is, like, a personal thing.
+ Yeah.
+ I draw the ethical line kind of at the sales call, basically.
+ So, like, if I have to get into a sales call and lie to a salesperson and be like, oh, yeah, I want to, like, test this for, like, my local business and, like, go through all of that.
+ Then it's, like, that just makes me feel weird about, like, having to go through all that.
+ But if it's, like, you know, an anonymous type of sign-up process where you just, like, sign up for a trial and, yeah, there he goes again.
+ What are you doing, man?
+ He's stepping on our circuit boards.
+ Yeah, no, I agree with you, Joel.
+ I will say, you know, I have not gone through a sales call and set up something like that.
+ But people do.
+ And a lot of bug bounty is about how far you're willing to go that other people won't go.
+ So define your own boundaries there.
+ I'm not going to tell you one way or the other what's right or wrong there.
+ I won't tell you whether it's right or wrong to go to the dark web and download a pirated version of it, you know?
+ Yeah, whatever you need to do to get it, you know?
+ Yeah, I think, you know, there's definitely some ethical boundaries there.
+ But at the end of the day, you know, the hacker is going to have access to that.
+ And, you know, if you in your goodwill are pursuing security research and you're not going to try to use this for a negative way, then I think each individual person has to define their boundaries with that.
+ I've got mine set.
+ Joel's got his set.
+ And, you know, we can look at other people.
+ There's been some drama recently about this, so I'll just sort of monologue about it for just a second.
+ You know, there's been a lot of people in the industry that have done things in pursuit of good intent, good faith security research that I would not do.
+ And at the end of the day, I'm not going to say that that's wrong for them or that that's, you know, a problem.
+ I just have my boundaries where I set my boundaries and I respect the people that have done differently.
+ And I think that's kind of the way I would like to see the industry flow.
+ Yeah, yeah, 100%.
+ I feel very, very similar.
+ You know, set your own boundaries, set your own ethical guidelines.
+ But, you know, there's always an equal and opposite reaction to every action, right?
+ So just, you know, be aware that if you cross the boundary too far, then that can always lead to some more negative consequences.
+ Absolutely.
+ And, you know, that might not be intended.
+ But, yeah, I mean, outside of free trials, you can also just, like, pay for software, right?
+ So you could just, like, you could buy the product if you really want to get your hands on it, if they don't do free trials or something.
+ All of these things, like, that we're talking about, these are clear barriers to entry.
+ So, generally speaking, you can be pretty well assured that, like, if this is something that you're doing, majority of other hackers probably aren't or haven't because of that financial burden or the time burden or the communication or whatever.
+ Just their own ethical boundaries.
+ Whatever.
+ Like, the friction, right?
+ Like, that is going to change how likely somebody else is to go and try and get that.
+ And so if you're willing to go the extra mile and push through it and work to get that software harder than they are, then that's going to give you that competitive edge, right?
+ Yeah, for sure.
+ And I've recently paid $170 for a code base and mega dividends, my bro.
+ Like, you know, you see ROI on that all the time.
+ And $170, like, I'm not going to lie.
+ Like, I preach on the podcast, buy the product all the time, right?
+ But, like, it was $170, so I was like, huh.
+ It's still, like, you know.
+ Let me think about this one for a second.
+ Yeah, it's like, I wouldn't spend $170 on dinner or something, you know, like.
+ And I just, I heard my own voice in my head.
+ Justin, buy the f***ing product, you know, like.
+ Professor Oak's voice echoed it.
+ Yeah, and so I bought it and boom, you know, you get some bugs out of that.
+ So, definitely, especially, I will say, on the lower, oh my gosh, Zorro is hyperactive this episode.
+ Yeah, no, he's going through it.
+ I love how his tail just, like, goes.
+ Through the mic like that.
+ That's great.
+ Yeah, so, definitely worth doing.
+ And I will say, you know, when the source code is on the cheaper side, like $170 versus, like, $10,000, you know, there's a pretty good chance that if it's getting sold at that price point, there may have been some, you know, edges being cut, you know, in production.
+ So, just another lesson that I've learned along the way that I'll pass along to you guys.
+ If it's cheaper, it might be easier to hack.
+ Who knows?
+ Yeah, for sure.
+ Another thing that we have done in the past, but it is also pretty common, is using, like, a local file disclosure or an LFI or an LFD.
+ Any of those for reading files, an arbitrary file read, anything like that, to read source code.
+ This is super useful for stuff like PHP and any type of, like, server-side app that is going to be, you know, basically what you see is not what you get, right?
+ So, like, PHP does a lot of stuff in the background, but you don't see any of the stuff in the PHP tags.
+ Or a Python web server is probably doing some, like, back-end rendering or something with that Python before it sends out the response.
+ So, those are types of things where it's really, really useful to understand what's going on from a white box scenario.
+ And being able to see the source code is, like, a huge gateway into, like, understanding the application at a deeper level.
+ Yeah, for sure.
+ I'm glad you mentioned Python because I didn't have that on the list here.
+ So, we just wanted to list a couple things here.
+ Like, if you're dealing with a Java application, if you can pull the JAR file down, that's easy to decompile back down to actual, readable, normal Java using JADx.
+ So, that's a good one.
+ If you can pull Python C files, you can uncompile them using Uncompile 6.
+ If you can pull .NET binaries, you can decompile them using .peak and get access to the full source code, which I did not know until two live hacking events ago.
+ And that was a big game-changer once people told me about that.
+ After the dupe window ended, they were like, yeah, I was reading the source code.
+ I was like, the source code?
+ Yeah, yeah, yeah.
+ I was like, how did you do that?
+ How did you do that, do you say?
+ And so, very big there.
+ And then, at the end of the day, worse comes to worse.
+ If it's a binary and you can't do anything else, pop out the good old Ida or Ghidra and try your luck at pulling all the strings and that sort of thing you can to piece together what the code is doing.
+ Yeah, 100%.
+ These are, like, probably the main, kind of, like, core, easily decompile, is what I would call them.
+ Like, Python, Java, .NET, specifically.
+ I think there are probably a couple others that I'm not thinking of at the moment.
+ But, like, those are really, like, if you have an APK or a JAR file, you can get that back to source code very, very easily, just the way that Java works.
+ Python, same thing.
+ The Python bytecode.
+ Generally, these languages have, like, an intermediary type of, like, bytecode language that it has to use in order to be, like, cross-platform compatible.
+ Yeah.
+ Like, JVM, the Python byte, PyC, right, like, those types of things.
+ Those make it easier to decompile them back into the source code because it's pretty concrete in terms of what those instructions are doing.
+ .NET is kind of, like, a weird edge case here.
+ I'm not really sure why .NET is so easy to, like, reverse engineer.
+ But, yeah, .Peak is an insane piece of software.
+ I've used that for a number of years.
+ It's from JetBrains, the people who make IDEA and PyCharm and all that kind of stuff.
+ And it's a really, really amazing tool.
+ I used it last week for something completely non-bug bounty related.
+ But, yeah, no, it works.
+ Every time I've ever had a .NET executable, .Peak is the way to go.
+ Nice.
+ Yeah, that's awesome, man.
+ I love that trick, and I love adding stuff like that to my repo for attacking all these various types of applications.
+ I will add a little disclosure here.
+ Do not pull source code via LSD if that's not chill.
+ And some people, like I said, other people will do this.
+ But source code is something that developers are pretty possessive over, as you can imagine, because that's their whole thing.
+ And so, you know, I've definitely seen some kickback on these more so than other pivots.
+ So definitely get permission from the team first.
+ Submit the LFD.
+ Say, hey, I would like to pull source code to try to affect integrity rather than just confidentiality.
+ Is that chill?
+ Yeah.
+ Yeah, that's a great call out.
+ That's a great call out because I think a lot of times you might be actually going against program scope if you go too far.
+ And I think the last thing you want to do is be writing up your report.
+ And like as they're reading through it, they're like, oh, wait a sec.
+ They like went way too far with this.
+ This is not okay.
+ And then it becomes an issue or something that you have to deal with.
+ So it's, you know, the program, depends on the program.
+ Most programs are pretty chill.
+ If you say, hey, I have this really awesome bug.
+ I'd like to pursue it further.
+ Is it okay if I pull source code?
+ Or are you okay with extrapolating the impact from this point?
+ Right.
+ And basically leave it up to them.
+ Because you could probably impact, like show like way higher severity if you want.
+ But that's going to be their call whether or not they're okay with that.
+ Source code is intellectual property.
+ So you have to be aware of that.
+ Be careful with that.
+ And like you said, it may just even be most effective for you as a bug bounty hunter to just take the bump, you know, and say like, hey, don't want to grab source code, you know, without your permission.
+ But if I do, I'll probably find a bunch of other bugs.
+ And then, you know, they'll just say, okay, yeah, sure.
+ I'll bump this to a crit, pay out the max bounty for an LFD.
+ I've sort of ranted about this before on the pod.
+ I think LFD should almost always be a crit.
+ A lot of people put it at highs because it technically only affects confidentiality.
+ So, but if it just, if it does just affect confidentiality, then I think it's only fair for them to give you the opportunity to pivot and pull source code and see what you can do.
+ And if not, they need to give you the bump to crit.
+ Yeah, yeah, 100%.
+ It's just one of those cases where like, you know, you hope the program is understanding and stuff and they're just like, yeah.
+ For sure.
+ Okay.
+ So let's see.
+ The other one here that I wanted to call out, and we actually see this quite a bit between top hackers, finding Docker containers for the specific product.
+ So let's say you don't have access to the source code for a specific product.
+ You don't have a product key, right?
+ One of the best ways, excuse me, for you to get access to the source code would be to find their Docker container that they use for rapid deployment of the product, even if it doesn't have a key in it, right?
+ And then pull that Docker container down, override the starting point.
+ What is it?
+ Is it starting point?
+ Start point?
+ I mean, you don't even have to.
+ You can just extract files from a Docker container.
+ You can also do that.
+ That's generally what I would do.
+ I normally run the Docker container personally and then jump into it by overriding the initialization point or the start point, whatever it's called, and just running a bash interactive shell and then sort of scrapping through the source code.
+ But yeah, you know, this is before I learned about the magic of VS code.
+ And so I guess you're going to want to extract the files out of that Docker container, copy them into a directory, open it up in VS code, and then do all the things we talked about before with VS code.
+ But it is a really good trick, basically, that you just talked about there.
+ I don't know if you realize this, but you can make your own Docker file, basically a patch, a Docker file patch on top of it.
+ So if you make a new Docker file, all you have to do is say at the top from and then your image name.
+ And what it'll do is your image will then be based off of the other image, and you can just set your own entry point.
+ So you just from target image, entry point, bin bash.
+ That's it.
+ Yeah.
+ And then you can just start point and initialization point, entry point.
+ That's what I meant.
+ Entry point.
+ Yeah.
+ And I think also I'm going to try to see if I can find it in my in my bash history right here.
+ But I think you can also just run it and then, yeah, just run exec on it as well.
+ Yeah, you can.
+ And then just pop into bin bash and then copy stuff out if you want, or just use the Docker CP command to pull files out.
+ Yep.
+ Yeah, yeah, yeah.
+ So I, at one point I had a set of commands that I use that will basically, it creates a new instance of an image, copies all the files down into a local folder, and then destroys it.
+ Oh, that's good.
+ That's, you should put that in a gist or something and we'll upload it after.
+ That'd be cool.
+ Yeah.
+ Okay, so the other thing, last one that I wanted to talk, well, all right, I kind of got two more.
+ Last one.
+ We said the last one.
+ Yeah, you know, I said the other one was the last one.
+ But all right, we got a couple more interesting things.
+ Okay, so the other thing is that, I don't know why I sort of assumed this in the past, but in the past I've kind of assumed that if there is a library like on NPP for Python or NPM for Node, that that library is going to be open source and on GitHub.
+ But that isn't necessarily the case.
+ So there are some times where these, you know, packages are getting pushed to PIP and to NPM and that sort of thing.
+ And they are not, you can't go find them and read the source code on GitHub.
+ So you need to pull those libraries down and you can read that source code and sometimes you'll just find like embedded secrets and reference to external assets.
+ And like I've had people find API keys in there before that are worth a lot, five figures.
+ And I think actually there was a scenario with Shopify, I want to say, that was just closed not too long ago where it was above that.
+ I think it was a six-figure bounty.
+ So definitely keep it in your mind to audit some of these public source code packages and libraries and look for not only vulnerabilities there, but also for secrets leaking and stuff like that.
+ Yeah, 100%.
+ That's like a built-in feature.
+ So like GitHub, for example, they offer this thing called package, GitHub package registry.
+ And you can register, you know, custom private packages just for your org in GitHub, right?
+ And so oftentimes a JavaScript library will be built as a result of webpacking all of the used libraries into one place and there'll be like a vendors.js, main.js type of thing.
+ And so that's a great way to like look at an attack scenario, either if they've left the source map files in.
+ So you can see the whole node modules folder and you can look through their private modules through the directory structure.
+ Or if it's just like in there and you can like look for keywords like the company name or something like that, that's like a really great way to get access to those private libraries that you're talking about where like it may have been included accidentally.
+ We've seen similar type of stuff with mobile apps where protobuf files, for example.
+ Protobuf files will get, you know, used to generate .java files within the app, but then that folder of .protos gets built into the app as well.
+ Like by accident, it's just included as a build artifact and then, oh, hey, cool.
+ Now I have like full, you know, commented protofiles, which we definitely have not seen on another target right before this.
+ We have definitely seen that lately, I think.
+ No, yeah, that's mega helpful.
+ And yeah, I haven't paid as much attention to vendors.js or whatever stuff before.
+ So I'll definitely make sure I'm not skipping over that because there could be some cool stuff in there.
+ It's good to know.
+ The last thing, so, okay, so actually this kind of bleeds into the report that I was going to talk about.
+ So I'll kind of integrate this.
+ Yeah, let's tie it together.
+ And man, we didn't even get to talk about like, okay, sources and syncs and like, you know, going through the application and stuff like that.
+ So, man, we might have to make a part two to the source code review thing.
+ Yeah.
+ But the report that I wanted to talk about today is a report that popped up in a live hacking event three years ago.
+ And essentially what it was, was while we were hacking a specific application, we would get errors, you know, when we were fuzzing the API calls or playing around with the API calls.
+ And those errors would return a string that contained the company's name in it, but also contained like the microservice that we were talking to, the specific name of the microservice.
+ Sorry, got my, my throat's bothering me a bit today.
+ And so when we, what we would do is while we were hacking, we would take these strings and we would just boom, throw it in a GitHub search, right?
+ Well, a couple of times in for that, one of them popped up and that the repo that had that reference to that microservice was a training repo for employees of that company.
+ And that training repo contained a ton of proprietary source code that was in live use, um, in their microservices in production.
+ Um, and it's so hard, you know, and it wasn't even necessarily on the front level too, but the guy had committed his node modules repo into your, uh, his node modules folder into the GitHub repo.
+ And so like, you know, one of those modules, you know, has a sub module that's also, you know, an internal module.
+ And then she just kind of go down and down and down and, uh, and until you enumerate all of the source code.
+ And, um, we reported it directly to the company as like, wow, your production source code is kind of out there flopping around.
+ And they're like, yeah, meh.
+ And we're like, all righty then.
+ So we, we took, uh, some of the secrets out of there and started decrypting stuff, uh, you know, stuff that they trusted, trusted, um, data and re-encrypting it and sending it back.
+ We started, uh, auditing the source code, found like a bunch of vulnerabilities because of it.
+ Um, so that's another way to find, uh, source code is look at the world's biggest source code, you know, provider, GitHub, uh, just throw it into GitHub search.
+ And I think it's even better now when, uh, now that GitHub has increased their, the, uh, effectiveness of their search.
+ So definitely excited to see some cool finds there.
+ Yeah.
+ It's super cool.
+ I, um, one of the things that I had wanted to mention earlier in the episode, I wrote this down and, um, kind of, there was no, not a great place to, to, to drop it.
+ But this is, this is like one of those great examples of like working within like constraints.
+ And I think this is sort of like a, a more general like topic that like really talks about the types of stuff that makes like hacking, like finding really epic bugs, like a lot easier.
+ Um, where if you're making like those types of deep dives, like it's like two, twofold deep, deep dives, like going as deep as you can, like exploring the source code, exploring whatever, like finding like deep references, understanding at almost the level of an engineer, like what is happening within this application, what's happening across different services, all that kind of stuff.
+ That's like one side of it.
+ The other side of it is figuring out the constraints, setting goals, and then finding ways to get to that goal within those constraints.
+ Um, a lot of hacking is like operating within a constrained environment.
+ So you'll have different permissions or you'll have a firewall or you'll have a, a WAF or like whatever that you have to like work around and all these if statements and whatever, right?
+ Like the stuff that you have to like figure out how to get around.
+ And if you can figure out a creative way to move within those constraints to get to your end goal, that's where you're going to find like those really awesome bugs that are, that are like leveraging every little bit of, you know, movement and whatever that you have within this environment to try and like exploit.
+ Oh, this like weird config entry or, you know, this weird, like, Oh, it's in the node modules, like within the vendor JS or whatever.
+ Right.
+ Like just finding like how to, you know, the program comes back and says, Oh, we don't really care about that.
+ Okay.
+ Additional constraint.
+ How do we get around that and like make it so that they do care about it?
+ Right.
+ Yeah.
+ So I think just like finding those constraints is, is huge.
+ Yeah, it is.
+ And, and that's a great way to framework eyes that whole, that whole process there.
+ And then, you know, working around those constraints requires a very in-depth knowledge of the product because at the end of the day, those, it wasn't, you know, some, it was, those constraints were put in there by accident.
+ Someone's thinking this through like, no, this user shouldn't be able to do this.
+ Right.
+ And so, you know, it requires mastery of the product to, to be able to work within those constraints in an artful and beautiful way.
+ This is a, this is one of the things that really, I think makes hacking an art as well is because you, you do have to, um, as, as much technical documentation and technical knowledge as it is, there's a lot of creativity that goes around, uh, you know, working within these constraints and, and, and sort of turning the system back on its head.
+ Um, so read the, read the bleeping manual.
+ Yeah.
+ Read the, read the manual.
+ Yeah.
+ And, uh, definitely you'll be able to find some, some cool stuff like that on the edge of functionality within the constraints.
+ Yeah.
+ Super awesome.
+ All right, man.
+ I got to bounce.
+ Uh, anything else we got to do before we end up the pod?
+ I think that's it, dude.
+ Another great episode.
+ Awesome.
+ See you, man.
+ All right.
+ Catch you later.
+ Hey everyone.
+ Thanks for checking out this week's episode of the critical thinking bug bounty podcast.
+ We hope you liked it for more hacking and bug bounty content.
+ You can find all of our other episodes, wherever you get your podcasts.
+ You can also find our show in a video format over on YouTube.
+ That's youtube.com slash at critical thinking podcast.
+ Please, if you wouldn't mind, leave us a rating and share this episode with your friends and colleagues.
+ It helps a ton.
+ And it's the best way to support the podcast directly next week.
+ We've got another exciting episode coming up.
+ So you're not going to want to miss this one.
+ See you there.

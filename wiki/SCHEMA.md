@@ -15,6 +15,13 @@ wiki/
 ├── SCHEMA.md           # this file — never auto-edit
 ├── _ingest_log.jsonl   # append-only log of wiki-ingest invocations
 ├── _lint_<YYYYMMDD>.md # wiki-lint reports (one per run)
+├── _external/          # vendored OSS knowledge bases (git submodules / clones)
+│                       # NOT in `wiki` RAG collection. Indexed separately as
+│                       # `external` collection if embedded at all. .gitignore'd.
+├── sources/            # raw inbox — articles, podcasts, videos, gists
+│   └── podcasts/<show>/ # transcripts grouped by show
+├── payloads/           # canonical payload library by sink_kind
+│   └── <sink_kind>/<slug>.md
 ├── targets/            # per-bounty-program intel (NOT engagement work dirs)
 ├── techniques/         # bug-class patterns
 ├── tools/              # caido, tlx, browser, karpathy
@@ -87,6 +94,49 @@ possible. Examples:
 - `wiki/tools/karpathy/autoresearch.md`
 
 Tags: `tool/<tool>`.
+
+### `wiki/sources/<slug>.md`
+
+Raw inbox entry. One file per ingested external source (article, gist,
+talk, podcast episode, video). Preserved verbatim — Karpathy's "raw
+sources" layer. Skills (`wiki-ingest`) extract patterns into
+`techniques/` / `tools/` and back-link to the source.
+
+Frontmatter MUST include:
+- `url` — canonical URL fetched from.
+- `fetched_utc` — ISO timestamp of fetch.
+- `kind` — one of `article | gist | podcast | video | thread | repo-snippet`.
+- `extracted` — `true | false` (set by `wiki-ingest` when extraction pass done).
+- `extract_model` — `sonnet | opus | manual` when extracted.
+
+Body: cleaned markdown of the source. For podcasts/videos: full transcript.
+
+Tags: `source`, plus topic tags.
+
+### `wiki/payloads/<sink_kind>/<slug>.md`
+
+Canonical payload registry. One payload (or tight family) per file.
+
+Sections:
+1. **Payload** — the exact string(s), code-fenced.
+2. **Context** — when this fires (sink type, framework, sanitizer in play).
+3. **Provenance** — which `sources/` page or finding it came from.
+4. **Linked techniques** — links to `techniques/<class>/<pattern>.md`.
+
+Tags: `payload`, `sink/<sink_kind>`.
+
+### `wiki/_external/<repo>/`
+
+Vendored OSS knowledge bases (e.g. PayloadsAllTheThings, HackTricks).
+Cloned in-place. Treat as read-only — do not edit upstream files.
+
+- NOT auto-embedded into `wiki` RAG collection (too noisy + license
+  concerns).
+- `wiki/_external/<repo>/INDEX.md` (created by `wiki-ingest`) holds a
+  one-paragraph summary + pointers to high-value subtrees + links from
+  our `techniques/` pages.
+- Cross-link FROM our techniques INTO `_external/...` using relative
+  paths.
 
 ### `wiki/findings/<id>.md`
 
