@@ -1,0 +1,1592 @@
+1
+00:00:00,000 --> 00:00:27,940
+all righty sup y'all it's your boy rhino raider running the pod solo this week
+
+2
+00:00:27,940 --> 00:00:33,800
+and when i'm solo you know what we do we get in those technical nitty-gritty details
+
+3
+00:00:33,800 --> 00:00:38,880
+um so i actually know what i'm going to call this episode already i'm going to call it the saml ramble
+
+4
+00:00:38,880 --> 00:00:44,980
+because i'm about to ramble for the next you know however many minutes about saml to you guys and
+
+5
+00:00:44,980 --> 00:00:51,800
+try to pique your interest in saml um it's kind of a complicated topic so um the goal for this
+
+6
+00:00:51,800 --> 00:00:56,900
+episode is going to get you interested in it and get you comfortable enough with the structure of
+
+7
+00:00:56,900 --> 00:01:05,080
+saml where you can desire to attack it where you'll be curious and not scared by it whenever
+
+8
+00:01:05,080 --> 00:01:12,260
+you see it in an sso context okay so that's the that's the goal now um i chose saml because i'm
+
+9
+00:01:12,260 --> 00:01:18,520
+really interested in it and uh the reason i'm really interested in it is this saml is everywhere
+
+10
+00:01:18,520 --> 00:01:24,560
+we see it in a lot of organizations being used uh for single sign-on and for idp um your identity
+
+11
+00:01:24,560 --> 00:01:31,400
+provider uh services and here's the crazy part okay it's xml based and which we all know all the
+
+12
+00:01:31,400 --> 00:01:37,540
+concerns that go around with xml but it just kind of recently struck me that if a if a company is using
+
+13
+00:01:37,540 --> 00:01:42,820
+saml for their identity you know in conjunction with their identity provider then all of the
+
+14
+00:01:42,820 --> 00:01:48,460
+different applications that they're going to be um logging into using this single sign-on
+
+15
+00:01:48,460 --> 00:01:55,340
+will need to be parsing xml and parsing saml right um and because it's such a complicated thing
+
+16
+00:01:55,340 --> 00:02:02,040
+uh you know all of these different languages you've got java apps you've got node apps you've got python
+
+17
+00:02:02,040 --> 00:02:06,220
+apps all of these are going to have different libraries that they're using to parse the saml
+
+18
+00:02:06,220 --> 00:02:14,580
+uh the saml assertions or the saml responses and um i'm sure that there will be uh you know some some
+
+19
+00:02:14,580 --> 00:02:20,820
+quirks between all of these different applications right so whenever i i feel like whenever i see saml
+
+20
+00:02:20,820 --> 00:02:25,780
+it's like oh there's got to be a bug on the scope somewhere because not all of these things can be
+
+21
+00:02:25,780 --> 00:02:33,220
+parsing it exactly the same way okay so rant over there um lots of attack potential uh for saml so
+
+22
+00:02:33,220 --> 00:02:38,580
+let's let's get ourselves comfortable with it because i don't know about y'all but before um before i did
+
+23
+00:02:38,580 --> 00:02:44,260
+this deep dive on saml and prep for this episode i was a little intimidated by saml because um you
+
+24
+00:02:44,260 --> 00:02:49,940
+know you see this giant base64 blob and then you base64 decode it and then xml inflated so you're
+
+25
+00:02:49,940 --> 00:02:57,060
+actually looking at the xml and then it's just a huge you know blob of xml and there's all sorts of
+
+26
+00:02:57,060 --> 00:03:03,460
+like references to what is it w3.org or something like that where it's like check out this protocol and
+
+27
+00:03:03,460 --> 00:03:09,060
+and that sort of thing and the schema and there's all sorts of attributes and you know who knows what
+
+28
+00:03:09,060 --> 00:03:15,300
+all of it does um and and sometimes even there's like large base64 encoded blobs inside of the saml
+
+29
+00:03:15,300 --> 00:03:20,820
+response you know encapsulating certificates and signatures and it's just like gets overwhelming
+
+30
+00:03:20,820 --> 00:03:24,820
+really quickly at least that was the experience that i had before i deep dived it for this episode
+
+31
+00:03:25,540 --> 00:03:32,820
+so i'm hoping that we can delete that and get us comfortable with it okay so the thing that spurred this
+
+32
+00:03:32,820 --> 00:03:40,500
+research was um a researcher that i'm really a big fan of named green dog released uh some of the
+
+33
+00:03:40,500 --> 00:03:47,780
+details that they did on a talk in at a conference called kazakhstan which is awesome that's such a
+
+34
+00:03:47,780 --> 00:03:51,620
+great name for a conference and i mentioned it on the pod a couple weeks ago and it's called how to
+
+35
+00:03:51,620 --> 00:03:56,660
+break saml if i have pause okay so i was looking through this this presentation and i was kind of
+
+36
+00:03:56,660 --> 00:04:01,220
+looking at all the various techniques in there and that is an amazing presentation that we will link
+
+37
+00:04:01,220 --> 00:04:05,780
+uh you know below so definitely go check that out because this is going to require a little bit
+
+38
+00:04:05,780 --> 00:04:12,020
+extra research on your behalf to become really really you know on top of of saml stuff um because
+
+39
+00:04:12,020 --> 00:04:17,060
+there's only so much you can do over a podcast um and sometimes you just need to see stuff so uh
+
+40
+00:04:17,060 --> 00:04:20,340
+there's going to be a lot of resources associated with this episode that you'll need to go and check
+
+41
+00:04:20,340 --> 00:04:26,820
+out um so i was reading through this this slide deck by by green dog also check out his weird proxy
+
+42
+00:04:26,820 --> 00:04:31,140
+stuff because that's the name of the repo weird proxies uh that's a that's really interesting
+
+43
+00:04:31,140 --> 00:04:40,500
+research um and i and i i stumbled upon this just absolute gem of an article by a researcher named epi
+
+44
+00:04:40,500 --> 00:04:48,260
+052 uh which is the same guy that did ferrox buster by the way um on how to hunt bugs in saml a methodology
+
+45
+00:04:48,260 --> 00:04:55,700
+and this was from 2019 research from 2019 and holy moly is it good um there's three parts they're they're
+
+46
+00:04:55,700 --> 00:05:03,220
+you know very digestible very readable very simply written clearly this guy knows what's up with with
+
+47
+00:05:03,220 --> 00:05:08,580
+saml because you know when you can take it and you can make it this simple it rocks so my my plan for
+
+48
+00:05:08,580 --> 00:05:14,500
+the rest of the day rest of the day rest of this episode is to is to talk to you guys about the
+
+49
+00:05:14,500 --> 00:05:23,940
+methodology that he lays out in that in that um uh blog series that he does and uh just kind of
+
+50
+00:05:23,940 --> 00:05:28,260
+generally get us familiar with that so let's go ahead and go down that path so before before we
+
+51
+00:05:28,260 --> 00:05:33,780
+get into the attack factor stuff we've got to understand a little bit about uh saml or uh security
+
+52
+00:05:33,780 --> 00:05:41,300
+assertion markup language okay so here's the here's the basic context in in which uh this is used
+
+53
+00:05:41,300 --> 00:05:45,540
+okay so you've got a user all right we gotta we gotta add some terms out of the way here first
+
+54
+00:05:46,420 --> 00:05:52,420
+we've got um a user that's the person that's wanting to off into an application or a service
+
+55
+00:05:52,420 --> 00:05:58,020
+provider okay an application you know let's say you wanted to off into you know an organization's
+
+56
+00:05:58,820 --> 00:06:03,700
+uh let's just say it's their git lab or something like that right that would be a service provider
+
+57
+00:06:03,700 --> 00:06:10,100
+sp service provider um hopefully these terms will not make this more complicated uh or scare away any
+
+58
+00:06:10,100 --> 00:06:15,380
+of you so just when you hear service provider think app okay and then we've also got the identity
+
+59
+00:06:15,380 --> 00:06:20,580
+provider okay that's the person that's providing the identity that's going to be your you know sort of sso
+
+60
+00:06:20,580 --> 00:06:27,940
+domain right your your sso service provider okay whoa i can't say sso service provider your sso
+
+61
+00:06:28,740 --> 00:06:33,140
+portal let's just say that okay and they're the ones you log into that and then it throws your
+
+62
+00:06:33,140 --> 00:06:37,700
+auth over to your service provider your app okay so we've got the service provider that's the app
+
+63
+00:06:37,700 --> 00:06:44,980
+identity provider that's the sso domain okay so the basic flow that happens is this the user wants to
+
+64
+00:06:44,980 --> 00:06:50,260
+off into the service provider they want to off into the app so the service provider says okay sure i'm
+
+65
+00:06:50,260 --> 00:06:55,780
+going to create this parameter called saml request that contains a base 64 encoded xml
+
+66
+00:06:56,740 --> 00:07:03,620
+document essentially and they're going to redirect us uh via our browser uh over to the identity
+
+67
+00:07:03,620 --> 00:07:08,580
+provider okay the identity provider is going to look at that saml request uh look at the xml inside of
+
+68
+00:07:08,580 --> 00:07:14,980
+it and it's going to say okay i understand you know i need to off this user for whatever service provider
+
+69
+00:07:14,980 --> 00:07:19,940
+uh now i need to off this user so then we go ahead and we put our credentials in to the service
+
+70
+00:07:19,940 --> 00:07:27,220
+provider excuse me we put our credentials into the identity provider and then it will go ahead and
+
+71
+00:07:27,220 --> 00:07:34,660
+create something called a saml response okay the saml response uh will contain a cryptographically signed
+
+72
+00:07:36,340 --> 00:07:43,220
+saml response tag that contains assertions about who the user is so they're asserting hey this user
+
+73
+00:07:43,780 --> 00:07:52,820
+is bloody blah right you can trust that okay and so that saml response is put into a a a parameter in http
+
+74
+00:07:53,460 --> 00:07:59,540
+it could be a query parameter it could be a post post body um and then sends it back over to the service
+
+75
+00:07:59,540 --> 00:08:08,740
+provider or the app okay um and the app will then look at that saml response parse it and trust uh
+
+76
+00:08:08,740 --> 00:08:14,260
+cryptographically hopefully cryptographically check um that that similar response is is valid not
+
+77
+00:08:14,260 --> 00:08:19,460
+tampered with and then trust the person that the identity provider said is there and log them into
+
+78
+00:08:19,460 --> 00:08:25,620
+that account okay so it's a pretty standard flow when you look at sso um based applications so that's
+
+79
+00:08:25,620 --> 00:08:29,300
+the that's the the basic flow let me i'm gonna take a sip of water now
+
+80
+00:08:29,300 --> 00:08:39,460
+all righty so um let's let's break it down a little bit further and we'll start talking about attack
+
+81
+00:08:39,460 --> 00:08:48,340
+factors okay um so before we get any any into the technical details of what the xml structure looks
+
+82
+00:08:48,340 --> 00:08:56,820
+like i just want to say that i've noticed a pretty strong correlation between libraries and domains that
+
+83
+00:08:56,820 --> 00:09:06,260
+use saml and xss okay so i i don't know why that is uh maybe it's an older technology but um whenever
+
+84
+00:09:06,260 --> 00:09:12,980
+you see an application parsing saml or a sso domain that is is utilizing saml to log users in
+
+85
+00:09:13,620 --> 00:09:17,780
+um then you're going to want to check that pretty thoroughly for xss you're going to want to check that
+
+86
+00:09:17,780 --> 00:09:26,180
+for xss in the um in the saml request so that first little um information that is sent from the service
+
+87
+00:09:26,180 --> 00:09:32,820
+provider the app to the identity provider or the sso domain right and you're going to want to inject
+
+88
+00:09:32,820 --> 00:09:38,900
+xss related payloads in there and and i'll give you an example of this later and see if they fire
+
+89
+00:09:38,900 --> 00:09:45,860
+on the identity provider or see if they fire on the service provider via the saml response so if you're
+
+90
+00:09:45,860 --> 00:09:51,060
+injecting inside of tags in the saml response or you're injecting in and attributes in the saml response
+
+91
+00:09:51,060 --> 00:09:55,780
+and sometimes it'll throw an error be like hey this is an invalid thing here's the invalid thing and
+
+92
+00:09:55,780 --> 00:10:00,820
+then they embed embed the invalid thing in the dom and then it triggers xss so it's a story you guys
+
+93
+00:10:00,820 --> 00:10:06,420
+are all familiar with i'm not going to explain how xss works here but um just know that there is a
+
+94
+00:10:06,420 --> 00:10:12,980
+pretty strong correlation with saml and xss okay and then the only other caveat i'll add to that is that
+
+95
+00:10:12,980 --> 00:10:22,740
+in order to embed xss payloads inside of attributes and inside of tags you may need to html encode those
+
+96
+00:10:22,740 --> 00:10:27,780
+brackets normally html encoding is our enemy in these scenarios right if you see it html encoded that's bad
+
+97
+00:10:28,340 --> 00:10:33,940
+but in order for it to not break it and for it to parse properly we have to html encode it sometimes
+
+98
+00:10:33,940 --> 00:10:41,780
+and then it will get re-injected back into the dom um html decoded and in its full you know xss glory so
+
+99
+00:10:42,340 --> 00:10:50,020
+that that's that i'll leave that there um definitely look at saml related stuff for xss okay so now let's go and talk about
+
+100
+00:10:50,020 --> 00:10:59,140
+attacks um outlined by uh epio 52 and what kind of uh in attacks that are a little bit more relevant to
+
+101
+00:10:59,140 --> 00:11:08,500
+saml uh itself okay so the first attack that that epio 52 has in their description is test whether or
+
+102
+00:11:08,500 --> 00:11:16,420
+not the sp accepts an assertion without a signature okay this is known as signature exclusion okay so
+
+103
+00:11:16,420 --> 00:11:22,340
+as i mentioned before the saml response the thing that is coming back from the identity provider and
+
+104
+00:11:22,340 --> 00:11:30,740
+going to the um service provider uh that response is a xml document and uh there are a couple things
+
+105
+00:11:30,740 --> 00:11:37,620
+that are normally inside this document for one there is a saml response uh tag that that tag contains
+
+106
+00:11:37,620 --> 00:11:44,260
+almost everything else that that'll that you'll need inside of it okay um it also contains a lot of
+
+107
+00:11:44,260 --> 00:11:51,300
+signatures okay signatures okay signatures are the things that uh cryptographically ensure the integrity
+
+108
+00:11:51,860 --> 00:11:59,540
+of the saml response okay um and so when we talk about uh an sp accepting an assertion without a
+
+109
+00:11:59,540 --> 00:12:08,900
+signature that will be um you know us simply just removing the signature tags from the saml uh the saml
+
+110
+00:12:08,900 --> 00:12:18,820
+document okay so all you have to do is base 60 40 code xml inflate um and then take out the signatures
+
+111
+00:12:18,820 --> 00:12:24,340
+re re-encode it up and send it over to the sp and if they accept it boom you're in because you can just
+
+112
+00:12:24,340 --> 00:12:29,940
+modify that assertion to have to have um anything you want in it well how do you modify an assertion well
+
+113
+00:12:29,940 --> 00:12:37,140
+an assertion is exactly kind of what it sounds like it's asserting that the idp or the idp the um identity
+
+114
+00:12:37,140 --> 00:12:42,180
+provider is asserting that the user is a specific person so a lot of times this will contain attributes
+
+115
+00:12:42,180 --> 00:12:50,500
+saying uh which is another tag inside of a saml um saying something along the lines of like uh user dot
+
+116
+00:12:50,500 --> 00:12:55,860
+you know username or whatever is rhino reader right and and it'll have a bunch of attributes that the
+
+117
+00:12:55,860 --> 00:13:01,780
+identity provider wants to convey to the service provider okay so if we could modify those assertions
+
+118
+00:13:01,780 --> 00:13:08,180
+uh and those attributes within the assertions then uh we're golden right because um we can just assert
+
+119
+00:13:08,180 --> 00:13:13,140
+that we're anybody uh and the only way that those assertions are actually validated for integrity is via
+
+120
+00:13:13,140 --> 00:13:18,740
+the signature so if we just remove the signature and send it on through then we're we're great and
+
+121
+00:13:18,740 --> 00:13:24,340
+there's a report that we'll cover later on in this episode that where this exactly this sort of
+
+122
+00:13:24,340 --> 00:13:30,180
+vulnerability happens so um this is an easy attack vector you can try however um you don't always
+
+123
+00:13:30,180 --> 00:13:36,180
+have access when you're trying to hack a company you don't always have access to a sample uh saml response
+
+124
+00:13:36,180 --> 00:13:44,020
+right excuse me um so you may need to take sort of a template saml response and just google you know
+
+125
+00:13:44,020 --> 00:13:50,340
+saml response template and send it on through and see what it says because sometimes it'll say uh hey
+
+126
+00:13:50,340 --> 00:13:54,260
+you're missing this attribute and sometimes it'll say hey there's no signature here what the heck is going
+
+127
+00:13:54,260 --> 00:13:59,620
+on right um and so in in the scenarios where it says hey you're missing this attribute there's a very
+
+128
+00:13:59,620 --> 00:14:04,740
+good chance that it's actually not checking the signature and it's just gonna uh you know tell
+
+129
+00:14:04,740 --> 00:14:09,780
+you what kind of attributes you need in order to log in any account that you want so definitely try to
+
+130
+00:14:09,780 --> 00:14:16,180
+be going after um assertions without a signature uh when you see any saml related um endpoints okay
+
+131
+00:14:18,100 --> 00:14:25,460
+um the next the next section that we want to talk about is uh xml signature wrapping okay and and
+
+132
+00:14:25,460 --> 00:14:31,540
+before we get into this section i'll throw a caveat out here okay um there's a burp extension called saml
+
+133
+00:14:31,540 --> 00:14:41,300
+raider okay this extension is super fire and uh epio 52 talks about it in the um the blog post and gives
+
+134
+00:14:41,300 --> 00:14:49,940
+a very clear example on how to execute all of these attacks um using saml raider uh very simply uh so
+
+135
+00:14:50,580 --> 00:14:55,300
+if you're using if you're using burp definitely check that out if you're not using burp uh you
+
+136
+00:14:55,300 --> 00:15:00,100
+might can open burp for this specific thing because uh it's it's pretty awesome and i don't believe
+
+137
+00:15:00,100 --> 00:15:03,940
+it's a pro extension so anyone should be able to use it with the community edition
+
+138
+00:15:05,460 --> 00:15:10,020
+um okay so let's talk about uh xml signature wrapping in order to actually understand this
+
+139
+00:15:10,020 --> 00:15:14,660
+vulnerability from a technical perspective we have to understand a little bit about signatures okay
+
+140
+00:15:15,300 --> 00:15:20,180
+um so as we mentioned before signature the signature tag inside of the saml response
+
+141
+00:15:20,740 --> 00:15:28,980
+is the thing that uh gives you gives us cryptographic security when when using saml okay so there's a
+
+142
+00:15:28,980 --> 00:15:35,220
+couple tags uh inside of the saml tag that we need to be aware of there's the signed info tag there's the
+
+143
+00:15:35,220 --> 00:15:43,220
+signature value there's key info and object okay um the the most important one here is signed info and
+
+144
+00:15:43,220 --> 00:15:50,020
+that signed info also has a sub tag called the reference tag okay and that reference tag is going
+
+145
+00:15:50,020 --> 00:15:55,220
+to contain a uri attribute just like this is just like html right like you have an href attribute for
+
+146
+00:15:55,220 --> 00:16:02,020
+an for an a tag right um we have a uri attribute for this reference tag and this is going to provide an id
+
+147
+00:16:02,660 --> 00:16:09,060
+of the assertion or the um other tag could be a response could be an assertion that uh it is signing for
+
+148
+00:16:09,060 --> 00:16:14,900
+a signature okay uh so you know let's say you've got a response that has id123 and then somewhere
+
+149
+00:16:14,900 --> 00:16:20,900
+you've got a signature that has a reference with uri equals one two three that signature is correlated
+
+150
+00:16:20,900 --> 00:16:27,540
+to that response okay so you just compare the ids and you're good to go um and these signatures can
+
+151
+00:16:27,540 --> 00:16:32,420
+live in multiple places throughout the xml document okay there's three that you need to really be aware of
+
+152
+00:16:32,980 --> 00:16:38,660
+there can be an enveloped signature which is the signature inside of the response right so you've got
+
+153
+00:16:38,660 --> 00:16:44,820
+response tag and then you've got signature tag um and then you've got end signature tag and response
+
+154
+00:16:44,820 --> 00:16:49,940
+tag right um so that would be an enveloped signature because the signature is inside of the response or
+
+155
+00:16:49,940 --> 00:16:56,420
+the thing that it's signing for then you've also got an enveloping signature right an enveloping
+
+156
+00:16:56,420 --> 00:17:01,700
+signature and that is the signature surrounds the response in this scenario we've got the signature
+
+157
+00:17:01,700 --> 00:17:08,500
+tag we've got the signed info tag and then we've got the end signed info tag we've got the response
+
+158
+00:17:08,500 --> 00:17:16,740
+tag end response tag signature right so it goes signature signed info response and signature right
+
+159
+00:17:16,740 --> 00:17:23,300
+and so the the response tag is inside of the um signature tag itself and we still have the reference
+
+160
+00:17:23,300 --> 00:17:29,860
+ids as mentioned before that are correlating um the ids of the response tag with the uh reference id
+
+161
+00:17:30,500 --> 00:17:35,460
+inside of the signed info section of the signature so you know you should be able to correlate them
+
+162
+00:17:35,460 --> 00:17:41,620
+finally the last one we've got is the detached signature okay and this is outside of the response
+
+163
+00:17:41,620 --> 00:17:47,540
+or the assertion or whatever it's signing so let's say for example you've got saml uh saml response right
+
+164
+00:17:47,540 --> 00:17:52,900
+and then you've got closed saml response signature and then close signature right so it's just totally
+
+165
+00:17:52,900 --> 00:17:59,380
+disjointed from the thing that it's signing okay and because of these different ways that you can
+
+166
+00:17:59,380 --> 00:18:05,380
+put this signature there's like a whole mess i want to say let me let me pull up the article right here
+
+167
+00:18:06,020 --> 00:18:11,380
+there's i think there's eight yeah there's eight different attacks you can do where you're like
+
+168
+00:18:12,020 --> 00:18:17,860
+you know having a specific response that has a detached signature but that detached signature also has
+
+169
+00:18:17,860 --> 00:18:24,260
+a you know uh an assertion inside of it and and like you're just putting all of these different
+
+170
+00:18:24,260 --> 00:18:31,860
+assertions in different spots and you're putting um you know data inside of it in a in a um in an
+
+171
+00:18:31,860 --> 00:18:38,100
+enveloping signature that is not correlated at all to this signature and hope that it will get accepted
+
+172
+00:18:38,100 --> 00:18:44,900
+blindly um and so there's lots of different techniques that you can use here to try to sneak assertions
+
+173
+00:18:44,900 --> 00:18:52,020
+uh and responses into this this saml response okay and get it parsed by and accepted by the service provider
+
+174
+00:18:52,020 --> 00:19:00,180
+um and like i said before a simul raider will largely take care of all this for you um and there's
+
+175
+00:19:00,740 --> 00:19:05,780
+i mean literally uh each one of the i don't want to sit here and read all of them to you because it's
+
+176
+00:19:05,780 --> 00:19:12,260
+just going to be too dull for a podcast but i mean each one of these attacks has a beautiful graph on it
+
+177
+00:19:12,820 --> 00:19:19,780
+um and and will and has like three sentences associated with it just explaining what it does right so
+
+178
+00:19:19,780 --> 00:19:25,220
+that really really simple when you've got the the graphics um so definitely check out part two of
+
+179
+00:19:25,220 --> 00:19:29,780
+epio 52 saml testing methodology if you actually want to understand this stuff a little bit better
+
+180
+00:19:29,780 --> 00:19:37,300
+but by simply inserting assertions into various spots throughout the saml document you may be able to
+
+181
+00:19:37,940 --> 00:19:42,500
+sneak some values in there which could really affect the way that the service provider parses the
+
+182
+00:19:42,500 --> 00:19:49,460
+saml document and maybe even get you a full auth bypass which would be super awesome um so that's
+
+183
+00:19:49,460 --> 00:19:57,060
+that's the uh xml signature wrapping section the next one on epio 52's list is test whether or not
+
+184
+00:19:57,060 --> 00:20:04,180
+the sp verifies that the assertion came from a trusted idp okay so is the app verifying that the
+
+185
+00:20:04,180 --> 00:20:11,220
+assertion is coming from a trusted uh identity provider right um and so the way that this would be
+
+186
+00:20:11,220 --> 00:20:18,660
+um executed normally is by including a public key that the sp should use to validate the the signature
+
+187
+00:20:18,660 --> 00:20:23,940
+inside of the signature in the key info section okay um so this is also something you can see in more
+
+188
+00:20:23,940 --> 00:20:30,980
+detail on the write-up but um just sort of conceptually you're sending that x5 x509 certificate
+
+189
+00:20:30,980 --> 00:20:40,100
+along with the saml response um and that will then get parsed by the sp and used to validate the the
+
+190
+00:20:40,100 --> 00:20:44,900
+signature on the thing it's like kind of stupid like why would you use the certificate of the thing
+
+191
+00:20:44,900 --> 00:20:49,940
+you're trying to validate to validate it like that doesn't make any sense um but it does happen so
+
+192
+00:20:49,940 --> 00:20:55,860
+that's called the certificate faking vulnerability in saml and um and so that's something we should be
+
+193
+00:20:55,860 --> 00:20:59,780
+on the lookout for and like i said you know maybe this isn't going to be vulnerable to one of the
+
+194
+00:20:59,780 --> 00:21:04,740
+applications a company uses um you know in their in their infrastructure but if they're using saml over
+
+195
+00:21:04,740 --> 00:21:10,020
+the whole organization then some application has got to be vulnerable to something right so um really good
+
+196
+00:21:10,020 --> 00:21:15,700
+attack surface uh to deep dive here i think um all right so the next one that he's got on his list is
+
+197
+00:21:15,700 --> 00:21:21,060
+like test whether or not the sp creates more than a single session per assertion okay so maybe you like
+
+198
+00:21:21,060 --> 00:21:26,980
+take the sp response you send it multiple times if you get two unique sessions then you know it's a
+
+199
+00:21:26,980 --> 00:21:32,100
+replay attack uh you know this one i just kind of skipped over because it's like this isn't really a bug
+
+200
+00:21:32,100 --> 00:21:39,140
+um but it could be indicative of uh other problems with their saml parsing so you know maybe poke around at it
+
+201
+00:21:39,140 --> 00:21:45,620
+okay next one is test whether or not the sp is vulnerable to xxe now this is the one that i've
+
+202
+00:21:45,620 --> 00:21:51,700
+been doing for years right whenever i see saml i'm like all right you know what saml justin's brain goes
+
+203
+00:21:51,700 --> 00:21:57,300
+okay saml that's xml right uh well xml is vulnerable to xxc so let's just try that um and that's pretty
+
+204
+00:21:57,300 --> 00:22:02,580
+much the extent of the saml testing i did for a long time um and i found several xxs with this so
+
+205
+00:22:02,580 --> 00:22:09,060
+definitely do this not trying to discount the technique at all but um you know go and essentially
+
+206
+00:22:09,060 --> 00:22:17,380
+to exploit this you just have to base64 decode xml inflate the um the uh saml response and then
+
+207
+00:22:17,940 --> 00:22:26,340
+insert the xxc payload go ahead and re-encode it with saml saml deflation and then base64 encode it
+
+208
+00:22:26,340 --> 00:22:31,940
+um and then send it over to the sp and if they accept it and it pops then great and i'm not going
+
+209
+00:22:31,940 --> 00:22:36,900
+to go ahead and explain all the different ways that you could test xxc because um you know there's
+
+210
+00:22:36,900 --> 00:22:41,380
+lots of ways that you could do that uh but i'm going to leave that as an exercise to you guys um
+
+211
+00:22:42,420 --> 00:22:47,620
+we will i will say here we will talk about a little bit later in this episode about something called
+
+212
+00:22:48,180 --> 00:22:54,340
+transforms or transformations um which will modify the xml document uh when it's being
+
+213
+00:22:54,340 --> 00:22:58,820
+parsed by the service provider and there is a really cool bug that i'll that will link to the description
+
+214
+00:22:58,820 --> 00:23:06,340
+um uh of course it's project zero because those guys are total badasses and uh they found a way to
+
+215
+00:23:06,340 --> 00:23:16,180
+like use transforms to get past the uh entity um xml entity being disabled on on a library and it was
+
+216
+00:23:16,180 --> 00:23:21,060
+actually only like last year in 2022 so actually this is something that could be really applicable to
+
+217
+00:23:21,060 --> 00:23:28,420
+lots of bug bounty programs still if they're not patching um so definitely check that out um all right so
+
+218
+00:23:28,420 --> 00:23:33,540
+check for xxc and i will add as well you may want to check for xxc on the service provider side and on
+
+219
+00:23:33,540 --> 00:23:39,780
+the idp side right because the idp is also you know if it's like one login or like you know uh some of
+
+220
+00:23:39,780 --> 00:23:45,140
+these other well-known sso providers then you know well i should i shouldn't say that you shouldn't test
+
+221
+00:23:45,140 --> 00:23:49,620
+those because you definitely should uh and they most of them do have bug bounty programs but you know
+
+222
+00:23:50,740 --> 00:23:56,260
+once you've tested it you you may not have to test it every single time you see it um but if it's some
+
+223
+00:23:56,260 --> 00:24:01,060
+janky sso provider then you may want to just try it there too so you can try it on the service
+
+224
+00:24:01,060 --> 00:24:07,620
+provider side and on the identity provider side for xxc okay um the next one on the list is actually
+
+225
+00:24:09,540 --> 00:24:15,380
+test whether or not the sp is vulnerable to ssrf via certificate okay and i'm actually i'm gonna go
+
+226
+00:24:15,380 --> 00:24:22,340
+ahead and look at the blog post really quickly here uh yeah okay so this one actually is not in
+
+227
+00:24:22,340 --> 00:24:32,500
+um fb052's um uh write up this is actually an addition that i did to to this list um thanks to
+
+228
+00:24:32,500 --> 00:24:40,420
+to green dogs um write up and essentially in his uh in slides he talks about certificate validation to ssrf
+
+229
+00:24:40,420 --> 00:24:45,380
+okay and this is something that i just think is really cool and something that i've i've tried recently
+
+230
+00:24:45,380 --> 00:24:52,020
+with um with a couple programs that i have been working on that accept x5 and un certificates as input
+
+231
+00:24:52,020 --> 00:24:57,220
+from the user um and essentially it's some research that came out in black hat of 2023 so just a couple
+
+232
+00:24:57,220 --> 00:25:06,660
+months ago that uh and it was released by a guy named uh michael stepankin and uh there's just a
+
+233
+00:25:06,660 --> 00:25:15,700
+couple fields inside of an x509 certificate specifically the extensions of the x509 certificate um that
+
+234
+00:25:15,700 --> 00:25:21,860
+could actually cause ssrf when the certificate is being parsed okay so specifically there's a uh
+
+235
+00:25:22,020 --> 00:25:27,860
+extension called the authority information access extension i'll actually just i'll just go ahead
+
+236
+00:25:27,860 --> 00:25:35,780
+and read it right here um for instance the authority information access extension contains a url pointing
+
+237
+00:25:35,780 --> 00:25:41,140
+to the issuer certificate if this extension is used for validation there's a high chance that you can
+
+238
+00:25:41,140 --> 00:25:48,660
+exploit it to perform an ssrf attack okay so there's a field inside of this um you know extension
+
+239
+00:25:48,660 --> 00:25:54,820
+uh that you can put a url in and when it's validating that certificate and and maybe the certificate
+
+240
+00:25:54,820 --> 00:26:00,740
+chain associated with it then it might reach out to that url to grab the issuer's certificate right
+
+241
+00:26:00,740 --> 00:26:08,020
+um and so that could result in ssrf and likely it would be blind ssrf but uh blindness is better than
+
+242
+00:26:08,020 --> 00:26:14,660
+no ssrf and blindness rf can often be well i shouldn't say often can sometimes be turned into full read ssrf
+
+243
+00:26:14,660 --> 00:26:20,340
+depending on the amount of error logging that is in place so definitely keep that technique in mind
+
+244
+00:26:20,340 --> 00:26:26,660
+um i think there's a decent amount of attack surface uh that i've seen recently um by doing weird stuff
+
+245
+00:26:26,660 --> 00:26:31,620
+with x509 certificates like um you can craft a certificate i'm getting a little bit off topic
+
+246
+00:26:31,620 --> 00:26:38,500
+now but you can craft a certificate that has some um cryptographic problems with it right and when
+
+247
+00:26:38,500 --> 00:26:45,380
+they try to uh use it it will you know use up a whole mess of memory um so i'll see if i can find
+
+248
+00:26:45,380 --> 00:26:51,380
+that article and put it in the description as well but uh definitely be on the lookout for x509 parsing
+
+249
+00:26:51,380 --> 00:26:57,140
+problems because i think that is something that we'll see uh grow over the next couple years okay
+
+250
+00:26:58,100 --> 00:27:04,980
+next one is test whether or not the sp is vulnerable to xslt that's extensible style sheet
+
+251
+00:27:04,980 --> 00:27:12,740
+language transformation uh via saml and to be honest in my saml deep dive that i did this is the most
+
+252
+00:27:12,740 --> 00:27:19,460
+like mind-blowing thing that i found because i'd heard of this before actually at one of my first live
+
+253
+00:27:19,460 --> 00:27:26,420
+hacking events um some legend i think it was sam herb of course because this is such a like sam herb thing
+
+254
+00:27:26,420 --> 00:27:34,500
+um used this to like hack some xml related thing right uh it might have even been saml um but
+
+255
+00:27:34,980 --> 00:27:41,780
+uh you know this isn't something that i had thought about for years um and and here it is and it's
+
+256
+00:27:41,780 --> 00:27:49,220
+so much easier than excuse me it's so much easier than i thought um this is pretty much very much like
+
+257
+00:27:49,220 --> 00:28:01,140
+a a xxc okay um the the language at xslt is extremely flexible uh there's so much you can do with it
+
+258
+00:28:01,140 --> 00:28:06,180
+um and it's actually if i remember correctly from the notes i think it's a turing complete language
+
+259
+00:28:06,180 --> 00:28:12,180
+so you can write i mean you can write a lot of code in here um and you can do stuff like just read files
+
+260
+00:28:12,180 --> 00:28:16,900
+and then xfiltrate them to the attacker server just like an xxe and actually might even be more powerful
+
+261
+00:28:16,900 --> 00:28:22,980
+than an xxe in that capacity um so definitely something cool to look into here um so let me tell
+
+262
+00:28:22,980 --> 00:28:27,540
+you a little bit about how it works um i mentioned transformations before i'll read a quick
+
+263
+00:28:27,540 --> 00:28:33,620
+true uh quote about transformations uh so you can understand what kind of role they play in saml okay
+
+264
+00:28:33,620 --> 00:28:40,900
+so it says transformations are a very powerful tool to transform saml user attribute values transmitted
+
+265
+00:28:40,900 --> 00:28:45,220
+through the saml response all right so that's the thing coming back from the idp to the sp right to
+
+266
+00:28:45,220 --> 00:28:53,300
+the app um transmitted through the saml response or assertions from the identity provider mainly they
+
+267
+00:28:53,300 --> 00:28:59,460
+are used to transform not changeable values within the identity provider so the transformed value fits
+
+268
+00:28:59,460 --> 00:29:07,940
+the uh the required or desired attribute format in the application okay so good old you know identity
+
+269
+00:29:07,940 --> 00:29:12,660
+provider doesn't want to change service provider doesn't want to change stuff right here right you
+
+270
+00:29:12,660 --> 00:29:18,340
+know there has to be this whole language that we've created just to like make the names line up so that
+
+271
+00:29:18,340 --> 00:29:24,260
+people don't have to actually modify their code um and that's what that's what this is uh and so
+
+272
+00:29:24,260 --> 00:29:31,700
+essentially how it works is you can add a a transform tag uh inside of your inside of your signature
+
+273
+00:29:32,260 --> 00:29:38,100
+um which will be parsed uh parsed before the signature is actually validated okay this is the
+
+274
+00:29:38,100 --> 00:29:45,940
+kind of this is the crazy thing um let me see if i can find this other quote here um yeah the reason for
+
+275
+00:29:45,940 --> 00:29:51,860
+this is that the xslt transformation occurs before the digital signature is processed right so this
+
+276
+00:29:51,860 --> 00:29:56,900
+should really be like setting off fire alarms in your head right now right there is something
+
+277
+00:29:56,900 --> 00:30:03,700
+there's a token that is being taken and used for authentication and there is a whole you know turing
+
+278
+00:30:03,700 --> 00:30:11,060
+complete language that you may be able to use uh in this the parsing of this token which uh gets
+
+279
+00:30:11,060 --> 00:30:15,780
+processed before the cryptographic signature gets processed right that i mean i can
+
+280
+00:30:15,780 --> 00:30:22,740
+feel my i can feel my pulse rising right now just just talking about it right um so very cool stuff
+
+281
+00:30:22,740 --> 00:30:28,100
+here and something that we should definitely be looking at anytime we see saml um because you know
+
+282
+00:30:28,740 --> 00:30:33,540
+even signature validation isn't going to stop us here because it gets parsed before signatures get
+
+283
+00:30:33,540 --> 00:30:40,820
+validated so uh very cool so essentially you know i've got a payload here right in front of me and i'd
+
+284
+00:30:40,820 --> 00:30:45,620
+like to just sort of read it out to you but it's going to be kind of hard to process so
+
+285
+00:30:45,620 --> 00:30:50,580
+essentially i'll tell you how it goes um inside of this transform tag you know you define that
+
+286
+00:30:50,580 --> 00:30:59,140
+there's going to be a um a style sheet that is and you reference the w3.org transform um spec okay so
+
+287
+00:30:59,140 --> 00:31:06,100
+it knows what what this is and then inside of that you have this um template that you define uh that applies
+
+288
+00:31:06,100 --> 00:31:14,580
+to specific um uh xml tags you can say all right i only want this to affect whatever tag you know the if this
+
+289
+00:31:14,580 --> 00:31:18,180
+is html you could say all right i just wanted to affect the h1 tag or whatever right and then you
+
+290
+00:31:18,180 --> 00:31:26,260
+can define a whole set of things to do to that tag and uh from looking at right here from the example
+
+291
+00:31:26,260 --> 00:31:34,500
+that is in uh epio52's write-up um he essentially just says okay uh assign a variable file to the value
+
+292
+00:31:34,500 --> 00:31:39,700
+for etsy password go ahead and uri encode that file you can see the power of this language right here right
+
+293
+00:31:39,700 --> 00:31:47,060
+go ahead it has you know a function for encode to uri um and then uh concatenate it with the attacker url
+
+294
+00:31:47,060 --> 00:31:53,380
+and then go get that url right um and so it's like this is such a powerful language that i didn't know
+
+295
+00:31:53,380 --> 00:32:01,300
+existed uh so so it really blew my mind when i started learning about it i will add one caveat here and
+
+296
+00:32:01,300 --> 00:32:08,340
+i'm a little bit hesitant to even point this out because like clearly epio52 knows their stuff super well
+
+297
+00:32:08,340 --> 00:32:13,140
+and i i could be wrong about this but if it's if i am if i'm not wrong about it then it's something
+
+298
+00:32:13,140 --> 00:32:18,900
+that could mess up a lot of people's testing which is that if you copy and paste epio52's payload
+
+299
+00:32:18,900 --> 00:32:27,460
+specifically um uh from the from the article there the template uh tag that i mentioned in the beginning
+
+300
+00:32:27,460 --> 00:32:33,700
+has an attribute called match and it's set to the value dock by default and it maybe it's something i
+
+301
+00:32:33,700 --> 00:32:39,140
+don't know about you know xpath stuff but this seems to to me that this should only apply to an
+
+302
+00:32:39,140 --> 00:32:47,220
+attribute called doc and lots of the other um uh you know payloads that i've i've looked up for this uh
+
+303
+00:32:47,220 --> 00:32:56,100
+xslt thing has a match equals slash in the template tag okay so that would be matching the root tag
+
+304
+00:32:56,100 --> 00:33:04,180
+of this whole xml document so it would always apply right um and so it could be that you may need to
+
+305
+00:33:04,180 --> 00:33:11,780
+modify this payload that's mentioned in uh epio52's um right up here or i could have something wrong so
+
+306
+00:33:11,780 --> 00:33:16,420
+if any of you guys know that's listening or feel like deep diving the uh the explanation definitely
+
+307
+00:33:16,420 --> 00:33:21,940
+let me know um if i'm if i'm off on this one but you may want to do your research before you just copy
+
+308
+00:33:21,940 --> 00:33:28,580
+and paste this payload which is good advice for any payload to be honest um but yeah in conclusion
+
+309
+00:33:28,580 --> 00:33:34,180
+super cool thing here if you're going to take anything uh if you want to do any xml deep diving
+
+310
+00:33:34,180 --> 00:33:40,100
+it could be really cool to look at extensible stylesheet language transforms uh and it also could
+
+311
+00:33:40,100 --> 00:33:46,740
+be good to look at transformations themselves um there's also a whole section of this referenced in
+
+312
+00:33:46,740 --> 00:33:53,140
+um on slide 26 of green dog's presentation that i mentioned before um where he's talking about all
+
+313
+00:33:53,140 --> 00:33:57,860
+sorts of different transformations that you can do uh and this is just such a cool thing because they're
+
+314
+00:33:57,860 --> 00:34:04,820
+processed before the actual um you know parsing of the signature so really really cool stuff there
+
+315
+00:34:04,820 --> 00:34:09,700
+definitely check that out okay i'm gonna take a sip of water and then we're gonna we're gonna close this
+
+316
+00:34:09,700 --> 00:34:18,660
+one out all righty so the last one that we wanted to talk about here uh that's on epio52's list is
+
+317
+00:34:20,020 --> 00:34:27,460
+if the target sp is serviced by an idp to which you have a legitimate account on a different sp serviced
+
+318
+00:34:27,460 --> 00:34:36,740
+by the same idp test whether or not the target sp accepts a valid assertion meant for the valid sp okay
+
+319
+00:34:36,740 --> 00:34:47,300
+so that was uh a lot of acronyms and stuff in there but the tldr of this is this is an attack called
+
+320
+00:34:47,300 --> 00:34:53,060
+token recipient confusion okay so let's say you have an account on app a that is serviced by the sso
+
+321
+00:34:53,060 --> 00:35:00,980
+provider right can you use the assertion from app a in the same response used to log into app a on app b
+
+322
+00:35:00,980 --> 00:35:06,180
+right so it's sort of like a like a token reuse sort of thing um and well really it's a token
+
+323
+00:35:06,180 --> 00:35:12,260
+recipient problem right a token because ideally the sp should be looking at the recipient field
+
+324
+00:35:12,260 --> 00:35:18,100
+of the subject confirmation data element uh which is a i'm reading this now which is a child of the
+
+325
+00:35:18,100 --> 00:35:25,460
+subject element in the saml response um to determine whether or not this uh saml assertion is is meant
+
+326
+00:35:25,460 --> 00:35:30,820
+for them right uh as opposed to some other recipient so if they're not validating this then you may be
+
+327
+00:35:30,820 --> 00:35:38,820
+able to do some weird stuff by um pulling a valid uh you know token to and and like we see this we
+
+328
+00:35:38,820 --> 00:35:44,980
+mentioned a sort of a similar thing um affecting tesla a couple weeks ago uh found by i want to say
+
+329
+00:35:44,980 --> 00:35:54,420
+it was evan um evan connelly um and it you know using this sort of idp you know taking a token from here
+
+330
+00:35:54,420 --> 00:35:58,820
+and using it over there that sort of thing right so it same sort of thing can happen with saml um with
+
+331
+00:35:58,820 --> 00:36:05,940
+this token recipient confusion uh bug here okay so that wraps up the attack vectors that i wanted to
+
+332
+00:36:05,940 --> 00:36:14,100
+cover under specifically saml related attacks um now i just wanted to close out this episode by uh
+
+333
+00:36:14,740 --> 00:36:22,660
+recovering some hacker one reports um and of course my my session died to hacker one so i'm gonna have to
+
+334
+00:36:22,660 --> 00:36:28,660
+like go ahead and put in my auth code right here um before i can load up the report because the report
+
+335
+00:36:28,660 --> 00:36:36,980
+that i'm gonna cover first is uh a report by yours truly um and it's an xss like i mentioned before
+
+336
+00:36:36,980 --> 00:36:45,220
+uh and so let's go ahead and take a look at that uh once i log in all right here we go so this was
+
+337
+00:36:45,220 --> 00:36:52,020
+this is a private program so i can't tell you who it is uh but it's a pretty textbook xss uh when it
+
+338
+00:36:52,020 --> 00:36:58,260
+comes to uh xss plus saml okay and so the situation was this there was a service provider or an app that
+
+339
+00:36:58,260 --> 00:37:03,700
+i wanted to log into and it was using saml so i took the saml response that i had from a valid login
+
+340
+00:37:04,340 --> 00:37:16,980
+and i modified some of the um attributes within that uh within that saml response values right and actually
+
+341
+00:37:16,980 --> 00:37:22,660
+i believe i was subbing every single url in there for my my callback server so that i could try to
+
+342
+00:37:22,660 --> 00:37:31,460
+find ssrf which is also not a bad idea um but uh one of the responses i got from that was a message from
+
+343
+00:37:31,460 --> 00:37:37,540
+the uh service provider saying hey uh invalid response uh the response was received at the
+
+344
+00:37:37,540 --> 00:37:44,980
+current url of the app instead of at the uh you know my callback url right and so uh and it was serving
+
+345
+00:37:44,980 --> 00:37:53,700
+that up in text html so i was like hmm i wonder if i can you know inject uh some some uh html characters
+
+346
+00:37:53,700 --> 00:38:00,100
+in there and so i went back and i modified and this is actually in the destination um attribute of the
+
+347
+00:38:00,100 --> 00:38:06,500
+saml response so he was checking that to confirm um you know who should be receiving this token kind
+
+348
+00:38:06,500 --> 00:38:11,220
+of like we talked about earlier with the um with the destination and the recipient stuff right so there's
+
+349
+00:38:11,220 --> 00:38:17,460
+multiple areas where you can check for that so i went to the destination attribute of the response
+
+350
+00:38:17,460 --> 00:38:25,780
+uh of the response tag which is the the parent tag and uh just sort of inserted a uh html encoded
+
+351
+00:38:25,780 --> 00:38:32,100
+payload because like i mentioned before sometimes you have to put html encoding inside of that that um
+
+352
+00:38:32,100 --> 00:38:39,220
+if you're putting it uh html control characters inside of an attribute in xml uh you have to encode
+
+353
+00:38:39,220 --> 00:38:46,180
+those with like ampersand less than uh or lt colon right or ampersand gt colon right um so we put those
+
+354
+00:38:46,180 --> 00:38:53,460
+in there and i submitted the the saml response back to the service provider and boom it reflected into the
+
+355
+00:38:53,460 --> 00:39:00,740
+uh into the response and i was able to get xss now when you get xss on a uh an app like this a lot of
+
+356
+00:39:00,740 --> 00:39:08,820
+times it will result in um account takeover because you can leverage that position uh in the saml flow
+
+357
+00:39:09,460 --> 00:39:17,780
+in the auth flow to hijack that um that page uh so and and hijack the user session so um very impactful
+
+358
+00:39:17,780 --> 00:39:23,060
+stuff here uh definitely be on the lookout for xss like i mentioned and then the last report that i
+
+359
+00:39:23,060 --> 00:39:30,740
+wanted to cover was the one login authentication bypass on wordpress sites reported by jolko a hacker
+
+360
+00:39:30,740 --> 00:39:40,020
+that reported this bug in may of 2016 to uber and this is just sort of a textbook off bypass via saml
+
+361
+00:39:40,020 --> 00:39:48,340
+right he found this newsroom.uber.com and it was using one login saml sso um i assume it's a plugin yeah
+
+362
+00:39:48,340 --> 00:39:53,620
+it is it's a plugin um and this report is is public so you can go see it it's report number one three
+
+363
+00:39:53,620 --> 00:40:01,300
+six one six nine that's one three six one six nine um and uh he he essentially just did what i mentioned
+
+364
+00:40:01,300 --> 00:40:07,620
+before which was he took a saml response and he you know sort of like a vanilla saml response and he
+
+365
+00:40:07,620 --> 00:40:13,300
+sent it to the that endpoint and then the endpoint was like yo bro you're missing this attribute and he's
+
+366
+00:40:13,300 --> 00:40:19,300
+like okay and so he puts in that attribute and then he's like yo you're missing this other attribute and
+
+367
+00:40:19,300 --> 00:40:23,940
+so he keeps on doing that until he fills out all the attributes that he needs and then it's like all
+
+368
+00:40:23,940 --> 00:40:29,300
+right cool got all the attributes log you right on in there's not even a signature tag in this whole
+
+369
+00:40:29,300 --> 00:40:36,660
+payload that he mentions here okay um so this is a textbook example of the first type that we talked about
+
+370
+00:40:37,300 --> 00:40:42,260
+which is the assertion without a signature okay uh so definitely know that this does exist out there
+
+371
+00:40:42,260 --> 00:40:47,700
+uh and like i mentioned when organizations are using saml they have to you know there's so many
+
+372
+00:40:47,700 --> 00:40:53,060
+different apps that are using it to log into it right um and so there's got to be a bug somewhere
+
+373
+00:40:53,060 --> 00:40:59,540
+there's got to be uh so hopefully going you know using that methodology using that mentality you guys
+
+374
+00:40:59,540 --> 00:41:04,020
+will go out there and find some sample bugs if you do definitely dm me it'd be super cool to know
+
+375
+00:41:04,020 --> 00:41:09,540
+that you guys found some sample bugs because of this episode um so let me just do a quick review keep an
+
+376
+00:41:09,540 --> 00:41:16,100
+eye out for the xss's in any sort of saml environment uh because for some reason they're particularly
+
+377
+00:41:16,100 --> 00:41:22,420
+prevalent um there's the assertion without a signature the signature signature exclusion bug
+
+378
+00:41:22,420 --> 00:41:29,860
+which you just delete the signature tags from a uh a saml response there's the xml signature wrapping
+
+379
+00:41:29,860 --> 00:41:35,780
+bugs which there are eight of them um by placing the signature in different spots uh throughout the saml
+
+380
+00:41:35,780 --> 00:41:40,580
+response and trying to trick the application into getting to trust your assertion even though the
+
+381
+00:41:40,580 --> 00:41:47,220
+signature uh is not valid for it okay so there's there's that one there's um assertion check that
+
+382
+00:41:47,220 --> 00:41:52,900
+the assertion is coming from a trusted idp that's the signature faking bug um there's the re assertion
+
+383
+00:41:52,900 --> 00:41:58,340
+replay bug which is like kind of a bug but not really um that you could check for and if there is it
+
+384
+00:41:58,340 --> 00:42:05,700
+could indicate sort of a less strict saml implementation um there's xxc's inside of saml there's srf
+
+385
+00:42:05,700 --> 00:42:11,940
+inside of saml either by them hitting some sort of url from within the saml response directly
+
+386
+00:42:12,740 --> 00:42:21,540
+or by a parsing a maliciously edited x509 certificate and calling out to your server to uh to validate
+
+387
+00:42:21,540 --> 00:42:27,780
+the certificate and i think there's a couple other things not just the um not just the authority
+
+388
+00:42:27,780 --> 00:42:32,900
+information access extension there's a couple places where you can put the ssrf payload inside the x509
+
+389
+00:42:32,900 --> 00:42:38,340
+certificate so definitely check out that uh blog post that i'll have in the description um from the
+
+390
+00:42:38,340 --> 00:42:47,860
+github blog by michael stepankin um so there's the the ssrf and then there's uh the xslt uh vulnerabilities
+
+391
+00:42:47,860 --> 00:42:53,300
+inside of saml that we spent a lot of time talking about definitely research these super exciting stuff
+
+392
+00:42:53,300 --> 00:43:01,220
+here could really result in some crazy bugs um and then finally there's the uh token recipient confusion bug
+
+393
+00:43:01,220 --> 00:43:06,260
+which um you know it would be kind of a specific scenario you need to have this happen but if you
+
+394
+00:43:06,260 --> 00:43:11,700
+do it still could result in auth bypass so definitely definitely some really interesting bug types here
+
+395
+00:43:12,580 --> 00:43:18,020
+all right i think that's it hopefully you guys have learned some stuff about uh saml and and uh if you
+
+396
+00:43:18,980 --> 00:43:22,660
+yeah if you find anything like i said let me know hopefully you're feeling a little bit more
+
+397
+00:43:22,660 --> 00:43:37,060
+more confident going into your sample testing all right go find some bugs
+
+398
+00:43:39,940 --> 00:43:40,020
+you
+
