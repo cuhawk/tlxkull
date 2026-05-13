@@ -134,6 +134,12 @@ def test_post_verdict_rejects_unknown_verdict_value(client, target_factory):
     assert r.status_code == 422
 
 
+def test_post_verdict_404_when_target_does_not_exist(client, targets_root):
+    r = client.post("/api/target/ghost/verdict/1", json={"verdict": "fp", "note": ""})
+    assert r.status_code == 404
+    assert not (targets_root / "ghost").exists()
+
+
 def test_root_serves_spa_index_html(client):
     r = client.get("/")
     assert r.status_code == 200

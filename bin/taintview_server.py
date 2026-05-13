@@ -148,7 +148,8 @@ def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
     @app.post("/api/target/{name}/verdict/{chain_id}")
     def post_verdict(name: str, chain_id: int, payload: VerdictIn) -> dict:
         target_dir = app.state.targets_root / name
-        target_dir.mkdir(parents=True, exist_ok=True)
+        if not (target_dir / "chains" / "all.jsonl").exists():
+            raise HTTPException(404, f"target {name!r} not found")
         rec = {
             "chain_id": chain_id,
             "verdict": payload.verdict,
