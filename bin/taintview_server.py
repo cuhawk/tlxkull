@@ -23,6 +23,17 @@ def build_app(*, targets_root: Path) -> FastAPI:
     def health() -> dict:
         return {"ok": True}
 
+    @app.get("/api/targets")
+    def list_targets() -> dict:
+        root: Path = app.state.targets_root
+        if not root.exists():
+            return {"targets": []}
+        names = sorted(
+            d.name for d in root.iterdir()
+            if d.is_dir() and (d / "chains" / "all.jsonl").exists()
+        )
+        return {"targets": names}
+
     return app
 
 
