@@ -156,15 +156,13 @@ Single Python file, ~150 LOC. Endpoints:
 | GET  | `/api/targets` | List of dirs under `targets/` that contain `chains/all.jsonl` |
 | GET  | `/api/target/{name}/chains` | `{chains: [...]}` — every chain from `chains/all.jsonl`, each annotated with `is_hot: bool` (presence in `hot.jsonl`) and `reach: "reachable"|"unreachable"|"unknown"` (presence in `dom_reachable.jsonl` / `dom_unreachable.jsonl`; `unknown` if neither). |
 | GET  | `/api/target/{name}/opus/{chain_id}` | Markdown text of `opus/{chain_id}.md` or 404 |
-| GET  | `/api/target/{name}/snippet?qname=...` | Calls tlx MCP `js_get_snippet`. Returns `{source, file, line, start_line, end_line}` |
+| GET  | `/api/target/{name}/snippet?qname=...` | Reads `targets/<name>/index/nodes.jsonl` to resolve `qname → file, line, end_line`, then reads the slice from `targets/<name>/sources/<file>` (±3 lines of context). Returns `{qname, file, line, end_line, source}`. Pure filesystem read — no MCP dependency. |
 | POST | `/api/target/{name}/verdict/{chain_id}` | Body: `{verdict: "tp"|"fp"|"undet", note: str}`. Appends to `targets/<name>/verdicts.jsonl`. |
 | GET  | `/api/target/{name}/verdicts` | All verdicts as `{chain_id: {verdict, note, ts}}` |
 
-MCP invocation: reuse the same stdio pattern the existing skills use to
-talk to the tlx MCP server. The sidecar spawns `python -m mcp_server`
-once on startup and keeps the connection alive. If the spawn fails, log
-to stderr and serve a 503 with the error text on `/api/...` calls — the
-SPA shows a banner.
+No MCP dependency. All endpoints are pure filesystem reads/writes
+under `targets/<name>/`. Simpler, more robust, no long-running stdio
+subprocess to manage.
 
 CORS: not needed (same origin).
 
@@ -253,7 +251,8 @@ bin/
 | Failure | UI behavior |
 |---|---|
 | chains/all.jsonl missing | CLI prints error, refuses to start. |
-| tlx MCP fails to spawn | Sidecar logs to stderr; `/api/snippet` returns 503 with error. SPA shows "snippet unavailable: <err>" in right rail. Graph + chains still work. |
+| `index/nodes.jsonl` missing for a qname | `/api/snippet` returns 404 `{error: "qname not indexed"}`. SPA shows "snippet unavailable" in right rail. Graph + chains still work. |
+| `sources/<file>` missing on disk | `/api/snippet` returns 404 `{error: "source file missing"}`. SPA shows the file path. |
 | opus/<id>.md missing | `/api/opus` returns 404; right rail shows "no opus writeup". |
 | chain has invalid path (single-node, empty) | Skip with console warning. |
 | Cytoscape layout times out on >5k nodes | SPA detects via timing and switches to dagre layout, shows banner. |
@@ -261,10 +260,12 @@ bin/
 
 ## Testing
 
-- **Sidecar:** pytest. Stub tlx MCP via fake stdio process. Assert all
-  endpoints return correct shape. Test verdict append idempotency
-  (re-posting same chain_id updates rather than duplicates — last write
-  wins per chain).
+- **Sidecar:** pytest. Use a temp directory laid out like a real target
+  (`chains/all.jsonl`, `chains/hot.jsonl`, `index/nodes.jsonl`,
+  `sources/<file>`, `opus/<id>.md`) as a fixture. Assert all endpoints
+  return correct shape. Test verdict append idempotency (re-posting same
+  chain_id appends a new line and `/api/verdicts` collapses to the
+  newer entry).
 - **SPA:** Vitest + React Testing Library. Two tests are enough for
   initial cut:
   1. Given a fixture of 3 chains sharing one hop node, the graph
@@ -284,10 +285,10 @@ None — all design decisions captured above.
   shared hops may exceed 5k nodes. Mitigation: filter defaults to
   `score >= 70` (matches `hot.jsonl` threshold) on initial load; users
   opt into the full graph via filter.
-- **Sidecar lifetime.** Long-running uvicorn process holds MCP stdio
-  open. If tlx MCP crashes mid-session, snippet calls fail until
-  restart. Sidecar should detect EOF on stdio and respawn the MCP once
-  before giving up.
+- **Stale `index/nodes.jsonl`.** If sources changed after indexing, the
+  snippet endpoint may return out-of-date line ranges. Acceptable: the
+  pipeline already documents `index` as a separate phase, and the
+  viewer surfaces `file:line` so the user can spot drift.
 - **Build output in git.** Checking `dist/` in keeps the tool runnable
   without a node toolchain but adds binary churn. Acceptable for a
   single-user repo; revisit if it bothers diffs.
