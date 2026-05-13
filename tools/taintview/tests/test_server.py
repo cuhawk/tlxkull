@@ -143,10 +143,10 @@ def test_post_verdict_404_when_target_does_not_exist(client, targets_root):
 def test_root_serves_spa_index_html(client):
     r = client.get("/")
     assert r.status_code == 200
-    assert "<div id=root>" in r.text
+    assert 'id="root"' in r.text
 
 
 def test_unknown_non_api_route_falls_through_to_index_html(client):
     r = client.get("/some/spa/route")
     assert r.status_code == 200
-    assert "<div id=root>" in r.text
+    assert 'id="root"' in r.text
