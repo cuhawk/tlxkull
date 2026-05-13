@@ -128,11 +128,15 @@ def _stored_sha256(col, doc_id: str) -> str | None:
 
 
 def _collection(cfg, name: str, embedding_function: Any | None):
+    """Open a collection without attaching an embedding_function.
+
+    Callers pre-embed via the kernel embedder and pass `embeddings=` to
+    upsert and `query_embeddings=` to query. Attaching an EF here causes
+    chromadb to reject the collection if a different EF (or none) was
+    persisted at create time. The `embedding_function` arg is retained
+    only for the legacy adapter path; ignored when bypass mode is used.
+    """
     client = chromadb.PersistentClient(path=cfg.chroma_path)
-    if embedding_function is not None:
-        return client.get_or_create_collection(
-            name, embedding_function=embedding_function,
-        )
     return client.get_or_create_collection(name)
 
 
@@ -181,18 +185,33 @@ async def docs_ingest(
             {"source": path, "chunk_idx": i, "sha256": current}
             for i in range(len(chunks))
         ]
+        # Pre-embed via kernel embedder. Bypasses chromadb's attached EF
+        # so collections written by different ingest paths stay queryable.
+        if embedding_function is None or not hasattr(
+            embedding_function, "_embedder"
+        ):
+            return json.dumps({
+                "error": "no_kernel_embedder",
+                "hint": "RAG module did not receive a kernel embedder; "
+                        "MCP boot misconfigured.",
+            })
+        kernel_emb = embedding_function._embedder
+        marker_vec = (await kernel_emb.embed([_MARKER_DOC]))[0]
+        chunk_vecs = await kernel_emb.embed(chunks)
         await asyncio.to_thread(
             col.upsert,
-            documents=[_MARKER_DOC],
             ids=[doc_id],
+            embeddings=[marker_vec],
+            documents=[_MARKER_DOC],
             metadatas=[{
                 "source": path, "sha256": current, "marker": True,
             }],
         )
         await asyncio.to_thread(
             col.upsert,
-            documents=chunks,
             ids=ids,
+            embeddings=chunk_vecs,
+            documents=chunks,
             metadatas=metadatas,  # type: ignore[arg-type]
         )
     except Exception as e:
@@ -217,8 +236,21 @@ async def docs_query(
 ) -> str:
     try:
         col = _collection(cfg, collection, embedding_function)
+        # Pre-embed the question with the kernel embedder, then query by
+        # vector. Avoids chromadb attempting to embed with whatever EF
+        # was attached at collection-create time (which may not match).
+        if embedding_function is None or not hasattr(
+            embedding_function, "_embedder"
+        ):
+            return json.dumps({
+                "error": "no_kernel_embedder",
+                "hint": "RAG module did not receive a kernel embedder; "
+                        "MCP boot misconfigured.",
+            })
+        kernel_emb = embedding_function._embedder
+        qvec = (await kernel_emb.embed([question]))[0]
         results = await asyncio.to_thread(
-            col.query, query_texts=[question], n_results=top_k
+            col.query, query_embeddings=[qvec], n_results=top_k
         )
         items = []
         docs = results.get("documents") or []
@@ -229,9 +261,11 @@ async def docs_query(
         for doc, meta, dist in zip(
             docs[0], metas[0], dists[0], strict=False,
         ):
+            # `source` from docs_ingest path; `path` from RagService bulk path.
+            src = meta.get("source") or meta.get("path") or ""
             items.append({
                 "text": doc,
-                "source": meta.get("source", ""),
+                "source": src,
                 "score": round(1 - dist, 4),
             })
         return json.dumps(items)

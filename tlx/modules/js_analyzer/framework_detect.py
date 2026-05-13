@@ -61,8 +61,33 @@ _EXPRESS_IMP_RE = re.compile(
     re.MULTILINE,
 )
 _NGMODULE_RE    = re.compile(r"@NgModule\s*\(")
+# Ivy/AOT runtime markers — prebuilt Angular bundles where @NgModule decorator
+# is compiled away. Hits any of: ɵɵdefineNgModule, ɵɵdefineComponent,
+# ɵɵdefineDirective, ɵɵdefineInjectable, bootstrapApplication, NG_PROV.
+_NG_IVY_RE      = re.compile(
+    r"ɵɵ(?:defineNgModule|defineComponent|defineDirective|defineInjectable|definePipe|defineInjector)"
+    r"|\bbootstrapApplication\s*\("
+    r"|\bplatformBrowser(?:Dynamic)?\s*\("
+)
 _VUE_DEFINE_RE  = re.compile(r"\bdefineComponent\s*\(")
 _VUE_TEMPLATE_RE = re.compile(r"<template[\s>]")
+# Browser-DOM marker — anything that touches window/document/location at module
+# scope or via clearly browser-only globals. Used to force `browser` tag so the
+# DOM XSS taxonomy fires on framework-free or compiled-away bundles.
+_BROWSER_RE     = re.compile(
+    r"\b(?:window\.|document\.|location\.|history\.pushState|XMLHttpRequest"
+    r"|HTMLElement\b|customElements\.|navigator\.userAgent)"
+)
+# React markers — hooks and JSX runtime entry points. Catches prod bundles
+# where the `react` import name is preserved-and-mangled but hooks survive.
+_REACT_RE       = re.compile(
+    r"\b(?:useState|useEffect|useRef|useMemo|useCallback|useReducer|useContext|useLayoutEffect)\s*\("
+    r"|React\.createElement\s*\("
+    r"|\bcreateRoot\s*\(\s*[a-zA-Z_$]"
+    r"|\bhydrateRoot\s*\("
+    r"|\bjsx\(s?\)?\s*\("
+)
+_VUE_CREATEAPP_RE = re.compile(r"\bcreateApp\s*\(")
 
 
 def _scan_pkg_json(pkg_path: Path | str) -> set[str]:
@@ -126,13 +151,17 @@ def _scan_files(file_list: list[str] | None) -> set[str]:
 
         if _EXPRESS_IMP_RE.search(text):
             found.add("express")
-        if _NGMODULE_RE.search(text):
+        if _NGMODULE_RE.search(text) or _NG_IVY_RE.search(text):
             found.add("angular")
         if suffix == ".vue":
             if _VUE_DEFINE_RE.search(text) or _VUE_TEMPLATE_RE.search(text):
                 found.add("vue")
-        elif _VUE_DEFINE_RE.search(text):
+        elif _VUE_DEFINE_RE.search(text) or _VUE_CREATEAPP_RE.search(text):
             found.add("vue")
+        if _REACT_RE.search(text):
+            found.add("react")
+        if _BROWSER_RE.search(text):
+            found.add("browser")
 
     return found
 

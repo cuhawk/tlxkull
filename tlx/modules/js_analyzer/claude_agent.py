@@ -579,14 +579,27 @@ def _consult_opus(
     resp = client.messages.create(
         model=CLAUDE_OPUS_MODEL,
         max_tokens=2048,
-        system=_CONSULT_SYSTEM_PROMPT,
+        system=[
+            {
+                "type": "text",
+                "text": _CONSULT_SYSTEM_PROMPT,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
         messages=[{"role": "user", "content": user_msg}],
     )
 
     in_p, out_p = price_per_token(CLAUDE_OPUS_MODEL)
     in_tok = getattr(resp.usage, "input_tokens", 0)
     out_tok = getattr(resp.usage, "output_tokens", 0)
-    cost = in_tok * in_p + out_tok * out_p
+    cache_write = int(getattr(resp.usage, "cache_creation_input_tokens", 0) or 0)
+    cache_read = int(getattr(resp.usage, "cache_read_input_tokens", 0) or 0)
+    cost = (
+        in_tok * in_p
+        + cache_write * in_p * 1.25
+        + cache_read * in_p * 0.10
+        + out_tok * out_p
+    )
 
     ctx.consults_used += 1
     ctx.consults_cost_usd += cost
@@ -595,6 +608,8 @@ def _consult_opus(
         "question":   question,
         "confidence": confidence,
         "tokens_in":  in_tok,
+        "cache_write_tokens": cache_write,
+        "cache_read_tokens":  cache_read,
         "tokens_out": out_tok,
         "cost_usd":   cost,
     })

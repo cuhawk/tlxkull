@@ -15,6 +15,12 @@ from typing import Any
 
 BATCH = 100
 MODEL_ID = os.environ.get("TLX_EMBED_MODEL", "gemini-embedding-001")
+# Throttle: seconds to sleep between batches to stay under TPM/RPM caps.
+# Tier 1 (paid, default): 100 RPM, 1M TPM. 100-chunk batches at ~1k tok each
+# = ~100k tok/batch → need ≤10 batches/min → 6.0s sleep is a safe floor.
+BATCH_SLEEP = float(os.environ.get("TLX_EMBED_BATCH_SLEEP", "6.0"))
+# Retry on 429 (RESOURCE_EXHAUSTED). Exponential backoff capped.
+MAX_429_RETRIES = int(os.environ.get("TLX_EMBED_MAX_429_RETRIES", "5"))
 
 
 class GoogleEmbedder:
@@ -56,8 +62,24 @@ class GoogleEmbedder:
         if not texts:
             return []
         results: list[list[float]] = []
+        total_batches = (len(texts) + BATCH - 1) // BATCH
         for i in range(0, len(texts), BATCH):
             chunk = texts[i:i + BATCH]
-            vecs = await asyncio.to_thread(self._embed_batch_sync, chunk)
+            attempt = 0
+            while True:
+                try:
+                    vecs = await asyncio.to_thread(self._embed_batch_sync, chunk)
+                    break
+                except Exception as e:
+                    msg = str(e)
+                    is_429 = "429" in msg or "RESOURCE_EXHAUSTED" in msg
+                    if not is_429 or attempt >= MAX_429_RETRIES:
+                        raise
+                    backoff = min(60.0, BATCH_SLEEP * (2 ** attempt))
+                    await asyncio.sleep(backoff)
+                    attempt += 1
             results.extend(vecs)
+            # Throttle between batches (skip after last).
+            if i + BATCH < len(texts) and BATCH_SLEEP > 0:
+                await asyncio.sleep(BATCH_SLEEP)
         return results

@@ -42,8 +42,8 @@ durable facts; remove stale ones.
 
 ## Cross-session pointers
 
-- **Current target:** _none_ (update when starting a target).
-- **Last touched target:** _none_.
+- **Current target:** coralbug3-syn (full pipeline run 2026-05-13; 0 TP, 1 undetermined surface — Angular [innerHTML] bindings flagged for live retest if access becomes available).
+- **Last touched target:** coralbug3-syn.
 - **Wiki last linted:** _never_.
 
 ## Long-running learnings (cross-target)

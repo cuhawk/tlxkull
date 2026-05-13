@@ -2,65 +2,88 @@
 """Export TLX's internal js_analyzer artifacts for one target into
 targets/<name>/index/ so the engagement folder is self-contained.
 
-Reads from ~/.tlx/sessions.db (or the js_analyzer-specific SQLite store
-inside ~/.tlx/) and writes:
+Reads from ~/.tlx/js_analyzer.db and writes:
   index/nodes.jsonl
   index/edges.jsonl
   index/tags.jsonl
-  index/frameworks.json
-  index/_skipped.json   (files the analyzer couldn't parse)
+  index/frameworks.json   (only if --frameworks provided)
+  index/_skipped.json     (best-effort; empty if analyzer doesn't track)
 
 Usage:
-  python bin/export_index.py <target_name> <out_dir>
+  bin/export_index.py <target_name> <out_dir> [--frameworks '["react",...]']
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sqlite3
-import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TLX_HOME = Path(os.path.expanduser("~/.tlx"))
+DB_PATH = TLX_HOME / "js_analyzer.db"
 
 
-def _open_callgraph_db() -> sqlite3.Connection:
-    """js_analyzer persists the callgraph in its own SQLite file inside
-    ~/.tlx/. The exact name has varied; we probe the few common ones."""
-    candidates = [
-        TLX_HOME / "callgraph.db",
-        TLX_HOME / "js_analyzer.db",
-        TLX_HOME / "sessions.db",
-    ]
-    for c in candidates:
-        if c.exists():
-            return sqlite3.connect(c)
-    raise FileNotFoundError(
-        f"No TLX callgraph DB found in {TLX_HOME}. Run js-index first.")
-
-
-def export(target_name: str, out_dir: Path) -> dict:
+def export(target_name: str, out_dir: Path, frameworks: list | None) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
-    conn = _open_callgraph_db()
+    if not DB_PATH.exists():
+        raise FileNotFoundError(f"missing {DB_PATH}; run js_index_target first")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
 
-    def _rows(query: str, params: tuple = ()) -> list:
-        try:
-            return [dict(r) for r in conn.execute(query, params).fetchall()]
-        except sqlite3.OperationalError:
-            return []
+    nodes = [
+        {
+            "qname": r["qualified_name"],
+            "file": r["file"],
+            "line": r["start_line"],
+            "end_line": r["end_line"],
+            "kind": r["kind"],
+            "parent": r["parent"],
+            "name": r["name"],
+            "original_file": r["original_file"],
+            "original_line": r["original_line"],
+        }
+        for r in conn.execute(
+            "SELECT id, qualified_name, file, name, parent, kind, "
+            "start_line, end_line, original_file, original_line FROM nodes"
+        )
+    ]
 
-    # Tables/column names may differ across TLX phases. We try a few.
-    nodes = _rows("SELECT * FROM nodes WHERE target = ?", (target_name,)) \
-        or _rows("SELECT * FROM cg_nodes")
-    edges = _rows("SELECT * FROM edges WHERE target = ?", (target_name,)) \
-        or _rows("SELECT * FROM cg_edges")
-    tags  = _rows("SELECT * FROM tags  WHERE target = ?", (target_name,)) \
-        or _rows("SELECT * FROM cg_tags")
-    fws   = _rows("SELECT * FROM frameworks WHERE target = ?", (target_name,)) \
-        or _rows("SELECT * FROM cg_frameworks")
-    skipped = _rows("SELECT * FROM skipped_files WHERE target = ?", (target_name,))
+    edges = [
+        {
+            "caller_qname": r["caller_qname"],
+            "callee_qname": r["callee_qname"] or r["callee_raw"],
+            "callee_raw": r["callee_raw"],
+            "edge_kind": r["resolved_kind"],
+            "line": r["line"],
+        }
+        for r in conn.execute(
+            "SELECT n1.qualified_name AS caller_qname, "
+            "       n2.qualified_name AS callee_qname, "
+            "       e.callee_raw, e.resolved_kind, e.line "
+            "FROM edges e "
+            "JOIN nodes n1 ON n1.id = e.caller_id "
+            "LEFT JOIN nodes n2 ON n2.id = e.callee_id"
+        )
+    ]
+
+    tags = [
+        {
+            "qname": r["qualified_name"],
+            "file": r["file"],
+            "taxonomy_id": r["taxonomy_id"],
+            "kind": r["kind"],
+            "severity": r["severity"],
+            "line": r["line"],
+            "source": r["source"],
+        }
+        for r in conn.execute(
+            "SELECT n.qualified_name, n.file, t.taxonomy_id, t.kind, "
+            "       t.severity, t.line, t.source "
+            "FROM node_tags t JOIN nodes n ON n.id = t.node_id"
+        )
+    ]
 
     def _write_jsonl(name: str, rows: list) -> None:
         with (out_dir / name).open("w", encoding="utf-8") as f:
@@ -70,25 +93,31 @@ def export(target_name: str, out_dir: Path) -> dict:
     _write_jsonl("nodes.jsonl", nodes)
     _write_jsonl("edges.jsonl", edges)
     _write_jsonl("tags.jsonl", tags)
-    (out_dir / "frameworks.json").write_text(json.dumps(fws, indent=2, default=str))
-    (out_dir / "_skipped.json").write_text(json.dumps(skipped, indent=2, default=str))
+    (out_dir / "frameworks.json").write_text(
+        json.dumps(frameworks or [], indent=2)
+    )
+    (out_dir / "_skipped.json").write_text("[]")
 
     summary = {
         "target": target_name,
         "nodes": len(nodes), "edges": len(edges),
-        "tags": len(tags), "frameworks": fws, "skipped": len(skipped),
+        "tags": len(tags), "frameworks": frameworks or [], "skipped": 0,
     }
-    print(json.dumps(summary, default=str, indent=2))
+    print(json.dumps(summary, indent=2))
     return summary
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print(__doc__, file=sys.stderr)
-        return 2
-    export(sys.argv[1], Path(sys.argv[2]).resolve())
+    ap = argparse.ArgumentParser()
+    ap.add_argument("target_name")
+    ap.add_argument("out_dir")
+    ap.add_argument("--frameworks", default=None,
+                    help='JSON array of detected frameworks, e.g. \'["react"]\'')
+    a = ap.parse_args()
+    fws = json.loads(a.frameworks) if a.frameworks else None
+    export(a.target_name, Path(a.out_dir).resolve(), fws)
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

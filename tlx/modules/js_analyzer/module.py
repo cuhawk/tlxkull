@@ -757,8 +757,26 @@ def _index_target_payload(
         kernel, "js_analyzer.parsing", f"{len(files)} files to parse"
     )
     results = extractor.extract(files) if files else {}
+
+    # Load taxonomy + read source text so AST tags persist to node_tags.
+    # Without these, index_batch skips _tag_nodes entirely (the guard requires
+    # both taxonomy is not None AND file_sources truthy), and node_tags stays
+    # empty even when ast_extractor.js emits ast_tags.
+    from modules.js_analyzer.taxonomy import load_default as _load_default_taxonomy
+    taxonomy = _load_default_taxonomy()
+    file_sources: dict[str, str] = {}
+    for f in files:
+        try:
+            file_sources[f["rel"]] = Path(f["abs"]).read_text(
+                encoding="utf-8", errors="replace",
+            )
+        except Exception:
+            continue
+
     cg.index_batch(
         results,
+        taxonomy=taxonomy,
+        file_sources=file_sources,
         root_dir=target,
         template_files=template_files or None,
     )
