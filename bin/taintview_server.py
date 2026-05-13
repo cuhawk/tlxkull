@@ -39,6 +39,15 @@ def _read_jsonl(path: Path) -> list[dict]:
     return out
 
 
+def _resolve_target(targets_root: Path, name: str) -> Path:
+    """Resolve a target dir under targets_root, rejecting path-escape attempts."""
+    candidate = (targets_root / name).resolve()
+    root_resolved = targets_root.resolve()
+    if not candidate.is_relative_to(root_resolved):
+        raise HTTPException(400, "invalid target name")
+    return candidate
+
+
 _node_cache: dict[tuple[str, float], dict[str, dict]] = {}
 
 
@@ -84,7 +93,7 @@ def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
 
     @app.get("/api/target/{name}/chains")
     def get_chains(name: str) -> dict:
-        target_dir = app.state.targets_root / name
+        target_dir = _resolve_target(app.state.targets_root, name)
         all_path = target_dir / "chains" / "all.jsonl"
         if not all_path.exists():
             raise HTTPException(404, f"target {name!r} has no chains/all.jsonl")
@@ -107,14 +116,15 @@ def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
 
     @app.get("/api/target/{name}/opus/{chain_id}")
     def get_opus(name: str, chain_id: int) -> dict:
-        path = app.state.targets_root / name / "opus" / f"{chain_id}.md"
+        target_dir = _resolve_target(app.state.targets_root, name)
+        path = target_dir / "opus" / f"{chain_id}.md"
         if not path.exists():
             raise HTTPException(404, f"no opus writeup for chain {chain_id}")
         return {"chain_id": chain_id, "markdown": path.read_text()}
 
     @app.get("/api/target/{name}/snippet")
     def get_snippet(name: str, qname: str) -> dict:
-        target_dir = app.state.targets_root / name
+        target_dir = _resolve_target(app.state.targets_root, name)
         nodes = _load_nodes_index(target_dir / "index" / "nodes.jsonl")
         rec = nodes.get(qname)
         if rec is None:
@@ -147,7 +157,7 @@ def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
 
     @app.post("/api/target/{name}/verdict/{chain_id}")
     def post_verdict(name: str, chain_id: int, payload: VerdictIn) -> dict:
-        target_dir = app.state.targets_root / name
+        target_dir = _resolve_target(app.state.targets_root, name)
         if not (target_dir / "chains" / "all.jsonl").exists():
             raise HTTPException(404, f"target {name!r} not found")
         rec = {
@@ -162,7 +172,8 @@ def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
 
     @app.get("/api/target/{name}/verdicts")
     def get_verdicts(name: str) -> dict:
-        path = app.state.targets_root / name / "verdicts.jsonl"
+        target_dir = _resolve_target(app.state.targets_root, name)
+        path = target_dir / "verdicts.jsonl"
         collapsed: dict[str, dict] = {}
         if path.exists():
             for line in path.read_text().splitlines():

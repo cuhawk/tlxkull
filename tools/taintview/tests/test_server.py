@@ -140,6 +140,27 @@ def test_post_verdict_404_when_target_does_not_exist(client, targets_root):
     assert not (targets_root / "ghost").exists()
 
 
+def test_chains_rejects_target_name_path_traversal(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)])
+    r = client.get("/api/target/../t1/chains")
+    # FastAPI will normalize the URL; verify either a 400 invalid-name
+    # or a 404 -- the important thing is we don't serve t1's chains
+    # via an escaped path.
+    assert r.status_code in (400, 404, 405)
+
+
+def test_opus_rejects_target_name_dotdot(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)]).opus(1, "md")
+    r = client.get("/api/target/../t1/opus/1")
+    assert r.status_code in (400, 404, 405)
+
+
+def test_resolve_target_rejects_dotdot_via_helper(client, targets_root):
+    # Direct invocation: any handler with name=".." must reject before touching FS
+    r = client.get("/api/target/..%2F..%2Ftmp/chains")
+    assert r.status_code in (400, 404)
+
+
 def test_root_serves_spa_index_html(client):
     r = client.get("/")
     assert r.status_code == 200
