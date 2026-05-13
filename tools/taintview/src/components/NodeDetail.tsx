@@ -41,6 +41,7 @@ export function NodeDetail({ target, selectedChain, selectedQname, verdict, onVe
         <section>
           <h3 className="text-zinc-400 text-xs mb-1">manual verdict</h3>
           <VerdictEditor
+            key={selectedChain.id}
             target={target}
             chainId={selectedChain.id}
             current={verdict}
