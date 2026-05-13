@@ -1,0 +1,862 @@
+that the team said, okay, it was developed by third party, we had enough of fixing the
+box there, let's just decommission it and put it behind our more secure code base.
+So like, we actually managed to get a product decommission, which is nice achievement.
+I mean, poor people if they lost their jobs.
+I don't know.
+Hey guys, quick reminder before we hop into this week's episode, WordFence is still running
+their holiday bug extravaganza through December 20th and paying 6.25 times their normal bounty
+amounts.
+Over the past week, over 200 critical thinking listeners have set up their WordPress testing
+environment and the WordFence team reports multiple crits turned in by critical thinking
+listeners.
+So I really appreciate it.
+You guys, you guys have been crushing it.
+The best way to support the podcast is to hack on our sponsors and you guys have been doing
+just that.
+So if you guys want to get in on the action, if you haven't already head over to ctbb.show
+slash WF for WordFence, ctbb.show slash WF.
+You can find the program signup link there and some Docker install scripts to get you started.
+And of course, when you do finally turn in your report, don't forget to mention critical
+thinking for that extra 10% bonus on top of your normal bounty.
+With that, I guess we'll get to the episode.
+This week, we've got guest Gal Naglion for a second time.
+We're going to be discussing the live hacking event scene and some bugs we found collaborating
+together over a week of hacking in person.
+Hope you guys enjoy.
+All righty, man.
+Round two.
+We just got settled in the sunroom here at my house and we recorded for 15 minutes and
+then we realized that the mute button on Nagli's mic was on.
+So, once again, welcome to the podcast, Nagli.
+Thank you.
+Happy to be here for the second time.
+And let's hope this one, my mic is working.
+Let's hope so.
+It's too complex for me, this very expensive microphone.
+All right, man.
+So, let's see.
+We can talk about a bunch of live hacking event stuff and we should, I think.
+And I think we will.
+But I think before we get into that, let's talk about some of the hacking we've done over
+the past couple of days.
+Because we have been working together on some hacking stuff for what?
+Probably three or four days.
+Yeah.
+And I think we found some pretty interesting stuff.
+So let's talk about the www.root.zip thing that you came upon and how we kind of exploited
+that.
+So give me a little bit of an intro into that.
+Yeah.
+So it was just one random domain.
+Suddenly pops up on my Slack automation with a exposed www.root backup file, zip file,
+whatever you can call it.
+It's just, it's nothing fancy, just random nuclear template.
+So when you see a backup file, I mean, first thing you would want to report it right away,
+you know, so it won't be dupe or anything else.
+And then all the efforts will go down.
+And while we open it, it was ASP.NET app full of source code, bin files, config files,
+web.conf and so on.
+So nothing really, I mean, you wouldn't find like AWS credentials out of nowhere in the source
+code or like PII leakage of all users, some stuff like that.
+There were some juicy stuff, some source code, but still you would want maybe to take it,
+you know, one step further.
+I mean, only the, probably the exposure is a critical for itself, but maybe we can find
+more stuff to do with it.
+Yeah.
+So, I mean, source code exposure at that level, definitely I think is a critical in and of
+itself, but a lot of programs want to see impact from that too.
+And so, you know, obviously we went and got that impact.
+So we'll talk about that.
+But the initial discovery, I kind of want to double click into that as well.
+Is that, was that a custom nuclei template that you had, or was that a, one of the defaults
+that were in the list or is, do you have so many now it's kind of hard to keep track?
+Yeah.
+I think it's just the default backup files templates.
+Okay.
+That's awesome.
+So, and then how fast did you respond to this after, cause you got automation running these
+nuclei scans across all of the targets that you have in your system.
+Yeah.
+You know, at a certain pace, how fast did you have to respond to be the first one to report
+this?
+Yeah.
+It really depends.
+Some of the stuff you have to be really, really fast, like .git config, for example,
+you can't let it lay down for more than half an hour, maybe, or five minutes until someone
+will pick it up.
+But this one, I'm not sure I was that fast about it because it was just a random template.
+I, I mean, I didn't, I don't do much of root cause analysis, like whether the host was
+just new and that's why I got it because it's not a dupe.
+I mean, I got, I got it triaged eventually.
+It was like two or three weeks ago.
+Um, but I mean, certainly you want, you want to report your findings less than one day after
+you, after you get notification or something like that.
+So that one, I'm not sure if it was like rapid the same second, but it always depends
+if you find a new host, if the host just became publicly accessible or if, you know,
+some, something happened.
+So yeah, I'm not really sure how long it took, but it wasn't rapid.
+It wasn't in a minute, I guess, for that one.
+Yeah.
+No, that makes sense.
+I think, you know, when you're doing automation scanning like that with nuclei, you kind of
+got to be pretty quick to scan all of your targets as well.
+And so for that, are you, are you using, um, are you distributing those scans or are you actually
+just have one box just like pounding all of these hosts with nuclei?
+Yeah.
+So I use axiom to distribute like most of the heaviest can that I want to do fast.
+I also just created a shockwave box for like, I literally went manually to all, through all
+of my programs on hacker one and background.
+And I collected a list of 90 programs that I, I consider good paying well, wildcard, good
+teams.
+And I will just add the only their root domains to like a more dedicated scanning feature
+that we can see like changes more, more frequent, like easier way to see with UI and stuff like
+that.
+So I like, there is the entire program dataset that someone can suddenly expose a backup file
+and we can find good money.
+And there is the problems that I know, okay, we need to keep close eyes on the close eyes
+on them for changes because they develop and ship new line of code every few days and they
+have a good bounty.
+So like I divided my scanning and my targets to two different.
+Nice.
+So you've got sort of like the S tier programs and then, you know, some other.
+On the rest.
+Gotcha.
+And then the rest.
+No, that, that makes sense.
+And that incentivizes programs to really, you know, pay some good bounties because hackers
+like this are like Noggle are doing that sort of thing.
+So that's cool.
+Um, shockwave you mentioned there.
+I'm going to give you 30 seconds, you know, uninterrupted to do a shockwave promotion.
+Right now.
+Yeah.
+So, so look, look right there into the camera and talk, talk to us about your product shockwave.
+Yeah.
+Basically we try to have companies small or big, just give us your domain, give us your company
+name.
+We'll show you all your assets, technologies, very easy to see with one clicks, very easy
+to scan with your own templates, even with nuclei or whatever scanners you'd like to see.
+Also for companies or campaigns or projects who wants to launch a bug bounty campaign or
+like a way to interact with the, with the external researchers who comments and markdown, we have
+that very easily integrated and set up.
+Everything is in the website.
+So no, I mean, no nonsense there, just you can see.
+So it's sort of like an ASM plus bug bounty interface of challenges.
+Yeah.
+People.
+I mean, you can invite your top researchers to see all your assets, you know, instead of
+giving Excel file or Google sheets file or Google docs.
+So you can add the researchers to the actual ASM interface as well.
+Yeah.
+And they can have like only view only, you know?
+I mean, imagine like an Akiwana background program, instead of giving you CSV file, and
+you're parsing, run HTTPX, and go to stuff, just having your entire researchers and, you
+know, you can just skip the recon, focus on manual.
+That's awesome, man.
+No, I totally dig that.
+So yeah, definitely.
+What's the, what's the domain where people can find out?
+Shockwave.cloud.
+Check it out, y'all.
+So you've got Shockwave, you know, your Shockwave instance set up, and we get this ping, you
+report it as quickly as you can.
+You know, this one was a little bit slower, but the whole source code for this app is sort
+of leaked in, in the document route.
+And the team comes back and they want more, more impact with it.
+And no, actually they, I mean, I reported 11 days ago, then no one, no three hours were
+on it, sadly.
+And then the team reopened it and like three days ago and said, Hey, is it still working?
+So I'm like, I'm not sure, wait, did you fix it?
+Was it fixed by its own?
+Do you want me to retest?
+So it's like hanging in between.
+So I said, let's, we can still exploit it.
+So let's see, let's see what we can get out of it.
+Yeah.
+And, and obviously the source code disclosure is a problem, but we want to try to bring
+actual tangible impact to the asset as it is currently, because if they had said, if they
+had had somebody delete that file and then they go back and look at your report, they're
+like, well, we didn't make a change because of your report.
+So.
+I mean, they might even fix it.
+Like it's resolved now.
+We can't access the file, but it's still not resolved.
+You know, if someone got the file, it's like, you can still get the stuff that we managed
+to.
+It's the end of the world.
+It's the end of the world.
+Yeah.
+Especially in those ASP environments, because what, what we ended up doing with that was
+the backup, the zip file backup had the prod machine key in the web.config file for that
+application.
+And then what we were able to do was use YSO serial to craft a deserialization view state
+or a view state that would get deserialized and execute some malicious code.
+And then that proved that we were able to actually turn it into RCE and that they also
+hadn't fully resolved this bug because they hadn't rotated the prod machine key.
+Yeah, they had to rotate it.
+So some bugs, I mean, they can resolve the exposure, but they need to rotate some keys and
+stuff.
+It's like instant response after the initial discovery.
+Yeah.
+And, and sometimes you can get a second bounty for that.
+You know, if they really don't do a good job of, of cleaning up after them.
+So that's another, you know, it's kind of tip to keep in the forefront of your mind.
+But something that was interesting to me technically about this bug, that as, as, you know, we started
+collaborating on actually shelling the box and getting an RCE, was that the ASPX file that
+we sent this request to with the view state, it actually had some source code in it that
+said view state enabled false.
+Yeah.
+And, and, and so, you know, you, when looking at that, you might think that the view state
+was parsed, but I found in this article somewhere that back in 2014, they just said, all right,
+we're just going to ignore this parameter.
+Okay.
+Let's put the file clean.
+Exactly.
+And they're going to parse it anyway.
+So you're still able to get that even if the view state is set to false, specifically
+within the document or within that specific file.
+And then, so let's talk about the second piece that happened there.
+So now we've popped the RCE and we're good, but now there's still a bunch of source code,
+you know, that we've got access to.
+And for us, that looked like a couple ASPX files.
+And we were able to expand that, that scope quite a bit by looking through the source code
+that was there and finding that there were a couple DLLs in that, in that source code that
+were being referenced in the ASPX files.
+And inside, and those DLLs were, were created using ASP.NET.
+And so they could be reversed using a software called .peak.
+And so we, we loaded it up into .peak and we got access to a massive amount of source code
+that was powering this whole application.
+And it depends, you know, they might bring this asset inside the network.
+Yeah.
+And I, I might advise them to bring the asset inside the network.
+I wouldn't double down, like spend the months on it before we see like the reaction to the,
+to the second bug, you know, see what, what they want to do with the host.
+Yeah.
+It's important to be outside or like.
+So, so in scenarios like this, you normally wait to go down that additional exploitation path.
+Um, assuming we have permission from the program to use the source code and that sort of thing.
+Um, you normally wait to see how they are going to deal with that scenario before you go down that path of extra exploitation.
+Yeah. Not in terms of holding bugs, but in terms of not spending time for nothing, you know, like,
+let's see how the reaction and let's continue from there because we don't want to spend two weeks on bugs that you will fix with one, one go,
+or will reward one bounty for. So in the, in that sense.
+Yeah. You got to try to avoid those scenarios.
+Um, so that was a fun one that we found.
+Uh, let's see. What is, uh, what I mean, the only reason that I contact, I mean,
+Yeah.
+We saw the secret and there was, as I said, there was no like AWS access key or env or passwords,
+but I saw the pod machine key.
+And then I just remembered on the back of my head some tweets of things.
+Shabs used to do a lot of ASP.net or other people.
+And they always say, yeah, if you find config, if you find for machine, you have RC.
+So like you have this on the back of your head and say, okay, Justin, you want, maybe you, you could dig a little bit further there.
+So that's like,
+When you get a prod machine key, feel free to reach out to Justin and, uh, and he will, he will try to get that RC for you.
+Um, no, that's good, man.
+I, and I think it's, it's a good, you know, various hackers have different, different skills.
+And, um, you know, I would have never found that www.rude.zip just because I don't scan for that sort of thing on a regular basis.
+And then we can kind of put our minds together to actually get the RCE.
+So it's a good collab.
+Um, the next interesting bug that we found was this swagger file that turned into an S3 bucket arbitrary read.
+So, uh, talk to me about the, the, I guess, our initial recon and discovery process for that.
+Yeah.
+I mean, you, you always like to look for swagger files either for trying the XSSs, which barely work these days.
+Most of them are fixed unless someone wants to find a new zero day on swagger and it will be very, very good, very good one.
+And so instead of just looking for access, sometimes you have unauthenticated access to execute API calls and stuff like that.
+So the, the one host that we found was like very weird API calls.
+They're just list tons of data, which first looked like it's dev or demo, but it was production data actually.
+And we had to piece out, like to assemble a lot of small pieces to get to some impact out of the host.
+But we found like a good, eventually we found like a good lead there that, uh, we could get directory list access to internal S3 bucket by, and because we were able to get a pre-signed URL on a pass, like not on an endpoint.
+And then it just gave us access to the, to the host.
+If you want to expand a little bit about that.
+Yeah.
+Yeah.
+So, so I guess the first step of that was starting to sort of recreate the, um, the requests and try to piece together the logic because the swagger file is great because it gives you the sort of technical details, but it doesn't always kind of explain all the lingo behind everything.
+And, uh, all of the purposes of, of the various functions.
+Actually there were blocks there, but it's an internal domain.
+Like they said, if you want to read about how it works, check this internal domain.
+And we're like, Oh, drat.
+Okay.
+Can't do that.
+Um, so we're trying to piece it together and it was actually a couple layers deep, right?
+So in order to find the initial, uh, in order to find the string, I guess the format of the ID that we needed to give to the,
+end point that ended up leaking the, the pre-signed URL to the S3 bucket, we had to go through a couple, two other API calls to get, uh, to list all the objects associated with some stuff and then pick one of the sub objects within there, get more details on that object.
+And then that leaked to the ID.
+And then we used that ID to get access to the S3 bucket arbitrarily.
+Um, so it goes to show, you know, when you're looking for these, when you're seeing these swagger APIs pop up, you know, sometimes it's a little bit unfortunate because you go and you check them out and, and then it says auth required, auth required, auth required.
+But in scenarios where auth is not required, it definitely pays to sort of double click into those and read through and kind of experiment.
+We probably spent what, like two hours playing around with those end points.
+Yeah.
+Yeah.
+Um, and, and I think we'll get a good bounty for it.
+So that, that should definitely be interesting to see how that one pans out.
+Cause we just found it like earlier today or yesterday.
+I mean, the whole thing is a question, what you respond, what the responses and what you see returns, like from your actions.
+Like I tried to put a full URL there, like with an actual log endpoint.
+And then I got like, not found, like the endpoint directory wasn't found.
+I said, okay, what happens if I just remove the endpoint and check the directory and then gave you full access to the directory with pre-signed URLs.
+So that's like question everything you see.
+Okay.
+We can't find this.
+Can we find, can we make the API do other?
+Yeah.
+And sort of ID, you know, on top of that too, like even, even as you're thinking, you can be, you know, deleting various paths and seeing how far it'll let you traverse back up in that scenario.
+Because we had an ID that contained paths, um, that we were kind of working with.
+And so, uh, that was, that was the way we ended up actually popping it there.
+Um, so yeah, I guess swagger, swagger files.
+Do you often actually inspect the content of the swagger files that you're searching for?
+Are you just kind of looking to pop XSS with the swagger files?
+How does that play into your normal automation?
+I'm not doing routinely scanning for this, like there are thousands.
+So it's like one of the most popular endpoints for like random, you know, that is common for every program around the world.
+Once in a while, if it's interesting program, or if I want to do some manual hacking and check swagger, less in the automation side of things.
+Yeah, no, that makes sense.
+Um, I'm going to go ahead and do the, uh, Hey Google, turn on the sunroom lights.
+There we go.
+Wow.
+Look at that.
+Look at that.
+Look at that technology coming into play.
+For those of you actually listening to this podcast as an audio medium, uh, we just turned on all the lights in the sunroom.
+Uh, yes, by voice.
+Um, so yeah, that was, that was a great bug.
+And then I kind of want to talk to you as well about, and sort of debate with you, the URL dot domain.
+We're going to need to bleep that one, but that's the one that we spent, I spent a bunch of time on and you told me to give up on.
+Um, and then I ended up confirming that it is vulnerable, but, uh, it's going to take at least 70 days worth of, uh, of HTTP requests to actually pop this bug because of the, uh, sort of cryptographic complexity of the vulnerability.
+Um, so this domain, we, you found just through normal recon and then you pass it off to me, right?
+
+Can you elaborate on that at all?
+
+So we found some, it's like a domain for well-known target and they have a lot of subdomains.
+And we, we found the one domain, which is, was pointing to a third part.
+It was just a login panel.
+Then you see the version down there.
+It was like one 1.74 or 1.7.
+Uh, yeah, 1.74.
+And then the, the one thing you do, the first thing you do is look for CVS, you know, for the version.
+Yeah.
+And we just saw critical CVS solve for version 1.73 or patched in 1.74.
+So we are right on the verge of, okay, is it vulnerable or not?
+Like that's the value.
+So yeah, in order to confirm it, there was public CV, public POC, which basically tells you, okay, you need to brute force a lot until you get a collision, like PHP typing.
+Yeah.
+It was a PHP type juggling bug.
+Yeah.
+And, and it required you to generate a hash that starts with zero E and this is an MD5 hash zero E and then F1.
+And then every other character in the whole hash is a number rather than a letter.
+Yeah.
+Um, which is very, very tricky to make happen.
+Um, but we were running, I was working with another hacker and we were kind of running the math on it.
+And he says, he thinks we can do it in roughly 70 days of brute forcing nonstop.
+So, and it would be, it would be a pretty impactful bug if it actually popped.
+So, uh, I'm going to set up a script and just kind of have it run because why not?
+I think for those stuff, maybe if it's a good team and I think here it's a good team, you could try and ask them like maybe in the chat, in the back of one of your reports or like in a new report, Hey, I mean, I'm pretty sure it's vulnerable because we actually diffed the GitHub version and saw that it's on the vulnerable version.
+I mean, would you accept it without me?
+I mean, would you accept it without me?
+What forcing it for 70 days, like killing the server and stuff like that?
+Yeah.
+You know, it could work sometimes.
+Filling up all of the log files.
+Yeah.
+Yeah.
+Um, yeah.
+And, and I think just to clarify or to dive a little deeper on what we did to confirm it was vulnerable, even though the advisory said it was patched in 1.7.4, what we ended up doing was going to the GitHub because it's an open source software.
+Um, and we, uh, I guess hosted within the organization.
+It's an open source software.
+Um, and we found that there was a modification to the readme.html file that was done right before, uh, the change that fixed the critical vulnerability.
+And it was modifying a lowercase h to an uppercase h.
+That's it.
+Um, and when we went to the readme.html file, we ended up finding that it was the lowercase h still confirming that it had not been, that the vulnerability had not been patched.
+Uh, that there had been other changes made in that same version.
+Uh, but they had, when they pulled down that version, it, it wasn't to the point where it had, yeah, had had the patch in it yet.
+So we were able to, uh, identify that it should still be vulnerable.
+Yeah.
+
+You know, we could, we could reach out to the program.
+Yeah.
+I mean, worst case, they tell you exploit it.
+That's the worst case.
+Yeah.
+The best case scenario is they accepted and patch, which is easy.
+Yeah.
+So what best case you get the bounty, which you deserve, worst case, you need to do what you want to do anyway.
+So like, uh, maybe, maybe it's a better idea to let them know.
+Yeah.
+I'll, I'll reach out to them and see if we can get it to pop.
+Um, but I spent, uh, cause I sent the exploit that, that was out there that the POC that was published was a.
+Yeah, it was, it was only for HTTP.
+And, uh, the server that we were interacting with would only communicate over HTTPS.
+So you had to rewrite the exploit for HTTPS compatible, which wasn't very tricky.
+Actually, you told me to do, have chat GPT do it.
+And I was like, uh, very funny.
+And then I, I told chat to be to do it.
+And it like.
+Generated almost all of the code.
+I just only had to make a couple of modifications.
+Hey guys, if our weekly episode, isn't enough bug bounty content for you, then you'll definitely want to join the critical thinking podcast discord.
+There's tons of channels in there where people are asking and answering questions, collaborating on exploits and even developing tools together.
+Also, for those of you that are interested in supporting the pod, we've got premium subscriber tiers that get access to things like AMAs and masterclasses.
+So if you're interested in that, head over to ctbb.show slash discord, ctbb.show slash discord to get in on some of the action.
+All right, back to the show.
+Then, you know, there was the whole process of like, okay, is it something wrong with this exploit or is it something wrong with this, you know, the server and it's not actually vulnerable, right?
+Or is it just taking time?
+And at the end of the day, um, you know, me and this other hacker that, that went after it, uh, sort of determined that the server was definitely vulnerable.
+Uh, which is, is going to take a bunch of time.
+So, uh, I got to go set up a script after this to actually continuously monitor that.
+And reach out to the team, maybe.
+Yeah.
+Yeah.
+That we don't actually disturb the services there.
+Exactly.
+Um, yeah.
+All right.
+So that's, that's what we had for the bugs that we found.
+Let me see if there's anything else on here.
+Oh yeah.
+Do you want to tell them, uh, uh, no, I'll do the honors.
+And the S3 bucket was filled with, drum roll, please.
+Um, credit card transaction data.
+Um, so it should be, should be pretty juicy when the team gets that one and gets that one triaged.
+Um, so, all right, let's, uh, let's take, we're going to go get some dinner here shortly, I think.
+But, uh, let's go ahead and discuss the live hacking event season that we had in 2023.
+And then also go and talk about the new live hacking event standards that dropped, uh, for 2024, not too long ago.
+Because they made some changes that are looking quite good.
+Um, first, I want you to tell me about two live hacking events that you've been to this year.
+Buenos Aires and, uh, actually, let's do three.
+Because these are the ones that I'm the most salty to have missed, okay?
+Buenos Aires, that's the, uh, Ambassador World Cup.
+We got the, uh, Facebook event in Singapore.
+No, no, no, no.
+In, in, uh, South Korea.
+That's right.
+And, um, and then we have, uh, HackerOne Las Vegas, which I didn't go to, uh, by choice, which, which was, which was a hard decision to make, but I think the right one for me at the time.
+Um, so start with, uh, Buenos Aires.
+And that was an Ambassador World Cup event.
+Tell me a little bit about that and how that sized up to normal live hacking events that we, that we go to on a regular basis.
+Yeah. So basically this is the second edition of the HackerOne Ambassador World Cup.
+And the first year there wasn't any live hacking event, which was very good event, you know, bounty wise.
+Yeah.
+The biggest perk was and still is that it gives more people opportunities to get to live hacking events.
+They usually save some slots from the competition to, to show up for the team or this community edition that they nominate for the events.
+I got my first event invite just from participating and doing well in the Ambassador World Cup last year.
+So this year we were in the group stage with team Spain, which we actually batted for the first place eventually.
+And, uh, one part of team USA.
+I don't know if you, I think you were there.
+No, no, it wasn't mine.
+It was, uh, it was the West Coast.
+No, it was yours.
+Uh, the, it was, so team USA is split into multiple different teams.
+Yeah.
+Um, my, my team.
+How many teams did you have?
+I only had one team.
+No, how many teams did the U S have?
+The U S had two teams.
+Yeah.
+So we were against you.
+No, you were against USA team.
+Oh, you mean in the beginning of the world.
+Yeah.
+Oh yeah.
+Beginning.
+Not, not, not, I thought you were only one.
+Oh, okay.
+Okay.
+So you guys didn't, the, the other team, the, the West Coast team.
+That's right.
+They got knocked out on the other side.
+So you're right.
+You were against me in the beginning, uh, and freaking knocked us out first round.
+Uh, it was you and Spain were also in that same bracket, right?
+So, you know, you, us zero had it hard from the beginning, uh, because we had up against
+such a, such a strong competition.
+Um, we were very happy in the quarterfinals this year that they announced the eight ambassadors
+that were left.
+Okay.
+We didn't know if it would be like a knockout for the final in person, like two teams, 24
+members each, or it would be like 14.
+So then they announced before the quarterfinals stage that there would be four teams.
+So it was very good motivation for the quarterfinals.
+We were against Singapore in the quarterfinals and we beat them.
+So that was good.
+Then in the quarterfinals, then the semifinal was online as well.
+We beat in France.
+Then it was hard battle there as well.
+And then for the finals, we flew, four teams flew 12 to 10 members from each team.
+And then it was the fight for the first place and the fight for the third place, Nepal and
+France for the third place, uh, us and Israel and Spain for the first place.
+And it was the same target, same environment, same LHE vibes as always.
+But like, you know, we battle for different, uh, different prizes.
+Okay.
+So all of the top four teams.
+So first, second, third and fourth, you know, whatever undecided places they were in yet.
+Yeah.
+They were all hacking on the same target.
+So you were duping each other on the same targets.
+And did it have a dupe window or?
+Uh, hmm.
+Time to remember.
+If there was a dupe window, it wasn't a big one because I don't remember.
+I, no, I don't think there was no dupe window.
+Oh, really?
+Yeah.
+I think it was, sometimes you could say welcome change because I found log4j in five minutes
+after the, after the event started.
+So that was like super crazy.
+So, so did you just like load up the domains into your, into your shockwave tool?
+And then it just like.
+Yeah, I do that, but actually I found it randomly not from that.
+Like my routine scan, just log4j out of, on in scope domain before the targets were announced.
+No way.
+Before we knew the customer, I got an alert 30 minutes before.
+It was in person.
+We were actually in Portugal at the time and this painting were around me and I told them,
+Hey, I just found log4j got 10k after two hours.
+They paid me like, so some good things they did, they pay you right away and no dupe window.
+So those are like, I mean, dupe window, you could say sometimes it's good.
+Sometimes it's bad, but they pay you also right away.
+And not only the event.
+So it was very, very nice to start the event like that.
+Okay.
+So, so they actually, the whole time they were paying, they weren't waiting to do payouts until
+they were.
+Yeah.
+So you were already coming to the event already having a lot of the bounties in your pocket.
+Yeah.
+I bet that made for a nice environment actually at the, in Buenos Aires, because you were,
+you were already paid out in a lot of ways.
+You were kind of, I mean, I don't know, maybe the competition was still raging.
+No, in one end, yes.
+But in the second end, because the point system is not reputation based and not bounty based.
+It was only, it's like severity and volume based.
+So we didn't really know the rankings.
+It was like internally for the Hockey One team.
+They had to do a lot of calculations.
+Maybe for next year, they will have a proper leaderboard just to display the points.
+So our team was like first, second and third, like three people, me, Matan, Bear and Avishai
+on the bounties.
+But it doesn't mean that we are going to win because like 10, like four mediums are one critical.
+Or three mediums is one crit.
+Yeah.
+So even if we have 10 crits and they have 50 mediums, it's like, it's even better than that.
+They add crits also as well, but we had like the most crits.
+So you don't really know if you're winning or losing on side, which it adds a little bit of suspense,
+but I mean, the bounty sometimes is good to get, less stress.
+So, I mean, with that then, do you prefer the live hacking event based money sort of order of payouts?
+Or I guess like in the live hacking events, the leaderboard is based off of how much money you've earned.
+Right?
+Do you prefer that or do you prefer this system with-
+No, I don't say how much bounty, like today, like how much bounty you earn.
+I think it's the most, it's the best, no farming, no other stuff that you could do.
+But I mean, team competition, it's interesting to have a point system.
+I guess it makes sense to have points and not bounty, the bounty base, because there are some targets like PayPal or like,
+like one man show targets, you know, like Alex Wilson or Joe Hash,
+if they get a target, they would easily win alone with one hand, you know?
+Yeah.
+So sometimes you need like team competition with point system and it makes sense in this.
+That makes sense, man.
+So you've got the Ambassador World Cup, seems like it was very LHEE with a little bit of changes to it, you know, for the-
+Some experiments.
+Yeah, some experiments that seem to have gone well.
+Talk to me about the South Korea event with Facebook, because like, man, was I bummed to not have been able to go to that event.
+I had a bachelor party that weekend.
+So I wasn't able to make it out there, but it seemed awesome.
+And I think you said out of all the destinations that you've been to for the live hacking events,
+South Korea was one of your favorite, right?
+Yeah, it's very good.
+The vibes are very good, very chilly.
+Like it's very nice country.
+And I got reached out from one of Facebook's former program managers.
+They wanted to invite like, they have their inner circle, they have leagues, they have gold leagues, diamond league,
+but they also wanted like other LHE hackers from Akiwan, from Bacow and so on.
+So we got into the event, me, Joel and TechnoGeek decided- no, Joel is TechnoGeek.
+Me, Joel and Space Raccoon decided to collaborate and see if we can find anything.
+And actually, just as I was on the train to get to catch the flight, we managed to land together XSS on WWW,
+which is like super rare, even, you know, Yusuf is one of the best hackers on Facebook,
+said it's super rare to see the stuff.
+So we got paid good and it was very, very nice to get there.
+But also, I mean, it's nice to see events from other companies as well, see how they manage it,
+how some stuff that they do differently or not, but it was very good experience there.
+Can you talk about the XSS a little bit?
+I guess vaguely, was it a reflected XSS or a DOM-based XSS?
+It was some DOM post-message stuff.
+Basically, we found embedded inside WWW, they had some service which was open source.
+And I think it was Excalibur, probably.
+I think Space Raccoon is filled actually a zero day for it or one day.
+I think they fixed it already.
+So Joel was already messing with some CodeQL stuff to reverse engineer.
+So he took that code, put it in CodeQL.
+He saw some XSSing.
+I mean, he told him there is XSSing, but I mean, if CodeQL tells you there's XSS,
+you're far away from actually seeing the pop-up.
+So we reached out to Space Raccoon and he told us that he found a very, very, very similar bug on other big company.
+So he just looked at it, okay, modification here, modification there.
+Yes, public blog about another very similar, just detailed all the way.
+So it took him 20 minutes and we got our very good bug for the event.
+Dang, man, that's crazy.
+So Joel is actually hitting you with CodeQL.
+That's an interesting approach to that.
+I haven't used CodeQL at all, especially not in a JavaScript context.
+That seems like an interesting...
+I'm not sure if it was JavaScript.
+For the library it must have been, right?
+It was like a third party product embedded into Facebook.
+I don't remember which code is like one of the code QL support.
+Gotcha.
+Gotcha.
+That's really cool.
+I dig that.
+And that was, I mean, I imagine you guys found other bugs at that event, but that was the crowning jewel of the event for y'all.
+Yeah.
+Other bugs were, I mean, it's hardware and it's called Facebook.
+So it's like very, very hard to find some good bugs.
+I had some few minor ones, but that was the big one.
+Man.
+I wanted to go to it so bad.
+All right.
+So that's the Singapore event.
+I'm not Singapore.
+I'm sorry, South Korea.
+Again, I keep on getting that mixed up in my head.
+The last one, Vegas.
+Missed this one because of Mariah's birthday.
+I'm going to try to come every other year, but it always goes over her birthday.
+So sometimes I got to stay home and enjoy the family life over here.
+But this year kind of tell me how Vegas went and what were your thoughts on the Lifehacking event?
+Yeah.
+So the vibes were very good.
+It was two very big and good customers from previous LHs as well and so on.
+Great bonuses, great people that came along.
+It was very, we had some small fun challenges between ourselves as well.
+Me and the other people, for example, we found Franz Rosen a little bored, which is very rare to see him bored.
+Because he got so many bounties, so he didn't know what to do.
+So I was finding some XSS and literally I took my computer.
+I gave him the URL.
+I set up a timer of 10 minutes and that 2K in cash, I think dollars, and I put it near him.
+There is a picture of it somewhere or video.
+And I told him, okay, you have 10 minutes to get to bypass the Wafil, which I know he wouldn't be able to do, which is he can do everything.
+But I think, I saw this one, he couldn't.
+If you bypass it, you get a 2K cash.
+Because I needed it for a bug.
+Please don't, he did it.
+No, he couldn't.
+Oh no.
+But he made way more, so it's okay.
+That would have been ridiculous if he had bypassed it in 10 minutes.
+Yeah, because it was like very, very difficult to Wafil and other, it would be a zero day on some very big things.
+Oh my gosh.
+It was fun, fun challenge and good bounties, good bugs.
+We managed to find some very critical bugs.
+Even one of the products that I was hitting was just decommissioned after the event.
+I mean, we were able to find so many bugs and critical ones on this very important component of one of the products that the team said, okay, it was developed by third party.
+We had enough of fixing the bugs there.
+Let's just decommission it and put it behind our very more secure code base.
+So like we actually managed to get a product decommission, which is nice achievement.
+I mean, poor people if they lost their jobs.
+That does feel good though.
+When you just see the host like disappear and never appear again.
+I mean, I lost some, I lose some boundaries now because of that, because the host is dead now.
+Yeah.
+But it was fun experience.
+Yeah.
+Hopefully they won't do that to our vuln that we mentioned earlier.
+Yeah.
+Yeah.
+We're already got the source code now.
+That would be great if we could hold on to that and keep trying to find bugs there.
+Yeah.
+All right, man.
+Let's go get some dinner soon.
+But I want to talk about the live hacking event standards that dropped.
+So I'm going to go ahead and pull it up here on my phone and you can pull it up on your computer.
+It's new season starting now.
+Yeah.
+So the new season for live hacking events is coming up in 2024.
+We both got our invites today for a live hacking event in January, which we can't give any other details on right now, but we're pretty hyped for.
+So that should be great.
+So I took some notes here.
+I kind of read through it and took some notes here.
+The first thing that I kind of saw that looked most interesting was they are offering up to 10 researchers invites with this condition.
+HackerOne platform performers over the last 180 days.
+Researchers with 75% or greater submissions rated high or critical in more than five total higher crits in that timeframe.
+And then this list is prioritized by total rewards in the last 80, 180 days.
+So it looks like they're looking for hackers that have pretty much just submitted high and critical reports in the past six months with over 75% amount of that.
+Right.
+And they hold the impact requirements from everything.
+Yeah.
+Impact, they started, they pulled this last year, I think actually, because it was like hard 22 impact, which eventually didn't make sense.
+Because you don't want, I mean, collab basically because collab takes your impact down as well.
+It's tough.
+So you can tell people not to collab.
+So it was good.
+It's good that they took it off from there.
+This stats, it's a little, it's still hard here to understand because it tells you to report less medium and lows.
+But I mean, most, some people have this by default above 75% higher crits.
+I think I have above 75, probably Cosmin, Alex Wilson, those guys probably answered that criteria, but it doesn't reflect on the leaderboards, right?
+On the HackerOne leaderboards today.
+Because if you check top 10, I think nine of them are not having only high crits.
+Wow.
+That's crazy.
+I definitely did not have above 75% high in crit reported as I report, you know, lots of mediums and lows just as a part of my normal flow.
+Is that something that you're doing intentionally?
+Are you not reporting the lows or the mediums?
+No, I'm not doing that.
+I'm reporting mediums.
+I don't find, I wish I would, I want to find more mediums and lows, but it's more money.
+But I mean, this year I found less medium and lows, but if I find, I, of course I will report them.
+Yeah.
+I mean, this stat, I think maybe they could remove, like, let's say, remove the restriction of 75%, but have a hard gap.
+Okay.
+We have to have 10 crits or 10 high-end crits paid and also minimum bounty, like at least 50K for six months, this 100K for six months.
+That would be also, could be a good barrier also.
+No, I really, I really liked that.
+I would love to see them move this top performer on the platform to strictly bounties earned from highs in crits vulnerabilities.
+Like if they're looking for people that are dropping a lot of highs in crits, then you should just look at highs in crits and then sort by amount of money earned.
+Yeah.
+From those highs in crits reports, right?
+Because you're essentially, what that proves is you're finding lots of highs in crits on targets that are paying highs in crits well.
+So I think that would accomplish their same goal.
+So you don't want to have like one person, let's say, Corbin, find, say, one 500K bag on OpenSeal.
+Like, let's say, find 200K bag.
+So you want to have like 10, you need to have like 10 of this in the period and you need to have the bounty average or the bounty stat.
+Yeah, totally agree with that.
+But there's a good opportunity there because I feel like there's probably not as many people that are submitting 75% highs or crits.
+Yeah.
+So if you really, if like your life goal is to get invited to a live hacking event, then it might be worthwhile to maybe pass these bugs off to a friend or trade bugs off with a friend or, and just focus on submitting highs and crits for six months if you want to get invited.
+Yeah.
+The next sort of section that I thought we might have some conversation about is up to three researchers that are new to live hacking events.
+And this is researchers who have shown criticality, consistency, and contributed to the community across HackerOne platform, but have not participated in the live hacking event previously.
+Hackers must have the below criteria greater than 5K rep, greater than 5 signal.
+And so it seems like that is not too crazy of a criterion there, right?
+Like there are a lot of people that have above 5K rep and above 5 signal.
+Yeah.
+I mean, nowadays I think, I think when HackerOne first began and I wasn't still hacking on the plans, signal was more in play because there were way more NAs.
+These days I think there was way less NAs.
+Only if you're really spamming, you get NAs and your signal is getting affected.
+Yeah.
+But above 5K, it's fair.
+Yeah.
+If you have 5K, it means you did something.
+I mean, I would say some people could have 5K only from VDPs as well, but it's easy to filter if someone has no bounties, but above 5K.
+I think Ali actually got his first live hacking event invite because of that.
+He was like new to live hacking events and he got a chance as a community choice that's here.
+So now they have this criteria and he did very well on the event that he participated in.
+So it's a good, it's a good one to have.
+Yeah.
+Yeah.
+No, I really like this one and I think it'll bring some fresh blood in.
+And the criterion is not so difficult.
+Yeah.
+It excludes a bunch of people.
+So I imagine what this will look like is either a lottery or some sort of choice system because there's going to be a lot of people that meet this criteria.
+Right.
+And then there's also obviously, of course, the local hacker thing.
+So if you're, you know, if a live hacking event is getting hosted in your city, there's a chance that you'll get invited to that simply because you're local and you don't require flight and hotel and that sort of thing.
+So that's something to be on the lookout for as well.
+The biggest change they did this year, I don't think you mentioned on the docs, but I see it here.
+So basically from last year, they introduced a new criteria to have up to top 10 researchers from the past events.
+So they take the past three events, they accumulate the top 10 for each event.
+Then they take the top 10 of the bounties, like individual bounties from the last three events, and they have another little one and they invite the top 10.
+So this year they made it 20.
+Okay.
+So there are 20 people.
+Either you got MVH, best exterminator, any other award or top 10 based on bounties.
+It really helps you like you got the chance once.
+If you will be on the top five, top 10, get awards every event, you will be there again, which is very good.
+I mean, you don't want to be invited to an event, do very well, and then you wouldn't answer any other criteria.
+So that's, I think, the biggest.
+Speaking from the heart right now, aren't you, Noggle?
+I like the top five performance for all of 2023, right?
+No, no, I was.
+I mean, in Vegas I was top 10 because it was two targets, but I was top 10 across most of them.
+But yeah, I mean, it helps you to also push harder when you get invited and not just lay back and chill, like try to do a good job to get invited to the next one.
+And also this year they mentioned specifically that they, I think they saw a little bit of trend of people who really don't find any bugs or don't even try, I mean, to have you.
+And I think they specifically mentioned if we saw people who were invited and didn't really even try or something, they take it into consideration as well for events.
+Yeah, no, I think the trying piece is pivotal because I think if you don't try, it's just disrespectful and it's squandering an opportunity that a lot of other people would fight really hard to get their hands on.
+So I'm definitely glad to see that as well.
+And I guess within the life hacking group circle, that extra top 10 piece is really interesting.
+Unfortunately, I, you know, they called out specifically in here that the MVH, you know, would be included in the top 10 list or whatever, but I don't see that same little caveat that they've had in years past of MVH is being invited for the live hacking events for the next year in there anymore.
+So I guess that's so many now.
+There are so many now, you know, a lot of MVH and a lot of events, like plus five events a year.
+So I mean, you could have like 10 award winners an event if you collab for exterminator on for best collab.
+So it's like, it's harder now, I guess.
+It's definitely becoming more tricky.
+And then the last one that I wanted to call out here was the plus one nominations, which I still think is one of the best ways to get invited to a live hacking event.
+If that's your goal is to collaborate well with somebody who gets an invite to a live hacking event and then get that plus one nomination and get chosen for that.
+And for that, they don't lay out the specific stats that will result in their decision, you know, because they can't accept everyone who's nominated.
+But, you know, if you have a good HackerOne profile and you get nominated as a plus one, you certainly have an opportunity.
+One of the things that I saw here, though, was multiple nominations does not increase the priority.
+Excuse me.
+Yeah.
+Does not increase the priority to ensure consistency and fair review.
+So that's one thing that we've kind of talked about before at the top level of like, okay, we've got this specific friend that wants to be invited.
+You know, we all want him there.
+And so we all put him as a plus one, you know, in hopes that he'll get he'll get chosen.
+But they've made a specific caveat this year that that is not the case.
+It makes sense.
+Yeah.
+Yeah.
+That does make it a little bit more difficult to sort of brute force that process and try to force the people you want to get chosen in.
+But, you know, I'm definitely looking looking for this.
+This plus one nominations thing is one of the key pieces of the live hacking event sauce and finding people who are able to perform at live hacking events, you know, through referral, essentially.
+So I'm continuing to look forward to seeing how that that is going to play out.
+
+I think in general, we need to be grateful to have events at all.
+And even to be invited.
+It's like very it's crazy opportunity to have a good time, find good bugs, learn.
+Like, so it's very every time we get one and I hope there will be as many as possible.
+And also with background integrity, I hope they will take to have like they will do well also in this year for in terms of live hacking events.
+And yeah, I'm looking forward for the next day, the next year.
+Yeah, me too, man, for sure.
+All right.
+The last thing that I wanted to cover before we we get some food, I know I've been teasing you with dinner like,
+No, it's okay.
+It's okay.
+I can still buy it.
+No, no, no.
+Is this whole concept of bug bounty motivation and you've shared with me while you've been here, you know,
+when we're chilling in the hot tub or, you know, relaxing, that you struggled a little bit with motivation with bug bounty outside of the life hacking events.
+And one of the ways you've tried to solve that is by setting up this, you know, 50K bounties in 50 days challenge and kind of trying to motivate yourself.
+And I'm sure the ambassador world's cup also helped, but trying to motivate yourself outside of life hacking events.
+Do you, so two, two part question here.
+Okay.
+First, first question is, do you think life hacking events have sort of poisoned your brain in, in, in kind of made it more difficult for you to focus on non life hacking event targets?
+And then two, what are some ways that you have found to try to motivate yourself outside of a live hacking event?
+Yeah.
+I don't know if it's the challenge or if it's the public accountability because the leaderboard is open for everyone or if it's the fight with friends,
+but definitely every domification external factors helps you to focus more and know, because like I said, I've low 90 different programs.
+I think I know we pay well if I focus on them, but how can you focus on 90 programs with 500 domains and 250,000 sub domains.
+So that's like the question.
+Where do I focus now?
+Oh wait, I focus here.
+My ROI wouldn't be that good for other programs.
+So it's like in poker, they say EV, you know, expected value.
+Do you want to play the hand if you, I mean, do you expect how much you could earn if you make this play based on the probability and stuff?
+Like in general, I mean, am I making the right choice focusing on this program when I have all of the other programs waiting?
+So the best way to have the best EV or the best ROI is like when there is an event and everyone is focused and you can get invited to the next event if you do well.
+So that's like the best ROI that I can get.
+I don't know in real, like on normal times, we don't know where is the best ROI to get.
+I mean, maybe if someone tweets, oh, I got 100K from Epic Games, so I got 250K from other, maybe the best ROI will be there at the moment.
+So it's all about the moment, like where would we find the best ROI at a given time?
+So some of the people I know were looking at the activity feed on AcuraOne just to see a program who resolved the bug to see, okay, they're alive.
+Let's check them because they're active.
+Now we can't do it because they changed something in the activity, but they will revert it back, I think.
+But it's basically like that.
+I mean, find a way to know which programs are active, paying, if you can make a competition or between people like a league or something like, you know, to have extra motivation to do better.
+Between you and your friends, maybe.
+Yeah, just, you know, for the fun, for the bunch, or just to focus with another person.
+So, I mean, a lot of ideas that I don't have answers for, but if anyone knows, so...
+Or maybe fly out to Virginia and hang out with your friend in person and do some hacking there.
+Yeah, competition and stuff.
+Yeah, that sounds good.
+Yeah, it's a hard problem to solve the bug bounty motivation thing.
+And I kind of shared with you when we were talking about this that, you know, for me, it's a lot about forcing yourself to start doing it.
+And then from there, you get curious about the target, right?
+For me, I get that technical curiosity that kind of grows.
+But in the beginning, you really got to force yourself to go, you know, back down that deep dive again, which is definitely hard to do.
+So, it's a struggle that we all kind of deal with and will continue to overcome as bug bounty hunters.
+But I'm sure it helps everyone who's listening to the podcast to know that a top hunter, even a top automationist like yourself, deals with those sort of similar struggles.
+So, thanks for sharing that, Navajo.
+Alright, man. The time has come. Let's go get some dinner.
+I think that's it. That's a wrap.
+Okay.
+Alright. Peace.

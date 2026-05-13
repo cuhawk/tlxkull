@@ -1,0 +1,484 @@
+ pay somebody to set up a server with this on it on fiverr or freelancer.com right like even if
+ it's a couple hundred bucks like hit up hit up a developer that works with this software stack and
+ just says hey uh can you just like put this on the server and set it up and then you've got it set
+ up all right hackers i'm looking at my inbox right now for hacker one and i'm smiling ear to ear
+ because i got paid out a crit and it came from that last ctbb hack along that we did live in the
+ discord with a couple hundred of you guys present when i had to cut the stream and go report a
+ vulnerability live that resulted in a 7k crit from adobe guys i'm so pleased the adobe team also added
+ a 650 bonus to that report because uh i used the ctbb partnership code okay so i want to remind you
+ guys that adobe is offering a 10 increase in bounties to you guys the critical linking listeners
+ because you guys rock okay and that uh is targeting adobe stock and lightroom web
+ adobe stock and lightroom web and it is a 10 bonus for valid ai vulnerabilities mapped to owasp top 10 for
+ llms okay um so definitely go target those two products look at the ai features and report some awesome
+ bugs and you'll get that 10 bonus we'll put the the uh information down in the description the code is
+ ctbb063026 that's june 30th 2026 because that's when the promotion ends okay go tear them up guys
+ they're a really good program they're paying some great bounties and they're offering some special
+ love to you guys the ctbb listeners all right let's go back to the show all right so packers before we
+ hop into the episode today uh we've got the this week in bug bounty segment just took some rapid fire
+ news for you the only item on our list actually is very relevant to the episode and it is the open
+ source security testing guide uh by yes we hack okay um so we'll go ahead and link that down in the
+ description but we're going to spend a lot of time this episode talking about uh source code review and
+ that sort of thing and this while this guide is focused specifically on open source there are a lot
+ of really applicable techniques here um to any sort of source code review right um a lot of the tools
+ you need to know a lot of the terms you need to understand so give this a glance if you're getting
+ into that space um there's also another really big added benefit to these write-ups like these nowadays
+ which is you can feed these into your your ai hey say hey check this out write up a nice little skill
+ for this based off of this article and others um one of the ones that i thought was really nice in this
+ uh example was um mentioning that you can define uh bookmarks throughout the different pieces of code
+ uh that makes it easier for you to jump around into different pieces and follow your own code flows
+ inside of vs code love that so check out this article it'll be in the description
+ all right let's hop to the show all right hackers today i am attempting something quite
+ ambitious which is i'm going to try to give you guys um some cross between a meta analysis
+ and a recipe and just random thoughts thrown together on source code review um the idea originally
+ for this episode was like can i find a way to grab a bunch of different sources on source code review
+ analyze what kind of patterns we see across all of them and kind of put those into one episode so we did
+ that and then i kind of added a little bit of my thoughts here and there we asked a couple experts in
+ the industry got their thoughts pulled all that in um and that is what this episode turned into so i've
+ spent the past three hours reading through this document trying to tweak it trying to get it to the
+ spot where it needs to be um and hopefully and try to abstract some of the stuff as much as i can and
+ hopefully you guys will be able to get some uh good comprehensive coverage on the topic of source code
+ analysis okay um i think this is a really applicable topic right now because ai is is augmenting the space a lot
+ and while i will give you some tips on how to use ai for source code analysis today most of this is going
+ to be focused on the good old here's how you do source code analysis um source code review uh and you
+ can then take those and collaborate with claude or your ai of choice to to sort of superpower it okay so
+ um first let's let's go ahead and and jump right into it um the first thing that i want to challenge
+ you with if you're going to do source code review is what is your goal for the source code review looking
+ at um a couple of the main purposes for source code will reveal a couple things one for example if you
+ look at acid node or the sl cyber team um they are often just looking for pre-authority right that's also
+ the kind of thing you see in pone to own right if you know that you are just looking for pre-auth rce
+ you know you have to start from an unauthenticated route right or you have to bypass authentication
+ um so that's a you know if you've defined your goal in advance hey what i want is unauthenticated rce
+ then you can start from there if you are a bug bounty hunter and you're just looking to cash in
+ maybe you can you know get bugs uh get rewards for post-auth xss or something like that right
+ um so it's just it's helpful to know in your head what am i going for here um and have that well
+ defined from the beginning okay so next i kind of wanted to throw a little theory out there before
+ we jump into everything i've been sitting here looking at all the vulnerabilities that sort of
+ powered this episode and um all the articles and stuff like that and i think i think that there are really
+ three areas that almost all of the vulnerabilities that we find sort of sort of uh come together sort
+ of narrow down to when you think about it the first one is tracing the data flow better than the
+ developer the second one is knowing the nuances of the context where your payload is landing better than
+ the developer and then the third and last one is just of course the developer makes some sort of mistake
+ and forgets a security control so let's look at each one of those really quick and kind of talk about
+ those from a high level so that we can understand where all the other vulnerabilities that that um you'll
+ see sort of how it falls into that model and you can start thinking about it from a more abstracted perspective
+ okay so tracing the data flow better um this often you know this is a pretty common scenario
+ where the developer just doesn't understand that what they are working with at the time is user input
+ um i'm going to give you an example of this from a real vulnerability that i found
+ um we me and my buddy we uploaded a zip file and this uh it extracts and pulls a file out of that zip
+ and then inside of that file there's xml and inside of that xml there's an attribute okay and somewhere
+ down in the pipeline that attribute got embedded into a command line shell out and we were able to
+ escape that that command line argument and get rc via command line injection okay and that's a classic
+ scenario of like oh because it was so abstracted because you know they had parsed the xml the xml was
+ different from the file it was you know far away from the zip and you know it was it was in a job that
+ was not even you know correlated with that original http request i think the developer just didn't realize
+ that they were dealing with malicious input here okay so this is one of the things that we're going to
+ talk about a good bit in this in this session uh is you just really need to get super good at tracing dataflow
+ like i know that that is super dumb and basic to say okay but really that's the meat of it is you need
+ to know if data is coming in right where where is it going all the way through the pipeline right if
+ there's one skill that i can tell you to master it's that just tracing where the data is going to go
+ through all of the sources all the way to the scenes okay um second one is knowing the nuances of where
+ your payload is landing better than the developers um there's a really good example of this let me go
+ ahead and pull it up here in um one of the sl cyber write-ups i'm going to reference them a lot
+ um shout out to shubs and the team for also helping with this episode um i'm gonna i'm gonna share
+ my screen here as well so that you guys can see this this snippet uh from the um from the write-up
+ but essentially it says another key implementation here uh implementation detail that must be well known
+ by those writing any file and path operations in c sharp is how path combine works we've seen this
+ throughout our careers as source code auditors where the usage of path combine leads to critical
+ vulnerabilities if the second argument of path combine usually the user input if it is an absolute path
+ the previous argument is completely ignored and the absolute path is returned the documentation does
+ try to make this obvious be this behavior obvious clearly stating and then proceeds to quote the
+ documentation which says the exact same thing okay um so this is a perfect example of like hey the
+ developer thinks that what they're doing with path combine is pre-pending you know a uh you know
+ a certain path that locks the user into a directory but really you can supply an arbitrary directory and
+ as the second argument and it just removes the first argument right um and so that's a classic
+ example of like well if you understand the nuances of this technology better than the developers themselves
+ um then you'll be able to find vulnerabilities like path traversal or i guess it's not really even a
+ traversal here it's just arbitrary path injection here um another classic example of this like
+ understood understanding the nuances of the the payload or the the context in which your your um input
+ is getting injected is xxe right a lot of people don't realize when they're parsing xxe or uh part
+ parsing xxe man you can see in my hacker brain when they're when they're parsing xml that xml has this
+ crazy ability to like request files and like send http requests and stuff like that like why would why
+ would it have that um and the only way that you can exploit that is by knowing more about xml than the
+ people using the xml right um so number two here on the list is knowing the nuances of where your payload
+ is landing better than developers and this takes a lot of work and ai can certainly help with this
+ right you can you can ask it to learn about a specific technology stack or um even a specific
+ function how it's implemented uh right we saw that with with path um the path combine call out there
+ um yeah just really need to know where your path where your your input is landing in what context and we'll
+ talk a little bit more later about the more complex that context the better okay and then last but not
+ least on my list of three items is forgetting a security control okay um this one's basic there are
+ security controls in place in the app uh or maybe there aren't any at all and they just completely
+ forgot about security altogether but if somebody forgets the security control then of course you can just
+ boop plop in there and exploit it okay so here are the main things abstracted up as high as i can uh that
+ you should look for tracing the data better than than the the developers themselves realizing that you
+ control a piece of data deep deep deep deep deep deep in the app um knowing the nuances of where your
+ payload lands better than the developer right understanding the context and then looking for forgotten
+ security controls or like you know uh the lack of security controls in general okay so those are some
+ sort of abstracted stuff that i thought you guys might benefit from um i keep that under the set
+ your goal um heading uh because these are sort of things we need to think about as we're going into
+ the app okay now let's talk about getting our hands on the software um a lot of times we have open source
+ software and that's great we can just audit the source code directly from there and you may even
+ want to pick your target based off of the fact that you have access to source code i've talked on an
+ episode recently about hacking on sdks those are really good attack surface because you have the source
+ code for the sdk and you can just audit it and look for vulnerabilities in there um but if you need to
+ get your hands on source code and it's not open source there are a couple ways you can do it one you
+ got to look for docker images supplied by the organization that's a great way to do it um aws
+ azure or gcp images also in the cloud environment sometimes they have those set up so that you can
+ set up that software and get a trial or whatever moving very quickly without having to talk to a
+ sales team we've seen that a couple times um i figure i'll just shout this out as well you also
+ should look into packages and related packages um to the actual main you know app uh in pip and npm
+ we just saw recently with cloud code you know cloud code we can look at the minified javascript or
+ whatever but they shipped their map files right and uh you know if if you've got the map files that
+ makes your life a lot easier um so make sure you check uh the repositories um the packages the package
+ managers that's what i'm saying uh the package manage repos and know that those are not necessarily
+ going to correlate with a github repo you know there may not even be a github repo but even if there is
+ a github repo note that there may be something different in the package manager um there so keep that in mind
+ um another option is reversing it right uh we oftentimes will get a binary or something like
+ that and it's reversible with like dot peak or maybe if you got a jar you can convert it back to java
+ or whatever you got to know that what type of um language was used to create this binary and is it
+ possible for me to reverse stuff out um another shout lately is that we've been using ghidra with a very
+ very very very dense binary um and just hooking claude into it via mcp it's cracked guys it's freaking
+ cracked and i've actually seen a couple people on twitter being like uh what the heck my job is gone
+ you know like like really really good um reverse engineers just kind of saying sadly like man this is
+ my art i've been like working on this art for a long time and now claude can just come in there and just
+ be like hmm it goes like this and then it goes you know and so um even if you're not good at reverse
+ engineering hook clawed up to ghidra and you're gonna get some crazy results out of that okay um
+ and then here was another shout that i you know i i'll have to look up the source for this where this
+ came out came from because i didn't see it in one of the articles it was actually from the notes of our
+ researcher um but he's he noted down pay somebody to set up a server with this on it on fiverr or
+ freelancer.com right like even if it's a couple hundred bucks like hit up a developer that works with
+ this software stack and just says hey uh can you just like put this on the server and set it up
+ and then you've got it set up and that's the best 200 bucks you've ever spent spending your life if you
+ know how much of a pain it is to get stuff set up um and then you can jump on that that um server
+ reverse you know grab the code out and apply some of the other techniques that we just mentioned
+ um but yeah once you've got your hands on the code then we go to the next step um which is you
+ you really do need to set up the code and get a local environment um guys this is where ai is really
+ super game-changing okay ai knows how to set stuff up better than anything i've ever seen in my life
+ dude and if there's one area where i save a lot of time it is this like where i just wouldn't bother
+ with it before because it's like oh my gosh this is so excruciatingly painful to set stuff up
+ like i just can't do it right if there's not a docker image you can just throw ai at it and ai will
+ turn turn turn turn turn turn until it gets it working um such a big big win to use quad for this
+ sort of thing um and then as much as i have been on the fence about it hooking a debugger into this
+ stuff is really really legendary guys um i've played with it a little bit lately and i have to say like
+ i i used to be a proponent for just like try to eat it at the main server you know
+ look at the source code try to figure it out it's so unbelievably overpowered to set a you know a debug
+ breakpoint and then just be able to see and inspect live um variables so if you're if you're going to
+ sit down and you're going to be serious about it if you're going to reverse some code get it spun up
+ attach debugger and you're good to go this is another area where um ai can really really help a ton
+ okay so we're we're through the boring stuff here figure out a way to get your hands on the source
+ code and get that set up and get a debugger hooked into it okay all right next mapping the software
+ okay um this is an essential first step a lot of people say okay we we prefer sync based analysis if
+ you listen to some of the episodes back when joel was a co-host we debated a good bit like hey should we
+ start at syncs should we start at sources what's the idea here um whatever the idea is you should
+ map the software first okay and i personally think that moving from a source enumeration perspective
+ at the beginning really gives you a a strong understanding of the app um but either way you
+ need to understand the basic structure of the app before you you start going in and trying to find
+ you know the exec function or something like that where that you want to map up to a source okay
+ um and once again ai comes in super clutch here it can build you graphs it can lay you know slurp up
+ the build files which is one of the things i wanted to recommend is taking a look at the actual build
+ files and um and looking at the various services that they're sort of you know duct taping together in
+ some of these enterprise apps um but it can look at all that stuff and it can create a map for you of
+ what the application looks like and guys that is so valuable okay um one of the things i've learned by
+ working really closely with chubs a couple times is how much impact he gets out of finding weird little
+ apis that were hidden in a corner that aren't defined the same way that have some exception that are
+ routed a little bit differently and uh you know he turns that into magic time and time again okay so
+ if you know maybe your app is just vanilla and it's just normal you know python flask routes in
+ a file you know but you got to make freaking sure that that's the case okay and that there's not any
+ other microservice or um web socket server or like grpc something something you know that's like hiding in
+ a corner uh that you can go after okay so that's something you really have to pay attention to i
+ noted i noted just a second ago um that we should be talking about um you know these route definitions
+ and the routing well reverse proxy is another big piece here are they using that reverse proxy to wall
+ off certain endpoints or certain parts of the the routing on the back end right don't just look at
+ the router and assume that all that stuff is accessible and then you know when you hit your
+ your uh you know production server you're like oh that route isn't accessible blah blah blah you've got
+ to look at the reverse proxy that's the first layer right and understand what they're trying to wall off
+ and that also can give you a nice treasure map for what you should get access to okay reverse proxy
+ configuration is very important middleware configurations equally as important okay a lot
+ of times auth is being applied at the middleware level so figure out what decorator or um you know
+ additional piece that gets built into these routes is applying the auth middleware and check that it is
+ holistically applied across all the routes if it's not that could be a good gadget okay um so make sure
+ you're checking all those you're looking for web sockets you're looking for grpc you're looking at
+ the reverse proxies you're looking at the routes definitions and don't skip the boring parts of all
+ of this okay the grafana ssrf that i found in 2020 which is one that i refer to all the time because
+ it's such a classic example of a a clean exploit okay um this exploit was found in the avatars route for for
+ grafana okay this is the grafana ssrf um and it would hit gravatar on the on the on the back end and
+ then uh i got a redirect off of gravatar to aws metadata credentials okay and if i had if i had skipped
+ the avatar route on grafana then i would not have found that and the avatar route is not typically the
+ most interesting path right um but we really need to be thorough about it and it was an unauthenticated path
+ which is what drew me to it in the first place um so make sure you're being thorough and not skipping
+ any of those boring boring quote unquote boring looking paths okay you know what's going to be
+ boring is when you don't submit any dang reports because you didn't look at the boring routes
+ um so yeah i mentioned that you should look for services that are explicitly not exposed by the
+ reverse proxy um i also wanted to mention here that you can use stuff like assets no asset notes or sl cybers
+ uh excuse me uh hyoketsu which is uh h-y-o-k-e-t-s-u that's japanese for verdict hyoketsu um and
+ what that does is it scans the it supports various um uh source code um bases uh but for example it'll look for
+ jars that are known uh open source libraries or um reused code right and then you can not spend
+ your time decompiling all those and trying to cross correlate them um so this is a great way to like
+ get out all the fluff and look at the meat of what is the custom code from this application
+ um so then you're not spending a bunch of time searching for you know zero days in some apache jar
+ file right um that being said i also had in my notes here that sometimes when the single point of
+ failure might be a third-party library sometimes it it it's worth it to to look into that a little
+ bit okay um and it depends on what program you're working with you know if you're if you're trying
+ to if they're really not going to pay for third-party bugs if you're doing this from a bug bounty
+ perspective um you know then obviously you need to not do that on the other hand right um but i do
+ often find that if they're using some rinky-dink little like you know 200 star on github library
+ there's a decent chance that there actually might be a problem with that so that could be another area
+ where we could see some tooling get introduced soon is like um uh sl cyber hyoketsu um sort of i just
+ wanted to go off in japanese there uh like the hyoketsu something that looks like hyoketsu uh but for
+ identifying open source libraries or um you know reused code that is very low star on github or on the
+ package managers or whatever right um that could be another really interesting attack surface to go after
+ if they're using a a not very popular dependency um just a thought um once again just sort of jumping
+ into the ai for this specific section um really this we you really want to be using ai for mapping this
+ out this is one of the biggest productivity gains you gain with ai right now is i feel like i can ingest a
+ code base in like freaking 30 minutes now whereas it would take four or five six hours sometimes before
+ to like understand okay this is here this is there you know and i feel like i have a good good grasp of
+ it 30 minutes in um very very helpful massive productivity gains okay so we've covered um you know
+ set your goal set up the software um get your hands on the software that sort of thing um map the software
+ and now we're going to go into now we understand the architecture we understand the attack surface
+ and we're going to start doing the actual assessment okay um i i always kind of call this segment
+ um this portion sniffing for blood because there are just so many how do i put this there are so many
+ signs there's so many like um patterns that will just give you a sketchy feeling if you've done this for a
+ little while and even if you haven't done this for a little while if you've read a lot of write-ups
+ you'll look at something and you'll be like that's a little weird right um and i was trying to figure
+ out how to abstract that up and the only way that i think i can describe it is when our user input and
+ like enters a more complex environment okay that's i think that's really the root of it is our our you know
+ if our string input that comes from a query parameter or something like that is just compared to a string
+ right you know it's not that complex there's not a lot of wiggle room there right it's not probably
+ setting off your alarm sensors for like um you know this could be vulnerable if instead our query parameter
+ is put into a configuration file that can controls you know has a whole language in this configuration file that's at our disposal
+ then you know the gears are turning a little bit here where you're like wow
+ my simple user input just ended up in a really complex environment same thing we see with xss right
+ you know one one of the ones i love to point to is if our input is inputted inside of a string inside of a
+ script tag inside of html right there's just so many layers of complexity there right how is that string used
+ we've got string um features we can use with like backslash unicode escapes we've got um hexadecimal
+ definitions uh you've got so many different things and then you've got the script layer okay now we're in
+ javascript you know what can i do here let me break out with a single quote um okay we're in html i i
+ got to make sure that those you know angle brackets and the slash are escaped even if the single and
+ double quotes are because i can just cut off the tag right there's just so many layers of complexity
+ um when our user input ends up in various contexts and as that complexity continues to increase that's where
+ things get sketchy okay so that's the one of the more high high level principles that i would like to
+ convey to you is look for your input entering complex environments what are some complex environments
+ well let's talk through some of those okay i created a little list here um of course we have
+ the traditional ones like um database strings right like sql injection um why is that complex there's
+ various encodings we can use there's there's um you know inside of the sql or database string right there
+ is a syntax there double quotes single quotes or strings you know that sort of thing that's an
+ increasing complexity and comes along with massive capability right if it gets if it just gets complex
+ that's great but we also have to be able to do something right if we can break out of our string
+ in a database we can query the database right to the database sometimes execute commands right
+ complexity plus capability very important some other areas where we might see that complexity
+ i mentioned config files from before i think configuration file injection is a super underrated
+ vulnerability type there's different language syntax there's encodings there's there's uh you
+ know some of these languages you can just like javascript or um you know inside of the javascript
+ screen you can write in escaped hex right um there's all sorts of stuff unicode right so definitely
+ configuration file injection um if our user input ends up in a url we've got traversals we've got the
+ various parts of the url that we can um create segments for with question mark pops us into the query
+ uh hashtag pops us into the hash right if we're defining the the domain portion the at sign pops
+ us into the username and password field right there these areas where there are different grammars in
+ place that's where we need to be you know living and it takes an understanding of the technology that
+ you're working with right which is why that mapping and understanding the architecture of the application
+ and the technology base that you're working with is super important and answering some of those
+ core questions like okay my input just ended up here what capabilities does that have okay and that
+ brings it all back up to the top when i was talking to you guys in the beginning about understanding
+ the nuances of where your payload lands better than the developer who wrote it right that's what
+ we're talking about here with this complexity okay so hopefully i didn't drive that home too hard
+ uh here are a couple other ones that are interesting um if your input lands in an api request body not just
+ the path right that's also interesting can you um escape out of the json freaking franz rosen told
+ me to start doing this i was like dude nobody ever like doesn't use a library to parse json or create
+ json and then i started looking for it and i found a couple of them and i was like ate my words there so
+ um make sure you're looking for weird concatenation of json um xml other entities you know even some of these
+ binary protocols i just talked last week about um protobuf structures right binary protobuf structures
+ um being able to input into these very impactful sometimes we're looking at templates concatenation
+ with templates um and one of the ones that shubs called out as well as an increasingly complex
+ environment is any sort of dynamic code evaluation paths this is something that i've seen shubs do really well
+ um he mentioned a couple xslt rhino script uh jel um any sort of sandbox environment where you are getting
+ you know plopped into a sandbox uh those are really interesting to look at so your your alarm
+ should be going off boom boom boom boom whenever you see our input landing in dynamic code evaluation
+ paths or increasingly complex environments okay hope i drove that home um another thing to look for that
+ kind of uh leads to that that weird tingly spidey sense on where the vulnerability is is code that
+ seems to be interested implemented in a different way or you know a legacy way from the main code base so
+ once you've mapped out the architecture um you know you understand what where is the majority of the
+ functionality living it's living in this main api that's defined in this flask blah blah blah um but
+ as soon like even if there's another api completely whichever one's not the like main api is just
+ inherently interesting so um that's another area to look for for um for issues okay i tried to i tried to
+ get as much of that abstracted as possible um and i i think there are probably a lot of other areas where
+ where you can um sniff for blood right where you can sort of um where you get a spidey sense for where
+ the vulnerabilities may be but these are the ones that i came up with that i thought were most abstractable
+ um okay now let's talk a little bit about uh some common pitfalls and then we'll go into some patterns
+ that sort of extend actually you know what let's jump over to the patterns first we'll we'll jump to the
+ patterns and then we'll jump back to the actual things that seal the deal in some of these environments
+ okay so what kind of patterns do we see in addition to um our our input landing in increasingly complex
+ environments which often results in vulnerabilities and we pulled these from a bunch of different
+ research a lot of the asinode write-ups a lot of just stuff i have bookmarked on on twitter um a lot of
+ talks uh across youtube on source code analysis that sort of thing and we kind of put them into
+ like top five bullet points here um to try to show you guys what we've got so the first one that came
+ up is parser differentials um this is something that uh the team over at yes we hack uh has done an
+ excellent job of writing up recently so definitely check that out we'll link that in the description but
+ um there are going to be a lot of uh a lot of scenarios where parser differentials um cause
+ vulnerabilities and one of the most common patterns i've seen here is there being a well-defined security
+ layer and then there being a well-defined you know application layer and the security layer
+ i've noticed that if the security layer just gives you a yes no then it's it's less effective and that
+ isn't always the case right but one of the things i really like to do is you know look at the security
+ layer and and the security layer doesn't pass the input to the application layer is what i'm trying to
+ say so example request comes in hits the security layer the security letter says okay and then it
+ passes the request to the application layer right um versus the security layer saying uh here's the
+ information to the application layer does that make a little sense there's like a direct handoff between
+ the the security layer and application layer and the reason for that is um there are two preparation
+ processes is is what i'm calling it right now i'm sure there's a different way to um define it but
+ whenever you're parsing unstructured data um for example i will just give the example of a json parse
+ right let's say your your security layer lives in in a javascript environment and using json.parse
+ and yeah i'm just pulling this out of my out of my hat here um and in your back end is using python
+ which uses json.loads right these are two different parsing environments and there might be a differential
+ between those two and so the security layer can just say sure here you know this seems fine
+ pass it you know pass it back and say all good and then the routing layer you know sort of passes it
+ to the application layer on the back end versus let's say a scenario where you have something more
+ monolithic um a javascript security layer and and a javascript um back end and it just passes the
+ object directly from the security layer into the um the application layer okay does that make sense so
+ there's there's there's there's different preparation processes across the front end and the back end where
+ the security is implemented in the front i hope that makes sense there's lots of different examples of
+ parser differentials um across lots of different uh environments so just be on the lookout for those on
+ how the data is being processed um next was uh chaining okay that's another common um scenario that we see
+ is that a lot of times these more complex vulnerabilities especially in the enterprise
+ applications are not single bugs they are multiple chained bugs together and this is where i start to
+ think ai is going to have some problems certainly we should be using ai and really ai is great for this
+ right uh we can tell it hey look i've got this i've got this i've got this i actually just told it like
+ an hour ago look i've got this csbt i need an arbitrary json hosting primitive okay find me this
+ find it for me now you know and and it you know goes across everything it knows across about the code
+ base and it says look the most likely places for this to exist are here here here and i'm gonna work
+ through them one by one and it goes through it and you go through it at the same time and you're
+ you know handing stuff back and forth right so i would really encourage you guys as you use ai you
+ know one of the things it's not great at is yet is doing this multiple chain thing right so you have
+ to be the multiple chain thing make it document gadgets make it document things that you you know
+ that you've used in other pieces of in other chains right this is the importance of like maintaining a
+ nice cloud md file that where the the ai knows okay arbitrary json hosting for justin is a very very
+ valuable gadget right um and then bringing them together uh to complete the chains and and same
+ for um same for just forcing it to find the other piece of the chain that you need right then you
+ don't have to go through uh all the mental duress of like man i really need an open redirect right now
+ like where the heck am i supposed to find an open redirect and you kind of offload it to the ai see what it
+ comes out with okay so good stuff there chaining is essential to high quality um uh you know
+ source code auditing in my opinion okay next up is dependency auditing i sort of mentioned to the this
+ to you all before but if you've got a dependency that looks a little sus it might be a good idea to
+ take a peek at that especially if it's low stars or um the source code just looks a little different
+ right um i this one was one i added in myself because i've been finding vulnerabilities here
+ um and typically when they're in programs that value impact they pay pretty dang well um so don't sleep
+ on that and i wish you know i i hope all the guys like ronnie and and uh the people that do dependency
+ confusion vulnerabilities i hope they that that becomes a little bit more widely expect accepted
+ in the bounty space right now because um man it is is impactful uh if you compromise a dependency and
+ then boom your whole source code's gone really crazy um okay uh next one is the validate then transform
+ um code pattern we see this pretty often you know there's something for me the episode i mean i was
+ pretty far into my you know professional hacking career when i did this the dom purify episode with
+ kevin mizu but in that episode for me is where it became super concrete what kevin was emphasizing in
+ that episode was that if you do anything anything to the string after you put it through dom purify
+ then it is polluted and you can very very very likely you know cause a problem the the dom purify
+ sanitization step needs to be like pretty much wrapped in the whatever is going to write write it to
+ the dom um for this to actually work properly um and similarly any sort of sanitization any sort of
+ validation checking um that you do for vulnerabilities really needs to be right before the sink where it is
+ where it would potentially be abused okay i'm gonna say that again when there's some sanitization or or
+ checks for malicious input it needs to be right before the place where it would be maliciously used
+ okay if it's not any anything in that space is interesting right what happens between the check
+ and the actual sink um that is it one of the most common things that we see is you know code gets more
+ complex over time that that little segment between the validation and the sink it's bigger when somebody
+ adds in a little feature here or there right um so make sure you're checking that space between the
+ validation and the sink um another big one that i've seen often is alternative sources okay i'm going to
+ tell you guys a quick story about this one so i was banging my head up against an app i was like man if i could
+ get xss here this would be game changing because of the way of the the way the app works right unauthenticated
+ input it would be great um anyway it would compromise the whole app because of warmability okay so i was
+ banging my head up against this markdown uh editor and i'm like surely there's something here i can find
+ couldn't find it anyway i notice that there's also a way for me to send text messages into this application
+ and i'm like all right you know let me let me let me try that out so i whip out my phone i write a you
+ know message uh an actual uh html message on my phone and i send it and i typoed it so i send it again
+ and it pops on the admin panel and i'm like frick yes um so you one of the the takeaway from this being
+ is look for all alternate sources into the place where you want your data to to live okay um surely
+ there's going to be the traditional path but there's also going to be maybe legacy endpoints v1
+ v2 v0 endpoints right there's going to be alternate data streams is data coming in from sms is data coming
+ in from web sockets is data coming in from you know being loaded in by a a mass import from a
+ configuration file right maybe that one's missing the sanitization that's happening at the source
+ rather than the sink and that's why we we sanitize more at the sink rather than at the source because
+ like there's you know you have to hit every single source right versus if you sanitize right before
+ the sink then you know you know it's just going to go right into the sink does that make sense okay i i hope
+ it does so look for alternative sources for data to flow into the application and look for patterns
+ of where they're putting that sanitization if they're putting it at the source or at the sink
+ um yeah and and i just wanted to say you know in with regards to ai and these common patterns
+ you can take these patterns we'll we'll have them in the hacker notes and you can tell ai hey look for
+ these across the application look for sanitization that is far from the the sink look for um you know sus
+ dependencies look for this um you know alternative sources into the same spot look for the look for
+ these gadgets that i need um ai is just here to bolster all of that uh as you as you do your security
+ assessment okay um now let's jump into a couple common pitfalls that sort of close the deal in a lot
+ of situations i i ranted a little bit about this on a recent episode but freaking casing guys let me tell
+ you casing causes a lot of dang problems okay so just keep that in mind um uppercase letter lowercase letter
+ things are going to parse those things you know the same or different right um and it's good to know
+ which one's which unicode normalization much like uh you know the casing is also something that is uh
+ often causes a lot of problems that one's a little bit less easy to spot in the source code review
+ um that is something that you could shout to ai and be like yo you see any like unicode normalization
+ issues here uh where you know unicode is potentially being processed um could be a a good a good piece
+ once again you'll see that more in increasingly complex environments if you're handing off from
+ one technology stack to another technology stack what are the assumptions that are between these two
+ technology stacks okay that may not hold true in all edge cases um another one this is really funny
+ that we see really often two i'll give you non-global replacement and bad regex like they get their own
+ shout outs here because they are so common okay if somebody's trying to replace something they very very
+ often forget the uh you know the global piece or the recursive element of it right you know especially
+ when they're sanitizing with a replace that's just hacked okay so anytime you see a replacement on your
+ input just like stare at it for a couple minutes and be like hmm hmm and something will jump out to
+ you that's what i do i just i say replace all right i'm gonna be staring at this for the next 10 15 seconds
+ at least um definitely a good use of time um bad regex like i mentioned a second ago very common dot escapes
+ missing um you know up arrow at the beginning or dollar sign at the end super common um look look
+ deep into this uh because there are there are really some some things that people can miss here
+ um one of the ones that i really like is a backslash inside of square brackets trying to escape stuff
+ that you don't need to escape and accidentally putting the backslash character inside of square brackets
+ and thinking that it's it's uh you know it's actually backslash escaping something okay um really really
+ fun scenario there uh encodings another thing you know we mentioned uh unicode but you've got to
+ master all of your encodings of course um yeah incomplete syntax checks is another really big one
+ for example i mean the big one that just comes to your mind is like oh if they're just looking for like
+ script tag for xss input these are this i'm giving you this example i know you know this
+ right but let's generalize it a little bit let's abstract it a little bit to any sort of incomplete
+ syntax checks anytime you are looking for you know the the code is looking for a specific syntax to
+ disallow right that's when we need to think okay is that disallow list is that block list
+ really thorough or not and are there any cases can i capitalize my script tag can i you know use a svg
+ on event handler right um what else can i do here that will um address this incomplete block list
+ very common these are the kind of things that seal the deal right once you've found you submit sniff
+ the blood you find an unauthenticated route from the legacy api you go in there you're looking at the
+ code bad sanitization boom xss boom file read whatever um this is one that i added to the list
+ because we see it a lot with like rce write-ups which is uh you know something that we used largely for
+ this um uh meta-analysis here uh is dynamic function calling so by this what i mean i mean there's lots of
+ ways that you can do this but the one that sort of rings true for me in php because we covered it on
+ episode a long time ago with the word fence team is this like really weird method invocation uh structure
+ where you can just call a string in php right you have a string and it has a function's name in it and
+ you just call it right and it's like oh wow that works like that's crazy um so it's really important to
+ do your your data tracing there and see if there's any sort of scenario where you're essentially doing
+ an rpc right like a remote procedure call um because that is is where a lot of yuck comes in and a lot of
+ flexibility for the attacker okay um so keeping out and on an eye for any of those keep an eye out is what
+ i meant to say for any of those situations as i'm saying that keep an eye out is such a weird english
+ phrase right like keep an eye out like your eye anyway i digress um got a couple more here and then
+ we'll wrap uh for this episode um incomplete application like i mentioned before of security
+ controls that's another really big one ask the ai this is something that i can really help you with
+ where are the pivotal security controls here if they are not globally applied as middleware
+ how how do i check whether everything has this you know function call right at the beginning of
+ its route handler right how do i check whether um you know there are any weird places where where
+ this function is not being called properly or or maybe it's like in an if statement with another condition
+ or you know the way that this function is called seems non-standardized right like i just mentioned
+ the if if statement just a second ago maybe one of them is a truthy sort of thing right um that's
+ another big thing is truthy issues and and typing checks um we need to be there needs to be consistent
+ across the board right any sort of auth or um sanitization checks need to be consistently implemented
+ across the board and any variance is a very very common pitfall um in a an area that you should look
+ deeply into um another one that came up here is making auth decisions off of an inconsistent source
+ okay um like as i said a moment ago the middleware if it's not globally applied where where are they
+ getting their auth information is this coming from anywhere except this bearer or this cookie or this
+ one function that processes it as a part of the http request if they are um then we need to know where
+ that is and we need to double click into that deeply okay um so that's a really big one as well
+ lastly we have custom sanitizers okay um a lot of times we have things like dom purify for a reason
+ right there are going to be um very very complex environments where our input is landing if you see
+ a custom sanitizer you need to be very very locked in on that and um you may even be able to instrument
+ it to fuzz it a little bit better um that's something that i've done in the past um and when you do
+ something often falls out and it may not be a full bypass but a partial bypass sometimes can be enough
+ to give you another gadget in your chain which you can chain with something else um all right y'all
+ that's just a bunch of me ranting about stuff i i we're going to have a ton of resources linked
+ in the description uh from this episode that you can go to learn more about source code analysis i tried
+ to summarize it best i can i wanted to so really give a lot of respect to those people um whose work
+ is in their description i really really appreciate the write-ups that they did but i want to give a special
+ thanks to shubs rafax and fsi um for giving uh direct feedback or direct input into this episode
+ um and really changing the way that we that we thought about this um this episode from the meta
+ analysis perspective so shout out to them um and i hope you guys gain some value out of that keep
+ hacking y'all keep popping bugs and zero days on these uh on these code bases all right all right peace
+ and that's a wrap on this episode of critical thinking thanks so much for watching to the end
+ y'all if you want more critical thinking content uh or if you want to support the show head over to
+ ctbb.show discord you can hop in the community there's lots of great high level hacking discussion
+ happening there on top of master classes hack alongs exclusive content and a full-time hunters guild if
+ you're a full-time hunter it's a great time trust me all right i'll see you there

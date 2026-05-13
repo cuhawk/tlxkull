@@ -1,0 +1,209 @@
+ if you leak the age of a person you also leak their birthday their full date of birth right
+ because what you can do is you can just look at that age and then find the day that it changes
+ and then you've got the person's birthday
+ all right y'all we've talked about threat locker ring fencing a lot we know how it allows you to
+ set acls and policies for exactly what an application is allowed to do in your network
+ but today i'm going to tell you how it does that okay three technologies many filter drivers
+ window filtering platform and ex version kernel notification routines many filter drivers are
+ essentially a hook or callback for um io requests okay so when you're trying to write or read from a
+ file you can create a hook with those and improve or deny based off of the threat locker acl windows
+ filtering platform similar situation but for connect bind uh requests right you can say okay
+ hey is this process allowed to talk to port 443 over there on the internet yes or no approve or deny
+ lastly you've got ex version kernel notification routines the ex version is important because
+ it allows you to approve or deny versus just getting a notification from the kernel
+ and this is specific for um hooking various native api calls like nt create user process which is what
+ you would use to like spin up powershell.exe or something like that okay so those three are very
+ useful to threat lockers ring fencing core technology hope you enjoyed learning how this is implemented
+ check out threat locker if you think your work could benefit from something like that all right let's
+ go back to the show all right sup hackers before we jump into the episode this week i got a couple quick
+ announcements in the this week in bug bounty section the first one is actually the first three are from
+ yes we hack uh yes we hack has dropped another complete guide uh and it's this time it's on os command
+ injection um as i was reading through this there's a bunch of really good summaries on what kind of
+ techniques to use here you can see a bunch of payloads where the um you know command will break
+ out of various different contexts one of the things i've learned about command injection is you will
+ only find it if you're looking for it right um and i i know a couple hackers franz and matias that often
+ find these bugs and the reason they often find them is they are often spraying payloads just like these
+ uh polyglots that include multiple contexts or these specific ones that are right here um so grab some
+ of these integrate this into your testing workflow and some of these command injections will fall out i've
+ i've seen it happen and it's amazed me all right y'all next up is another piece from uh yes we hack this
+ time we're covering a critical auth bypass in wordpress azure adsso plugin man i i'm not gonna lie
+ guys i've had to say that i've had to do like three different takes because i can't say that um but yeah
+ guys this one's pretty gnarly essentially um this allowed unauthenticated attackers to log in as arbitrary
+ wordpress users if they're using this plugin so uh this is essentially like an rce right because if
+ you can log in as any wordpress user log as an admin upload some php code and then you've got uh you
+ can shell the server so really bad probe for this uh wordpress plugin any of you recon boys out there
+ um the details uh are laid out pretty cleanly here by yes we hack in the write-up um down in the proof of
+ concept section essentially um you can just provide a jwt token uh an id token specifically uh that just
+ says you are anybody right and you can just look you can just submit blah dot base64 encoded uh id
+ token dot blah right and it's just not checking the anything besides that middle piece of the jwt um so
+ that's really bad uh so definitely go ahead and poke at this if you haven't already great write-up by
+ yes we hack we'll link it in the description all right our last piece from yes we hack today is actually
+ highlighting our boy i2glow who is a part of the ctpb team and writes our hacker notes so shout out to him
+ those have been great lately um and this is just a bio on him so if you want to get to know i2glow better
+ he's an excellent hacker um and this is a good way for you to understand how he thinks how he chooses
+ his targets what his favorite hacking tools are um that sort of thing so uh we'll link that down in
+ the description as well highlighting our boy i2glow i got to get him on the pod sometimes too he'd be
+ he'd be a great um addition all right the last and perhaps most exciting news item that we have for
+ today is adobe is partnering with echo party miami may 21st and may 22nd at the echo party event to do
+ a live hacking event um to join the live hacking event you can submit all findings through the normal
+ adobe bug bounty program in scope is adobe stock lightroom web adobe workfront and they're increasing
+ bounties from tier one to tier three uh for the ai bonus tier here for this live hack game so if you're
+ going to be at echo party and want to participate in this definitely find the adobe team and we'll link
+ more information in the description below all right i think that's it let's jump to the main show
+ all right what's up hackers uh i am finally back at home after a marathon run of live hacking events
+ um so shout out to hacker one and google for um their various live hacking events they've been running
+ i've been working long hours and i've been traveling so i'm not gonna lie i'm pretty wiped um last episode
+ joseph and i were in korea we kind of very sleepily at at like midnight gave you guys some of the
+ takeaways from that event um i proceeded to spend a couple days in korea um traveling around spending
+ time with my wife and then came back to the us and have been hit with an absolute one two punch of
+ seasonal allergies here in virginia just a shit ton of pollen um and jet lag which has been quite the
+ combo and solo parenting while my wife went over to japan for a couple days to see some friends so um
+ yeah been a busy busy week um that being said this episode is going to be pretty tight as well
+ um my apologies for that but i do have some really interesting content so um yeah i hope you guys get
+ as much out of it as i did when i was finding these things uh it's definitely some good some good
+ takeaways so let's go ahead and take a look at those we're going to do a couple bugs and then we're going
+ to do a couple like just takeaways um so first up is a protobuf based xss so i wanted to tell you guys
+ about this because i've been hacking on a target that uses protobuf a lot um and i recently found an xss that
+ um requires you to actually send raw protobuf so binary level protobuf not like proto json or like
+ base64 encoded uh proto protobuf uh over over the wire in an http request for it to work okay and this
+ presents a couple challenges and i'll try to enumerate those here um anyway so like if you could send the
+ request then it would result in xss so it needs to be like a top level navigation in the browser right
+ it's not checking the content type so we can send it with text plain um i thought it was not going to
+ be as hard as it was but it was pretty tricky so let me tell you a couple reasons why one um there's
+ this thing called a dom string mutation that seems to happen whenever uh you actually add these uh this
+ raw binary to the dom so sometimes some of the payloads will get a bit mangled so you really have to
+ make sure your payload is largely within the uh pure ascii range which is um ox01 to ox7f
+ otherwise you're gonna it's gonna cause some problems uh within get mangled so i kind of tweaked the
+ payload a lot to fit that range by um you know inflating or deflating uh you know the size of various
+ payloads trying to shift uh types as much as i could or omit fields that were going to cause problems if
+ they weren't actually strictly required in the um in the protobuf payload there was some flexibility there
+ which was cool um so after a lot of smithing i got it into that pure ascii range um the another problem
+ is that if you have an lf uh a line feed um character which is ox zero a um then and it is not immediately
+ uh you know preceded by a uh a ox od a um cr a carriage return field then the browser is going to try to
+ fix that for you and uh put put in one uh which is very annoying and will break your whole payload
+ um so the way that i kind of got around this oh and the uh protobuf i'm looking at my notes down here
+ that's why i keep glancing down but the protobuf field for um you know field number one and wire type
+ two which is a string is going to be oa so you're not going to get away from using getting an oa in your
+ actual protobuf payload so the way that i actually got around this was um by buffering it up with a
+ a junk field before that ended in od uh and so now i've got what appears to be a um uh a real crlf
+ right in od oa um in the hex and then the browser doesn't feel like it needs to fix that invalid um
+ new line sequence there uh and it was not mingling my my protobuf payload so that was awesome um
+ obviously this is really tricky because protobuf is a length based thing right so if you're if your
+ lengths are off or if there's a stray bite in there somewhere and the the browser does anything funky
+ then uh your payload is going to completely break so um that was one of the issues that i ran into
+ and got got through the other one was uh you kind of need to send a or at least the way that i was
+ doing it i think there are other ways to do it but you need to send a um uh
+ equals character in your your payload body um if you're even if you're doing a text plane submission
+ uh form submission to get the top level navigation um so you need somewhere in there there's going to
+ be a equals sign right and something's going to be the the the key on one side and the value on the
+ other side and the equal in the middle right so uh how i ended up solving this one was i padded out a field
+ um you know that had the um the ox 3d character as the length right where i needed it to be um so that
+ it wouldn't heck up the the string before or the string after um with some of these weird rules for
+ keys versus values um in a form submission so just had to align that properly to get it to not break um and
+ get most of the values in the um or most of the data in the value which is a little bit less liberally
+ um tweaked by the uh by the browser um so we have a lot more flexibility there um
+ so that was another challenge was getting that um equal sign in there and then the last challenge
+ was really interesting which is the browser will actually append a um crlf sequence at the end of
+ your submission whenever you send a form which was really annoying to me i'm like okay well that might
+ just do me in because i need my whole you know protobuf payload needs to end with crlf um but actually
+ the way i solved this in the end was define a string field at the end with a length that is two
+ bytes longer than the length i actually provided it so when so when the browser actually appends the two
+ uh characters at the end that will get slurped up into the defined string at the last you know field
+ of the protobuf and it will actually not mess with the the byte offsets or um not parse it as extraneous
+ data or anything it'll just parse it as a part of the string that we already defined so let's say i
+ the last you know um character or the last string that i defined was four uh bytes long i would only
+ give it two bytes so when the browser filled in those other two bytes it would be that full four
+ byte string um so anyway just a interesting little um solution there if you're ever dealing with protobuf
+ uh that you actually need to send over the wire in um an actual like top level navigation via a form
+ um to trigger an xss or otherwise then those are some tips and tricks that i had along the way um all
+ right let's let's keep moving um up next was this was one that is not actually that crazy but i like
+ the mentality so i wanted to tell you guys about this so um i found a way on a program recently to
+ leak the age of a person excuse me of a person um and the age of the person is an interesting thing to
+ leak sure it has some impact on itself but as i was sitting there thinking about it if you leak the age
+ of a person you also leak their birthday their full date of birth right because what you can do is you
+ can just look at that age and then find the day that it changes and then you've got the person's birthday
+ right um and the full date of birth which is a lot more helpful in my opinion um obviously you could
+ do some brute forcing and stuff like that but if we're talking about like pii disclosure getting the
+ actual month and day as well as the year is valuable um so i just wanted to you know throw that out there
+ for y'all as thinking about whenever you're leaking some data try to think about how that data can
+ change over time and if that can give you any additional information uh and you might be able to
+ find some additional impact for your bugs um okay uh just a couple more takeaways and then i gotta wrap
+ this episode um cspt's work not only on web apps but also on desktop apps or any other type of app
+ i was hacking on a desktop app specifically recently and i was able to essentially incur a http request with
+ user supplied input in the path remotely from a different machine okay and uh this one specifically
+ came in through sockets web sockets but um it actually was able to you know i was able to supply
+ a path traversal and truncate the path and hit a completely different endpoint um and that ended up
+ having some really good impact and i was just kind of sitting there thinking about this and i i guess i just
+ sort of um assumed beforehand that this was more of a web-based vulnerability but pretty much anything
+ that interacts with http can be cspt um because uh traversals are such a key part of pathing in um
+ in most http environments so just think about that as well i i i know that sometimes as web hackers we
+ struggle to make the pivot to other types of hacking whether it be iot or desktop apps or buying
+ binaries or whatever um this is an attack that can be used fairly universally um because http is really
+ is really common even outside of um strictly web apps okay just a thought um and i'm also interested
+ in kind of thinking about other types of vulnerabilities that are more present outside of uh just the web
+ environment where we can sort of take those over so if you have any of those uh maybe drop them in the pod talk
+ channel in the critical thinking discord um yeah i think that there's definitely going to be more i'm
+ gonna i'm gonna keep uh spinning on that um okay another one that is really interesting another takeaway that i had
+ guys capital letters are really overpowered okay uh i was hacking with somebody i'm not gonna say who
+ who's going to do recently and we just found a ton of bypasses using capital letters okay i'll give you
+ an example of one of them this is this one is just uh one of like three that we use to find vulnerabilities
+ uh in the past couple months okay first uh we had a scenario where if a specific cookie was not present
+ that is pretty much always present uh when a request was issued to a specific endpoint it would result in a
+ vulnerability okay so how do we get this cookie not not issued well we could you know put it in a
+ credentialist iframe or whatever but we kind of needed access to the victim session as well right
+ so we've got this like catch-22 situation of okay how do i um send a request without just this one cookie
+ while keeping the other cookies was essentially what we needed to do and the way we ended up solving this
+ was by sending a request to the same path but with one character switch to a capital letter okay and what
+ that did was uh technically that is a different path the back end was processing it as the same path
+ but the browser was not sending the cookie to that path because the cookie was hard scoped
+ to a specific path that did not have that capital letter right so the path attribute for the cookie was
+ set to let's call it slash abc lowercase and when we sent the request to slash abc uppercase that cookie
+ would not be sent right so these uh cookies path definitions they're they're case sensitive and a lot
+ of times our paths that we're dealing with on http servers are not case sensitive um so just keep that in
+ mind obviously there's uh encoding tricks and stuff like that you could do but in this situation it was
+ actually as simple as uh lowercase and uppercase letters um there was as soon as some of these bugs
+ get resolved i'm going to come back on the pod and talk about them uh because there were some other
+ weird ones that we solved with uppercase uh letters so just be on the lookout for that i feel like it's
+ kind of like a uh you know simple method but it's it's very prevalent okay um two last takeaways both sort of
+ relate to um click jacking or getting a new tab open inside of your browser with top level navigation okay
+ so we're dealing with some client-side stuff here so um i ran into a situation recently where i needed
+ to be able to c-surf somebody to set a cookie and i needed to do this inside of a iframe because of the
+ constraints of the attack and then inside of that iframe there would be rendered a link and if the
+ user clicked that link and did a top level navigation with it it would result in a c-surf
+ um so essentially what i ended up doing here was uh performing a click jacking attack and the person
+ would need to control click one button on the screen and then their account would get taken over right
+ um because i could trigger the the login c-surf and then they click the button and then bad stuff happens
+ okay um so i hadn't really used that control click to open up a top level navigation from within an iframe
+ trick before uh so i thought that was a pretty interesting one that you guys might want to know about
+ um once again click jacking very impactful vulnerability type in my opinion uh if you do it
+ correctly okay note that last caveat if you do it correctly um very important so keep that technique in
+ mind and then last but not least i was just doing a little like brainstorming before this episode and i
+ was thinking like okay if i need to do a window.open i need to get a user gesture right that's the
+ technical term that you use to get a window open uh without a pop-up block in uh in modern browsers
+ and i was looking into what that is and i've just always kind of thought of that as a click
+ but it's not only a click you can also get this from a key down event which i think is a lot easier
+ to get in some scenarios i mean really this isn't a problem very much because you can always just
+ perceive um get the user to perceive it as like one of those accept cookies uh pop-ups and then you get a
+ free click whenever right really useful for pocs um but just keep that in mind as well that you can
+ also do a window open without a pop-up block from a key down event um the last thing that i wanted to
+ mention was whenever you do need this control click i realized that you can actually like make buttons
+ unclickable until you are holding the control key so that makes it a lot easier to like cerebrally
+ convince the victim that they need to control click something is uh you can actually hide ui elements
+ if the user's not currently holding down the control key um so just think that about that as well it's
+ much easier to program these things with ai nowadays so um it makes your poc a lot cleaner also definitely
+ want to cover it on the pod just popped into my brain i don't don't have time to do it today but the research
+ by lira on svg enhanced uh clickjacking is unfreaking believable you can make literally you know responsive
+ buttons via uh svg magic essentially um overlaid you know for clickjacking purposes right so the problem with
+ clickjacking is right there's an invisible iframe in front of it so when you click it it it you know
+ it doesn't actually do anything you don't see the ui you know button depress or anything like that
+ um but with these svg magic things that lira does uh you can actually make it happen so anyway i really
+ want to build a library out of that um i think that that is a really useful and mass applicable technique
+ um so anyway i'll link that research in the description um all right guys that's all i got for this week
+ i'm sorry we're gonna bring the heat coming coming forward the next couple weeks we've got a lot of
+ great interviews lined up and we've also got our first meta analysis episode which i'm excited to
+ present to you guys all right that's a wrap for this week peace and that's a wrap on this episode of
+ critical thinking thanks so much for watching to the end y'all if you want more critical thinking
+ content uh or if you want to support the show head over to ctbb.show discord you can hop in the
+ community there's lots of great high-level hacking discussion happening there on top of the masterclasses
+ hack alongs exclusive content and a full-time hunters guild if you're a full-time hunter it's a great
+ time trust me all right i'll see you there

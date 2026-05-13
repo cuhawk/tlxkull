@@ -1,0 +1,3263 @@
+You know, as I'm talking about this, I just started scrolling through there and I see
+a vulnerability.
+That's hilarious.
+Well, I'm going to go ahead and bookmark that bad boy.
+Hey guys, ever since WordFence did their campaign back in December, I've been deep diving everything
+I can get my hands on with regards to WordPress security.
+And naturally, I wanted to talk to you guys about that on the pod.
+And so I grabbed WordFence security researcher, Ram Gall, brought him on the pod to discuss
+some of the nitty gritty details of hacking WordPress plugins.
+It's a pretty technical episode.
+We get pretty in depth on what kind of functions are called to register routes within WordPress,
+what kind of common vulnerabilities you see, and patterns that Ram and the WordFence team
+have identified over the years, which lead to WordPress vulnerabilities.
+So a lot of great content.
+I really think you'll enjoy it.
+In conjunction with that, WordFence is relaunching their campaign that they had in December and
+offering 6.25 times the normal bounty amounts.
+And they've told me that they're going to keep on offering amazing opportunities like
+this to researchers.
+So you'll definitely want to head over to ctbb.show slash wf and sign up for a researcher
+account on the WordFence platform, so you can stay in the loop with that.
+And it's a great way to support the show.
+So I think that's it.
+With that, let's go ahead and get into the episode.
+All righty, we're rolling.
+Ram, welcome to the pod, man.
+Hi, I'm happy to be here.
+Dude.
+Yeah, this episode is going to be great.
+And I have to say, I'm excited for it, even though I just got pulled out of the hot tub to
+record this episode when it's snowing outside, man.
+Oh man, that's the best.
+I know, like, I just, you know, if there was a time, time to be in the hot tub, it's when
+it snows.
+Absolutely.
+But there's a lot of great content in this episode.
+I'm looking through this doc and it is chock full of awesome, awesome information about WordPress.
+So just to give the listeners a little bit of background, Ram, you work for WordFence and
+Ram does some very impressive security research on WordPress.
+And so our thought today was, let's go ahead and dive into some of these more nuanced WordPress
+based knowledge that you need to hack WordPress plugins.
+Because ever since we did the sponsorship in December, I've just been like deep diving that
+shit and I love it.
+So now my chance comes to geek out over this and Ram's the perfect guy to do it with.
+So with that, Ram, I was hoping we can start with your bugs in particular.
+So just like every other guest, we're going to put Ram through the give us a cool bug ringer
+here.
+And let's start with the subscriber plus RCE on Elementor if you want to kind of just give
+us the rundown of that one.
+Sure.
+So this is only around for a couple of versions, but Elementor introduced a new functionality
+for their onboarding module.
+And they had an action running on admin in it, which basically runs anytime you're on any
+admin page, regardless of whether or not you're an administrator.
+Right.
+It wasn't using a normal Ajax listener.
+It actually had their own like estimate Ajax listener.
+It's just like, are we doing Ajax?
+Yes.
+Okay, cool.
+Then take care of this.
+And all it used was a knots check.
+And effectively what it would allow you to do was it was intended to allow you to upload
+and install the pro version of Elementor.
+But you could just feed it any old zip file and stick your, you know, web shell in there.
+And if you were a subscriber, you grab the knots off the admin page, upload the pro upgrade
+zip and bam, you own the box.
+Wow, dude.
+Okay.
+So let me get this straight.
+Elementor is also the, it's like a 5 million install plugin.
+It's like the biggest WordPress plugin, right?
+I think it's more than that, but WordPress doesn't, they stop counting after five.
+Oh, do they really?
+Oh my gosh, that's crazy.
+And I think if you look on their website, it says 10 million, Elementor does.
+But so this, this was when they were, they implemented this functionality when they were
+including some pro upgrade stuff.
+And so the whole functionality on this is to actually put PHP files on the web server, right?
+Yeah.
+Yeah.
+So, I mean, it was working as intended, just not.
+From an access control perspective.
+Exactly.
+And, and this actually goes to a topic that I can't wait to talk about later with you,
+which is essentially nonce, nonce acquisition as access controls, which is something that
+we see quite a bit, um, in WordPress, I think.
+And so actually this, this brings to my mind that there's a bunch of other nuanced things
+about WordPress, for example, ad action and admin init that we haven't really covered
+for the listeners just yet.
+And so what I think we'll do is we may even swing back around to this vulnerability, even
+though this one's pretty simple to understand.
+It's just a, it's a, um, you know, a arbitrary, you know, PHP file upload on the most, you know,
+popular WordPress plugin out there.
+And we'll, we'll come back to this once we've covered a little bit more of the basics of WordPress,
+um, functionality, and then we'll go to the rest of your bugs too.
+Um, so with that, what I had in mind for this beginning part is like, we're talking to, you
+know, with our audience here, Ram, we're talking to a lot of people that know stuff about web
+pen testing, right.
+But may not know the intricacies of WordPress and all the weird shit that WordPress does.
+Um, and so what I'm hoping to do is kind of have you talk us through some of the crazy
+stuff I've been learning about with ad action and then all of these different hooks that
+we can, we can hook functions into, um, and then start to see what it looks like to identify
+sources and sinks in a, in a WordPress application.
+Um, so let's, let's go ahead and start from there.
+Uh, let's talk about ad action and how that works in conjunction with, um, these various
+hooks, admin init, uh, wp underscore Ajax underscore, and that sort of thing.
+All right.
+Uh, so realistically bread and butter is, uh, what we're doing is, uh, what we're doing is
+WP Ajax.
+There's a WP admin admin Ajax endpoint, and basically everything uses it, um, for everything,
+including stuff that doesn't actually need Ajax functionality.
+Right.
+Right.
+It's just the endpoint.
+If you want to get stuff done, uh, it accepts an action parameter.
+Um, by default, uh, you have to be authenticated, but that's all, uh, you can set it to allow
+unauthenticated users and plugins have mostly stopped doing that because that's, you know, generally
+not a great idea.
+Yeah.
+Um, but you know, it, it, it's pretty basic, you know, it just accepts a request or post,
+you get parameter.
+And, uh, sometimes, you know, processes within the actual callback.
+Sometimes it calls another callback, but.
+Gotcha.
+So, so there's this, there's this, so unlike other PHP applications where you navigate to
+specific PHP files and execute the PHP inside those files with WordPress, there's the opportunity
+for us to, um, hook, create hooks in the application that correlate to different paths on the WordPress
+core functionality.
+Right.
+And so ad action is, is one of the ways to do that with, um, and there's various types of,
+of hooks in there admin init, uh, being one of them, uh, WP underscore Ajax underscore, and
+then some string being another one.
+And what those allow us to do is interact with core files, right?
+Like, like, um, uh, what is it?
+A WP dash admin slash admin dash Ajax dot PHP.
+Is that right?
+Yeah.
+That's the end point that, uh, if you, if you send something to that end point, you add
+up, you add a WP Ajax hooks anywhere in any active plugin and, uh, it'll call whatever
+callback you have set.
+Right.
+So, so instead of hitting direct PHP files, we can trigger functionality in these WordPress
+apps by this admin, uh, you know, this interface, which says has admin written all over it.
+Admin init, uh, admin dash Ajax dot PHP, but.
+Admin action.
+Admin action.
+Right.
+But unfortunately can also be hit by unauthenticated users and triggered.
+Is that correct?
+That's correct.
+Yeah.
+So that's, that's kind of nuts.
+That was one of the things when I first, you know, after we, we launched the campaign
+back in December, I was just really like, wow, I can't believe this is how this works.
+Like, this is so easy to make a mistake on.
+I mean, if you do it right, it's not that bad, but you know, a lot of people don't do it.
+Right.
+Yeah.
+Yeah.
+It was just the naming conventions a little, a little bit tricky too, you know, with all
+the admin and then, and then, you know, and we'll cover this probably a little bit
+later, but there's also a function called is underscore admin, right?
+Which is not what you think it is.
+Right.
+It's not checking whether it's an admin.
+It's checking whether the request originated from an administrative page.
+Right?
+Yeah.
+Yeah.
+So there's anywhere in the admin panel, even if you're unauthenticated, there's some
+pages that are on in the admin folder that will trigger that.
+So.
+It's crazy, man.
+It's crazy.
+So there's lots of, lots of sources.
+So we've got admin in it.
+Um, that's the hook that, that can trigger on various accessing of various pages.
+So for example, if you wanted to trigger an admin in it hook, you could visit pretty much
+anything under WP dash admin, right?
+Yeah.
+Yeah.
+Admin WP admin, uh, slash admin dash post is pretty common.
+Uh, that was originally designed similar to XML RPC to, uh, you know, allow people to just fire off new posts
+without logging into the whole admin panel, just basically, uh, automate it.
+Wow.
+That's, that's, that's a lot, man.
+So, so, and then, you know, by hitting those endpoints, admin posts or admin Ajax, we can trigger that callback function.
+So the ad, ad action call, which is something that, that we can, that's provided by WordPress takes a hook.
+So admin in it or admin WP underscore Ajax underscore plus a callback function.
+And then it triggers that callback function.
+So then, you know, we can start executing, forcing that code to execute.
+And a lot of times that's making decisions off of our, you know, input, right?
+Like post and get like, you know, dollar sign underscore post dollar sign, underscore get, and that sort of thing.
+And that's sort of like, for those people that are listening that know PHP, but haven't done WordPress stuff, this is the sort of hidden attack surface that the WordPress plugins are hiding behind where you can really pop some crazy bones.
+Would you say that's accurate Ram?
+I would say that is extremely accurate.
+Yeah.
+WordPress relies on a lot of user input and core is actually pretty secure these days.
+Pretty secure, but yeah.
+A lot of plugin developers, you know, it's an open source ecosystem.
+Anyone can post their code and.
+Right.
+Yeah.
+A lot of people learn by doing.
+Yeah.
+I imagine, I imagine there's lots of mistakes being made, which is one of the really cool things about the word fence bug bounty program too, is that constantly there's new, you know, plugins being added to the scope as things pass 50,000 installs.
+Yeah.
+So the people that are, you know, messing around and finding out, so to speak, you know, and then find success and get over 50,000 installs, all of a sudden their code is up for review, which is something that's a really good opportunity, I think.
+Absolutely.
+So, okay.
+So now we know, you know, how we can access some of this attack surface, right?
+There, there'll be these calls to admin, uh, add action, and then there'll be these, you know, hooks specified admin in it admin post, um, WPA jacks underscore.
+And we'll link in the description of this episode, a PDF file, common WordPress vulnerabilities and prevention through secure coding best practices.
+It's kind of a mouthful.
+Uh, but it's a PDF file released by word fence that documents all these interesting hooks and stuff like that.
+So we're able to trigger code from, for running and now we're looking to have our user input affect the server in some way.
+
+Cause that's how the, you know, vulnerabilities are made.
+Yeah.
+Um, we trigger some code and then it takes our input and something happens.
+Um, so what are the most common ways user input is accessed in a WordPress application?
+Um, well, are you talking about syncs or are you talking about, uh,
+I'm talking mostly about sources still like, like, I guess, you know, the traditional method would be in PHP, you know, you've got the dollar sign underscore get or dollar sign underscore post.
+Yeah.
+We have that super globals.
+Yeah.
+
+I'm sure we have those in WordPress too.
+Is there any other ones we should be aware of?
+Or is it just those PHP based ones?
+Um, a lot of, uh, WordPress, press plugins use a get query var.
+Uh, that's usually for the specific WordPress search function.
+Um, you know, some people use filter input, uh, which does not actually, uh, sanitize your input unless you tell it to.
+Exactly.
+See that a lot.
+Uh, you'll also find some, uh, plugins using customer quest parsing functions that just use the super globals or filter input, but, you know, call it something fancy.
+So, uh, it can, if you, you know, you're just using a regex to search through a whole bunch of files, you might miss something like that because they're all using it.
+You know, specific function to parse requests.
+Sure.
+
+That's one of the difficulties that I've kind of run into with automating, uh, WordPress vulnerability analysis.
+Cause when I saw this opportunity of like, wow, there's new scope coming in, you know, there's new plugins coming into scope every week, you know, every day sometimes.
+Uh, you know, these are old and, uh, you know, it might be untouched even sometimes.
+Um, I was thinking, wow, it'd be great if I could just run some static analysis tools on these on a regular basis and extract information out.
+But like, it's not always a simple tracing user input.
+Okay.
+When it can come from, you know, it can be abstracted behind all of these functions.
+You know, they can use input underscore get, you know, get or input underscore post.
+And they can also use the dollar sign underscore sort of functionalities that come attached with PHP.
+So there's a variety of things you kind of need to be aware of when, yeah, there's this huge variety of coding styles and, uh, it does make it really hard to do static analysis.
+I mean, there is, there is a sort of WordPress recommended coding stand standard, but, uh, no, not everyone uses it.
+They're getting people on board, but yeah, that, that, that seems like something really interesting and something that should be, uh, globally applied to maybe all of these plugins and then maybe like a badge added or something like that to the, uh, to the, you know, WordPress.org plugins page or something.
+If they comply with it, I think that'd be really cool.
+Yeah, that's not a bad idea.
+Um, so regarding these, these, uh, you know, Ajax functions or this functionality that we can trigger using, uh, you know, these core PHP hooks, uh,
+uh, what is, so the, these do not have any functioning in place protections for CSERF.
+Is that correct?
+Correct.
+They don't, uh, they don't have any in place access control.
+They don't have any in place CSERF.
+Ah, I love it.
+And, uh, you know what?
+I love to hear it.
+I'm sorry.
+I just, you know, I know it shouldn't make me happy.
+WordPress doesn't have a working content security policy on, unless you add it and, you know, futz with everything to actually make it compatible.
+Oh my gosh.
+Yeah.
+No, I mean, I hate to love it.
+You know, I love it, but I hate it.
+But I love it.
+But I love it.
+You know, you know, being on the offensive side, you got this sort of, you know, pull of the heart in each direction.
+It's a big round.
+Exactly.
+Exactly.
+It's just so much fun.
+Um, but yeah, and that does make these target, these functions particularly, um, enticing for an attacker, right?
+Because there's no built in default access control.
+There's no built in default, um, uh, non-sir or, um, CSERF protection.
+So that could be really cool.
+So in my, in my, you know, WordPress plugin assessing journey, I found a couple scenarios where, um, we have CSERF, but that CSERF is, uh, is limited to a post request, right?
+They're using, you know, $1 underscore post or something like that to pull user input.
+Yeah.
+Um, in those scenarios, obviously we're in the era of same site cookies.
+Um, and, and a lot of times cross site requests are not sending, uh, cookies anymore because of those same site defaults implemented by Chrome.
+Um, this is something that I wanted to ask you and I'm not, I'm not sure if you got the chance to look it up before we, before we, uh, got on the call, but do you know if there's any way to trigger a session refresh in WordPress via CSERF?
+Because here's, here's the approach that we normally take when doing CSERF in a bug bounty context is you, you, find your CSERF, you get it validated, you validate it with a two minute post.
+Um, you know, there's, there's a two minute exception to the same site lacks default stuff.
+
+Um, and which I'm not even sure if, if, uh, WordPress uses same site lacks.
+It doesn't use, it doesn't use same site cookies by default.
+You're stuck with whatever Chrome sticks on there.
+Okay.
+So I've honestly never had it be a problem.
+I've never run into any problems executing a CSERF on a WordPress site.
+
+Wow.
+
+So maybe, maybe they've got it even turned off, but, um, one of the things that, that, you know,
+Chrome should be protecting it within a two, after the two minute window of login.
+Um, but it could be, uh, you know, re-authoring the session.
+That's something that I need to kind of look into is like, I wonder if there's some core gadget that we can use to send a CSERF to refresh the user's session and then get that cookie reset and refresh that two minute window.
+Uh, do you know anything sort of like that?
+Not off the top of my head though.
+No.
+That's something that I'm like, there's the heartbeat, there's the heartbeat, but that actually does use a, you know, different nonce every time.
+
+It uses a nonce.
+
+Got you.
+Well, not a different nonce every time, but it does use an once.
+So.
+
+Right.
+And that's the, that's the funny thing about the whole nonce related thing too, is like, it's not a number used once in this scenario.
+It's like, that's, that's kind of hilarious.
+You get to each one last 48 or you get one that lasts 24 hours and then it's still valid for another.
+Okay.
+It's valid for 24 hours and then they generate a new one for the next 24 hours, but the old one still works for that period.
+So.
+Okay.
+Right.
+Love that.
+Yeah.
+And I did look into the implementation of that when I first, you know, started deep diving WordPress stuff and it's pretty solid.
+Um, you know, they, they essentially take your session token.
+It's tied to your session.
+So even if it's from a different session, you can't use it.
+Um, you know, they take your user ID, your session token, the current timestamp, a bunch of other things, hash it, and then, you know, use it as the nonce, which is kind of a pain in the ass.
+But, you know, it's good to see good, good CSRF protection in place, you know, as long as the developers use it, which is what, you know, is a little bit iffy in these scenarios.
+I mean, it's pretty easy to set up, but yeah, a lot of developers don't use it or try to use it for access control.
+So I guess while we're on that topic, what are the, what is a nonce in the context of WordPress?
+I guess we've kind of already covered that it's, it's a CSRF protection.
+It stands for number use once, but it's not really used once.
+It's just kind of like a CSRF protection.
+And what are the functions that we need to be on the lookout for to, to see for, if they're verifying the nonce or not?
+Check admin refer is one of them.
+Mm.
+Let's see.
+WP verify nonce.
+Yeah.
+So check admin refer, it's kind of weirdly named again, because it doesn't actually check the refer, I don't think, right?
+No, it doesn't.
+No.
+That would be a terrible way to do things.
+Yeah.
+Oh my gosh.
+And so then instead it checks the nonce that's passed into it.
+Yeah.
+And nonces in WordPress, they have some sort of action associated with them, right?
+Uh, I mean, if you're talking about, uh, W create or create nonce.
+Um, no, I mean like that little, what is that little string that's passed into them?
+Like it's like, uh, like oftentimes it'll be like the name of the action that nonce is supposed to be associated with.
+Oh yeah.
+No.
+Yeah.
+You can create different nonces for different actions.
+Okay.
+There there, there's a default, you know, general nonce for a user, but, uh, most plugins will have, you know, different nonces for different purposes.
+Um, some plugins.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Um, some plugins will just have one plugin global nonce.
+And that's especially bad if you're using it for access control, but yeah, you can basically create, you know, nonsense for different purposes, nonsense specific to use cases.
+Okay.
+So there are various actions that can be associated with nonsense.
+Yeah.
+And, and so I can't take, you know, a nonce, even if it's associated with my account for, you know, changing my user profile and then use it in the specific function, uh, you know, on the specific plugin, because more than likely they're going to have.
+Some sort of action that's associated with that nonce.
+Yeah.
+Yeah.
+It's not even really an action so much as just a label.
+A label.
+Okay.
+Yeah.
+It's just like this nonsense for this, that nonsense for that, for this user.
+So, so, so, and, and those, those can have value, I guess, in some ways, uh, for an attacker, because if you're able to leak nonsense that are associated with specific values.
+Yes.
+Um, from an access control perspective and then the, that, that function is solely relying on nonsense for access control.
+Then we can start, we can bypass access control in those scenarios.
+Right?
+Exactly.
+Yeah.
+So, so I guess the attack in that scenario would be like, let's say that they're generating a nonce on admin underscore init.
+Right.
+I think this is similar to the scenario we just talked about with elementor.
+Um, and, and it, you know, it's generating a nonce and then it's sticking it in the response from admin in it, which we know that anybody can access.
+Right.
+Um, and then you go there, you get that nonce and then you, you craft the request to trigger a specific code path.
+Um, and the, they're only relying on, you know, a nonce, the, the access to that nonce, whether you can access that nonce or not.
+Assuming that you can't access that nonce, you know, in a scenario where you actually can, that is a, is a vulnerable, uh, you know, a code pattern that I've seen that can result in vulnerabilities.
+Is that, would you say that that's fairly common?
+That is incredibly common.
+Okay.
+You should never assume that someone can't access a nonce.
+Okay.
+Never use nonce as the sole form of access control.
+Uh, we'll get into some other stuff, but you know, we were going to talk about, uh, menu pages, but a lot of the ways that, uh, WordPress.
+Uh, WordPress are a lot of the ways that plugins, uh, try to protect nonsense is by checking which page the user's currently accessing and only displaying the nonce if it's on that particular page.
+But there are ways to mess with that.
+Oh, really?
+Can you, can you tell me a little bit about that?
+Uh, yeah.
+So, uh, WordPress uses a global called page now, uh, to determine which admin page you're on.
+Um,
+Oh, and is this a part of core?
+Yes.
+Oh, really?
+Interesting.
+Huh.
+Yeah.
+And on some configurations, I believe it's NGINX.
+It might've gotten a little trickier recently.
+Mm.
+Uh, but on some configurations, because it uses PHP self, you can basically, you know, do one page, add an all byte, and then do the page you want to think you're on.
+Interesting.
+And then that, that might generate some other nonce for you.
+Yeah.
+Assuming, well, what would be the assumption then in that scenario that that page does not have that.
+That page does not have access controls that prevent your user from, well, then you could just access it in the first pace.
+Yeah.
+Well, let's say, um, all subscribers.
+If you're not running WooCommerce, for instance, uh, can access the profile page.
+Uh, so, you know, your subscriber, you log in the profile page.
+Uh, but let's say the nonce only shows up on an admin page for, uh, you know, XYZ plugin.
+Sure.
+Uh, so you go to the profile page and, uh, add an all byte, add, you know, admin.php.
+Oh, so it's still coming from an admin source, but then it's perceived to be a different page.
+Yeah.
+And it's tricky to pull off.
+Like, you know, it's a fairly rare case, but it does happen.
+Wow.
+That's really cool.
+Is this, is this, uh, uh, this is under the, the weird WordPress shit section of our document.
+This is under the weird WordPress shit section.
+Is there, is there a, um, is there, do you have any, um, I guess documented places where
+this has been exploited?
+Uh, yeah.
+Uh, you know, Mark Montpass, I think he works for automatic now.
+Yeah.
+Um, I'll add it to the notes at some point, but, uh, I believe it was in a, oh yeah.
+There was a, uh, you know, backup download in our updraft plus a while back that, uh,
+that took advantage of this.
+No way that, that sounds really cool.
+I, yeah, definitely go ahead and grab that and put it in the doc.
+I would love to see that afterwards.
+And for any of you guys that are also interested in looking at it, um, that's something that
+we'll, we'll link in the description, uh, because that that's seems like a really valuable
+way to get your hands on nonces.
+And, and unfortunately we see a lot of plugins do this, this thing where they don't do any
+authorization checks.
+Uh, we'll kind of cover this a little bit later.
+Well, actually, I guess we'll just cover it now.
+The way WordPress does auth checks is they do can, uh, current user can calls, which is
+a function that comes apart of, of WordPress and it, and it accepts a capability, right?
+And that capability is associated with different types of users.
+Yeah.
+It'll also accept a role, but that's, uh, generally considered poor practice.
+Uh, it's pretty old.
+I was gonna ask you about that actually, because I saw that the other day and I was like, what the heck?
+Administrator is not a capability.
+What is, does this code even work?
+It does actually, it's a, it's a, it's a ton of backward compatibility stuff.
+So.
+Wow.
+
+So it will accept the role as well.
+Um, and that's pretty, literally pretty much the primary way, like 99.9% of the time.
+That's how they're doing auth checks.
+Right?
+Yeah.
+But there are some plugins that will not even use that and just rely on your ability to access
+the nonce for the access controls, which is really like you mentioned Ram really bad form.
+Um, so this, any extra tricks that could get, get us access to nonces, um, when they think we shouldn't be able to get access to nonces.
+Extremely valuable.
+Um, so, so that's, that's really rad.
+Um, also it looks like that updraft plus thing.
+Uh, that was not a nonce bypass using that page now.
+It was.
+Okay.
+Yeah.
+It was something else.
+I think we'll find it afterwards and we'll put it in the notes for the people that are, that are interested.
+Um, so that, that covers a lot of the ad action stuff.
+There's a lot more to unpack there though.
+So I just wanted to make, you know, our, our goal here on critical thinking, we try to get as technical as we can, but at the end of the day, it's an audio medium.
+So you, the listener need to go and look into this more, um, or else your brain's going to forget it.
+And you're not going to be able to be, you know, triggered by this thing in the past.
+Um, when you see something that's, that's similar, uh, similar to this.
+So definitely check out the link in the description, um, and figure out how to access these really weird part of the, uh, uh, WordPress functionality.
+Um, with that Ram, I want to have you talk to me a little bit about something that I don't really even fully understand still, which is the add filter function.
+functionality, which is a little bit different than ad action.
+Yeah.
+Add filter is basically, uh, registers an observer, uh, and a callback whenever an action happens.
+So, uh, you can add a filter that runs a callback whenever your profile is updated or a post is updated.
+Um, it doesn't actually run it until apply filters, uh, gets executed, but it's basically a way of setting up different observers for stuff.
+Okay.
+It's a little clunky, but, uh, the name filter means that it often gets used to like, you know, sanitize stuff, do some post-processing on content.
+But, uh, there's also certain room for exploitation.
+For instance, uh, we see a lot with like update profile.
+Mm-hmm.
+Like, uh, you can add a filter and update profile, so it'll run a callback whenever a user updates the profile and accept extra input.
+Ah, interesting.
+So then, so then anybody who can update their own profile can trigger that, that code.
+Exactly.
+
+
+Okay.
+So add filter WordPress built-in function that allows you to create callbacks on specific actions that occur when apply filter is run.
+Right.
+So apply filter is the trigger.
+Uh, add filter is the, you know, the hook or whatever.
+Yeah.
+And the cool thing is that it'll actually accept, uh, not only built in WordPress, uh, actions, but also custom actions by plugin developers.
+So.
+Ah, so they can define their own.
+And anytime that action happens, they just run apply filter and then that kicks off a bunch of, I don't know, are they async or are they sync?
+They gotta be synchronous.
+I imagine.
+Uh, they're in a priority, but I believe they are synchronous.
+Yes.
+Okay.
+Yeah.
+So, so synchronous actions that are correlated with that specific hook.
+That's interesting.
+So yeah, we, we have update profile update post, a couple other things that non administrative level users could trigger.
+Yeah.
+And this result in some, you know, malicious code flow occurring where the user can, can do things they shouldn't do.
+Very cool.
+I like that.
+So that, that's sort of, I guess when I was sort of looking into WordPress history, that's sort of like the mid, the mid tier, you know, way back in the beginnings of WordPress time, they were using XML RPC and stuff like that for a lot of implementing routes and implementing, um, Ajax requests and that sort of thing.
+Then we moved to add action and that whole flow with the admin dash Ajax dot PHP.
+And we're still a little bit in that era.
+There's active development occurring with those functionalities, but then WordPress, um, implemented this register rest routes functionality.
+Can you tell me a little bit about that?
+Sure.
+Uh, so, I mean, it, it is, uh, WordPress rest routes are super handy.
+What's even cooler is that you can actually go to, uh, WordPress or, you know, you can go to the site slash WP dash JSON and it'll just show you all the registered restaurants and you can dig into them and it just gives you a map of them.
+You know, I think I heard of this before.
+I think I saw it somewhere in the super handy.
+Is it dot PHP?
+They just, uh, go to the site slash WP dash JSON.
+Um, you know, I think I've got some sort of weird routing thing, hecked up with my Docker container.
+Cause it's not hitting it.
+Oh, you might have to have pretty permalinks turned on.
+If not, you can do, uh, you can do, uh, let's see.
+Uh, just add, uh, rest dash route equals, uh, forward slash.
+At the end.
+Yes.
+Dot route.
+Rest dash route.
+I think it's a dash.
+Interesting.
+Let me see this here.
+It might be an underscore.
+Is this as a, huh?
+Dude, I'm going to have to, I'm going to have to look into this.
+Yeah.
+It's rest underscore route.
+Sorry.
+Is it, is that as a parameter?
+Uh, yes.
+Rest underscore route.
+And it'll show you all the namespaces and you can dig into the namespaces.
+No way.
+It's amazing.
+Right.
+What?
+Wow.
+Okay.
+So we can just hit slash question mark rest underscore route equals slash.
+And it will give us access to this interface.
+Wow.
+Whoa, dude.
+I know, right?
+Actually so long for this to load because there was so many of them and my poor Docker container
+is overloaded.
+Wow.
+This is like a big recon dub.
+I don't have to be, do I have to be authenticated for this?
+Nope.
+Dude, Ram.
+This is not good, dude.
+Why do they do this?
+Uh, ease of use, I guess.
+I mean, it's definitely one of those things you'd want in like debug mode, but I don't know if you'd really want that in production.
+I mean, like the rest routes are, it does give you a lot of info on what's installed.
+You can, you can get access to it anyway, you know, cause you can just hit the plugins directory and use enumeration to figure out what plugins are.
+Then look at the, you know, read, read me.txt and figure out, you know, okay, what code is running and then look at that and extract all the restaurants.
+But this is just so much more convenient time saver.
+Yeah, for sure.
+
+Uh, guys, this is a big, this is a big dub here.
+I'm going to put this in the, uh, dude, why is this not under the weird WordPress shit section?
+Is this, I don't know why I grew up thinking it was normal.
+This is crazy, man.
+Uh, so I'm going to go ahead and add it to the weird WordPress shit section.
+Um, uh, that that's a really big dub for anybody looking at a WordPress site, just literally add the parameter rest underscore route equals slash.
+And then it just dumps all of the, the, uh, uh, restaurants associated with that site.
+That's crazy.
+
+So, so then, you know, we've got those, we can access them like a normal, um, API or whatever, but there there's, there are some nuances to that, right?
+Which is they fixed the whole, no automatic C-surf protection thing.
+Can you tell me a little bit about that?
+So, um, if you don't provide a nonce that's, uh, again, per user, uh, to a restaurant, it will basically assume that you're on authentic.
+Yeah.
+Yeah.
+Which is, uh, well, if you're trying to access, uh, something that has a permission callback that returns true or that has a permission callback that, yeah.
+If, if it has a set, if it has, you can have the permission callback, uh,
+I guess, so the permission callback is the thing that allows access control, right?
+Yeah.
+So if that permission callback does some sort of like current user can check or something like that, the current user is going to be not, not there cause it's on off.
+So then you exactly, you know, blah, blah, you, you drop it.
+But then if there's no reference to the current user in that interface and they're just assuming that it's secure, you know, then it, it has no C-surf protection.
+Wow.
+
+All right.
+I mean, that's better than the Ajax stuff, the, the ad action stuff where there's just no, you know, implementation at all that, uh, that, that runs by default.
+Um, yeah.
+And you have to use Ajax to get the, uh, restaurants.
+Oh yeah.
+Yeah.
+Yeah.
+Yeah.
+That, that makes sense.
+And then, and then, so I guess, let me ask this, what would, let me just, give me just a gut, a gut feeling on this.
+What is the distribution of use right now between ad underscore action, you know, WP underscore Ajax underscore versus restaurants?
+I want to say it's still 80% Ajax.
+Really?
+No way.
+Yeah.
+And that's the thing as more and more plugins start bringing restaurants online, uh, they're making mistakes in their first implementation.
+So there's a lot of opportunity for, you know, seeing plugins, not using best practices on their first go.
+Yeah.
+That, that makes sense.
+And actually I'm gonna, I'm gonna keep my, my cards closer to my chest here than I normally do.
+Ram, I know, you know about my WordPress automation, cause we've talked about it a little bit, but that is definitely something, I guess since the kickoff in December, uh, of the, the word fence, Bob Ghani program, I've built some automation stuff, uh, that uses, um,
+some, let's just say some code parsing grammar.
+And, uh, you know, that has been kicking out a lot of volumes.
+I think we've, we've identified over, over 10 volumes from the automation and we're seeing volumes popping up in real time as developers push new code.
+It doesn't even support register restaurants yet.
+So I think that's going to get bumped up on my priority list after this.
+Um, I think, I think there could be some really good stuff there.
+Um, okay.
+So we've got registered restaurants.
+That's another great way to get, to be able to execute code, right.
+To be able to trigger code execution flows on the server side.
+Um, do I want to mention the weird WordPress shit about this?
+Yeah.
+Yes, please.
+Yeah.
+Okay.
+You know how, you know, most rest APIs, um, if, if it accepts get as a method, then you have to use query string parameters with WordPress.
+You can put JSON on the body and, and get as the method and it'll just parse it.
+It'll, it'll parse.
+It, wait, so it allows for the body of there allows for a get request to have a request body.
+Yes.
+It's not parsing, like you're not putting the JSON like in the query parameter and then question mark and then like a blob of JSON.
+No, it'll, it'll read the entire raw post body for all request methods.
+What the heck?
+So, and then if you use functions like, I can't even really wrap my head around that.
+So then if you use functions like WP query, that's like there, cause it's not going to show up in dollar sign underscore get or dollar sign underscore get or dollar sign.
+Or post.
+Will it?
+No, it uses a PHP input.
+Oh, PHP input or I, mm.
+Would it, would it show up in request?
+Do you think?
+I mean, it would probably.
+Yeah.
+Oh, dollar sign underscore request.
+That could be interesting.
+
+So WordPress parses.
+You can send it.
+Actually no request has to use, um, request has to use, um, either form encoded or, um,
+XWW form URL encoded.
+Yeah.
+So yeah, no, it wouldn't show up in any of those.
+Interesting.
+So it's gotta be, it's gotta use the PHP, uh, you know, the, the input underscore post and put us or get, but that's still really, really pivotal for, for ways that one, you know, WordPress will parse that data.
+And then that that's, that's the kind of sneaky shit you guys gotta know about to be able to pop crazy bugs is like, oh, I can.
+They're not expecting me to be able to give Jason input to this specific function because I'm doing it under a get request.
+You know, no doubt on that one for a while.
+No, no, no doubt in my mind that there's some, you know, some code out there.
+
+You know, a get request will allow a post request.
+No.
+And then they're sharing logic and you can send body along with a get request and it's going to screw their whole, their whole mechanism.
+That's crazy.
+That's really good.
+Thank you for that Ram.
+This is exactly the stuff that I wanted.
+You know, for you to talk about when you came on here.
+WordPress is full of stuff like this.
+Yeah, dude.
+And that's why I've been kind of finding that out over the past like month or two as I've been kind of geeking out about it.
+And the crazy thing to me about it too is that it's everywhere, man.
+WordPress is literally on every single attack surface you can possibly think of.
+Like every company has a blog or like three blogs.
+They got an engineering blog.
+They got a marketing blog.
+They got a company-wide, you know, press release blog.
+And so there's so many opportunities out there and people are installing plugins that are like 500 installs or something like that.
+And using it on their, you know, main site stuff that hasn't really been audited and stuff like that.
+So there's a lot of, there's a lot of value here for specifically for bug bounty hunters that wants to find vulnerabilities using white, you know, white box code, code review.
+Yeah.
+If I were going, if I were going to make a recommendation, a lot of the low install count authentication plugins are full of.
+Dude, that's terrifying, man.
+They're below the, they're below our current scope requirements, but man, there's, there's a lot of stuff in there.
+Unless you get, unless you get the, what is it?
+Like elite status or something like that.
+Right.
+Then it drops to like a thousand or something.
+I think the requirement does.
+Yeah.
+If you end up with the elite status and you know, that's, that's not that hard to get.
+Just keep on putting in good bugs.
+I'm well on my way.
+I'll get there eventually.
+Um, so I'm excited for that.
+Uh, all right.
+So next thing we've got on the list here as we're kind of going through WordPress syncs, I mean, our sources still, excuse me.
+Um, and then we're going to talk about syncs at some point too, but we got to get our sources in place so we know where our data is coming from and we could start tracking code flows.
+Okay.
+So, um, we mentioned earlier, uh, page related code, right?
+Um, so this is using built in WordPress functions, like add underscore sub menu underscore page.
+This allows us to, I assume define little pages on the left side and admin panel.
+And how does that work and how could, uh, a person hook functionality into that?
+Uh, so if it's done right, you can't.
+Okay.
+Um, WordPress basically lets you register.
+Um, and it performs a capability check during the page registration and then has a call back to whatever function renders the page.
+Um, but you know, not all plugins only use that to call that function.
+Uh, some of them will also call those functions using, you know, admin Ajax, using admin init.
+Uh, and it'll perform a check to see what the current page is to see if, uh, you know, your source is.
+Yeah.
+You know, you're supposed to be there.
+Yeah.
+WordPress does actually use the, um, page get parameter to verify what page you're supposed to be on.
+So.
+Really?
+So tell me, tell me about that.
+What is that?
+What is that?
+So in the query parameter and the get query parameter, you can say query question mark page equals something and then it will.
+Yeah.
+That's what the register page, uh, or register menu basically does is, uh, it'll basically register that page as the thing that calls that function.
+Interesting.
+Hold on.
+Maybe I'm, uh, uh, my, my, uh, my Docker container is, is being slow.
+Cause I've got too many, too many plugins installed.
+I feel you, man.
+I've got like a classic.
+I just disabled them most of the time.
+Classic problems.
+I, yeah, I need to go back and disable them.
+Um, I'm going to log in really quick and see if I, if I am actually remembering properly what you're talking.
+Uh, yeah.
+Cause then, then you've got the, and then there's the page parameter.
+Okay.
+Okay.
+I see.
+Yeah.
+So that, that is also used to show, you know, what, as sort of a source of truth in those scenarios to see what page you're on specifically.
+And that's pretty hard to mess with, um, for the actual page parameter.
+Uh, you know, the thing we talked about earlier accepted, but yeah.
+Yeah.
+Interesting.
+And, and so yeah, WP dash admin slash admin dot PHP.
+Question mark page equals whatever will trigger various stuff.
+I just went to this page and an alert popped because, uh,
+You already had something in there.
+My, my buddy's working on something.
+It sounds like he got it to pop.
+That's great.
+Um, and I try to use different messages from my alerts.
+So I know what, which one it's actually from.
+So yeah, that's smart Ram.
+We're, we're not all as smart as you at the head.
+Cause it's just like, wait, where's this, where's this popping up from?
+That's great.
+Hmm.
+All right.
+Um, so then the last little thing.
+That we wanted to talk about from, from an input perspective is short codes.
+Um, as I'll try to give it a little bit of a summary of that and then you can fix it.
+So essentially short codes are a, um, a way for people who have the ability to write posts normally.
+Contributors.
+Contributors.
+I don't know if you can use them.
+Yeah.
+Contributors.
+Yeah.
+Um, those are roles in WordPress, by the way, you've got subscriber.
+That's the lowest level permission all the way up to administrator with editor.
+Author.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Oh, I mean, I guess to some extent that's basic PHP stuff, but WordPress has its own upload
+handle handler, which plugins should use.
+So if you see them not using that, that's a danger sign.
+Interesting.
+Okay.
+So if it uses move uploaded file, if it uses an unzip, I mean, that's, you know, again,
+it's normal PHP stuff, but if it doesn't specifically look, check file types within the zip, then you'd have an opportunity.
+Interesting.
+Yeah.
+Anytime, anytime you're dealing with zips, this is a pretty general web application hacking thing is like, if they're dealing with zips, there's going to be some weird shit that can happen there.
+Absolutely.
+You can do zip slip, you can do, you know, all sorts of file extension, hidden files that don't get deleted from directories, like all sorts of weird stuff you can do with that.
+Absolutely.
+So that's always a good one.
+And then I see you also put here WP underscore remote underscore get, which is a great, a great one.
+And I imagine that's often used as a sync for SSRF.
+Absolutely.
+Yeah.
+WP remote get is the built in WordPress server side request functionality.
+It uses curl or whatever it has available, but you can use it for SSRF if you're on an EC2 box with IMDS or is it IDMS?
+I can never remember.
+Yeah.
+I want to buy DMS.
+You can grab the EC2 box credentials and then you own the box.
+Yeah, dude.
+I love that, man.
+I saw earlier, I was snooping around the bugs.
+I try not to snoop around the bugs too much before people come on because, you know, I like to be surprised on the on the podcast, but I did see you pwned some box with that.
+So I, it was my own box, but yeah.
+Wow.
+Yeah.
+Yeah.
+Yeah.
+But you know, it still counts.
+Every WordPress is very often launched in AWS.
+So that's good to see.
+Yeah.
+And the other thing is that a lot of configurations don't use IDMS too.
+So, and a lot of WordPress plugin developers don't really take into account that SSRF is a thing.
+I think it's a lot of people who have some plugins whose entire functionality basically depends on at the very least blind SSRF.
+So, you know.
+Yeah.
+100%.
+I've seen that often as well.
+SSRF is definitely becoming more well-known in primary web app circles, but I imagine that hasn't trickled down fully to WordPress plugins and sort of peripheral environments like that.
+Yeah.
+So that's, that's good.
+Um, so let's talk a little bit now about echo as a sync, right?
+Yeah.
+Anybody who's familiar with, with PHP knows that echo as a sync will echo something onto the screen.
+It will print onto the page, the HTML that's being outputted.
+Um, WordPress has a lot of escaping mechanisms for various things.
+It does and some of them are very good.
+Okay.
+So can you talk to me a little bit about some common mistakes that you see in escaping within a, uh, a WordPress environment that results in XSS?
+Oh, uh, I actually almost added this to the vulnerabilities, but, uh, you'll have, you know, you'll have the function escape part of it and then run s printf on the out.
+Outside of the escape.
+And, uh, wait, wait, wait, say one more time.
+You'll have an escape part of it.
+Yeah.
+It'll have escape part of it and then you'll have run s printf around the escape.
+And, uh, yeah, that one's fun.
+You'll, you'll see those sorts of things.
+And, and actually, you know, later, later this week we'll record, I'm not sure what order we'll release these, but at some time soon you'll be, uh, critical thinking listeners will be listening to an episode about vulnerable code patterns, which was inspired a lot by reviewing a lot of the source code of WordPress plugins.
+Um, and that's always, it was a funny, you know, piece that you see where they, they try to sanitize stuff, but they just do it a little bit off, you know, and, and there's some common patterns you can find that will help you find bones in any language based off of that sort of thing.
+Um, but there's, there's, I guess the WP underscore K S E S related functions.
+It stands for a strip evil, evil scripts.
+Okay.
+Gotcha.
+It's pretty solid.
+Um, it's complicated.
+It's reject base.
+It's very slow, uh, which is why they don't run it on absolutely everything.
+Yeah.
+Uh, but it does a decent job of, you know, cleaning up, uh, basically any HTML tag from any unsafe attributes, but, you know, it has to be a complete HTML tag.
+It has to know it's an HTML tag in order to remove those attributes.
+So that's where we run into stuff like, um, shortcut code based cross site scripting because it runs the K S S on just the attributes before it adds them to the HTML tag.
+Gotcha.
+So this is something that actually is used to parse.
+HTML.
+Yeah.
+Okay.
+There's like text.
+Yeah.
+That's not a great idea.
+That's not a great idea.
+So that, that's something that where they're expecting HTML.
+And a lot of times also they'll be expecting just normal input and they'll use this function, sanitize text.
+Field, which I think is pretty bulletproof.
+Like there's not much you can do about that.
+Right.
+Sanitize text field also doesn't escape attributes if they're being added separately.
+So, um, it'll, it'll kill any tags you have, but if you know, you have tag and you have control over the attribute from a source, then, uh, sanitize text field.
+Isn't going to.
+So you may be able to, uh, and that's, so if it's being injected into an attribute, it won't escape the double quote.
+So you can escape out of the attribute, define your own attribute, like on load or, you know, on air or something like that.
+Trigger JS through that.
+Yeah.
+I honestly should have brought that up, but I.
+Yeah.
+Yeah.
+It just didn't come up until you mentioned it.
+Yeah, no, you're good.
+You're good.
+That's what this section's for.
+So, so that's great.
+So we got to understand, you know, what, what parts of the app, and I know there's functions like escape.
+Oh yeah.
+It's you added it right here to the doc escape underscore ATTR that are specifically used for escaping attributes.
+So when you're looking at this code, you kind of got to get your brain to be like a machine and say, okay, where's the context?
+Did these the right function?
+Context function.
+If they're using escape URL on something that's not a URL, there might be a way to get around it.
+Yeah.
+If they're using escape JS on something that's, you know, in HTML or something.
+Yeah.
+Then there might be a way around it.
+Interesting.
+Very cool.
+So the, the naming convention is I should pretty be, should be pretty much similar to the context in which that, that string is used.
+So that's something to be on the lookout for.
+Yeah.
+Tell me about this E underscore or underscore E thing.
+What is that?
+So WordPress has a lot of translation capabilities.
+Uh, there's a lot of websites that will show content in multiple languages just by setting the language parameter.
+So underscore E echoes out the text or the translation of the text if one is available for the requested language.
+Ah, interesting.
+Most of the time, most sites don't actually use translation.
+So it's basically just echo.
+Which is bad.
+But it won't show up if you're just searching for echo.
+Interesting.
+Okay.
+So that's another sort of echo equivalent of sorts in the WordPress environments that we need to be familiar with.
+Very cool.
+So, and you can also, uh, if you have, you know, some sort of limited file upload, uh, you could potentially upload some, uh, translations, malicious translations with, uh, cross-site scripting payloads and set the language.
+Interesting.
+Wait, so, so you would need, we would need to be able to upload what?
+Uh, you'd need to be able to upload, uh, translation files.
+I forget what the extension is, but.
+Ah, so there's some, there's some maybe non-administrative, not, not always associated with administrator functionality that allows you to update translate files.
+And then you may be able to.
+I default it's admin only, but, uh, you know, the, it, some things perform, you know, they use a block list instead of an allow list.
+All right.
+They use an.
+Sure.
+So if you can get some of those, uh, translation files uploaded.
+Interesting.
+That's a good, you know, path.
+Cause like if you're working with a plugin that does translation in particular, then maybe there could be some access control stuff and then, okay.
+You think, well, all right, maybe I can affect the translation, but what does that really do?
+It gets XSS.
+Exactly.
+Um, so that that's, that's good to know.
+Very cool.
+Um, and, and so then moving on from access to, and obviously blind access is a big thing in, in, um, in a WordPress environment as well.
+So that's something that, uh, sort of, we got triggered from last week.
+Uh, Ben started talking a ton about, um, blind access.
+And now my brain has just been spinning about blind access.
+Yeah.
+Just assume the access, S and WordPress is blind and work and it probably will.
+That's great.
+No, that, that, that's good.
+Um, so moving on to SQL I syncs, um, they have a pretty good wrapper around SQL stuff in, in WordPress.
+It's WPDB, uh, prepare normally is what's being used.
+Um, what are some problems with that, that we can be on the lookout for when we're auditing WordPress plugins?
+Well, the biggest problem is, uh, developers that don't use it at all.
+Um, but, uh, you know, as, as you mentioned, uh, preparing part of the, uh, SQL state SQL query, but, uh, concatenating it with an unprepared portion and then, uh, actually running the query so that there's, so that part of it's not prepared.
+Uh, we do see that on occasion.
+Um, there is a sort of backward compatibility, uh, issue with WP prepare where, uh, if instead
+of percent S for a string, it'll do like labeled strings, like percent one S, uh, then it won't
+add quotes to it.
+So you can run like character based, uh, SQL injection.
+Ooh, interesting.
+So if you, so it doesn't, ah, maybe that's because it doesn't know it's a string.
+Well, no, but it doesn't know it's a string.
+It just, it doesn't, it does know it's a string, but because of the label, it doesn't treat it the same.
+Uh, there's some WordPress developer doc on it that just says due to backwards compatibility.
+So.
+What the heck Ram, are you, is this something that's known by people or are you just dropping
+like a core, a WordPress core SQL zero day on critical thinking podcast right now?
+No, no, core doesn't use this practice, but, uh, they just support it in case someone else does.
+Wow.
+That's, that's weird, man.
+Uh, okay.
+So, so they've got that functionality and it won't put in the double quotes.
+Exactly.
+So you might be able to escape out of that.
+Very interesting.
+Um, also, uh, you can escape out of single quotes if you're using a GB case character set using multibyte encoding, but that almost never happens.
+So I, yeah.
+Interesting.
+Uh, what, what do you, is there some character in that language that is.
+Effectively normalized to a single quote?
+Effectively a single quote.
+Yeah.
+Yeah.
+It's real old.
+It's been around since like 2006.
+It just almost never comes up because I've never seen a site using that character set.
+Uh, and it has to use that character set.
+In the database.
+Yeah.
+In the database.
+Okay.
+Yeah.
+That's pretty rare.
+Makes me think so.
+You know, maybe there's some, you know, websites that are using specific character sets that are not normal.
+That we haven't found it yet?
+Foreign, foreign, foreign.
+That could be a good place to do some, you know, WordPress related research.
+That, that could be cool.
+Yeah.
+I should, I should nerd, there's a, there's a guy that came on the pod.
+Um, uh, I guess probably a couple months back now.
+This is very much obsessed with, uh, character, character set related stuff.
+So I should, I should nerd snipe him with that.
+That'd be good.
+That stuff hurts my brain, man.
+It's complicated.
+He dropped a really good blog post though, that I still haven't found the time to read on, which is essentially like, uh, actually I've got it right here.
+It's literally right in my bookmark bar, the absolute, the absolute minimum, every software developer absolutely positively must know about Unicode and character sets is the name of the, of no excuses.
+It says at the end.
+I think I might've read that one.
+Actually.
+That's a great, that's a great article.
+I'll, I'll, I'll, uh, I'm, if you've read it, you know, I'm sure, I'm sure it's got a lot of value to it.
+And Matias mentioned that, um, you know, he endorses it as well.
+So that's, that's another one we'll link.
+I'll, I'll go ahead and, uh, sorry, Richie, the editor, I'm going to, you're going to have a really long, uh, description for this episode because there's so many things to link, but I'll put that in the doc and it'll be waiting for you guys in the description when you go to read that.
+Um, and, and so the actual things that going back to, to WordPress, um, the things that actually trigger SQL related statements are WP DB query or get row.
+Right.
+There there's a number of other functions, uh, update.
+You can, you know, you can do time-based SQL injection injection on updates or deletes though.
+Those are kind of a pain to deal with.
+Yeah.
+I imagine so.
+Yeah.
+So, but we need to be looking for direct injection into query and get row or concatenation with prepare or some sort of label based, uh, print F like.
+Yeah.
+I'd honestly put the label based one in the weird shit WordPress does because it's pretty rare.
+We were just like, that blew my mind when I found out about it.
+So I had to mention it.
+Yeah, no, that's, that's, that's exactly the stuff we want to know about.
+And, and that's the kind of stuff you want to hear about on a podcast and then be like, you know, two years down the line.
+You know, two years down the road, you know, when your brain has trapped that little piece of information deep, you're like, Oh, wait a second.
+I thought I heard something about that.
+And then you Google it and you find it and then you, you know, pop the bug.
+So that's the kind of stuff we're going for, for sure.
+Um, one of the things that, that, uh, my mentee actually brought up as he was doing some, some WordPress, uh, uh, plugin assessment was escape
+underscore SQL being used in conjunction with non quoted strings.
+So, uh, in those scenarios as well, you can trigger SQL, right?
+Correct.
+Uh, if there's no quotes to escape, then you can just use a character based SQL injection.
+Right.
+And, and you're not, you don't really even need to break out of any string related context.
+No, no double quotes, no single quotes, anything like that.
+So the use it, a lot of people will just blindly trust, um, escape, escape SQL.
+Uh, I remember my first security job, we used to, uh, patch stuff, uh, using escape SQL.
+And then I found out that it wasn't enough.
+And I was like, Oh no, what am I doing?
+Oh, I've made some mistakes.
+Yeah.
+I can, I was a PHP developer actually.
+It was my first software engineering job.
+And I, I wince when I think back on the code that I wrote in those days.
+Um, uh, but yeah, I think this is particularly, one of the things I wanted to call out here is this is particularly interesting when in context of, uh, dealing with integers.
+That, and there being a type confusion because in, in, in WordPress environment, you know, you, you, you can say, Hey, when you're doing an SQL query with a specific integer, you know, you can put it in there and you can say, you know, X equals whatever without having to use the double quotes.
+Um, so if they're assuming that X, Y, Z argument, that's being pulled from the query parameters is a integer that, and they insert it that way, then it, it could be very vulnerable to this.
+If you just give it a string instead and manipulate the SQL statement.
+Um, we just actually, I think we just published a really fun type juggling article.
+Ah, dude.
+I love those vulnerabilities.
+I gotta go consume that.
+Um, also don't use sanitized X fields for SQL, uh, proving stuff.
+Sanitize.
+
+Sanitize X field.
+That's for XSS.
+Yeah.
+Yeah.
+Yeah.
+That, that would, that would be, that would be bad.
+That's great.
+I love that.
+Um, all right, let me see where else we want to go here.
+Um, I do want to talk a little bit about, uh, WordPress based escalations, and we also want to talk about sort of deserialization in a WordPress, um, context.
+I'm going to go with that one.
+Yeah.
+She's, there's a lot there.
+Um, I'm going to go ahead and look through here really quickly and make sure we're not, this document has become pretty chunky.
+So I'm going to make sure that we're not, um, so yeah, I guess one of the things that, that is a vulnerability that's only specifically correlated to WordPress that I kind of wanted to bring up is this whole content concept of an arbitrary nonce leak vulnerability.
+And, and, um, this is a scenario where you can take user input and generate a nonce for any given sort of label, right?
+Like you mentioned before.
+Yeah.
+Um, probably found one a couple of years ago.
+I think it was in, uh, one of the Facebook plugins.
+Yeah.
+Yeah.
+I read that right up.
+It was amazing.
+And, and so essentially what this allows you, the user to do is escalate privileges in a lot of scenarios where, where nonces are being used as the access control because they can generate a nonce.
+Because they can generate a valid nonce for any label.
+Right.
+Mm-hmm.
+That's, that's a, that's a weird bug.
+That's when I wanted to make sure that people were aware of because it, it took a second, you know, it's only something limited to a, to a, um, WordPress related context.
+Yeah.
+I'm glad they're as rare as they are.
+Well, I hope there is risk.
+I think they are.
+Yeah.
+Yeah.
+Well, I, I did, I did poke around a little bit for them because I needed them for a chain and, and I didn't see a lot of them.
+So, um, even gripping through all, you know, 800 and something plugins that are in scope of y'all's program.
+So you have a better time trying to find the nonce on like, you know, an admin page.
+Yeah, exactly.
+Um, so let's see here.
+Uh, you, you have some stuff on here, WP handle upload.
+Was that the stuff that we, we talked about before or were those, was that some other tidbit, juicy tidbit of knowledge that I don't want to miss out on.
+Oh, uh, WP handle upload is the built in WordPress file uploading, uh, mechanism.
+It runs some pretty decent MIME type checks and file type validation checks and extension checks.
+Uh, but some plugins will put in overrides to tell it not to test the file type and, or to allow different MIME types.
+And, uh, then you can get away with some mischief.
+Wow.
+
+So WP handle upload, that's, that's a function.
+And look at that.
+There's overrides right there as the secondary parameter.
+Yeah.
+I realistically, WordPress has really good safe defaults for a lot of things.
+And a lot of developers just don't just turn them off.
+Love that.
+So, uh, okay.
+So look for that.
+Yeah.
+That's, that's a great call out.
+
+I'm glad, I'm glad we didn't skip over that.
+Um, definitely, you know, anytime there's an, and I'll share some interesting stuff with you outside of the pod.
+Cause I've got, you know, a top, a top plugin that I've been working on recently and reported some bugs, bugs in.
+They have some really sketchy, uh, uh, uh, my extension check and MIME checking functionality that literally just doesn't work.
+Yeah.
+Look for non-standard MIME type checks and file type checks.
+You'll, you'll find all sorts of crazy stuff.
+There's also, and this is like a very well-known plugin too.
+So I was very surprised.
+Um, great.
+Well, let, let's go a little bit.
+Let's dive back in again to the, the weird WordPress shit section before we go to pop chains and WP escalations.
+Um, there there's, oh, actually, you know what?
+I think, you know, yeah, we, we covered all of these.
+Cause this is the, the page thing and the, the, right.
+We covered all the weird questions.
+I don't think we covered how a WordPress actually lets you overload, uh, the request and, uh,
+Oh, talk to me about that then.
+What is that?
+Remember how we were talking about how WordPress uses the page get parameter to tell you what pages it's on.
+Yeah.
+On the admin.php.
+Yeah.
+WordPress verifies that that's the correct page.
+Therefore the function wouldn't run if you weren't on that page.
+Right.
+Right.
+Uh, so a lot of developers will echo out the page parameter, but they'll use request instead of get and WordPress.
+Basically smooshes together.
+It, if there's a post page parameter, it'll stick it in the request page.
+Interesting.
+Even if there's also a get page parameter.
+What if you, so if you did a, a post to that page with, with the page in the post body and the page in the query parameter.
+Yes.
+So you use the correct page in the, in the query parameter and you put an XSS payload in the post parameter.
+And that is sneaky, man.
+Yeah.
+I found a few of those.
+That's, that's great.
+So anytime we see echoing of request page.
+Or echoing of request anything when it should be using get or post then.
+Right.
+That, that makes a lot, that makes a lot of sense.
+So there, there's some way for you to sort of overlook.
+Yeah.
+That's really weird.
+So in request, it smooshes it.
+What is it just like implode them with a comma or something like that?
+What does it do?
+So, uh, PHP by default will basically, uh, stick both get and post into request, uh, in order of priority, but, uh, you can change the priority in PHP.ini, but WordPress will make.
+Darn sure that whatever's in post gets priority over whatever's in get, if it's the same parameter name.
+No way.
+And WordPress looks at get to decide what page it's in.
+Yes.
+Love it.
+I love that little, that little, uh, discrepancy between the two.
+This is exactly what we're looking for.
+That that's great.
+And so in those scenarios, you can trigger access by injecting into the post body.
+Exactly.
+Um, and it's usually reflected, but.
+Yeah.
+And, and, and we, and did we cover, um, the Jason really, we did check cover the Jason related stuff in the body.
+So that's, that's great.
+Yeah.
+With that, let's go ahead and, and, and move along to pop chains.
+Okay.
+So this is PHP object.
+Enjoy.
+I don't know what pop actually stands for.
+Most people just call them gadgets, but I like pop change because it's fancy.
+Hold on.
+I could have, I swear.
+I've read, read this.
+It's, it's, it's, it says it's like ROP chain PHP object pollution.
+PHP, PHP object.
+What the heck?
+Why is it escaping my, my head now?
+Uh, well, that's a little bit rip.
+Although the only one that I see is similar to ROP, ROP chains, pop chains allow you to do whatever.
+Um, so I guess pop chains, they're, they're essentially useful in these sort of deserialization scenarios.
+Exactly.
+And actually I've spent, funny, funny story.
+I've spent definitely like 40 hours looking for pop chains in WordPress core, um, and WordPress, uh, top WordPress plugins because I needed it for a chain.
+There's some pretty good ones in, I want to say TCP to T to PDF.
+The main problem is that that never ends up actually, you know, the class never ends up actually loaded when you need it.
+I hate that Ram.
+Ugh, that, that drives me nuts.
+So, so essentially this for the listeners, um, the, the scenarios in which you need this is an, is a deserialization scenario.
+Um, and specifically this is the scenario that I was using it with was when you were using a far based, um,
+uh, uh, deserialization.
+And this is when you can inject an arbitrary URL into file underscore exists or is file.
+Um, and what that will do is if you give it a PHP archive file dot dot far file, it will try to load that file up and deserialize the metadata associated with that.
+And, um, in that scenario, you need sort of a chain of gadgets in order to get RCE.
+Um, and to, to be clear, this only affects PHP versions.
+7.4 and below.
+7.4 and below.
+I think, wasn't it patched in 8.1?
+I think, or might, they might've just, it was either 8 or 8.1.
+Yeah.
+Yeah.
+8 or 8.1.
+You know, some of the, if it's in the sevens, you're fine.
+Everyone's still using 7.
+Exactly.
+It's the 5.6 of 2024.
+Right.
+Great.
+
+That's, that's good.
+Um, so, you know, still, still widely used.
+Um, but you can use that functionality to get RCE as well.
+So if you, you have arbitrary injection into a, uh, into a file underscore exists or is file, um, any stat based, uh, call in PHP.
+Um, and so I found that and I was looking, I was like, ah, I need to find a pop chain.
+So I started going through, unfortunately there was one that was patched in December.
+That was like blatantly obvious, you know, that was just like, that, that one was very obvious.
+And I would have loved to use it, but, um, in the end I couldn't find one.
+And there's a bunch of really good write-ups out there, like essentially chaining together just this crazy, massive, beautiful flow of functions and classes and, and stuff to trigger these, um, these, these chains.
+But essentially the concept for these is that you need some class that you can instantiate and just set the attributes of that class and then have some function trigger or some, something being called on that class.
+Like to string or underscore, underscore, wake up or underscore, underscore, destroy that kicks off a code flow that eventually allows you to gain control of the whole application.
+And then you can see that, uh, you can see that, uh, you can see that, uh, you can see that, uh, you can see that, uh, you can see that, uh, you can see that, uh, you can see that, uh, you can see that, uh, you can see that.
+And, and you spending time looking for this is crazy because you're, you're having to reach so deep into all of these PHP internals of like, all right, well, what if I treat a cat, uh, you know, a class, like, like an array.
+And I'm like trying to attribute, uh, access like the certain attributes of like this array, but actually it's a class and it's calling these functions.
+It's, it's nuts.
+So, so many interesting things there will link an amazing one.
+Um, and WordPress uses, uh, serialized data basically everywhere in its internals and, uh, built-ins handle.
+Built-ins handle that serialization fairly well, but a lot of plugins seek to emulate it and don't handle that serialization quite as well.
+So you'll end up with, you know, storing session data as an object in cookies and.
+Yeah, that that's, that's scary, man.
+And, and so, yeah, that's a great point, Rem.
+So, so cookies is actually probably one of the, the top, uh, sources for that sort of deserialization front.
+Yeah, I'd say so.
+
+Wow.
+Yeah, that's good.
+Definitely something to be on the lookout for there.
+Uh, we also see a lot of like, uh, settings, import exports functionality.
+That's always a, that's always a fun source to play with.
+Or even update options probably.
+Right.
+You know, there's being, there's stuff being stored in there in a serialized format.
+Anyway, I, I, I just wanted to talk about this cause I'm a little mad right now.
+I don't like being defeated by technology.
+That's one of the things that makes me a good hacker.
+Um, so I spent a lot of time and I over indexed on finding this pop chain.
+So if anyone can find a pop chain in WordPress core, uh, or any plugins above 5 million installs, then I will be very impressed because I spent a lot of time and I couldn't do that.
+Uh, so there's a little challenge for you, uh, WordPress, uh, enthusiasts in the audience.
+I'm sure it's only a matter of time before I add a new one.
+Yeah.
+Well, they need to add one, right.
+You know, there there's gadgets.
+I, man, I, I swear Ram, I went down every single path.
+I got really meticulous about it too, man.
+I started like saying, okay, here are all my sources.
+Like I started drawing, you know, I almost like that Pepe, you know, like whatever it is, the dude that's like, you know, there's like strings all over the place.
+Yeah, I know what you're talking about.
+Yeah, and, and, and, and, and yeah, I was like that except for the pop chains and Joel is like, Justin, chill out, dude.
+Like this is not, you know, and, and this is not even like, you know, top dollar bounty for me normally either.
+So it's just like, I will admit to searching for all the destructor methods in every plugin I look at.
+It's not just in case.
+Just in case.
+I don't know.
+I want one.
+It's critical thinking listeners, please.
+That would soothe my soul.
+Um, all right, Ram, we're coming to the end.
+Um, we're going to hit, uh, WP escalations.
+We're going to WordPress escalations, ways to sort of escalate impact in WordPress.
+Then we're going to swing back around to your bugs and we'll call it a wrap.
+Um, so talk to me about some, some WordPress escalations.
+I wrote down some, some basic ones here.
+For example, uh, one that you taught me in, in a fine little vulnerability exchange.
+Uh, file deletion of WP config results in RC.
+Can you talk about, about that a little bit?
+Yeah.
+So, uh, when you delete the WP config file, uh, the WordPress site thinks it's being newly set up, which means that the first person to visit the site gets to, uh, tell it what database connection information it needs to use.
+Which means if you already have a database set up somewhere else, you can just point it at that existing database that already has you as an administrator.
+Right.
+Or, you know, add a new admin account and, uh, log in.
+And then you can edit plugin files, install file manager plugins, uh, run code on the server.
+You own the site.
+Uh, you might lose access to the old database, uh, depends on if you want anything in there, but if there's any backups, you know, you got those.
+Or you might not, right?
+Cause a lot of times people make WP config backup files.
+Exactly.
+And then you can download those and then you have access to the database instead of the site.
+Yeah.
+And then after you, you know, put your little shell, your little reverse shell on there, you know, then you can just sub the old WP config file back in and then boom.
+Pro tip WordPress still uses MD5 for password hashing.
+It uses a lot of rounds.
+Oh, no way.
+Really?
+That's it.
+It uses a lot of rounds of MD5, but still MD5.
+Wow.
+I'm sure that's going to bite him in the butt someday.
+Um, it does use salts, but you know.
+Yeah.
+Yeah.
+I did notice that.
+Um, so I guess the next one on the list here.
+So, so that's great.
+If you've got an arbitrary file deletion results in RCE WP config, boom, you're done.
+Next one on the list here is the next one.
+So, I guess the next one on the list here.
+So, that's great.
+If you've got an arbitrary file deletion results in RCE WP config, boom, you're done.
+Next one on the list here, stored blind XSS to RCE via admin hijacking and then editing
+the plugins.
+Obviously, if you're an administrator, you have the ability to edit plugin code.
+That's one of the features of WordPress.
+So, anybody who's new to WordPress should know that.
+Um, you know.
+Or you can add new administrators.
+There's a fancy little JavaScript going around.
+I was so happy.
+I'm still taking some, I'm taking the OSCP and, uh, I was so happy to see this little
+JavaScript.
+I was like, I know that guy.
+Yeah.
+Yeah.
+I was like, I'm just going to use this character in code of JavaScript that adds a new admin user.
+That's great.
+I love that because it makes it so easy to implement.
+I think Hack Luke has something out there for that too.
+He's, he's great.
+Um, and then, and then, so tell me about some of the ones you added here that, that are ways
+to escalate privileges in WordPress.
+Uh, so we sort of discussed this already, but, uh, if you have update options, uh, you can set the
+default role to administrator and enable user registration.
+Uh, yeah.
+Um, yeah.
+And we already discussed about how you can use, uh, hard coded options for, uh, cross-site scripting.
+Okay.
+Gotcha.
+So, so a lot, a lot of the ones that, that are, came to mind surrounding this as well are options
+related ones.
+If you have arbitrary option update, then just boom, user registration, boom, default user, uh,
+should be an admin.
+Uh, should be an admin and then you're, you're in.
+Yeah.
+That's great.
+We actually discussed a lot of these at least.
+Yeah.
+I'm looking at them.
+We did.
+Yeah.
+Yeah.
+So this is good.
+The only other one that's down there is this, uh, roll your own password reset functionality.
+Yeah.
+Um, a lot of plugins, uh, sort of use less than secure practices.
+They don't use all of the built-in password reset functionality.
+Again, you'll see this in a lot of like membership plugins, other plugins that are designed
+to keep track of users and take their money for stuff.
+And, uh, yeah, uh, a lot of them will have insecure password reset functionality.
+Like it'll, you know, set a second, uh, it'll, it'll set like a reset code.
+That's deterministic and easily gassed, or it'll let you set the user ID to reset the password
+for, even if it's not your user ID.
+Yeah.
+
+You'll send yourself a password reset and then you click on the link, but you just spoof out your user
+ID for the other user and you can reset their password.
+Man.
+There's so, there's so many things like that whenever you try to bypass traditional functionality,
+that gets really tricky.
+Yeah.
+When, when you said predicting, you know, being able to predict, you know, what the, the reset
+token might be, excuse me.
+It made me think of a function where I found a vulnerability in some PHP code the other day.
+So, unique ID, uh, in PHP is literally it's, uh, U N I Q ID, right?
+It reads unique ID.
+Yeah.
+Not a unique ID at all.
+It's not suitor.
+It's just, it's, is it even suitor random?
+It's, it's just timestamp based pretty much.
+Oh yeah.
+Yeah.
+That, that's another one of the things that you see with bad password recess.
+They'll basically just set the code to the current exact time.
+It's like, oh no, this is so bad.
+And so unique ID, the, one of the plugins I was looking at the other day is using it as
+like a temp directory, um, name.
+And I was like, uh, this is not good.
+Cause we can guess that.
+Um, and so definitely some bones to be found there.
+It might even be worthwhile to just grab all this PHP source code for unique ID of the plugins
+and see where it's being used.
+Cause I'm sure a bunch of bugs would fall out of that.
+Absolutely.
+Yeah.
+WordPress is one of the places where a lot of those vulnerabilities you think are just theoretical
+end up being entirely practical to exploit.
+Yeah, that's great.
+And, and I'll, I'll mention as well, just for any of those, um, listening, I actually mirrored,
+I have a piece of code that runs every day and mirrors the, um, GitHub.
+I mean the SVN plugins that are in, uh, you know, on the plugins, uh, page for, for WordPress.
+It mirrors them into a GitHub, uh, organization.
+And that is, um, GitHub.com.
+I'm going to type it in as I'm, as I'm doing it, uh, slash WordPress plugin directory.
+That's one that I maintain.
+Um, and essentially you can see diffs on any changes that are being made there.
+Um, this is a part of my own personal, um, automation.
+Uh, and so you can see any changes being made there to various plugins and new code that's being pushed
+and you can diff it with, with, with, uh, oh my gosh.
+You know, I, I, as I'm talking about this, I just started scrolling through there and I see a vulnerability.
+That's hilarious.
+New stuff.
+Uh, well, I'm going to go ahead and, uh, bookmark that bad boy.
+Um, but yeah, go ahead and head over to, uh, github.com slash WordPress plugin directory.
+And then you can search within that organization on GitHub and you'll be able to do stuff like look for unique ID.
+But I will probably do that before you, uh, before this.
+I am so glad that you've done that because we used to use WP directory.net and it has gone down.
+Yeah.
+Yeah.
+It was, it was a little bit of pain in the ass, especially in the beginning.
+Cause there's like a limit on the number of repositories you can create in a certain timeframe on GitHub.
+So I had to like write a script that would be like, all right, wait, upload, wait, upload.
+You know, that sort of thing, but it's all automated now.
+It's all in a cron tab now.
+So it should be, uh, easy searching for any of you guys that are interested in mass searching,
+uh, WordPress, uh, plugins.
+Um, alrighty with that, I think we finished the weird or the WordPress, uh, escalation section.
+Let's get back to the buggos, uh, Ram.
+Let's talk about the rest of them.
+I guess let's go ahead and briefly revisit the, um, one now that we know a little bit more about,
+uh, the, the elementor, uh, remote code execution one.
+So this was a scenario.
+Ah, okay.
+Add action admin.
+Yeah.
+We talked about this.
+So this is a way you hook into, uh, you, you provide a callback function for specific hooks and admin.
+And it one can be triggered from an unauthenticated context.
+And then also, uh, can be triggered by visiting literally anything under WP dash admin.
+Right?
+
+Yeah.
+And, and in this scenario, I'm going to try to, I'm going to do a reverse right up here.
+I'm going to summarize it and then you can tell me if I'm right.
+Um, so, uh, in this scenario, it is, uh, WP underscore doing Ajax, which I assume is just a check to, to that, to whether it's, uh, being an Ajax request or not.
+And then you've got the WP verify nonce, which does make it require some sort of authentication, right?
+Because the user ID has to be associated with a specific thing for the nonce and you have to be able to access it.
+And then Elementor uses one knots for a lot of stuff.
+I mean, they got more than one, but they use the same one for most things.
+Very cool.
+And then, so using that, you can just trigger the upgrade of the Elementor plugin and provide PHP code, which is run on the server.
+Yeah.
+Rip dude.
+That's a bad one.
+That is a bad one.
+I'm glad you, you, uh, pounded that one out before they, that was there for too many, too many versions.
+Cause that would have been a bad one.
+Yeah.
+And technically it was an admin Ajax one, but they did it a weird way where it, they just, you know,
+didn't actually register the Ajax hook.
+It just checked if you happened to be on the Ajax page.
+Oh, interesting.
+Okay, cool.
+Huh?
+That, that little function looks a little interesting there.
+Yeah.
+Let's go ahead and talk about the, uh, SSRF, the next one subscriber plus SSRF.
+Also all of these write-ups that, um, Ram is sort of talking about.
+These are, these are public and they are in more detail on the word fence blog, which we'll link, uh, below.
+Um, and I just want to say, you know, we, we cover a lot of write-ups and stuff like that here on critical thinking.
+And, uh, the ones done, a lot of the ones done from like a corporate perspective are kind of shmeh.
+Um, the word, the word, the word fence ones are very good and clearly very technically in depth.
+So I didn't make quite as many screenshots for the Elementor one, just because I think I was in a hurry for that one, but.
+Yeah.
+Yeah, no problem.
+And, and they're, they're very useful for education when you're trying to do, uh, learn how to do WordPress plugin assessments.
+So I'm trying to make a little bit of a corpus here.
+I I've been dread almost all of them.
+Uh, so I I've seen these before, but, uh, I'll let you sort of take it, take it from, from there on this one.
+Okay.
+So, uh, the credential stealing server side request for Adrian, uh, this was in the get with, uh, Gutenberg blocks plugin, which has a bunch of installs.
+Pretty popular.
+Yeah.
+Not that many, but, uh, they registered a rest route, uh, to get remote content.
+And the permission check was just current user can read, which is the one capability that subscribers have.
+Uh, so that does mean that it ran a nonce check, so you couldn't see surf this, but it did mean that, you know, if you were a subscriber, you could.
+Retrieve arbitrary content from arbitrary URLs.
+And if you're on an EC2 box, then you can pass it a specific, uh, local IP URL.
+Incidentally, uh, WordPress has a WP safe remote yet that prevents this from happening, but no one uses it.
+Oh, really?
+Oh, is that like a, like a non-default setting on WP, uh, retrieve remote or whatever?
+Or get.
+Yeah.
+Interesting.
+So I'm looking at the code here.
+Essentially all they do is, you know, get unders or dollar sign underscore get, get the content URI.
+So get the URL.
+They pass it directly.
+And decode it.
+They just pass it directly right on.
+Yeah.
+Escape it there and then pass it directly into remote get, which gets the result back.
+They just on decode it and then they just send it right back out.
+Realistically, the biggest impediment to CSERF is the, um, request, you know, expecting it in some format.
+That isn't what I want.
+So the fact that this is in JSON is like, Hey, that's perfect.
+Yeah.
+JSON.
+That's a very, very lax consideration and, and definitely correlates really well to the AWS, uh, EC2 API.
+Cause everything is in JSON in those scenarios.
+Exactly.
+Which is great.
+Um, very cool.
+This is it.
+And, and I'm wondering also WP underscore remote, I just forget you can, if you have full direct access to the URL that's associated with there, is there anything else you can do with PHP related?
+Oh yeah.
+Yeah.
+No, if it's echoing out that information, uh, and you happen to have access to the remote URL, you can put like a cross site scripting, uh, you can put like a cross site scripting payload.
+Like if it's putting the contents of that remote URL somewhere, then you can get RCE.
+It's a little more rare, but.
+Yeah.
+But what about like, um, can you give it a URL that has like a PHP scheme, like a PHP filters or like a file scheme, you know, file colon slash slash.
+Do you know if that works with WP remote get, or is that something you have to do elsewhere?
+I don't think it works for, uh, non-standard pseudo, uh, protocols, but I will have to check that.
+Yeah.
+That'd be something interesting.
+We may, we may, uh, insert something here if, if it does, but I imagine it would just be used for, um, remote get.
+I imagine that would just be used for it.
+Yeah.
+It may, it says right here performs HTTP requests.
+I think it's explicitly for HTTP related functionality.
+Otherwise, I know.
+Otherwise that'd be pretty fun.
+Cause you could do some, you could do some tricky stuff with PHP related, um, schemes that are supported.
+Um, very cool Ram.
+Let's go ahead and hit this last one here.
+This is unauthor XSS via the user agent header.
+Wow.
+This seems pretty cool.
+I mean, it's, it's pretty basic, but you know, it was one of the more recent ones just because I haven't been focusing as much on vulnerability research in the past year or so.
+Uh, but yeah, it's, it was in a security plugin.
+Uh, and, uh, that, that always, that always feels good.
+And you know how security plugins will, you know, show you which requests were blocked or which IPs were blocked and they'll show you the user agent.
+Yeah.
+They forgot to escape that on output.
+That's clutch.
+That's actually a really interesting.
+And that's the thing we keep on seeing this in security plugins.
+I want to see even word, word fence has something like this at some point way back in like version two or something.
+
+Yeah.
+Where you're, where you're cause there's so much data to log.
+Yeah.
+It's a security related thing.
+Something is going to pop in there.
+That's a little bit tricky.
+Exactly.
+Very interesting.
+So then they were just echoing out the refer directly, I guess maybe after URL decoding it or something like that.
+Yeah.
+And then that was actually just being embedded right into the DOM.
+So you could just redirect it from a page that had that in the URL.
+And actually that makes sense as well.
+I'll add a little caveat here.
+Um, and I don't know if you, I wasn't even reflected.
+It was stored.
+So you could just visit the site, do something that get with that would get you blocked with the user agent, with the malicious user agent in there.
+And, uh, of course, because it's, it's a logging plugin.
+Exactly.
+That makes so much sense.
+Okay.
+Did I say refer it was user agent?
+I think it's just because I saw refer one recently too.
+Oh, you're good.
+And it actually, that makes sense with the user agent and, and how it would be stored there and outputted.
+That's something that people would want to see.
+It makes me think of a different thing with the refer since we kind of had that little mix up.
+Yeah.
+Um, Chrome recently, I guess, I don't know when it was maybe 2019 or something.
+So maybe not that recently, um, started not providing a refer in the, in for cross site refers beyond just the domain.
+So, so now if you're going from, from POC dot render.com or whatever to a different site, the only thing you'll see in the refer is, you know, HGPS domain.com slash.
+You won't see the path.
+Oh, but when you're using it for exploits, that's something that's controlled on the first page side.
+So you define a refer policy using the meta tag that says, please send my refer.
+And then you can send, you know, a, a refer, a full refer to the victim side.
+Right.
+And then, you know, if they're, you are all decoding it or basically for decoding it or whatever, and then doing something with it, then you can still get syncs.
+So we, we actually just, uh, we were, I remember just discussing something like that with Chloe.
+I want to say earlier this week, this goes like, I bet you could do that.
+And, uh, yeah, yeah.
+Yeah. I've used it a couple of times in exploits.
+It's pretty fun because there's like this default secure default that they put into place.
+But then, you know, cause it's from your side and you can just turn it off.
+And the whole, the whole point is, and it was very needed because we were using, you know, image, image tag injection and stuff like that to link, leak OAuth, uh, codes or something like that, that were in the URL that would be send along with the refer.
+So very smart move by Chrome.
+Um, but in this specific scenario, you can sort of undo the work and, and use there for our policy.
+And then you can do it with even more.
+Exactly.
+Yeah.
+So it was very cool stuff there.
+Um, dude, great bugs, uh, our RCE and the top plugin at a beautiful SSRF to, uh, EC2 metadata and a great, uh, XSS on a security plugin.
+Love to see that.
+Um, Ram, this has been, this has been great dude.
+And, uh, I, I really appreciate you coming on obviously word fence, uh, has, you know, working at word fence, you've really developed a lot of great skills there.
+Um, anything you want to shout out, uh, before you, before you, we hop off.
+Uh, just that, uh, check out our bug bounty program.
+Uh, I think there, we, we're probably gonna have some very exciting news in the very near future.
+So keep an ear out.
+Yeah.
+And, uh, I look forward to processing all your bugs.
+Yeah.
+
+I'm sure you'll be getting a lot more from the, uh, guys.
+Yeah.
+And everyone else.
+I can speak, I can speak from experience that Ram really enjoys getting cool bugs.
+Cause we've kind of geeked out together over discord over a couple of things.
+Uh, yeah.
+So very cool stuff.
+Well, thanks for coming on, man.
+And, uh, I think that's the pod.

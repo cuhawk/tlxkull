@@ -1,0 +1,1539 @@
+Dude, this must have been the most badass POC video for this, you know, like, just see the thing, just go, you know?
+Yeah, but there's more.
+Oh, there's more? I mean, I was gonna ask about Tria.
+This is like a freaking, you know, like, you know, blowout sale.
+But wait, there's more!
+Alrighty, Youssef, dude, you're probably one of our top requested guests that we get on the pod.
+So thanks for coming on and welcome.
+Hi, thanks for having me.
+Of course.
+I really enjoy your podcast and your show.
+Awesome, dude. That's great.
+So, yeah, we just for context for the viewers, we are here in sunny Miami for H1305 and we are getting to do a live interview with Youssef Samouda. Am I pronouncing that right?
+Yeah, it's Samouda, but it's the same.
+Samouda.
+I tried, but there's some construction going on or something.
+But yeah, dude, super excited to have you. So many people have requested and your blog is absolutely legendary.
+So definitely looking forward to this one.
+I wanted to start us off with this episode with kind of discussing...
+Obviously, client side stuff is your passion, you know, one of the things you love the most if you look at your write ups that you've done on your blog.
+And so I kind of want to get a little bit more niche down inside of that and understand that a little bit more.
+What kind of client side things makes your, you know, your pulse go up? What kind of thing? Are you maybe talking post messages? Are we talking about hash? Like what kind of things within client side stuff is your favorite to work with?
+Okay. So basically when I do look in client side stuff, I view it, of course, initially as a back bounty hunter. So I look for stuff that pays off the best. So maybe I look to anything related to Oath.
+So eventually I can escalate to have an ATO. Also, so it would be maybe post message, maybe like leaking the hash with the token or Oath token. Yeah, so...
+That makes sense. There's definitely a lot of areas of client side stuff where that sort of stuff comes into play.
+And if you look at your blog, it's just an array of, okay, we've got a hash leak, we've got a post message, but we got XSS, we got everything all over the place.
+So, but for you, it's mostly focused on, let me see what this application does. And let me see how I can, you know, optimize this for the goal of account takeover.
+Is that, that's pretty much where you end up normally, right?
+Yeah, yeah. So the final goal is to find an account takeover. So sometimes it would be like you said, post message, sometimes it's even self XSS.
+So if I see a chance to, let's say, find the self XSS and from there, upgrade it to an ATO, I do that.
+Very interesting. So is most of your hunting focused around ATO? Like, is that pretty much your primary target all the time?
+Or do you ever go for like XSS or, because you mentioned like a self XSS, is that what you're looking for? Or is it kind of just along the way?
+Yeah. So with client side bags, the maximum impact you can reach is basically account takeover. So if you find that, find it through an XSS or self XSS or a combination of,
+because when we say self XSS, it's a combination of log in, log out, CSRFs combined with that self XSS and post messages.
+Oh, so all of that, eventually you'll, the biggest impact you reach is account takeover.
+Okay. Gotcha. Nice. And I just want to make sure, make sure you're keeping the mic a consistent distance from your, sorry about that.
+He's got this nice, you know, deep voice and I want to make sure that the, the mic picks, picks it up.
+Um, no, that makes sense. You know, and he says essentially, uh, yeah, I just try to go for the max impact possible on the client side.
+You know, just don't give up until I have everything. Uh, that's great. Um, that's awesome, dude.
+And so I guess, um, I wanted to talk about specifically, I want to go and talk about some bugs right off the bat.
+Um, there was one blog post you did and I think this is one of your most recent ones.
+Uh, uh, and you haven't blogged as much over the past, uh, year or two.
+Um, but this is the last one on, on meta and it was a client side race condition via post message.
+And this one caught my attention because this is something that I've kind of been researching a little bit.
+And I was like, Oh, you know, I wonder if this is possible.
+And I started, you know, standing up some things in a lab and I started playing with it and it seems very possible.
+And then I stumbled upon this blog and I'm just like, Frick, Yuzif's already done it.
+Um, so I was wondering, you know, have you had, obviously this was an amazing write up and an amazing bug.
+Have you had similar, um, scenarios like that before where you see essentially state changing actions happening with post message that will allow you to trigger racism.
+And the flow that's happening on the other tab.
+Yeah. So, uh, with that one, if we can explain more about it.
+So it was like, uh, uh, an RPC communication between, uh, Facebook and, uh, iFrame, uh, hosting the game in, uh, apps.facebook.com.
+So basically what it does, uh, it, uh, requests, uh, the third party, uh, or the game page requests to the parent, uh, uh, the OAuth token for that app.
+And Facebook should reply with that token.
+Uh, what they did, uh, at that time, uh, they checked the app ID, the client ID.
+So, uh, not any app would, uh, request, uh, OAuth token of other apps.
+Uh, they did that check correctly.
+But, uh, what I found out that, uh, if we specify, for example, another app, uh, they'll check the origin in the server side.
+So for example, if, uh, Candy Crush requested, uh, OAuth token for, uh, Instagram app, uh, it would fail eventually because, uh, the origin, uh, has to be, uh, set to CandyCrash.com.
+Right.
+
+And that would fail, uh, in server side.
+So what I did, uh, was, uh, initially make the request, uh, with, uh, Instagram.com origin.
+Uh, and they had like some kind of, uh, client side function that would change, uh, the origin check.
+
+So because it's, uh, an, uh, asynchronous, uh, request to, uh, to, uh, to the server, uh, to the server request.
+So, uh, because of that, uh, while waiting for the response of that request, I'll just, uh, make, uh, the client side, uh, uh, that client side post message to change the origin.
+Mm-hmm .
+And now like, uh, because it already made the checks of the origin initially.
+Now they completely trust, uh, that origin.
+So when it came back, it just, uh, send it to, uh,
+Dude, I freaking, I freaking love it, man.
+Yeah.
+So the whole thing is tied to essentially that like window instance or the whatever, like the, where it's coming from.
+Yeah.
+That, that reference.
+And then it's just all basically goes from there.
+Once it establishes that sort of trust with, with that session or that window, wherever the messages are coming from, then from there, it's basically blind.
+And yeah.
+
+So, uh, they do a lot of checks initially of the origin and all of that.
+Uh, and, uh, after that, they make the request to, uh, get the OTH token.
+And, uh, after getting it in the response, they'll just, uh, like they don't do checks anymore.
+They just, uh, send it, uh, back to, uh, whatever origin, whatever, uh, window, uh, the source window and setting the post message to that origin.
+Ah, so they're using the built in post message, the second parameter in the post message, right?
+A lot of time for the attackers, us it's star, but for some people, when they're trying to control what origin they're sending it to, that second parameter is the origin that they're going to allow the message to be sent to.
+Is that right?
+
+So that second parameter, uh, to say the target origin, uh, I change it while the, while the request is, uh, the response is being, uh, returned.
+I love that.
+I love that. And, and so one, I just kind of wanted to brainstorm with you a little bit about that type of bug.
+Yeah. Yeah.
+Um, obviously that one's, that one's a great one. You have an asynchronous, you know, post message they can go through and change essentially the origin that's allowed to receive the post message on the way back while they're, while they've already done the checks.
+Um, so that's great. Um, one of the ones that I was kind of thinking of is when there's a window dot, uh, opener check of an, of an origin, right?
+And what I was thinking was, wouldn't it be interesting if we had three tabs? Okay. We've got attacker controlled tab, opened tab, victim tab, right?
+Okay. And when this third tab does a window dot opener check, uh, the original tab redirects this guy to a cached page on, on the, uh, on the parent, uh, on the site that's allowed. Right?
+So it does window dot opener dot, you know, location dot href or whatever that that's valid because it's the same origin.
+And then real quickly, our first tab redirects the second one back, um, to attacker control domain before this guy does a post message to him to intercept the post message. Right?
+Right. And, and one of the things that I, I did so, but like you mentioned in your writeup, the whole rub here is there has to be a, you know, a delay, some action that takes time.
+Um, and normally that's going to be an HTTP request, right? Cause you'll get a couple hundred milliseconds of time to trigger your exploit.
+Um, and one of the ways I figured out to optimize this was, uh, forcing the browser to cache some of these pages.
+So when the first page does the redirect of the second page, that doesn't start another HTTP request.
+It loads it straight from the browser cache. So it's an instantaneous switch.
+So if you send a post message to a tab that's loading, what happens? Does it hang? Like, does it fail?
+I think it fails. Okay. Uh, so what's the question?
+If I, if I send a post message, like say I redirect the second tab to some other domain and I send a post message while it's redirecting.
+While it's redirecting. Yeah. Because there are no, uh, so there are no, uh, uh, uh, uh, cross origin, uh, uh, event listeners, uh, for messages.
+So there are none set yet. So the post message would be sent, but, uh, uh, nothing to receive it.
+Yeah. So, so, so the key here is making sure that you get that, that timing correctly. And the, and the way that I figured out to do that in my research was, you know, getting the browser to cache your HTML page, you know, with some specific caching headers.
+Mm-hmm. And then you redirect that page that will be receiving the post message right before the post message gets sent.
+And then your cached HTML page is already there listening.
+Yeah. You know what it also makes me wonder is if you could take advantage of certain, like if it's parsing JSON, maybe you give it a really like deep dense JSON blob that takes it a second to parse so that you could actually use some built-in functionality to force a delay in just processing time.
+Not even like, you know, caching and stuff, but you know, how long does it take for it to load this giant JSON object?
+Yes. Uh, so yeah. Uh, after the bug I found in Facebook, I actually found a bypass for that. And, uh, basically the bypass was, uh, uh, a part of the bypass was to, uh, try to, uh, like, uh, uh, uh, escalate the time needed to, uh, so we can, uh, so they apply to a lock mechanism.
+So when the request is sent, uh, there is a lock.
+So we need time to like trick it to not trigger the lock.
+So I did that by, uh, uh, uh, I guess, uh, sending a lot of post message requests, like a ton of them with, uh, like each one with five megabytes or something like that.
+Wow.
+And, uh, that, uh, did the trick.
+No way.
+Yeah. Yeah.
+Dude, that's so cool.
+That's so cool. I did something similar once for the post message bug on PayPal.
+Um, and essentially it was a, a scenario where I needed to win a race to, to a, uh, an iframe on a victim page, right.
+Um, to send the configuration. Right.
+And I needed to get a post message first and get an ID and then win the race with the, with the other post message back to that child's post message.
+And the way that I want it was a, by not using JSON parse, by using string.
+Um, yeah, exactly. Like a, uh, substring. Right.
+And so I knew that the ID was always at, you know, index 23 or whatever. Right.
+So directly.
+Exactly. So just grab it, substring go.
+And whereas the, the other iframe that was sending it was using JSON parse and doing some other stuff, which takes more cycles.
+So there's lots of fun ways that we can do all sorts of cool stuff like that.
+So, I mean, obviously this bypass sounds pretty freaking amazing.
+I have, I've never thought about sending, you know, massive, massive, uh, post messages to kind of bog down the side.
+Have you, have you done any other stuff with, uh, with post message, uh, race conditions or just those two?
+I think it's a pretty rare class.
+Yeah. So, uh, it's actually the post message is, uh, just like, uh, the communication parts.
+Uh, yeah, I'll let you turn that off.
+Go ahead.
+Yeah, no worries.
+Uh, so, uh, it's actually like, sometimes you'll find, uh, so I view post message, uh, uh, like event listener, message, event listener of post message as a source.
+Yeah.
+So basically it can happen from the URL.
+Sometimes you can find the race condition.
+Uh, so let's say on how change event when the hash is changed, uh, it will, uh, trigger some, uh, stuff like, uh, it would grab, uh, some texts from, uh, the current location.ref.
+And, uh, try to, uh, uh, uh, parse it on all of that.
+
+So, uh, I guess, uh, sometimes, uh, there are, uh, uh, rejects, uh, checks and, uh, what, uh, you can do is, uh, risk condition the rejects, uh, check, uh, of the, of the hash change.
+Right. Again, large data.
+What the heck?
+Yeah.
+Yeah. Yeah.
+It's, uh, but it's like, uh, it's, uh, very time, uh, uh, since.
+Yeah.
+Yeah. Yeah. Yeah.
+So it's not, uh, I tried it, uh, it worked like maybe once in a thousand.
+Uh, yeah.
+It's very low percent.
+Regex bombing is a thing, right?
+Like where you can create like, you know, really hard things for regex.
+Yeah. Yeah.
+So you can, is that basically what you have to do is like create like a payload that is really hard for the regex to work with so that it takes the amount of time that you need it to take.
+So the regex, uh, basically checks, uh, the, for example, let's say it checks the URL.
+Uh, of, uh, of a text, uh, from a text.
+And if it passes, uh, it, uh, would, uh, do something, for example, the set window.location.ref to that URL.
+Mm-hmm.
+So basically, uh, I'll erase condition the check or the, the rejects check and the window.location.ref.
+Mm-hmm.
+So because that.
+Right in between the.
+So, uh, it, it would pass the rejects after passing the rejects instantly.
+I mean.
+It would change.
+It's no wonder it was like one in a thousand, right?
+Cause the, the, the timing on that, I mean, it's, there probably wasn't even a line between it.
+Right.
+Yeah.
+Uh, you can, uh, force it.
+Uh, also you can reinforce it because, uh, it's a client side, uh, uh, code.
+So you can make it like, uh, the page won't reload.
+Mm-hmm.
+It doesn't, in this case, it doesn't need to reload.
+So you can do it like a thousand, a hundred thousand times.
+I think it's really, I think those are really cool types of bugs too, because you can use sort of like, I think maybe technically it's a pop under sort of thing for that, where you, you open up a page, right?
+And now the user's interacting with this page, but then you can do this attack on the window that you just came from.
+Right.
+Yeah.
+And cause you've got a frame reference and you can, you know, brute force some stuff.
+I use that often in, in, in these sorts of scenarios because, you know, you need some explanation on why the user's just sitting there for, you know, five, 10 seconds while you're brute forcing.
+Obviously if it was only a thousand, then it would, it wouldn't take very long on the client side perspective.
+But, um, you know, if you're doing brute forcing something a little bit more intense, like I've had to brute force a six digit code before, uh, via, via post message, which is very doable.
+Yeah.
+It's very fast.
+It's instantaneous.
+Yeah.
+Um, which was something that I did not expect.
+Um, so that, that's definitely an, an extremely cool bug class.
+Yeah.
+Well, it's funny because post message is one of those things where it's like, you're almost making a request, but you're not.
+So like the possibilities with it are so much larger, right?
+Like it's so fast cause you don't have to make HTTP requests every single time.
+And so this extra functionality that they like made is, you know, user flow, ease of use, whatever, like, it's now the hacker's advantage.
+Yeah.
+Did you know, like before post message, it was like the two pages were communicating, uh, using window.name.
+Yeah.
+Yeah.
+I, I, so sometimes you can still use that for exploits.
+Um, especially when you need to, uh, get a, a payload into a, like a heavy CSP environment.
+Yeah.
+I don't know if you've ever done that, but like, you know, you set the window name and then you can, you can transfer it away and, and access it.
+So it's, it's, uh, it's, that's definitely a nice gadget for transferring data across, um, quickly, but man, is it a pain in the butt though?
+And I'm glad we have post message now instead of window name.
+Um, so you met, you mentioned, I want to go back to something you mentioned before you said, um, and, and I don't know why I've never really like thought of it this way, but, uh, you mentioned the on hash change event.
+Like, of course, I don't know why that hasn't been in my client side perspective of looking for window.addEventListener hash change, you know?
+Yeah.
+And, and so that's another, that's another great source.
+And I, I'm wondering actually, and I don't know off the top of my head, can window.opener change the hash of the other page without redirecting the page?
+Without like refreshing?
+Yeah.
+Without refreshing?
+I have, uh, stories later.
+You want to hear them?
+Oh, let's do it.
+Let's do it, man.
+Yeah.
+I want to hear it right now.
+So, uh, basically, uh, uh, do you know, like when you go to Google and search for a couple of words or, like, oh, my gosh, I love, I love how this story is, is starting.
+Okay.
+So when you search for, and, uh, pops up, uh, uh, like an article, uh, when you click on the article, it will automatically, uh, scroll down to that particular paragraph.
+Yes.
+So this is, uh, like, uh, technology, uh, known, uh, as, uh, scroll to text fragments.
+It's supported by Chrome.
+Uh, so basically, uh,
+Is it a Chrome only feature?
+Uh, I guess it's Chrome.
+Like the last time I checked, it's only Chrome.
+Okay.
+Uh, so basically you specify in the hash part, like you put colon slash colon takes equals and you put like suffix and prefix and suffix.
+Uh, basically Chrome will look in that page, uh, for, uh, that paragraph or that, uh, stuff and scroll directly to that one.
+So, uh, what, how I, uh, have used this.
+And actually this is, was, uh, zero day in Chrome back then when, uh, I use it.
+It's reported out.
+Yeah.
+Yeah.
+Yeah.
+This is great.
+I love, I love this.
+
+And we, we want to talk about this too, cause you found some other browser bugs, but yeah.
+Yeah.
+Yeah.
+Yes.
+Yeah.
+So basically what I did, uh, was, uh, trying to, uh, let's say look in the page, uh, for a certain words for, uh, let's say, uh, like, uh, you can't look for CSRF token.
+Sure.
+Cause it's not visible.
+Yeah.
+But, uh, we'll talk about this.
+Uh, so, uh, what I did, uh, first you have to detect the scroll.
+Mm-hmm.
+So, uh,
+So is this a cross-site leak?
+Is that what this is?
+Yeah.
+It's a cross-site leak, uh, of, uh,
+Dude, this is so smart.
+Why did I not think to look at this?
+Yeah.
+Yeah.
+But, uh, here comes the part of, uh, redirecting window to opener and changing the hash.
+Mm-hmm.
+So this, uh, uh, check of, uh, like every time the hash changed, uh, you look in the page and scroll.
+If you find the text, it would only happen if, uh, the hash was changed from, uh, same origin, uh, domain.
+Oh, interesting.
+Uh, uh, so you can do it, for example, uh, from attacker.com, uh, window.opener.location.ref equals and only change the hash.
+Right.
+It won't, uh, work because, uh, if it's cross origin domain, it would require each time to change user, uh, it would require, uh, require user gesture every time.
+Mm-hmm.
+Uh,
+Would it work if there was a cross origin policy set in the headers on the domain?
+Like, could you update it?
+Like, is it blocking you purely because of browser security or is it specific to this feature?
+Specific to this feature.
+Okay.
+Uh, it won't do the scrolling, the searching of the text and then scroll unless the hash was changed by, uh, same, uh, origin, uh, domain.
+Okay.
+The first part of the attack is to find, uh, uh, a page, uh, let's say in facebook.com that would, uh, we can control to set window.opener to a certain URL.
+So for example, we can set, uh, make this page return window.opener equals HTTP, uh, uh, facebook.com slash certain endpoint.
+Sure.
+Uh, it won't allow, for example, JavaScript, uh, URI scheme, but still allows, uh, facebook.com.
+And of course you just had that in your pocket, you know?
+Yeah, I had that.
+So yeah, I had that.
+And, uh, of course, this is, this is why, let me just, this is why we really highly encourage going deep on programs, right?
+Like, like this, this sort of a masterpiece of a situation where Yusuf comes up with.
+Uh, like a browser quirk, and then you need the specific piece of functionality.
+If you know an application, especially one as big as, as Facebook inside, outside, upside down.
+Yeah.
+Then you'll, you'll have a list of these.
+And I'm sure you keep a list of, of gadgets as well, you know, of things that you've found that are like, oh, this could probably be helpful someday.
+But I don't have a, you know, a use for right now.
+This is something that I think not enough people do.
+And if they would, then they'd see a lot bigger success in the bug bounty route.
+Yeah.
+So sometimes you see something interesting in, uh, in, uh, like a client set code or even an endpoint that returns something.
+Yeah.
+And, uh, you just ignore it.
+You feel like it's interesting, but you ignore it.
+But, uh, I advise, uh, anyone to just save it in a note.
+For example, one time in, uh, during a live hacking event with Facebook, I didn't find any bags.
+I just went through the notes and I found, uh, you know, that post message, uh, XSS, the one that, uh, like I have a page, uh, uh,
+Yeah, you're going to have to be more specific.
+You said you have a lot of post message, Dom XSS.
+So, uh, just let's not, uh, go, uh, yeah, yeah.
+I forgot that one, but, uh, I just found it from the notes.
+Like I just, uh, went through and I got second place.
+Yeah.
+That's crazy, man.
+Yeah, I do.
+I do remember that now.
+Yeah.
+I'm thinking like, he's like, yeah, you remember that one time I got Dom XSS?
+I was like, yeah, yeah.
+I can think of a couple.
+Yeah.
+Um, but yeah.
+Okay.
+So, back to, uh, yeah.
+So basically with this one, as I said, uh, you need to, uh, uh, uh, the redirect or the
+change of the hash from, uh, same origin domain.
+If you have that, uh, you can basically search in the page.
+Uh, it would scroll to a certain, uh, part of the page.
+If, uh, it finds the, that word, uh, the second, uh, and the, uh,
+this is the zero day.
+It was, I was like, how do you leak that though?
+Yeah.
+So it was like, how to, uh, if I, I frame that page and, uh, when I, I frame that page,
+you know, sometimes when, uh, the iframe scroll, uh, the main window would scroll too.
+Yeah.
+Yeah.
+It happened.
+So I was able to detect the scroll in the iframe with, uh, the scroll in the parent, uh, window.
+So with that, I can, uh, uh, uh, like have a confirmation if a word is found in the iframe
+or not.
+Uh, yeah, this, the.
+Uh, dude, that's crazy.
+So, okay.
+So, wow.
+Would you scroll on the parent page or on the iframe?
+So the iframe, the scroll will, would happen if, uh, the word was found, uh, using the scroll
+to text fragment.
+Mm-hmm.
+If the word was found in the text, it was scroll in the iframe, but, uh, unexpectedly,
+Chrome also scrolled the, uh, parent, uh, window.
+Mm-hmm.
+So, uh, both of them scrolled.
+And would it do both on load?
+Cause you can put it in the URL, right?
+And it would just, like, if you put the iframe URL as that text with the text hash fragment.
+Okay.
+It would scroll to that, uh, text in, uh, the iframe.
+Yeah.
+Okay.
+But that scroll triggered the, uh, scroll in the parent.
+As soon as it loads?
+Yeah.
+Yeah.
+So, uh, also because, uh, you can.
+No freaking way.
+Yeah.
+Yeah.
+Uh, allowed me to, uh, like basically, uh, load any page in an iframe and search that
+page and detect if the word was, uh, found or not.
+Wow.
+Wow.
+And the, the, the only requirement being that you need a gadget where you can set the,
+the.
+Uh, make like, uh, uh, a client side redirect, uh, from, uh, that domain.
+Gotcha.
+So, uh, for example, a page that would, uh, do window.opener, uh, dot location dot ref,
+uh, equals, uh, that domain with the hash and that would re it's.
+Yeah.
+That, that, that, that's actually not a very uncommon situation with, with post message related
+stuff.
+I think too.
+Yeah.
+Yeah.
+Being able to do hash based redirections, uh, or injections into window location dot hash.
+Um, and so, but it, it can be window location dot hash, not window location dot href, or does
+it have to be href?
+Yeah, it can be hash.
+Oh wow.
+But it's rare to find dot hash.
+Yeah.
+Yeah.
+And also it can be like the same page would, uh, set window dot location dot ref.
+It's not like opener setting opener.
+Yeah.
+Well, I, I say it is, it is, I guess it's rare to see window location dot hash, but it's
+less rare to see pages where you can, um, do where you can control the, the routing
+in like these sort of client side page routing situations, right?
+Yeah.
+You know, where, where you've got like, um, this whole route table that's set up for the
+hash fragment, right?
+Yeah.
+So if you, if you have a gadget where you can, uh, control that then, wow, but I guess
+it depends on whether the, yeah, cause you would need the, well, if you're not trying
+to leak something that changes, then you can do it over multiple refreshes.
+Yeah.
+Yeah.
+So, so that's, that's, that's nuts, man.
+Sometimes, uh, you can do it with the refreshes, but sometimes because, uh, for
+example, uh, this is the, like, there are more, there is more to the story.
+So yeah.
+Okay.
+Sometimes if you can, uh, let's say, uh, return, uh, the row page, so you can change
+content type set to text, uh, uh, text, uh, plain.
+So now it won't be rendered as HTML.
+So now you have access to, uh, data.
+Uh, you can, you have access to the CSRF token.
+You can, uh, query it.
+I was going to ask.
+Yeah, yeah, yeah.
+So the whole thing is now text.
+So now you can search text anywhere within the whole thing.
+But, but you still need the gadget.
+Don't you?
+Yeah.
+But the gadget, not in that page.
+If you found like the gadget, uh, that would, uh, let's say facebook.com has an end point.
+Uh, that end point, return to JavaScript, uh, that would do window.opner.location.ref equals,
+uh, and you control that part.
+So now you can change, uh, the, that page opener page to, uh, this, uh, like the one that.
+Like the one that.
+Ah, dude, what the heck?
+So, uh, this is crazy.
+So then you've got that middle page and then you're using.
+So every time I want to.
+No, I'm thinking about it wrong.
+Yeah.
+Every time I want to change, uh, the hash in that page.
+Yeah.
+To make, uh, to look for a word.
+I just.
+Yeah.
+So I just reload the end point that, uh, has window.opner.location.ref.
+I just reload it, change, uh, the value of the.
+Right.
+The value set.
+And it would make, uh, it would make the change in the other, uh, page.
+Cause the event has to, it has to be triggered by a change, right?
+So you have to change the hash or you have to change the URL.
+It has to be changed by a same origin, uh, domain.
+Right.
+So it requires some other vuln.
+You can't just load the URL once cause that doesn't change.
+Like the hash isn't changing, but if you load a URL that then changes the hash,
+that triggers an on hash change event, which then you can pick up and it scrolls and then you can use that.
+
+So that's, uh, happens.
+It's not like JavaScript code, but the browser detects on the hash.
+Uh, I'm seeing it now, man.
+Dude, this must've been the most bad-ass POC video for this, you know, like just see the thing.
+Yeah, but there's more.
+Oh, there's more.
+I mean, I was going to ask about TRIO.
+Like, yeah, this is like, this is like a freaking, uh, you know, like, you know, blowout sale.
+There's a, but wait, there's more.
+No, this is great.
+Yeah.
+So the STTF, this scroll to text fragment, it detects words.
+So it doesn't detect character by character.
+So, uh, it's words like, for example, you can like, uh, reinforce the CSRF token because it's, uh, uh, yeah, it's, uh, like a 16, uh, bits or, uh, whatever.
+Uh, you can't, uh, you can actually look for that.
+You need character by character in YouTube, uh, in, uh, Chrome, uh, the separation of words is using spaces, using, uh, whatever, I guess spaces on, uh,
+Parisian maybe or tabs.
+Mm-hmm .
+So what I did, like, uh, if I can find a way to change the, uh, uh, uh, the page encoding, for example, if it's not specifically set to UTF eight in, uh, in, uh, contained, uh, type.
+If I can, uh, control some part of the, uh, of that page, I can inject few characters and the browser would, uh, assume that it's not UTF eight, it's UTF 16.
+Now I'll have like Chinese words as, uh, yeah.
+And Chinese words like they have like, uh, yeah, yeah.
+It's separate.
+And then you can D you can D code that back down to UTF.
+Uh, yeah.
+Dude.
+What the heck?
+This is some Matthias Carlson shit here.
+Okay.
+Now I need to ask when you submit something like this to a triage, like what do they understand it?
+Like how, how much back and forth do you have to go through?
+Yeah.
+So, uh, actually this, uh, one didn't, uh, it wasn't reported.
+Uh, some parts were reported to facebook.com, but this back, uh, with, uh, UTF, uh, with, uh, Unico change and everything was reported to, uh, uh, program that I can disclose.
+And, uh, they had like, uh, like sometimes, uh, hard time, uh, to understand it, but, uh, yeah, eventually they did.
+And, uh, they fixed it.
+Wow, dude.
+That's great.
+And I guess your, your reports need to be very in depth in order for them to be able to reproduce all that.
+Yeah.
+That's, uh, that's amazing, dude.
+What, what a, uh, what a great example of the persistence needed to do this job, because I'm sure you didn't like just see all of that.
+I don't know.
+Maybe, maybe you did, but I, if I were you, I wouldn't going into that situation, I wouldn't have, you know, seen that path straight from the beginning.
+I would have, uh, you know, it would have taken me a lot of iteration on top.
+All right.
+Well, now the, you know, spacing is wrong.
+How do I fix that problem?
+You know, how do, how do I get this to be a same origin redirect?
+You know, what's going on here?
+So there's, there's a lot of persistence that's needed there to try to figure out all those things.
+So sometimes like an advice, if a new feature comes out, you just go to the, uh, uh, the standard page, uh, read it.
+And also the discussion page in, uh, I'm not sure in GitHub or in Chrome, uh, in Chrome.
+Yeah.
+
+You'll find like, uh, documents, they share documents, how they, uh, like, uh, want to protect against this, uh, security threat, how they protect against this.
+Sometimes they'll have like, uh, accepted risk and that accepted risk, you can use it to, uh, launch another attack in some scenarios.
+Yeah.
+Interesting.
+Do they ever push back on that because it is accepted risk?
+Because they go, well, this is the accepted risk.
+So we're not going to take that.
+Yeah, but, uh,
+Push back against a Yusuf report.
+What are you crazy?
+Like, try to die?
+No, but, uh, the browser guys, uh, thought that is accepted or, uh, like for example, uh,
+they didn't require user, uh, gesture, uh, with, uh, client side redirects originated from, uh, same origin domains.
+Mm-hmm.
+I guess now they do.
+So, uh, after, uh, this, uh, with the brute forcing and everything they do now.
+So sometimes they, uh, they're not convinced about something.
+And after that, uh, they changed.
+Yeah.
+Wow, dude, that's, that's an awesome story.
+Uh, so glad we got that one right in the beginning of this episode.
+That's awesome.
+Um, wow.
+Uh, I'm not gonna lie.
+I'm a little bit stunned on that.
+Yeah.
+So I wanted to ask, like, it sounds like a lot of your bugs are very multifaceted.
+Like there's a lot of different aspects.
+There's a lot of different moving pieces and stuff.
+Uh, you mentioned you take notes.
+How, like, is it super detailed notes and how much are you going back to those notes?
+Cause I imagine as you're hacking, you're like, some of it's clicking.
+You're like, oh, I have this thing that'll work.
+Yeah.
+But some of it, maybe not.
+Uh, is it, is it all just notes or how are you keeping track of that?
+So I just keep a screenshot, uh, of, uh, burb like, uh, or, uh, sometimes I just have, uh, like, uh, note that this page, uh, returned, uh, let's say, uh, uh, a client side code that would, uh, change window.opener.
+Okay.
+Uh, the other one, uh, would make a post message that I can control, uh, like control the contains.
+So, uh, that the notes would be like this, like, uh, this one allows me to do this.
+This one allows me to do this and that's it.
+It's not like deep, deep.
+Okay.
+That's cool.
+
+I mean, I feel like everybody I talk to like notes are like a huge part because there are so many like potential things that we come across that are useful later.
+And I think the bugs that you submit, especially like, I can't think of anybody who does like that level of chaining and like vulnerability, like combination that you do.
+I feel like every bug that I see, it's always like, there's multiple pieces and it's, it's so creative.
+Do you ever dupe?
+Like, do people ever do like, no, never?
+No.
+Like the last time I duped, uh, yeah, it was in 2018, I guess.
+This guy hasn't, this guy hasn't duped in six years.
+That's crazy.
+Wow, dude.
+That's, that's amazing.
+Um, so thank you for that story.
+That's, that's great.
+And I kind of want to come back to your, um, post message flow a little bit here.
+Okay.
+So, um, what kind of, what kind of methodology do you normally use for this?
+Because we've got a couple things.
+I'll sort of state the obvious.
+We'll get those out of the way so that we can go into the more interesting stuff.
+You know, you've got, when you've got multiple pages, uh, multiple frames, you know, tabs or iframes and stuff like that, that's always a place that you're going to want to look for that sort of post message based communication.
+Um, and you've got, you know, obviously you can see if you've got the post message tracker plugin installed, you can see the post messages flying between the page and the global listeners on the side.
+Um, so like, what is your go-to methodology for identifying those things?
+You just read the JavaScript, like read the JavaScript straight, or are you looking specifically for the listeners?
+Yeah.
+So, uh, the first thing I do is, uh, thanks to friends with the extension.
+Mm-hmm.
+So I just grab, uh, I see the, the part of code that, uh, said the listener.
+I just go to the source code and, uh, get, uh, like that part.
+Mm-hmm.
+And, uh, start looking if it's, it looks interesting, like they, uh, they're accepting some data.
+They're, uh, using that data to do something.
+Mm-hmm.
+I'll just continue with the research.
+Otherwise, uh, I'll ignore it and move to the next one.
+Mm-hmm.
+So that's it, like one by one.
+Mm-hmm.
+Uh, sometimes like if I see something, uh, I see, for example, uh, a listener from Google,
+let's say, uh, from, uh, GS, uh, like, uh, the one, uh, SDK, GS SDK that, uh, you, you include, uh, to do like Google authentication.
+Yeah.
+Mm-hmm.
+So I just ignore it because I'm sure I, I tested before it's safe.
+So I just ignore it.
+Uh, I'll ignore, for example, uh, uh, uh, ones talking to iframes that are third party, they're sandboxed.
+Mm-hmm.
+Unless they're leaking, uh, some interesting stuff to that, uh, third party iframes.
+Yeah.
+And, and, and, and those scenarios too, I've also seen sort of an inverse thing.
+Like if you can pop the thing in the iframe, then you have, you might have the ability to leverage something back on the parent frame.
+Um, you know, because that, that listener is expecting something specifically from that embedded host.
+Right.
+And then you have the ability to talk to that, that parent frame.
+Yeah.
+Sometimes.
+So if you read the code and see that, uh, for example, it, uh, only accepts, uh, post messages from, uh, origin, uh, let's say, uh, I'm not sure, plugin, uh, dot com.
+Sure.
+And, uh, that origin, uh, uh, is, uh, from that iframe.
+Mm-hmm.
+Uh, okay.
+And, uh, it has some potential.
+Mm-hmm.
+I just, uh, go to plugin.com and try to find the next SS there to, uh, inject the iframe.
+And from the iframe, I'll just send, uh, or directly send.
+And, and especially on high paying targets, like the ones you're, you're used to working on, you know, it's worth that extra effort.
+If you can guarantee, you know, if you can open up your browser tab and do a post message, you know, back, or your browser console, I mean, and do a post message back up and verify that there's a bug.
+If you can get an XSS on that, you know, child domain, then it's very much worth the time to go get the XSS on that child domain and then pop those, that big bug by going back up the stack.
+Right?
+
+I do that.
+Yeah.
+Maybe if it's a very deep, let's say, uh, uh, uh, I frame and from the I frame, uh, I have a story, uh, about this, uh, with Facebook actually.
+Mm-hmm.
+And it was very interesting.
+And it was like, uh, maybe, uh, a chain of four bags or five bags.
+Yeah.
+So, uh, I'm very interested.
+Yeah.
+You've got my attention, Youssef.
+Yeah.
+So, uh, just one more, one more thing with the post message.
+Yeah.
+Uh, sometimes like, uh, you find that, uh, there, there is an I frame to plug in or, uh, let's say, uh, a logger or a mark, you know, these, uh, I friends for marketing logging.
+Oh yeah.
+All the time.
+For the clicks and some, sometimes it's not doing something critical, but the parent page is sending critical information like window.location.ref is sending it to that I frame.
+So now I'm interested in the I frame.
+If I can find an XSS in that domain.
+Hijack the I frame.
+Yeah.
+Hijack the I frame, uh, receive the window.location.ref.
+And, uh, okay.
+It doesn't have, uh, a lot of data, but, uh, I can, for example, do, uh, both redirect to that page and leak it from there.
+Hmm.
+Is that something that you often, so I actually had this in my, my, my list on the account takeover section, cause I want to pick your brain about account takeover stuff too.
+Mm-hmm .
+Like, is that sending off alarms in your brain when you see, okay, I can control the page to which an OAuth code is being sent.
+Is that, is that often a big thing for you?
+Yeah.
+So, uh, for example, uh, that one, uh, actually, uh, triggers, uh, okay.
+It depends if I can only, uh, set, uh, I can only leak OAuth code to any end point.
+Mm-hmm .
+Okay.
+It's interesting now because, uh, it's not that interesting actually, because I need to find an end point that would, uh, pass, uh, its current parameters to, uh, to, uh, redirect or something like that.
+Mm-hmm .
+So I need to find the, it's easier with hash because we, if it's in hash, uh, I can just find an open redirect and the browser will carry the hash to.
+A 302, right?
+Or, or like you need a server side redirect for that, right?
+
+Yeah.
+Yeah.
+Yeah.
+But with, if it's code, uh, it needs some work, but, uh, I accept it.
+Like, uh, sometimes I just, uh, do it.
+Uh, also there are many things that, uh, trigger my head.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+I wanted to ask, uh, well, maybe, maybe I'll save this until after, but I was going to ask when you look for AccountTogover, is it always like low level type of post message, like technical bones?
+Or are you looking for like, I changed my email on the profile page and something goes wrong here.
+Like, do you, do you ever look at it from sort of the user perspective or is it always like HTTP, browser, JavaScript, that sort of thing?
+Yeah.
+So, uh, so you're talking about, uh, account takeover that can be caused by a server side, uh, mischecks or misconfigurations.
+Yeah.
+I do that a lot.
+Uh, but not with, uh, companies, uh, I usually work with, uh, like Meta because they have, uh, uh, uh, yeah, you can't, uh,
+They've kind of got that squared away.
+Yeah.
+But, uh, let's say I have few examples that, uh, are great actually.
+So for example, let's say, uh, uh, uh, certain, uh, uh, company uses, uh, Facebook uses, uh, Apple uses Google, Google, uh,
+Grave mistake.
+Yeah.
+Yeah.
+Never use Facebook in front of you.
+Yeah.
+So in that case, uh, you'll have to, for example, uh, they'll, uh, shake, uh, after, uh, the, uh, flow, they'll shake, uh, the email.
+Right.
+They'll not shake, uh, the user ID or, uh, something else.
+So when they read the email from Facebook, from Apple, they completely trust, uh, Apple and Facebook, and they just log you into the, uh, to any account with that email.
+So now if I can find an email, uh, confirmation bypass in Facebook, an email confirmation bypass in Apple, I can hijack that, uh, company, uh, any account in that company.
+Yeah.
+Or, or, or, or one of the ones we've seen is like, if you're passing an access token directly, um, then sometimes they, they will just check the, the email associated with that, not the app associated with that.
+Yeah.
+Have you seen that one?
+Yeah.
+Yeah.
+Yeah.
+Uh, because they didn't use the official, uh, SDK by Facebook for a certain programming language.
+Yeah.
+Yeah.
+Well, I was gonna say, uh, another one that we've seen is like, you'll create an account, then link your Facebook account to it.
+And you can change your email on the, on the vulnerable site.
+And then you just log in with the same Facebook account and it's tied to the, maybe that's what you were just saying, but it's tied to the account ID.
+And so there's like two separate account references that are get linked together here.
+And it doesn't really matter what, what is on your Facebook account, as long as it's valid.
+Mm-hmm.
+Yeah.
+So I guess we've got that.
+You mentioned a vuln story and then we got, we got on a little, on a little, a little tangent there.
+Do you want to go back to that one?
+Okay.
+So this one, uh, it's a combination of, uh, a lot of stuff, uh, post message and, uh, also, uh, crypt, uh, cryptographic, uh, secure, uh, functions and not secure functions.
+Yeah.
+Yeah.
+Like thereof.
+Yeah.
+So basically, uh, Facebook has, uh, uh, this, uh, uh, messenger chat, uh, plugin.
+Uh, it's, uh, included in the JavaScript.
+Uh, it's, uh, uh, with, uh, with, uh, with, uh, with Facebook.
+So basically when you, uh, when you, uh, uh, use the plugin, it would just pop up a chat, uh, and you can chat with that page, uh, in, uh, Facebook.
+Uh, so actually Facebook used that plugin in, uh, their own website in, uh, uh, an endpoint like, uh, facebook.com goals slash marketing, something like that.
+So, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh
+and the main page, facebook.com slash goals, they are communicating and they're doing like, uh, some kind of, uh, check, uh, the check is, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh
+random stuff and if it's true, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh
+so basically, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh,
+uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh
+that, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh, uh
+I was gonna say, because I literally have done the same bug and actually shout out to Donut, my man Donut, uh, because, uh, he, he's done a talk on this and I, I pinged him. I was like, hey, I read your talk. I still don't understand any of it, you know, on the insecure, you know, pseudo random stuff. And then he kind of walked me through it and we, we figured out in my specific scenario, it wasn't exploitable, but it sounds like you found a way to actually leak some of the seeds without refreshing it, which is, uh, this is once again, is this gadget after gadget after gadget chained together.
+Yeah.
+
+To create this. So yeah, continue.
+So the facebook.com page, uh, in mobile, like, uh, this is related to mobile.
+Okay. All right.
+So in mobile, they returned like, uh, uh, they returned, uh, extreme options with the allow from. So allow from is deprecated basically and it's ignored in mobile and even, uh, in a desktop version.
+Uh, so, uh, basically that page can be iframed.
+Okay. I'm sorry. So.
+Facebook.com.
+X, X frame options. And then there's allow from, and then it specifies a domain. Yeah.
+And that's depreciated. So it just ignores it. Yeah. Interesting. That's for any of you recon people out there, that'd be a good thing to hit like mass search for to see where there could be this configuration where they're thinking they've got a secure X frame configuration, but they don't. Very interesting. I'm sorry. Continue. Yeah. So that page facebook.com.
+Yeah. So that page facebook.com slash goals that page that load the I frame with the plugin now is I'm I frameable. So I can I frame it in my website in mobile. So when I frame it, uh, so attacker.com can access the inner I frame of course, and can read the name.
+Of the I frame. So I can leak, uh, uh, of my dot random because I can, uh, read the I frame name. Yeah. Which is like, uh, uses, uh, was generated based on math dot random.
+Wow. So after that, uh, I'll just, uh, send another, uh, so the way to not refresh the page, uh, to, uh, to maintain the same, uh, browsing session.
+Yeah. So, uh, they had like other, uh, uh, functions or that you can access without having that, uh, certain callback, uh, ID or certain that ID.
+Uh, one allowed you to refresh the I frame or to, uh, try to, uh, create the plugin or refresh the plugin.
+Mm. So each time you, uh, it refreshes the plugin, uh, it's generated a new, uh, uh, window dot name.
+And this is absolutely ridiculous.
+When it works out like that.
+This is nuts.
+Yeah.
+I can't.
+So now if you leak five, even if they're separated, for example, uh, you have a math dot random, uh, value, then, uh, one that you couldn't leak, then one that you could leak.
+So even if they separated by one or two, uh, you can, uh, actually, uh, find the seeds.
+So, uh, yeah.
+Wow.
+Yeah.
+So, uh, I found the seed.
+I, uh, calculated the next, uh, math dot random and, uh, got the ID, used the ID to, uh, exploit the DOM XSS.
+Yeah.
+It's so cool.
+Cause this is like almost a CTF challenge.
+I, I feel like I haven't even thought about like math dot random in, since like I did CTFs, you know, like, um, and it's so interesting.
+I didn't realize that JavaScript math dot random was vulnerable to that as well.
+Yeah.
+It's been for years.
+Wow.
+It's been known to.
+If only somebody could fix it.
+Yeah, I know.
+Right.
+They have like, uh, now a secure, uh, crypto, uh, yeah, they have it, but, uh,
+But it's, that's a random is still vulnerable.
+It's still vulnerable, but it's faster.
+So, uh,
+There's like a secure random class, right?
+Is that what you mean?
+Like the two separate?
+Yeah.
+So math dot random is, uh, variable to these types of, uh,
+type of attacks, but, uh, they have like a safe one, uh, in JavaScript, uh, crypto.
+Uh, yeah, I think it's crypto API or something.
+Yeah.
+It's totally safe.
+Wow.
+Well, a lot of people still using math dot random.
+So definitely, definitely interesting thing there.
+And then that whole concept of, you know, graphing all these random, you know, these points that are in the random generator function and then generating the seeds off of it.
+Really cool.
+Um, I loved that research by Donut and, uh, and others.
+Yeah, that's true.
+So, um, very cool there.
+So, I wanted to kind of, so that was, that was a cool, a mobile piece as well, which is great.
+I wanted to see that.
+Um, and I kind of want to go back to what you mentioned earlier.
+You said a lot of things make the alarms go off, you know, in the head.
+Um, and that was one of the questions I had here.
+And so here are some things that I could kind of come up, up with off the top of my head.
+Um, you know, OAuth flows, any sort of domain handoff of information, post messages, cookie bridges, et cetera.
+Those are all things that kind of make my, my brain kind of go, whoa, whoa, whoa, wait a second.
+Uh, I think I should be paying more attention to, uh, hash changes from this conversation that we've had.
+I'll be paying more attention to that in the future.
+Um, can you think of any other things off the, I know I'm putting you on the spot, but, um, can you think of any other things off the top of your head that sort of get the, the alarms sounding in your brain?
+Yeah.
+So, uh, sometimes like, uh, not a lot of people would look in, uh, uh, DOM generated, uh, HTML.
+For example, uh, if, uh, you have like, uh, GS code that would create an iframe and the iframe, uh, sources set, uh, from, uh, unknown, uh, unknown source.
+So we have a sync, like many things, they're not known to people.
+Like, for example, if you set the action of a form to JavaScript, your scheme, it's an XSS.
+If you set the iframe, uh, source to, uh, JavaScript, uh, your scheme, it's an XSS.
+So, uh, sometimes I just focus on things that, uh, let's say, uh,
+Like using create element, document.create element.
+And then you kind of see where.
+Yeah, yeah, yeah.
+It's not like direct inner HTML set or something like that.
+Interesting.
+
+Yeah.
+Inner HTML is one of the things I always search for, obviously, but I don't always search for.
+Yeah.
+Create, create element.
+That's, that's smart.
+And then specifically for these specific types, we've got, you've got source, you, uh, I'm
+sorry, you've got script, you've got iframe, you've got, uh, what, what, what are some of
+the other ones?
+Forum.
+Forum.
+Yeah.
+Forum.
+And then setting action.
+That's good.
+Would you say you start more at sources or syncs?
+So, uh.
+Yeah.
+I wanted to ask this too.
+Yeah.
+Yeah.
+So, uh, most of the time I start with sources.
+Yeah.
+But.
+My man.
+Give me some right here.
+Team sources.
+Let's go.
+Yeah.
+But in.
+Get out of here.
+Get out of here, Joel.
+Get out of here.
+Yeah.
+Even if you find a vulnerable sync, uh, you have to trace it back and you do all, but
+with sources, uh, like it's obvious where the alpha is going.
+Uh, and, and I think source related stuff also lends itself to gadget hunting, you know,
+like, like even if you don't have a sync, even if it doesn't result in an actionable vulnerability,
+you can, you can do stuff, you know, and that's what I'm all about.
+I think I get a hold on just a second, sir.
+You mean the 50 unexploitable bugs that I've been documenting are useless?
+Shut up.
+Shut up, Joel.
+Hold on.
+No, you know, the, the, just, I'm all about knowing what I can do with the application as
+an attacker, right?
+I want to know every place, every location where I can affect the app, you know?
+And, and I think hunting from sources really helps you understand holistically what an attacker
+is capable of doing in the app, even if it's something benign, you know, like creating an
+element on the page that, that you have no control over, right?
+But it inflates page size or, you know, who knows?
+Maybe it's some random cookie gets sent and you can, you know, and it's a randomly generated,
+uh, cookie key, and then you can inflate the, the cookie size and cause client side DOS
+or something like that, and then use that in a different bug.
+So with sources, uh, you always end up with something.
+Yeah, exactly.
+Yeah.
+Something that's worth it.
+I'm going to clip that.
+I'm going to clip.
+I'm getting indirectly roasted out here.
+This is.
+Scoot forward a little bit.
+No, that's great, man.
+I'm glad to hear you say that as well.
+Sources are.
+Yeah.
+But, uh, sometimes like, uh, I look for things that, uh, yeah, I look for things, uh, before
+sources.
+All right.
+In certain condition.
+Let's ignore that part.
+Anyway, Yusuf, I've got some other questions for you.
+And then, and then I'm sorry, go ahead.
+You do look for sinks.
+Yeah.
+Yeah.
+Yeah.
+So like I said, if, uh, I know that page, uh, uh, is setting the iframe is creating an
+element, iframe or form or something.
+And, uh, I'm sure like, uh, I'm sure like, uh, they're using, uh, they have a source that
+I control or something.
+I just straight, uh, look for, uh, sinks because I'm sure that, uh, eventually they'll use my
+source or, uh, yeah, because I guaranteed the source parts or now I'm looking.
+Right.
+Cause you know what, what type of stuff you're looking for.
+Yeah.
+Like for example, with like the iframe stuff, you're looking for changing the href.
+You're looking for changing the URL or the window location through JavaScript.
+Like, so you're going to target a sink instead of looking for an entrance.
+Got it.
+Yeah.
+I'm looking at my notes here and we sort of covered a little bit of this already, but
+I'll, I'll repose the question, which is, you know, so similar to an OAuth code being
+sent to any path on the thing, like if you can control the path with the redirect URL, right.
+Um, what are some other things that you've seen since you specialize in account takeover?
+What are some other things that you've seen that result in account takeover?
+And what I've learned from you already today is leaking location.href is, is pivotal.
+Um, and so I assume that's one of them.
+Yeah.
+Yeah.
+So, uh, also, uh, self XSS, basically having self XSS, you can leak, uh, the OAuth, uh, token, uh,
+most scenarios you can do it.
+So, uh, for me, uh, in some targets self XSS is, uh, directly an ATO.
+Does it have to have a CSRF to update, like to trigger the self XSS?
+Cause I assume your attacks scenario basically like attacker loads page updates an XSS to
+themselves, which then triggers your attack or.
+Like you're talking about like triggering the self XSS via C-Surf login.
+And then you have to have a CSRF.
+Yeah.
+So basically that's why it's called self XSS.
+Uh, so you self XSS yourself in a certain session in the victim browser to actually, uh, uh, trigger that XSS, uh, in the, that browsing context from that origin.
+Right.
+And, uh, all of that to actually, uh, for example, access, uh, an open page from the previous session that, uh, to read the window.
+So location.
+I've used that before, right.
+Where you have a, um, where you have a page that's already open and then you establish a, you know, a self XSS, and then you go back up and reach over and grab it and bring it back in.
+That's interesting.
+It would be more interesting if we could figure out how to actively have control of the victim session in a different tab.
+And I was thinking about this the other day and I was wondering whether it's possible to manipulate same site cookie policies to create two separate sessions in, inside the browser.
+And so like, say for example, I've got my attacker control page.
+That's got an iframe, right?
+That iframe is not a top level navigation.
+So, uh, it's not going to be, have cookies sent to it.
+Right.
+And then within that, within that iframe, I log in myself, right.
+Trigger the XSS, reach back through the parent and over to the opener tab, which I've now redirected to the other site, the victim site.
+And that site still has the session open of the victim, but it's an isolated cookie session.
+Have you seen anything like this before?
+Do you think that would work or is there, am I missing something here?
+I'm not sure.
+Yeah.
+Because, uh, yeah, because if you said, uh, the cookie is set, I'm not sure it would be.
+Set in that context.
+Uh, well, we'll look it up.
+Uh, I tried to look this up the other day and I actually did an experiment on my own little website with various origins.
+And I don't think that cookie is set on that other tab, which makes me think that those cookies are still, there's like some sort of different context.
+And I'm sure what's going to happen.
+Yeah.
+It's probably like some sort of cookie store.
+Cause like on Chrome, for example, if you open the application tab, you have like cookies that are associated with that application, quote unquote.
+Um, and it could be that it's basically just not reloaded from the, like it has to load it from the browser from the cookie store in order to have it associated with it.
+Yeah.
+That's what I'm thinking.
+I think that could be a really, and I'm sure what's going to happen is after this episode airs, someone's going to be like, Hey, Justin, here's the solution to this, which I love.
+So please keep continue to do that.
+People like this is, this is one of the things I love the most about podcasting is I get free, free research from people that just send me the answers to the things I want to know.
+Um, but it's very interesting.
+And I wish I had the answer off the top of my head.
+I didn't, I got pulled away that day, but, um, I think that would be really interesting.
+Right.
+Cause then, you know, you would actually just be able to control that session with the other cookies.
+And you, that would be a new way to kind of execute self XSS, but who knows if it'll actually work.
+Sometimes like, uh, you don't actually need all of that.
+So for, for example, uh, you established a certain, uh, state in that page, just leave it like that.
+And, uh, do, uh, start to do the all, uh, like log out CSRF, login CSRF and everything.
+And just, uh, come back after all of that and explore that page because it won't reload, unless they have like, uh, uh,
+a client side code that would, uh, for example, if it detects, uh, cookie changes, if it detects, uh, a logout state, it would refresh.
+Unless they do that, uh, you're safe.
+So just keep it waiting and, uh, do the self XSS and, uh, come back.
+Yeah.
+That's one of the, one of the biggest arguments I think for putting CSRF protection around the login and logout mechanisms
+is that any self XSS can be really, uh, badly exploited, you know, in a situation like that.
+If you have both of those gadgets in place for login and logout CSRF.
+And this is another, um, sort of con of using centralized login systems.
+So, cause if you've got the cookies isolated to a specific domain and then, you know, I, I hit login.youknowwhatever.com.
+And that, that still has its session live and I can re-log in, you know, if they don't fully log out the person out,
+um, then that can also result in some, some bad stuff.
+Uh, and, and as well as, um, social media logins and that sort of thing.
+Yeah.
+Uh, also some things like, for example, you have a self XSS, let's say, uh, in facebook.com.
+Mm-hmm.
+But, uh, because Facebook, uh, Meta have like, uh, this centralized, uh, like, uh, like, uh, let's say, uh, platform.
+For example, uh, they allow some things, uh, to be happen, uh, to happen from workplace.com.
+Mm-hmm.
+Uh, accessing facebook.com, facebook.com.
+Yeah.
+So if you find the self XSS in facebook.com, uh, you'll just target directly workplace user.
+You'll just target an Instagram user because they have like.
+Because there's these chains, these, these bridges.
+Bridges.
+Yeah.
+Some kind of bridges.
+That's a great, that's a great point.
+And one of the things I've mentioned to my, my mentees recently is like, anytime you see any sort of domain bridging.
+Yeah.
+Yeah.
+You, you, you've got to fully deep dive that.
+And, and we see that, you know, um, let's just say at plenty of live, I'm not going to do that.
+I should say at plenty of live hacking events that we've been involved in.
+Ha ha.
+Ha ha.
+There's been issues with that.
+And, uh, and so, uh, it's definitely, definitely a, uh, a great spot to continue to look for vulnerabilities.
+Um, all right.
+So let, let's, uh, let's move a little bit here to, um, well, I've got a couple directions we could go here.
+We could go and talk about, um, window frame relationships, uh, window.opener, window, window.parent, that sort of thing.
+Um, and, uh, sort of different ways to establish references to windows.
+Um, or we could go the message port route.
+I don't know.
+Let me just ask this.
+Have you done anything with message ports, um, inside of post message related?
+Yeah.
+I once found, uh, an ATO with the message port and message channel.
+Okay.
+Nice.
+So basically message port is like, uh, uh, a port, uh, you can use to communicate, uh, instead of,
+it's eventually it uses post message, but, uh, initially you set, uh, you create a new message channel.
+Uh, message channel has two ports.
+Uh, you send with post message, uh, to, uh, the, the target page you want to talk with.
+Uh, and, uh, you include the message port, one of the message ports from that message channel.
+Okay.
+Interesting.
+So you, and I, I found a message port bug before, but it was very rudimentary.
+So I didn't actually have to fully understand the message port functionality.
+So are you able to send the message port reference?
+Yeah.
+Cross origin.
+Yeah.
+Cross origin.
+So interesting.
+Okay.
+So, uh, uh, it can only read once or, uh, that, uh, particular message port, it can only,
+uh, be read once, uh, by, so you can't like, for example, uh, save the reference or, uh, so,
+so it can be consumed one, uh, once.
+Okay.
+Interesting.
+Okay.
+So, uh, basically what they, why they do that.
+Uh, so they, uh, establish, uh, let's say, uh, uh, uh, Facebook.com wants, wants to communicate
+with, uh, a certain domain and, uh, they don't want to every time shake the origin, shake, uh,
+everything, do the source check.
+They do it once and, uh, they do all the checks.
+And, uh, if all the checks, uh, are, uh, good, they share with them the message port.
+Now that new message channel is totally safe.
+We can trust each other.
+We don't need to, uh, do origin checks.
+Yeah.
+Lovely.
+Okay.
+Is there any catches to that?
+You know?
+Yeah.
+So basically if you can leak that message port that, uh, have, uh, the communication,
+uh, without, uh, security checks, if you can leak it, uh, basically you can, uh, do,
+uh, do a lot of stuff.
+Is the message port reference just like a string or how, how does it, how do you like
+pass it?
+Yeah.
+So it can be passed in, uh, ports, in ports in the post message.
+Okay.
+So post message allowed you to share, uh, message ports or object, uh, message port.
+Interesting.
+So I feel like there must be some way to like fetch it by name and the underlying APIs, right?
+Like somehow the browser is able to fetch a message port object off of that name so that it
+can communicate with it.
+Right?
+Yeah.
+Yeah.
+Uh, no, uh, actually it use it, that reference of message port to, uh, to just make a new
+object and then it just, no, no, to, to send the message.
+Oh, it's just, it's an object.
+Yeah.
+So in memory, uh, they have like, uh, because, uh, two of them, they, uh, they, uh, they have,
+uh, different, uh, origin.
+So they have like some kind of, uh, maybe, uh, like memory, uh, in memory, they, uh, both can access the same buffer, I guess.
+But, uh, uh, this, this is, so when you said that, I, I'm like, what, what is this?
+I'm looking at the post message MDN right now.
+Okay.
+And it, and it says, or MDN, it says, there's an option for post message to take three parameters, message, target origin, and then transfer.
+Transfer, yeah.
+Yeah.
+Transferable objects.
+And I'm never even, I'm never.
+So clonable objects.
+So, uh, for example, a rejects can be shared.
+Uh, we're going to make a new, we're going to have a new, a new session now where we quiz Yusuf on MDN documentation and see if he could recite it word for word.
+Yeah.
+Yeah.
+Continue.
+A lot of objects can be shared, but, uh, uh, not like, uh,
+So let's see.
+Let's see.
+There's, there's, um, there's array buffer message port, readable stream, writable stream, transfer stream, uh, web transport, receive stream.
+That's interesting.
+Mm-hmm
+Web transport, send stream, audio data, image, bitmap, video frame, offscreen canvas, and RTC data channel.
+Yeah.
+Very interesting.
+And, and so do these, when these are transferred, I wonder how it actually, is that a part of that E object that you, that you get when you do.
+So they, they maintain the same object prototype.
+They, uh, that's why it's not, uh, actually interesting.
+Oh, really?
+Okay.
+Because, uh, you can like change, uh, for example, uh, uh, the object, uh, you can add, for example, something.
+It shares the data, of course, but, uh, it doesn't change the prototype.
+Ah, okay.
+So, because sometimes like you, uh, uh, I found a situation where, uh, it's, uh, there is a check if it's a string.
+And after that, uh, they'll do something treated as an object.
+Uh, okay.
+So maybe if we can manipulate the, manipulate the prototype, uh, so it's a string, but, uh, it contains, let's say, uh, uh, a key called, uh, safe equals something.
+Sure.
+Sure.
+So you can do that with, uh, with the transfer, uh, the post message transfer.
+Very interesting.
+So it maintains the same prototype of that object.
+There's a lot of really interesting information in this doc.
+Yeah.
+So there is, uh, actually a nice trick there.
+So, uh, see target origin.
+So, uh, a lot of people assume that, uh, it needs to be string, but actually it can be an object, uh, with, uh, a key target origin and, uh, a value, uh, equals to, uh, the actual origin.
+This, uh, you can use it to bypass a lot of checks, string checks.
+Yeah.
+If at the time the event is scheduled to dispatch the scheme, host name, or port of the window document does not match the provided target origin.
+It will not be dispatched only of all three matches will be dispatched.
+Oh, dude.
+That.
+Yeah.
+This is really interesting.
+Huh.
+I did not know that.
+So you can provide it with an object there that will, because then it, so look, I'm sorry.
+I, I, you've probably got it in your head.
+Uh, for those of you that are, are listening, not watching, I'm sorry.
+We're looking at the end, but look, see the, the post message has two, has two, um, uh, sort of, what's the, what's the technical term for that?
+It's like overloading function.
+Yeah.
+Yeah.
+Function overloading.
+Um, and then one of them is message options.
+And one of them is message target origin.
+The one that we normally see is message target origin with, which is the string, but there's also the one with options where you can specify target origin and also specify transfer objects as well inside of that options.
+Yeah.
+Very interesting.
+So if you have the ability to affect the second parameter directly of a post message request, then you can specify a target origin key inside of that object.
+Yeah.
+Yeah.
+So sometimes like they'll check the target origin as a string.
+And the, for example, if it's an object, they'll ignore it or not sure.
+Yeah.
+So you can bypass the first check and the set target origin to the domain you want.
+So crazy.
+I'm clapping into the map.
+Yeah.
+And, and again, this transferables object thing, we'll, we'll put a link in the description, but the behavior of this, like I was just reading through how it, how it explains how this works.
+And it's, it's very similar to what you said, where it's like, when you transfer an object, it literally moves the memory, the block of memory to a different ownership.
+And depending on the type of object, like it says here, for example, when an array buffer is transferred, the memory resource that it points to is literally moved.
+Instead of copying the data, other objects are transferred by copying the associated resources and then deleting the old one.
+So yeah.
+They actually had like, you know, now they have site isolation, but they had like the possibility to share, to have a shared buffer, shared using post message.
+And the two sites will, for example, if you make change to that buffer, it would be changed in the other one.
+So that time, so this I actually used, but it didn't succeed.
+So, let's say you share a shared buffer and you keep it as it is, for example, with origin checks, with everything.
+When you reach the point where, for example, it would make a post message to me with that origin, I just change the shared buffer and it would be changed in that.
+It's almost a race condition.
+Yeah.
+Basically race conditioning.
+Yeah, yeah, yeah.
+Wow.
+That's so interesting.
+I need to look at the transferable obviously.
+Dude, I'm telling you, man, post message is the shit.
+I love post message.
+That's great.
+And so the other thing that we had, you know, from before was talking about window relationship, window frame relationships.
+Okay.
+So I'm just going to kind of talk through a couple of those.
+We've got the window.opener, right?
+That's the tab that's opened the current page.
+The window.parent.
+That's going to be your iframes parent.
+And then you've got some other things as well.
+You know, you can traverse into different frames by using a specific window reference and then .frames.
+And that will include all the frames associated with that page.
+And then, but I'm a little bit confused because I thought I did something recently and it didn't work where I had a child page that did a window.open.
+Is that populated into the window frames or does it need to have a specific reference?
+Do you know off the top of your head on whether how you can get a reference to, let's say I open up a page.
+Right.
+Okay.
+You need to keep the reference in a variable.
+Okay.
+You can't access it directly.
+Yeah.
+Yeah.
+So if I control the page, yes.
+But if it's a different origin.
+So I pop open a page.
+
+That page pops open another page.
+Mm-hmm.
+There's no way I can get a reference to that third page.
+Oh, it's impossible.
+It's impossible.
+Yeah, yeah, yeah.
+Ah, dude.
+That's so frustrating.
+I know that there is something that I read.
+By name.
+Yeah, yeah, yeah.
+Okay.
+So have you ever done anything with that?
+Yeah.
+I got it to work properly and we talked about it on the podcast one time, but I don't remember
+whether we actually got it to work ever.
+This will work if the pop-up window was open from a different frame on the same domain.
+Same domain, yeah.
+On modern browsers, this will even work if the window was...
+Yes.
+It also says...
+I'm just...
+I'm in my own zone.
+In modern browsers, this will even work if the window has been open from a different frame
+on a different domain, but this can cause some strange behavior in Internet Explorer
+specifically.
+Yeah.
+So maybe that's worth looking into.
+Yeah, yeah.
+But that is super interesting.
+So by window name, you can basically...
+Not window name.
+Like when you set window.open, you set the name of the opened window.
+Later when, let's say...
+Yeah, it's...
+You can call it again, it just uses the same name.
+Yeah, yeah.
+I wonder if I can store a frame reference.
+So for example, I have attacker page.
+Attacker page opens up another attacker page frame, right?
+That page opens up another frame with window.open specifying the name parameter.
+Then this guy gets a reference to that one because this is all same origin at this point.
+Yeah, you can have...
+And then this guy redirects away.
+I still have a reference to that.
+I'm sorry, this is terrible for any of you listening on the actual podcast because I've got my hand and I'm just waving it in the air.
+So let me try one more time.
+I'm sorry, Yousef.
+I've got an attacker-controlled page.
+That opens another page.
+And then...
+So this is page number two.
+Page number two opens up a new tab with...
+And these are all same origin at this point.
+With window.name...
+Or window.open specifying the name parameter.
+And then the second page transfers away.
+But you're still able to reference that third page from the first page.
+Yeah, I don't think it's possible.
+You don't think so?
+Yeah, I don't think so.
+Because the middle page is lost.
+So unless you keep the reference to a variable...
+Right, that's kind of what I was thinking.
+If we can reference, if we can get a reference to it, and then we redirect.
+Yeah, because you can actually access...
+Yeah, because why can't you open a new tab, store that as a reference in memory, with a named tab that you know is going to be reused.
+And then say your attacker...
+Sorry, the website you're attacking, the victim site, does a window.open with the same window name.
+You still have a reference to that because you controlled it originally.
+And it's going to update that existing window to the new URL, right?
+So...
+I have no idea, man.
+This is definitely something I'd like to see more research on.
+The window.name...
+Yeah, sometimes, you know, the iframe can be the opener of the parent window.
+Yeah, there are some tricks that you can do.
+What?
+Yeah.
+Whoa, whoa, whoa, whoa, hold up, hold up, hold up, hold up.
+Say that one more time.
+The what?
+The iframe now is the opener of the parent window.
+So when you look in opener in parent, you'll find the iframe as an opener.
+Yeah, but this is not...
+Yusuf, how?
+Yeah, so...
+That doesn't make any sense.
+It makes, it makes.
+So, uh...
+I don't remember the details, but it's possible.
+Wow, dude, we gotta...
+But it's not like something big that you can use unless there are some conditions for an attack to happen, like, in a particular way.
+So in that case, you can...
+You can...
+Wow.
+Yeah.
+Dude, that's crazy, man.
+I definitely want to do some more research into this and kind of...
+So there's this article that we've referenced a couple times on the podcast.
+It's called Every Known Way to Get References to Windows in JavaScript.
+We'll link it in the description for this episode.
+But it does a pretty good job.
+I don't think it's every single way.
+So, uh...
+Yeah.
+Do you know about the opener policy?
+Like, uh...
+No.
+Talk to me about it.
+Yeah.
+So, uh...
+Now, with the browser, you can control if you want to keep the reference to the opener or not, or...
+Ah, I have seen this.
+Yes.
+And you can do it in the, um...
+Is this something you do in the meta tag or is it a part of the...
+Metadata or in the headers.
+Right.
+Okay.
+Yeah.
+In the headers.
+Yeah.
+Yeah.
+Yeah.
+Cross-origin opener policy, coup.
+Oh, coup.
+Yeah, yeah, yeah.
+Okay, okay.
+That's right.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+How are you going about finding out about new stuff?
+Cause there's like...
+I mean, the browser space especially is changing a lot.
+But even just separate from that, like the programs that you hack on a lot, how are you finding new features?
+And are you just sort of like watching their blog or how do you look for new stuff to hack on on those same targets?
+And also like stay up to date about like browser level stuff at the same time?
+Yeah.
+
+So with browsers, it's basically they have like always discussions about like how to fix this, how to...
+So they're always discussing stuff and I always keep looking into them.
+Mm-hmm.
+And I'll check origin trials for new features and browsers and go read about them.
+With targets, it's about recon.
+So you have scripts in the background, checking JavaScript files, downloading them and trying to find a new code, new stuff.
+And if it's found, I just start working on it.
+Yeah.
+So actually that's a perfect transition.
+I wanted to talk about recon.
+So I think you have a JavaScript monitoring sort of system that you've got, right?
+Yeah.
+So can you talk a little bit about that and how that works and sort of how that plays into what we just talked about?
+Yeah.
+So basically, let's, for example, Facebook, they have like an end point that would download react modules or return JavaScript files that include that module.
+So basically what I do, I just keep downloading JavaScript files, keep collecting module names.
+After that, query that end point for more JavaScript files and keep the loop on.
+And also scraping pages like in Facebook for new module names.
+And after that, download the JavaScript files.
+So it's about collecting as much as possible.
+So it seems like, so for me, just from a naive perspective, I'm looking at, I'm looking at these whole JavaScript sort of packages that they have in a specific application as a holistic entity.
+And as, as individual, you know, or not as individual, you know, modules and stuff like that inside.
+And I think I know of some hackers that, that do it a little bit more granularly.
+Okay. Okay. This piece of code is a part of this library or this module, which is a part of this whole thing that's web packed into this, you know, minified garbage that we all have to read.
+So I assume, you know, Facebook gives you this nice endpoint where you download the modules individually.
+But how do you, do you take that same approach when you're looking at different targets where it's like, I'm separating out, okay, this module is a piece of this.
+And how do you parse this minified JavaScript to break apart all of these different modules and packages and stuff like that?
+Yeah. So with other targets, like Facebook is too nice to have like,
+Yeah, that's nice.
+With the module names.
+Yeah.
+With other targets, it's like obfuscated. The module name is random. Sometimes it's just an ID or numbers.
+Yeah.
+So actually, we're going to come back to all that you can finish, but we, I do want to come back to web pack lazy loaded things where they've got the, you know, one, two, three, colon, hash, dot JS or whatever.
+But anyway, continue. Yeah.
+Yeah. Yeah. Yeah. So, uh, I just, uh, focus on, uh, not the, uh, the actual contained of the function.
+Mm-hmm .
+I'll, uh, just, uh, like, let's say I'll give it a hash, like that, uh, particular function, uh, with, with what, uh, it's doing now or, uh, it's contained now,
+even if, uh, character is changed, let's say variable name, a, b, c, like that doesn't matter.
+Uh, and, uh, I'll give it a hash and that hash, uh, reference, uh, to that particular function.
+Now, uh, I just keep monitoring, uh, if that function, uh, was changed.
+Is this minified code?
+Yes.
+Oh, interesting. So you're, you're, you're, you're, if I understood it correctly, you're, you're taking a specific function, you're hashing it.
+So are you doing like AST trees and like breaking down the whole code structure?
+Yeah. On two functions. And, uh, yeah.
+Dang, dude.
+Yeah. But, uh, it's not perfect, but, uh, it keeps me like with all the, like the hundreds of functions and all of that.
+Uh, I just keep, uh, some kind of reference that, uh, this function is actually maybe this function, uh, from a long old version of that package.
+So that way I can like, uh, minimize the false positives. I can look for new, uh, functions, a new code.
+Do you have an elegant way of dealing with like variable names?
+Cause I imagine if you hash like a web packs function and then the next version, it's got different variable names, but it might be the same function.
+Yeah. It depends on the target. So sometimes I'll just, uh, detect that, uh, uh, they use, uh, single characters or for example, uh, uh, I'll, uh, the, uh, the arguments would be ABCDEF.
+So that's, uh, fixed, but in the, uh, uh, actual function itself, uh, they'll, uh, use sometimes random, uh, uh, characters.
+So I'll have like different versions and, uh, different hash for different, uh, if this was a, if this was B, if, uh, this was, uh, C.
+Got it.
+So it's, uh, it's not perfect, but it's just for comparison.
+Right.
+Like to find like, uh, after downloading, uh, this month, uh, version, uh, this particular hash.
+Yeah.
+Is it fun to try and reduce that attacks or something usable? Yeah.
+And okay. So then do you do any of the hot AI stuff with it as well? Like, do you run it through chat GPT or anything like that?
+Or is it, is it just use of GPT?
+Yeah.
+No, no. I use, uh, sometimes chat GPT to just like clear the code. Like, uh, okay.
+Uh, okay. Uh, can you, uh, can you understand what's happening here? Just, uh, yeah. Not spot the back, but just, uh, like, as code.
+Uh, with chat GPT, uh, currently I only use it, uh, let's say as a programmer, not as a security, from a security perspective.
+Yeah.
+So as a programmer, just clarify this code, uh, clarify, uh, the names, variable names, uh, make sense of them.
+Yeah. That makes sense.
+And, uh, after that, I'll just do the security checks.
+I want to go back to that hashing thing you mentioned. So are you using AST to, to parse out like, cause JavaScript has like, there's just like 15 bajillion ways to define functions.
+And like, you know, there's just a mess of syntax that you have to do. So are you using regex for this or using, you know, syntax parsing? Are you doing, how are you doing this?
+So the only reason I'm doing this, for example, when, uh, the first thing, uh, I do after downloading the package is, uh, break it into functions or, uh, parts.
+So now, uh, with the new version I have of that package, I want to make sure that, uh, this function, uh, is not like, uh, new. I already checked it.
+Uh, so, uh, I already have in the previous version, uh, uh, hashes of, uh, that function with, uh, like, even with the conditions that that variable was changed to G that variable name was changed.
+So if, uh, I do check of that, uh, of the, of the function in the new package, it's hash. I check it in the previous ones. If it's just found, I'll just remove that function and focus on the new.
+How are you extracting the functions though?
+Uh, it's like, uh, minify and, uh, like, uh, with, uh, grab breaks and all that.
+Okay. So it's, uh,
+Doing it by regular expressions.
+Yeah. Yeah.
+Wow. That's, that's a lot, man. There's, there's, there's some technology that I've been using, um, AST, which I think, do you know what it stands for off the top of your head, Joel?
+Abstract syntax tree.
+Yeah. So I keep on wanting to say AST trees.
+Okay. What's that?
+But it's abstract syntax tree. So it should just be, don't, don't abstract syntax trees.
+Um, essentially what it does, and this is how, um, uh, J Sluice, the tool that Tom, Nom Nom released, uh, deals with this.
+And essentially what it does is it allows you to parse the grammar of, of those specific, um, code base that you're dealing with.
+So I've done some automation with this, with, uh, with PHP. And you can also do this with JS where it will go through and say, okay, this is a function. Here's.
+Give me all function definitions. And it'll query that whole code block for any function definitions.
+Yeah. It's essentially, it's a programmatic way of parsing code, right? So it's a job like JavaScript has these built in libraries that you give it a chunk of JavaScript code and it will return an object that you can then say, uh, you know, what, what's the first variable definition.
+And if so, what's on the left side, what's on the right side, variable name value. And what's, what's the name of this function? What line is it at? How big is it? And it will do all of that in like a, a codified way.
+So it's a lot more strict in terms of like, it has to be valid JavaScript code. It has to be able to validly parse it and understand it for it to get there, which you should be able to.
+Um, but it's, yeah, I like that approach more like regex. I would always be worried that I'd be missing stuff. Probably that's that's yeah.
+But, uh, well, you, you know what you're looking for specifically because, yeah, because I have certain, uh, like, uh, let's say, uh, code or regex for this target for this target.
+So, uh, I spent some time like with each target, uh, to basically have the Rory Conrite and after that, I just, uh, forget it.
+This is exactly what we've been talking about is like, and I've actually spoken with some people in the, um, in the critical thinking community about building this.
+And I, I kind of got about halfway through it myself and I haven't swung back around to it, but essentially building instead of building a JS monitoring tool, building a JS monitoring framework.
+Because at the end of the day, all of these scripts should be custom because for each target, they're going to have a different, you know, uh, way that they're doing everything.
+And, you know, a different way of getting the files. And then you've got to, you know, unlazy load them and then load them all in and then JS beautify them.
+And then everything, all the formats are different. So really for each target, you've got individual things you should be looking at differently.
+And so I think that what we should do is build a Python package that makes monitoring these things a little bit easier and say, okay, you know, here's an HTML page, grab this specific script tag.
+Okay. Now you've got the script tag. Great. We've got an automatic, um, you know, D lazy loader that, that, you know, runs node on the inside and just, you know, dumps out all the values for these lazy loaded files and stuff like that.
+Um, and then build a library surrounding that. And then we use that library to create specific automation for specific, um, uh, targets using these sort of tools.
+And it seems like that's what you've done.
+Yeah. But, uh, uh, it's, uh, for me, it's still a tool, not a framework.
+Like, uh, I do, uh, yeah, yeah. It's not, uh,
+You just run it once and it does everything at once or do you have different?
+Sorry.
+Do you, I, I imagine like I have a, just like a microphone attached to me at all times.
+Um, so do you, do you run it just like one and done and it does everything at once or do you have different?
+No, but I have to set it up. I need to do some manual work, uh, at first.
+Got it.
+And after that, uh, per target, per target. Yeah. And after that set a few things, uh, and, uh, keep it working. Yeah.
+Very cool. It kind of reminds me of, um, there's a couple of different source map, uh, JavaScript source map unpacking tools that are like this.
+Cause source map also, it can be a little bit different per, you know, how it's, how it's deployed or whatever.
+And so sometimes you need to pull it from a different like index on an array or something like index one instead of index zero.
+And one of the tools that I've used is it specifically allows you to configure, like I want it from this path on the AST and it'll specifically do that.
+I think something like that, plus what Justin was talking about would be a good approach where you could say, say like for this target, the thing I'm looking for is here.
+And then you just feed it a blob and it just parses it, pulls it out. And then you can just run that every single time until it changes.
+Um, yeah, I like that idea.
+Yeah. And I'll, I'll mention this. I haven't played around with this tool yet, but somebody in the critical thinkers, uh, the premium,
+chat for, uh, for our, our discord, um, released this or posted this in here the other day, it's, uh, github.com slash, uh, middo x net slash mapper plus.
+It seems like a, it says an advanced source map extractor based on a headless browser.
+So this is something that I thought about doing for a while using headless browser to actually do that source map abstraction, um, uh, easier.
+That would be nice. Yeah. Yeah. Yeah. And so I'm gonna, I'm definitely gonna check this out after this.
+They dumped it on me right as I was about to go and do, uh, a live hacking event.
+So I haven't had the chance to check it out yet, but I think there's a lot of innovation that could be done in the source map space.
+And obviously you've got, um, you know, I won't say mine is the most innovative one.
+Yeah. Because, uh, yeah, it's basic, but, uh, because, uh, I, I'm just looking for a certain stuff.
+So after all it's code, uh, if I detect a pattern, uh, in the code that just, uh, I don't need to fully understand it or reverse engineer it or.
+Yeah. No. And I think that that shows, that shows expertise though. That shows that you know what you're looking for, which I think is very good.
+Just, just one second, Joel. And then, um, but so the, the web pack lazy loading piece, obviously we've got tools like, um, uh, Jase Luce and, um, Jase Weasel that are kind of addressing this as well.
+Um, have you, do you have your own, I guess, piece of technology to go through and address those sort of lazy loaded pieces?
+Where it's like, you know, one, two, three, four colon hash, and then it's dynamically creating that, that JS file.
+Do you know what I'm talking about? Or is it a little too abstract?
+Actually, I didn't like, uh, like, uh, with the targets I work on, uh, I don't usually see, uh,
+They don't have that very often. Okay.
+It's, uh, it's too complicated.
+I mean, lazy loaded JavaScript is so annoying to hack on.
+Um, let me, let me just do this though. Uh, Joel, I'm not even sure if you saw, cause we've been, uh,
+You know, knee deep in the live hacking event, but I just released to the, um, to the, to the critical thinkers discord, the premium channel, a new, so I'll, I'll share this with you too, Yusef.
+I, I, um, I, and you'll have access to it after this anyway, cause we give all the speakers access to the exclusive content.
+But, um, the, for, I've been trying to solve this problem of like, how do I programmatically extract lazy loaded JavaScript for a while?
+Right. And, and it's these functions that look like this. I'll, I'll turn it around. You can see it on the left-hand side, but it's, uh, it's these, you know, these numbers right here on the side and then the hash and then it automatically generates it.
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah
+Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah. Yeah

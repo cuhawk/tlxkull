@@ -1,0 +1,278 @@
+ If this becomes a standard, which I think it will be and slowly is, it actually opens up some more attack surface because we have a little bit more to play with.
+ The best part of hacking is when you can just, you know, critical thing, right?
+ Oh, yeah, dude!
+ All right, y'all, we've talked about Threat Locker Ring Fencing a lot.
+ We know how it allows you to set ACLs and policies for exactly what an application is allowed to do in your network.
+ But today I'm going to tell you how it does that, okay?
+ Three technologies: Mini Filter Drivers, Window Filtering Platform, and EX version, Kernel Notification Routines.
+ Mini Filter Drivers are essentially a hook or callback for I/O requests, okay?
+ So when you're trying to write or read from a file, you can create a hook with those and approve or deny based off of the Threat Locker ACL.
+ Windows Filtering Platform, similar situation, but for Connect Bind requests, right?
+ You can say, okay, hey, is this process allowed to talk to Port 443 over there on the internet?
+ Yes or no?
+ Approve or deny.
+ Lastly, you've got EX version kernel notification routines.
+ The EX version is important because it allows you to approve or deny versus just getting a notification from the kernel.
+ And this is specific for hooking various native API calls like ntCreateUserProcess, which is what you would use to spin up PowerShell.exe or something like that, okay?
+ So those three are very useful to Threat Locker's ring fencing core technology.
+ Hope you enjoyed learning how this is implemented.
+ Check out Threat Locker if you think your work could benefit from something like that.
+ All right, let's go back to the show.
+ Hey, what's up guys?
+ It's Brandon.
+ And this week in Bug Bounty is short, but it is very good news for some of you hackers out there.
+ And it's from Integrity.
+ Now, Integrity is collaborating with Port Swigger.
+ And what this means is if you get a certain amount of reputation points per quarter, you'll be getting a free six month burp license.
+ Now, in order to be valid for this, you need to achieve 400 or more valid reputation in a single quarter, and then you get a free six month burp license.
+ Now, I'm not too sure how long it takes for the license to come through, but you will be eligible for a license.
+ So if you haven't got a paid for proxy yet, if burp suite is your go to, or if you want a community edition, this one might be for you.
+ And it's a very good way to get a paid for license.
+ So check that out if you are in need of a burp suite license.
+ As I said, 400 reputation.
+ And looking at the score breakdown on Integrity.
+ Exceptionals, 50 points.
+ Criticals, 40 points.
+ Highs, 25.
+ Medium, 20.
+ Low, 5 points.
+ So just to give you a bit of an idea of what you'll have to be hunting for in terms of quantity.
+ So if you need a license, definitely check that out.
+ But yeah, that's it for this week, guys.
+ Have fun.
+ Hey guys, it's me, Brandon.
+ Great, me.
+ Back with a solo episode today.
+ It's been a while since I've last been on.
+ I can attribute that to LHE season.
+ It's been very busy.
+ I've had three back-to-back events now for what feels like two years instead of two months.
+ So it's been very busy.
+ And now Rezo and Brian Rater are out on their LHE.
+ So it's just going to be me today.
+ Now, this episode is being driven from a part of the scope that I focused on in one of these live events.
+ And I realized when I started digging into RFCs and looking at some of this functionality,
+ how impactful it could be on the rest of our scope and how we look at things going forward in the OAuth spec and the OAuth implementation.
+ Now, there's a few upcoming changes happening with regards to the OAuth 2.1 standard.
+ And I'm just going to show my screen real quick for people watching.
+ Now, the OAuth 2.1 standard, some providers have already started implementing this for agent-to-agent stuff.
+ But we'll get on to that shortly.
+ But the OAuth 2.1 standard states that PKC is mandatory.
+ The implicit flow is being removed.
+ The client credentials...
+ Sorry, not client credentials.
+ The password credentials flow is getting removed.
+ Redirect URI matching has to be exact string only instead of any wildcards
+ or some of the loose path matching that it does now in some frameworks.
+ Bearer tokens are no longer allowed to be in URIs either.
+ So that massively changes the attack surface from what we're used to.
+ So just to summarize, servers must reject requests that miss the code challenge parameter.
+ Implicit and parser credentials flows are going to die out.
+ Redirect URIs require exact string matching.
+ No more access tokens in URIs.
+ And this is quite interesting because it brings quite a significant change to what we're used to.
+ So the new proposed changes, which some frameworks are already implementing,
+ is that the authorization header is preferred for transmitting the token instead of the URI.
+ And also if this header can't be utilized for whatever reason,
+ it can be transmitted as formally coded within a request body.
+ So what led me to this is one of the targets, I can't say, unfortunately,
+ but there was some interesting functionality around the MCP and agent-to-agent authentication
+ and how that's handled as well.
+ Now, this actually brings an entirely new threat model to our frameworks as a whole
+ if they start implementing and becoming 2.1 spec compliant
+ and even if their ecosystem starts to change as well.
+ And that is because of the MCP authorization spec.
+ Now, I'm just going to reshare my screen here.
+ Now, the MCP authorization spec.
+ I've got a diagram up for people that aren't listening.
+ Builds on top of OAuth 2.1.
+ That then uses and builds on top of RFC 8414 and RFC 7591,
+ which is server metadata discovery and dynamic client registration.
+ And that then builds the MCP authorization spec as a whole.
+ So the traditional flow that we're used to with the dynamic client registration flow is we send a HTTP post request to the register endpoint,
+ which contains redirect URI, grant type, logo, client name, and then the authorization server returns client ID, client secret, and issue that.
+ Now, we're very much used to that traditional threat model when you introduce the logo URIs for SSRF and things like that.
+ But now with the new introduced client identity metadata document, that changes a little bit.
+ So the flow here is the agent sends a request to the authorization server containing a client manifest URI, a scope, and a response type.
+ That authorization server takes out and stores it in the metadata verification service or verifies it there as well.
+ And it's parsing and validating the redirect URI, the JWKS URI, logo URI, and so on.
+ And then that metadata verification service sends that back to the authorization server.
+ Yes, no, whatever, provides a consent and login screen, and then parses that auth code back to the AI agent.
+ Now, this is interesting because the threat model changes here a little bit because, I mean, the authorization server and the metadata verification service can be on the same host.
+ But we're now parsing a client manifest URI to both of these services where it has to be validated.
+ So the most logical thing to go after when we're looking at this new implementation is SSRF.
+ Now, SSRF on the metadata verification service is very much still going to be present because there's either going to be the authorization server itself handles that or the external identity verification service handles that.
+ And by the very nature of it, they have to request the client manifest URI and validate that themselves.
+ So when we start looking at how that validation occurs, which is some of the things I was doing on one of these targets in the live event,
+ it's trying to understand, okay, when this flow happens, first of all, understand what is the user agent that's making this flow?
+ Second of all, off the back of that, does the service that's handling the redirect and actually handling the request of that document, does it handle different response codes?
+ How does it handle those different response codes?
+ Does it handle different 30X response codes differently?
+ Are there any specific quirks on that specific user agent if we have access to that?
+ A long shot, but does it handle JavaScript processing as well?
+ If it's maybe a headless browser that's doing that?
+ And going down those very traditional SSRF attack vectors.
+ And it's quite nice because there's two different spots where this might potentially occur as well with this new client identity metadata document registration,
+ because you have the first request to the client manifest and then inside the client manifest as well,
+ you can nest a whole range of URIs as well, which may or may not be supported depending on the framework.
+ So there's two different places where this can really come up and increase that attack surface.
+ Now, the other thing as well with this is because the client must fetch the client JSON document
+ and must enforce that or redirect URIs and the document belong to the same domain.
+ We start to get into the standard, how is the domain validation made?
+ So, say for example, if the service isn't validating that the domain you pass in as a redirect URI doesn't match your actual own domain,
+ you might be able to set a redirect, for example, to attacker.com or victim.com/callback.
+ It might accept that weak domain check and you might be able to use that as a primitive to leak to an external domain as well.
+ And the other thing that I just wanted to touch upon as well that I did touch upon is the URIs in the CI/MD flow,
+ which you can pass in inside the client.json.
+ I just wanted to clarify this.
+ It's the logo URI and the JWKS URI.
+ So, test case in your client.json, you nest the logo URI as a target, say for example, internal, whatever it might be,
+ metadata or endpoint or internal host.
+ You set that in there.
+ So, if the tool server fetches the logo URI blindly and maybe displays the logo in the UI or gives an error on that, then you've got SSRF there as well.
+ And the other thing as well which I was thinking about when I started to threat model this service is since CI/MD is a static document,
+ the authorization server might start to cache some of these requests.
+ So, for example, if it's validating the client.json and it caches the results, that gives a whole leeway there for your traditional cache deception
+ and all those types of attack vectors as well.
+ So, overall, I'm just going to share the client identity metadata document again.
+ So, overall, even though the dynamic registration is going to be slowly phased out over time,
+ if this becomes a standard, which I think it will be and slowly is,
+ it actually opens up some more attack surface because we have a little bit more to play with in this flow as well
+ and there's more things to verify so it isn't all bad.
+ So, that's the second change I thought that was quite interesting when I started to deep dive and look at some of these documents off the back of the target.
+ Okay, so, on to the next one and that is the token exchange RFC 8693.
+ So, right now, agent authentication is in a good spot, but agent authorization not so much.
+ I'm just going to show my screen.
+ Now, right now, there's a lot of token pass-throughs everywhere, which is if you hack AI or if you're looking at these multi-agent workflows on the blue team side,
+ you'll know that this is a problem where token pass-through right now.
+ So, the user token has all the scopes which then get past agent A.
+ Agent A needs to spin up agent B and agent C in an agentic workflow and delegate all these different tasks over.
+ And right now, all these agents inherit the same token and the same scope.
+ Now, the token exchange RFC 8693 gives a mean for agent to agent communication to reduce the scope on each hop.
+ So, say for example, your user token, the scope is full as you'd expect.
+ You give that to agent A.
+ And the scope you only want to give agent A because it handles a very specific task.
+ It's just a calendar read, for example.
+ Now, when agent A invokes agent B, for example, it can do that on the next hop and just give it a reduced scope for that hop.
+ So, you get from this situation where you have a full scopes token being passed from every single agent and it just gets passed downstream.
+ If you look at any of this traffic, it will simply just have a authorization header with that token and each agent just appends it on and tags it on and sends it to the next call.
+ Now, this addresses that where you can reduce the scope for each hop in that agent workflow on agent to agent communications.
+ So, that's pretty nice.
+ And to be honest, if you're in any AI circle, that's been spoken about quite a while now where authorization is just a mess.
+ If you look at any targets, I think one of the most common bugs is around confused deputy attacks and just agentic services or chatbots, for example, just having almost God mode to everything.
+ So, this, although slightly different, aims to address some of that over-privileged scope creep that keeps cropping up all over the show.
+ So, that would be quite nice when it's implemented.
+ Well, not nice for us, but something to look out for at least.
+ Okay, some other things before moving on, I just wanted to mention on the token exchange as well, is that this is already cropping up in a few targets.
+ The one that I'm aware of is Auth0, the token vault utilizes this architecture for enabling the AI agent integrations.
+ And the other thing as well, token pass-through, when you directly forward user credentials, is a primary driver for confused deputy exploits.
+ Now, I know in one of the live events that people were just in Japan, there were a lot of these confused deputy-based attack vectors happening on this target.
+ So, definitely something to keep an eye out for.
+ Okay, so, in OAuth 2.0, PKCE is now required by default instead of being optional.
+ And PKCE, proof key for code exchange, is used to prevent authorization code interception, essentially.
+ And you would have probably seen it on requests through the code challenge parameter.
+ Now, it's interesting because in a normal PKCE flow, the client will send its code challenge, the server stores that code challenge,
+ the client then sends a code verifier, and then that's then verified, and if they match, you get the token issued.
+ So, with a downgrade attack, the code challenge is stripped from the request or set to a default value.
+ If the server accepts the request without it, that then facilitates the authorization codes to be stolen and then exchanged without no verifier needed.
+ So, the main vector here, when this is implemented by default on frameworks that are 2.1 compliant or are migrating to be 2.1 compliant,
+ is looking around the PKCE downgrade attacks.
+ Now, I do have a couple of CBEs that I found off the back of this research as well, which highlight this quite nicely.
+ So, one of the big ones that I saw, which went under my radar initially, was by Zeropath.
+ And essentially, it was in Django Olof, which is quite a big library.
+ And the implementation flaw was in the fact that it utilized the preferred username from the Olof response as the account UID.
+ So, when you are looking at these frameworks, it's important to understand that what claims should be writable and what claims should be used as your source of truth.
+ Because there are claims that are mutable or writable by users themselves.
+ And in this case, preferred username was actually a mutable claim on certain providers.
+ So, what this allows to do is an attacker, for example, can set their preferred username themselves.
+ They just set that to admin or victim.com, and they can get account takeover on that.
+ I'm just going to show my screen on this research, because it does deserve a shout out.
+ Now, as I said, by Zeropath, and it was seven vulnerabilities in Django Olof, which let them achieve account impersonation.
+ Now, it is a pretty big library, as I said, with 2 million monthly downloads.
+ And four major vulnerabilities are identified in the library with the different providers that it integrates with is that Okta identifiers were mutable.
+ NetIQ identifiers were also mutable.
+ Tokens for deactivated users could be refreshed indefinitely.
+ Now, in these live events, the reason why I wanted to share this research is because these are the exact things I was looking for in some of these implementations as well.
+ And that is, if a user gets deactivated or if the state of that user account gets changed in some way to a state where the user shouldn't be able to access something, how is that user's token handled?
+ And how is the user's refresh token handled as well?
+ Can you just use the refresh token to still get the same claims and same attributes as it was when it was first issued?
+ Or is the refresh token also updated on the server side as well?
+ Now, the biggest vulnerabilities from this right up are obviously the mutable attributes being used for certain providers.
+ So as it says here, the function uses the OAuth response field preferred username as the account UID.
+ Many OAuth and OIDC providers expose a stable sub subject claim and an optimal user facing field like preferred username.
+ Preferred username is often mutable and not globally unique.
+ Now that's important here because when an application or a library is identifying its users for a claim, that claim has to be immutable because otherwise a user can just create their own claim or overwrite an existing claim and use it as a source of truth.
+ Now, this is actually also can be quite an interesting primitive for privilege escalation bugs.
+ So if you see a permission set or something else as a claim which one you can overwrite and two is being used as a source of truth for something in the application, definitely try and overwrite that because it can lead to some really interesting bugs.
+ So just keep track of that as well.
+ I think this blog writer was a runescape player as well if you get the Zezima reference, however you say it.
+ But yeah, quite a good blog post.
+ It contains code snippets as well.
+ So definitely go and check that one out by zero point auth.
+ But those are the two points I wanted to mention.
+ Now, the other one I wanted to mention is touches upon the point that we just talked about around the new RFCs and where some of this ambiguity is going to start coming in on implementation floors.
+ And that one is a PKCE bypass on Cloudflare workers.
+ Now, this one took a little bit of digging and I've got the GitHub advisory shared on screen right now.
+ But essentially the bug was in the handle token request.
+ It accepted a code verify even if the initial authorization request omitted the code challenge.
+ So by stripping the code challenge, you could essentially exploit the lack of enforcement and steal the auth code and exchange it without a valid verifier.
+ And now this one affected all Cloudflare workers as well.
+ And you can see here that the MCP specification requires IOF 2.0 stated in that advisory as well.
+ So yeah, quite a interesting one off the back of some of the new implementation.
+ Okay.
+ So the next one is again by Xeropath and it is, let me share my screen, CVE-2025-5476.
+ And it is a authentication bypass on IOF 2.0 proxy, which is quite a big and popular gateway use for Kubernetes and cloud environments.
+ And essentially there's a feature in this framework that allows you to specify regex patterns for paths that should bypass authentication completely.
+ So say if you have a specific path that you needed to be publicly accessible and you didn't want it wrapped or sat behind the proxy, you would just go, okay, here's a regex for that path and have at it.
+ And it would be publicly accessible.
+ Now, there's an implementation flaw in the fact that the regex actually matched against the entire request URI.
+ Now that's interesting because if you match against the entire request URI, you have query parameters in there as well.
+ And that meant that you could essentially match a request by doing something like /endpoint/n.0 access/parameter= and then the regex, which is used to skip that path.
+ And because the parameter is also matched from that regex, it would lead to a complete auth bypass for those specific endpoints.
+ And what that would allow an attacker to do is actually get authentication being skipped for requests and endpoints that should have been protected simply by matching that bypass regex as a request parameter in the URI instead of actually being the URI itself.
+ So quite a, quite an interesting CVE.
+ But yeah, this was by zero point CVE 2025 54576 on OAuth 2 proxy.
+ Now, the last one that did make me laugh, which I'll share shortly, is from Pentester Labs, CVE from this year, quite fresh.
+ And I didn't know that HARBOR existed as a language.
+ I didn't even know what HARBOR was until I found this out, but still the bug's pretty funny.
+ But anyway, the TLDR here is that the classic none algorithm is supported.
+ And in this one, it was actually any unknown algorithm gets that bypass.
+ So quite funny as you can set the algorithm to Badana or ZZZ or whatever it might be.
+ It gets passed to the framework or library or you pass in none.
+ And it just basically fails open and bypasses signature verification altogether.
+ So that was CVE 202623993 by Pentester Labs.
+ So check that one out as well.
+ Okay.
+ So just to wrap up for everyone, a bit of a shorter episode today, but just cover some really cool changes and interesting things that's going to start creeping in to things we're looking at.
+ So the core OAuth 2.1 protocol PKC is mandatory.
+ Servers must reject requests that don't contain the code challenge.
+ Implicit flow and parser credentials are dead.
+ They're going to be phased out.
+ Redirect URIs now require exact string matching instead of wildcard matching that sometimes we're used to.
+ Bearer tokens are prohibited in URIs.
+ PKC downgrade attacks are going to be quite fruitful.
+ And some other things as well around where some of these bugs might come up is look for the transition gaps when frameworks are going from 2.0 to 2.1 and trying to be cross compatible and make sure all their clients are still in a working state.
+ Is that there's going to be a lot of compatibility shims where a lot of bugs show up in.
+ So if you see a target claiming OAuth 2.1 compliance, check out the downgrade attacks for examples.
+ Now the second takeaway is the CIMD SSRF for the new way for the client metadata to register.
+ Now that's an SSRF goldmine.
+ So if you see that implemented or see support for it, definitely check it out and pass in that metadata document and nest that with your own redirect URIs or targets, whatever you want to do as well.
+ Now the third point is authentication is in a fairly strong spot, but delegation and authorization is still in a pretty bad spot and there's a lot of bugs there.
+ So look for token pass through.
+ If an agent is calling at all, try and disclose how it calls that tool.
+ Look at the traffic if you can understand the request structure and see if the tool includes a full privilege token rather than a small scopes token just for that specific action.
+ So that's the takeaways for this week, guys.
+ I think OAuth 2.1 is going to be quite interesting when we start seeing a lot of the frameworks and libraries that we interact with start implementing it and trying to get a lot of these changes cross compatible and ensuring that clients are supported.
+ But that's it for this week.
+ I think me and Justin will be covering some of the fun we had in the recent event in an upcoming episode.
+ So look out for that.
+ But yeah, that's it for this week, guys.
+ Peace.
+ And that's a wrap on this episode of Critical Thinking.
+ Thanks so much for watching to the end, y'all.
+ If you want more Critical Thinking content or if you want to support the show, head over to ctbb.show/discord.
+ You can hop in the community.
+ There's lots of great high-level hacking discussion happening there on top of masterclasses, hackalongs, exclusive content, and a full-time hunters guild if you're a full-time hunter.
+ It's a great time.
+ Trust me.
+ I'll see you there.

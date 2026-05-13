@@ -1,0 +1,915 @@
+I believe HTMX is based on like an older framework, which has like, it's at least 10 years old or something.
+
+I didn't look into it that much. But yeah, I thought it was new too, but I guess it's just popular now.
+It's getting popularity because somebody is popping off on Twitter with the HTMX account.
+Like they're always roasting people or like getting some sort of viral meme, which is super hilarious, I think.
+Hey guys, real quick, if you are listening to this episode on April 25th, 2024, you are not too late to get on the Hardly Strictly Security conference held by Project Discovery.
+It is also happening today from 11am Eastern or GMT-4.
+So get in on that goodness. There's going to be lots of awesome speakers talking about open source security and very relevant topics for bug bounty hunters.
+So if you're interested in that, head over to Nux.gg, that's N-U-X.gg slash HSS24.
+It's a little bit of a tongue twister. HSS24, Nux.gg slash HSS24 to get on that conference.
+And I believe they're going to be releasing the content afterwards for review.
+So even if you didn't get to see it today or if you're listening to this episode later, you should be able to see the content from the conference on their website.
+So if you're interested in that, check it out and we'll get back over to the pod.
+All right. So let me preface this one with, I get a DM in my inbox a couple of weeks ago.
+Matias says, Justin, I've got something fresh for you, man. I've got something good to bring in the pod.
+So that's why we're here today. Matias is going to come and drop some, I don't know.
+So you've been doing some research into HTMX recently, right? And there's like four or five.
+Oh, no, it starts with zero here. So there's five individual things you've got here that came out of that research.
+So, well, first, I guess, let me ask this man. What made you look into HTMX in the first place to sort of spur this research?
+Well, I don't remember exactly how I stumbled upon it, but I didn't start by wanting to look for bugs or like security issues.
+When with using HTMX, I'm actually part of a couple of CTFs that are run each year and I wanted a better or maybe not better, but easier for me to use frontend framework to quickly build small applications, I guess.
+And I felt this kind of changing approach that is HTMX was nice.
+So I started building with it and then curiosity got the best of me, I guess.
+Okay. So, cause we, we, we kind of dissed on it on the pod a couple of weeks ago, you know, or maybe it was a couple months ago at this point.
+We were like, okay, like, let's just make JavaScript, you know, HTML here. Like, like how could this go wrong?
+Um, but I mean, you like it from an architecture perspective, is it easy to write? Is it, is it a good framework?
+Yeah, I think so. It's, it's very easy. I, I wrote like all, of all the only three, I guess, but still three functional web applications small that I wrote.
+I wrote the zero lines of JavaScript and that was lovely. Wow.
+And that's coming from a guy who's like, I like JavaScript. Yeah. That's, that's pretty great.
+But it's just easy to actually programming in it. Yeah. And it's just, um, I don't know, it feels more, more lightweight, less, um, layers of abstractions.
+And that's, that means generally that it's easier to understand and that I like.
+Very cool, man. Very cool. Yeah, no, I mean, I, I, yeah, originally the idea looked a little bit sketchy to me.
+Um, uh, but I, I could definitely see how trying to eliminate all of these, like, okay, now we got to deal with props and we got to deal with all these little, like, you know, little layers of abstraction that come with all of these, um, JavaScript frameworks could be attractive.
+And there's actually been a movement that I've kind of seen in the developer community, um, of just moving back to like just straight vanilla JavaScript and jQuery.
+You know, at this point I've seen it, um, on Twitter a decent bit.
+So I don't know that, that we need to go all that, that far in the other direction, but seeing something that's a little bit more lightweight is, uh, is definitely pretty cool.
+So very nice. Yeah, I, I agree.
+And I think that it might not be a bad idea to use more of the built-in features of the browser.
+And not only everything has to go through, through Ajax and then be rendered on the client side.
+I guess that's the biggest difference between traditional single page application frameworks and something like the HTMLX is that like the mix of the data and the markup is expected to be made on the server instead of the client.
+Just like the good old days or bad old days.
+Yeah. However you, however you remember them.
+That's good.
+All right, man. So let's walk through some of these, some of these things you found.
+Okay. So zero was, I like how he's got the list here.
+He's got, uh, you know, zero dot in the doc, zero dot, you know, one dot, two dot, three dot, four dot.
+I will say the zero dot is the, uh, is the title.
+So we've got four individual, um, things that we were going to walk through here.
+One of them is a, uh, is a CSP bypass using, uh, HTMLX.
+So kind of walk me through that if you would.
+Yeah. So I should have pressed my notes better because, but we'll just take it as we go.
+So the thing is when using HTMLX and then specifically, if you want to use, uh, its triggers, um, like a, uh, custom HX trigger or like HX on, um, that would be equivalent to like an on load or something.
+Okay. Uh, you kind of have to, or like it's using evil, um, internally.
+So if you want to use HTMLX in that kind of way, uh, at the same time as you're using CSP, you're kinda, you're kinda forced to have unsafe evolve enabled in your, um, directives.
+And because of that, uh, it's becomes like a kind of a global CSP bypass, uh, because even though CSP protects you, I guess, against unsafe in line, like an actual on error, you can just replace that with like the HTMLX equivalent.
+Mm. And there you go. Mm. Okay. So that's like one thing to note.
+And like all of these things are like, I w I wanted to figure out what type of issues could arise, um, only by using HTMLX.
+So like if some other framework was used or if there was well in the JS, the bug or problem, uh, didn't exist, but it exists only because we're now in this, uh, world HTMLX.
+Solid. That makes sense. And actually taking a step, step back from that before we double click into that one. Um, you, you, did you run all of these problems that are in the doc right here in the CTF that you recently did?
+Um, not all of them, but I, I, there was like three of them combined. Cause that's about as much as my head could wrap around into an actual challenge without like screwing it up somewhere.
+Nice. Yeah. Yeah. It was good. It was, there was a bunch of things that were, like,
+a bunch of soldiers do and new people seem to like it. So.
+Very good. Yeah. Client side CTFs are interesting. Cause I, I love a lot of client side bugs and I've kind of been talking with some people doing some CTF-ish stuff and it's like, okay, well, how do we, how do we get a flag?
+I guess they have to like submit it into a head, you know, headless Chrome and have them actually, you know, call some function or something to get the flag, return it back.
+Um, but it is cool to see client side, client side, um, stuff popping out in the CTF world.
+Um, okay. So this one, this sort of gives me the vibes of that, um, angular CSP bypass where it's like, you can, if you have like a white listed host, you can import angular from that host.
+And then you can run some, uh, ng dash init or something like that.
+And it will run JS code under the, the pretext of that angular.
+Is this kind of like the, the HTMX equivalent of that?
+Yes. Yes. I would say so.
+And, and I think that if you, if you would ask the authors of the framework, it's like expected, but still it's from, it makes a security feature that is built into the browser slightly less effective.
+You could say, and, and also I want to preface like most of these, if not all of these are based on the fact that you can get HTMX on some page, uh, to fetch your page via an open redirect or just straight up fetching your page.
+And that's kind of disencouraged in the documentation.
+So it's kind of the argument from the HTMX side is kind of like, well, you should never fetch a cross origin data with this framework.
+What do you, what do you mean? Like, like, are they doing like a fetch request or are you saying like?
+They are doing a fetch request internally, but since this is, since HTMX is based, the, the data transfer of HTMX is just like HTML, get the HTML, raw HTML from the server and then put it on the page.
+Ah, so inherently that would be like an XSS if you just fetch something off, off the, off domain.
+Ah, sure. Okay. So you need some sort of like client side path traversal or something like that. That's returning, that's allowing you to return data.
+But I mean, couldn't you also just have a traditional Dom XSS sync of sorts in this environment or is that, yeah.
+And then, and then also, or like we often see with the angular situation, you've got an HTML injection, uh, or something that, that has a, and you need to bypass a CSP and they actually explicitly import, uh, angular for the purpose of doing the CSP bypass.
+Is that also something that's popular or possible here?
+Yes. Yes, exactly. So it's like, if you, if you follow the documentation to a T and build your application as a pure single page application, like, like whichever route you request on the page, you will get the exact same HTML back, let's say.
+Mm-hmm .
+Then you're kinda okay. But that's very difficult to do if you want to build something that's bigger than like, hello world.
+Yeah. So, okay. And so, you know, somehow we achieve HTML injection or some sort of, uh, you know, client side path traversal based sync of sorts.
+And then we, um, you know, we're running into something where unsafe inline isn't in place, but unsafe invalid is, and we're able to use this gadget, um, using, uh, HT, HTX on HTMX load, the, the onload equivalent handler, um, to actually pop some, some, some,
+some, uh, some code. Is that accurate?
+That's right.
+Okay. That's exactly right.
+Solid. And, and so then for, for developers using HTMX or, or for hackers looking to exploit HTMX based pages, what kind of CSP, cause they have to do unsafe invalid essentially, if they're using any of these on, onload handlers, right?
+What kind of CSP do you want to see?
+Yeah. If they want to use these, uh, triggers and stuff, uh, they have to, but otherwise, and you don't have to build it like that.
+Uh, otherwise there is, uh, uh, uh, HTMX configuration flag to turn this eval stuff off.
+Oh, really? Oh, interesting.
+Yeah. Unfortunately that's not enabled by default and we'll, we'll come to another in my perspective in secure defaults later also.
+Mm. Mm.
+Mm. Um, so if there's something I would suggest that the, uh, HTML developers would change about this specific, it would be that to have this eval.
+Mm.
+I, I, I forget exactly what it's called, but it's called like use eval or not.
+That's it.
+I love that setting. Use eval or not.
+Yeah, well, it's really something like that.
+I'm gonna go with no.
+That's great. That's hilarious.
+Um, and, and, and so does this have to be the, the other question that pops into my head about this specific first instance?
+And by the way, for those of you listening, you know, we're not gonna really, I kind of read out the code on that last one, but like we're not gonna continue to read out the code for what this looks like.
+So we're gonna talk about it at a conceptual level, and then we will have these, um, written in text in the hacker notes, um, on the ctvv.show slash blog.
+Um, so head over there for the actual text version of all of these, where you can see this, uh, this, these partial solutions to the ctv that Matias is dropping.
+And also, um, this cool research done on the htmx.
+Um, okay, solid. So that makes sense.
+And the only other question that comes into my head on, on this one is like, there doesn't have to be any like parent tags defining that this is like a, um, cause I know like in some environments, there's like an ng app or something in angular.
+that you have to have defined, but if I do like a, like a script source to include, uh, uh, htmx.
+And then I just do this image tag with this, uh, hx on handler here that will pop in, in this environment.
+Yeah.
+Yeah. It, in this, uh, framework, it's like a, there's an opt out instead of an opt in and we'll get to why the opt out is, doesn't work, but.
+All right, cool.
+I'll put, I'll put.
+And also just noting the configuration flag was called allow evil.
+Allow.
+That was almost right.
+Yeah.
+Oh no, that is not what we, that is not what you want to see from a security perspective.
+Um, very interesting.
+Uh, okay.
+So next one up on the list, um, dude, this one's pretty interesting.
+So you've got a way to convert client side response header injection to XSS using this framework.
+That's right.
+And, and we realized actually during the CDF that I'm not the first one to talk about this and let's just press press this.
+I might, I might not be the first to know about any of this, but in any case, uh, yeah.
+So one thing that we can't do in a regular excess world is that if we can control the page that is fetched even, and only control the response headers and not the response body that cannot lead.
+At least from what I know in modern browsers to XSS straight up.
+I'm making a face.
+I, I want to say there is one way with like a link header.
+I want to say, did, does that sound familiar to you at all?
+No.
+Okay.
+All right.
+But, but I'm not a source of truth.
+There might be, but not that I go to your talk about this one real quick.
+I'm going to just look at my other tab and see if I can find, cause I want to say I tweeted about something a while back and someone was like, yeah, you can use this link header and like SVG some anyway, go ahead.
+So this essentially client side, um, header injection.
+This one can actually bring you to, to XSS using if HTMX is on the page.
+Yeah, exactly.
+So if you can make HTMX fetch, um, something across the region, some from, from your side, it's kind of like XSS by default.
+Um, but sometimes you can control, uh, not the origin that it will fetch, but you can control the path, um, because it's still taking it from location path name or something.
+Hmm.
+And if there's some path where you can inject the response header, um, then you can make access with that because there are certain special response headers in HTMX to control the framework.
+And like tell it to do a history push date, for example, or.
+Oh really?
+In this specific.
+Yeah.
+In this specific case, it's called HX redirect, uh, which is.
+Used to tell it to make, uh, make a hard redirect, let's say like a browser browser in the chat, the redirect.
+And that one doesn't check if it's like a HTTP or.
+Oh no.
+Just like HX redirect.
+Yeah.
+Hello.
+Wow.
+
+Okay.
+And so, I mean, it just pretty much does a window location at href with that, whatever's in the contents of that header.
+That's right.
+That's right.
+That's right.
+Wow.
+And so kind of specific, but if it's HTMX and you can make it, you can control the path that it, um, fetches, but you cannot control the origin where it will fetch it.
+And that one's in some path has a response to the injection, then you have a lab.
+Excellent.
+Okay.
+So this, this can't happen then at the sort of top level page.
+So I'm, I'm thinking like, say for example, we have, um, you know, sort of like that Franz-esque research where it's like, you, you've got some sort of faulty reverse proxy or something like that.
+And you're able to do a new line, you know, do a space, uh, in the URL, you know, you do percent 20, HTTP, you know, 1.1 or slash one-on-one new line.
+You do something right.
+But you can't, for some reason, get down to the body.
+If that body contains HX redirect, or if that header contains HX redirect, and then that body includes the script, that's not going to happen.
+This is only in the scenarios where, um, uh, HTMX is doing that thing where it like reaches out to the server and download some HTML and then processes it afterwards.
+Is that accurate?
+Yes.
+Yes.
+That's accurate.
+Gotcha.
+But also, um, it, it could work in, in, um, if there's like an open redirect, uh, which is kind of good, good to know too.
+Cause, cause like you can access via HTML by using redirects because it will follow it.
+Hmm.
+That that's, that is interesting.
+So, so I guess that also leads me to a thought.
+I don't know how much I forget if we discussed client side path traversal or how familiar you are with client side path traversal.
+Um, cause since it's sort of a new issue vulnerability type, but in your, in your experience of working with HTMX, did you see any propensity for client side path traversal?
+Um, you know, where is there any sort of system where, um, it's by default encoding slashes and backslashes and stuff like that when being put in the path or when a path is being dynamically generated with user input.
+Mm-hmm.
+Not that I can think of.
+I didn't really look at it too, but also a lot of the paths that will be used, they were actually, um, put together, let's say on the, on the server side.
+Uh, oh really?
+Yeah.
+But yeah, since it's, it's putting together the user data or, or data from the database or whatever, and the HTML over there instead of in the client.
+Uh, so there's no loading, like, uh, parsing the look location search and doing stuff.
+Interesting.
+
+But, but there might be, there might be, I, I just don't know.
+And, and, and so those paths.
+Okay.
+So this is actually really starting to feel more traditional.
+And this is, this is, I'm starting to actually see the picture of it now.
+I wasn't as familiar with the HTMX, um, architecture, but essentially this is, this is sort of like a hybrid between traditional structure where you're just dumping back a bunch of HTML and you're refreshing on every single page.
+And the modern day sort of Ajax based fetch based structure.
+But, but it's actually, you're passing in some, some parameters to it.
+It's actually doing the full HTML generation on the server side and then dumping that back from any, from an Ajax request from the client side.
+And then that's populating the body of the Dom.
+It doesn't need to be the body.
+It can be an element.
+And that's kind of the thing.
+Cause you can think of like, uh, uh, a hyperlink, like an A tag.
+Yeah.
+Like what does it do?
+
+It sends a request to the server and it takes that and it replaces the whole page with HTML.
+Yeah.
+And HTML allows you to do that, but only for certain parts of the page.
+Interesting.
+That's kind of how I think about it.
+It's this is, this is odd.
+This is an odd, odd little, little framework here.
+I wonder if this is, uh, I wonder if it is there like a billion requests that get generated with this?
+Cause every single component needs to be like a server side request to get like the piece that fills in that piece and that piece and that piece or.
+Um, I wouldn't say I'm very good at building.
+Maybe I shouldn't answer that, but for me it went pretty well.
+Okay.
+Like I tried to build the, what is that called?
+Like an infinite scroll and that kind of messed my head up.
+Uh, I'm sure it's possible if you're a better programmer than me.
+Hmm.
+Yeah.
+Uh, Matias is like, yeah, you know, it's about 600, 600 requests a page.
+Like I'm not great at it, but I feel like.
+Yeah.
+Well, in terms of performance, of course it's inevitable that you lose out because all of the computation that goes into mixing and matching all of this HTML stuff now has to happen on the server.
+Mm.
+Just like it used to be.
+Yeah.
+Um, that I guess that's, I like that.
+I guess that's more of the point of these sort of layers of extraction that we did in the first place.
+Why we moved away from that traditional structure is like, we want more performant code for these, you know, applications that we're scaling in the, you know, 2010s area.
+Right.
+Uh, and before, and, uh, and we needed to have, have them consume less bandwidth.
+So we tried to, you know, create a structure that isn't as verbose as HTML and trust JavaScript on the client side, which is loaded once to deal with all the formatting and stuff.
+And now with this, we're kind of going back in, in redoing and doing more of a, you know, server side generated thing.
+I wonder why they made that design decision.
+And, and, uh, you know, if they're expecting this to be used in high performance applications or not.
+Um, well, first of all, I don't think the bandwidth is as big as a problem as it was before.
+And second of all, I don't think we managed to solve that problem very well.
+If you look at the, like, uh, the web pack, the monsters, megabytes of JavaScript.
+Oh my gosh.
+It's ridiculous, man.
+So, yeah.
+Yeah.
+But in any case, also, I think, um, I, I believe HTMX is based on like an older framework, which has like, it's at least 10 years old or something.
+Oh, really?
+I don't think I'm talking to it that much, but yeah, I thought it was new too, but I guess it's just popular now.
+It's getting popularity because somebody is popping off on Twitter with the HTMX account.
+Like they're always roasting people or like getting some sort of viral meme, which is super hilarious.
+I think to see a, uh, you know, a front end framework, um, really just kind of popping off in that perspective is really odd.
+Yeah.
+That's a, it's a fun account for sure.
+Yeah.
+Okay, cool.
+So we've got the, that HX redirect that can be helpful in some, that can be a quick win in some, uh, client side patch
+controversial-ish environments.
+Um, and then what else is on the next is on the list here.
+Oh, bypassing HX disable.
+Okay.
+So tell me a bit about this.
+Um, I don't know if you have the doc up or not, but.
+Um, I had nine notes, but I guess I switched around.
+Okay.
+So HX disable is kind of like, remember how we talked about Angular and the, and the NG app.
+Yeah.
+Yeah.
+And I said that, oh, actually this is like more of an opt out instead of an opt in.
+Mm-hmm.
+Yeah.
+And so HX disable is supposed to, well, disable any HTML functionality, uh, within children's
+of that, uh, tag.
+Mm.
+Mm.
+Um, and it's even recommended on their security page.
+Let me try and find it.
+Oof.
+Oof.
+HX.
+Yeah.
+But it says like, Hey, you shouldn't let users create arbitrary HTML.
+Uh, but like, this is what you can do at least to turn off the HX stuff.
+And then you have to worry about the other stuff on the server side.
+Um, which I agree with, but in terms of effectiveness, I think it's a good thing.
+In terms of effectiveness of this HX disable, it's just not implemented very holistically.
+Mm-hmm.
+So what happened was that they changed how they did, um, what was that called?
+Um, the syntax, I guess, of triggers.
+So it used to be like HX on, and then you specify it in there, like HX on error colon alert
+one for like on error alert one.
+But now there's like a new way and I'm not sure how old it is, but that's what the code
+told me.
+So you can instead do HX dash on colon error.
+So that's like the whole attribute name equals alert for, or alert one.
+Okay.
+So this new, new type of, uh, way of specifying these, uh, uh, these triggers is just the disabled
+code just doesn't look for those.
+It just doesn't work.
+No, no.
+Yeah.
+Yeah.
+That's so.
+Oh no.
+Are they, are they, are they literally just doing like string checks here?
+Like, uh, like find no, no, no, but they are just like, uh, it's like one part of the code
+is doing all of the regular old, let's say handlers.
+And then instead of implementing the new handlers inside of that, they implemented it like the
+line under in the code.
+But in there, there's no, this HX disable stuff.
+So it's kind of messy.
+Oof.
+Okay.
+And so, yeah, I think, I think their heart was at the right place when they started this
+feature, but it needs to be reworked.
+Hmm.
+And it still doesn't, I mean, this just deals with HX related or HTMX related functionality.
+It doesn't necessarily relate to, um, other, other things like just normal traditional cross-site
+scripting and stuff like that.
+No, it's like, uh, if you really want to do this, it's like, uh, it's like, uh, it's
+like, uh, if you really want to do that, you should fix it with some framework.
+Mm.
+Uh, but to avoid the HX.
+Like a DOM purify or something.
+Okay.
+I like that you said that.
+Uh-oh.
+Uh-oh.
+Uh-oh.
+Why do you like that I said that?
+Because that's exactly what I thought too.
+Okay.
+So if you really can't avoid user-generated HTML, okay, maybe you, for whatever reason, but
+you can maybe use like something that is state of the art, like DOM purify to, to try and fix it.
+But there's a really unfortunate thing here in terms of using DOM purify for HTML and I had this in the challenge too.
+And it's that optionally you can prefix all of the, uh, HTML attributes with the data dash.
+So they, that they looked like data attributes.
+Classic.
+And it just happened.
+So to be that everything starting with data dash is allowed by default in DOM purify.
+Mm.
+Um, so DOM purify don't work out of the books on anything in HTML.
+Wow.
+Okay.
+So if you can, man, there's some possibilities here then.
+Cause I, I recently ran into a case where it's like, um, pretty strict CSP.
+Uh, and actually our injection was happening at, in, in the script source, uh, in the source attribute of a script tag.
+And so we could import various stuff and we could even break out of the script tag and stuff like that.
+But, um, the way that the CSP was, was implemented, it's like, okay, we can only import from the specific host and, uh, you know, we can't do unsafe inline or whatever.
+So in this sort of situation that would, that would work out, that would work out really well.
+Interesting.
+Okay.
+And, and, and even if, if there was DOM purify in the specific scenario, because you could just, DOM purify isn't gonna prevent you from continuing that source tag that you had.
+And then you could, uh, add this specific, um, DOM purify proof, uh, tag that you've got here.
+Essentially it's just the data dash and then the normal HX on right version of this.
+Yeah.
+That's right.
+And before I forget, shout out to Rio Tuck, who was the first, I think, to discover that scenario with DOM purify versus, uh,
+Are you kidding me?
+Wow.
+No.
+That's crazy.
+That is, uh, wait, in specific in the HTMX thing?
+Yeah.
+Oh, wow.
+Very cool.
+It's, he's everywhere, man.
+I don't understand how this guy does it.
+He was just like crushing it in the live hacking event too.
+I was like neck and neck with him in this past live hacking event.
+And he's like also just doing freaking HTMX research on the side.
+Like, geez, come on, man.
+Yeah, no, for sure.
+He's got a brain.
+Yeah, he really, really does.
+Yeah.
+But this does make me also think of another, um, piece of research that we talked about on the pod a while back, which was that, that whole, uh, Masato Kinugawa research on, um, how he did the teams.
+Um, let me see if I can pull it up.
+Cause he also had something similar to this there where he was able to use a data attribute in angular to pop the XSS.
+Did you see that?
+Nice.
+No, no, no.
+Let me pull this up for you really quick.
+And I also did find the other thing that I was looking for as well.
+Um, that allow that, uh, just, this is just so ridiculous.
+It's slide 30 in this, uh, this thing I'm sending you right here.
+Um, yeah, there you go.
+Check that out.
+Check out slide 30, how he ends up popping it, uh, here is, uh, it's not 30 actually.
+Is it 31?
+Uh, no, it's, it's 33 slide 33.
+He, he has essentially in, in angular, you can put the end ng init inside of the class, inside of the class tag.
+Right?
+So you've got in the, the payload he uses here is strong class equals ng dash init colon XSS payload here.
+And, and he goes from class attribute injection to XSS on angular, which is just absolutely mind boggling.
+Um, it just makes me think of this because it's not similar, uh, exactly because data attributes are very dissimilar to the class attribute, but, um, that's probably what angular should have done instead is put it in the data attribute instead of putting it in the class attribute, which is primarily used for, you know, assigning CSS classes.
+Yeah.
+Yeah.
+Yeah.
+Yeah, no, for sure.
+That, uh, doesn't look like a dangerous attribute.
+Yeah.
+I guess that is in the angular world.
+Yep.
+Exactly.
+Pretty crazy.
+Okay, cool.
+So this one, this one, so you can bypass DOM purify with this too, because DOM purify automatically allows anything that starts with data dash.
+So data dash HX on error equals alert one or whatever.
+Well, we'll take you all the way there.
+Yeah, exactly.
+And this is kind of like a, okay, who should fix this?
+Should DOM purify fix this?
+Probably not.
+Should HMX fix this?
+Maybe.
+They won't.
+But they probably argue something like, oh, well, you shouldn't do that.
+I don't want to put users, uh, put the HTML there.
+But yeah, if I, I would love, love to see HMX to just to drop that support, but I also don't have any background information on why it's like that from the start.
+So yeah, that is a little bit odd.
+And I think my take on that is actually, I think DOM purify should add something for it.
+Uh, because I think they're the ones that are more, they have a vested interest in performing, in performing comprehensive, uh, HTML assessment.
+And I think the whole allowing the data attribute in particular is a gadget that's been abused multiple times for DOM purify.
+So I, I'm wondering why they allow that and I'm sure they're stuck into it now from a, from a, um, you know, legacy perspective, but that seems like a little bit of a questionable decision in the first place.
+Yeah.
+Yeah, no, I agree.
+Yeah.
+And I don't know the reason either, or if there is one.
+Yeah.
+So we'll see, hopefully dump purify will do something with that or maybe add a flag like HTML, you know, prevention and just like delete all data, data tags.
+So maybe there is one already that just removes the whole, um, data attribute from, uh, HD or HTML attributes.
+I think that would be, I think that'd be good.
+Dude, this next one kind of looks crazy though.
+The, the, the, the element it's entitled accessing imp, uh, accessing impossible elements.
+And this trigger looks like you just like, essentially they just concatenate your input with a bunch of functions.
+What, what is this man?
+Yeah.
+So that's how, uh, triggers work in the deep down.
+Are you kidding me?
+So no, but they, they make them JavaScript functions basically, um, by putting whatever you have in the HX trigger with some parsing into an anonymous function and evaluate.
+So they get the function back and then assigning it as that.
+So that's how you can like break out of it by using like a bunch of, uh, and the brackets and stuff.
+Oh my God.
+But the reason why this is, yeah, the reason why this is interesting though, is that it's, um, so I don't, I forget what the proper name is called.
+I think it's called something like opaque elements that aren't supposed to do anything.
+They shouldn't have like an on load and they shouldn't change the, how the, how the page is displayed or anything like this.
+But it has happened multiple times in the past.
+And I think the most classic one is like, if you have attributes injection inside of a input that a type hidden.
+Hmm.
+Hmm.
+Yeah.
+And, and if that's the case in, in HXX world, uh, or even meta tags, like in my example, uh, you can, you can access SBA it.
+Wow.
+By just setting a trigger on it.
+Uh, but you don't need to actually make, uh, the trigger, whatever is supposed to trigger the trigger trigger, because you can just, when it's trying to build the actual trigger function in the load of it.
+You can use, uh, you can use.
+Okay.
+So let me, that's kind of, kind of difficult to explain.
+Okay.
+Let me try to repeat it back to you so I can make sure that I understand.
+So essentially what you're doing is you're adding this HX trigger attribute to the HTML element.
+And when it's processes, this H HX trigger attribute, it's concatenating your input, uh, it's doing some rejects on it or whatever, and then concatenating your input with some other templatized anonymous function.
+Right.
+So it's just saying, okay, you know, we'll get this function, evaling it, taking the function, assigning it to the onload handler or whatever you're telling it to trigger.
+Um, and when it evals it, like I'm looking at the code right here, it's like, uh, it looks like he's closing off a bunch of functions, um, and, uh, function calls and that sort of thing.
+And then just adding alert and then commenting out the rest of it, which is like classic, you know, uh, context injection here inside of a JavaScript environment.
+Um, I just wouldn't have thought that this is actually done that way.
+And then furthermore, I wouldn't have thought that they would have not considered the fact that these control characters might end up in the input, like, like your curly bracket and stuff like that to close off these functions.
+I guess you can't disallow those because you need to be able to allow them to do curly brackets and that sort of thing inside the, the actual function, but kind of odd.
+
+Yeah.
+No, I agree.
+And you, you got that exactly right.
+And they should have of course, escape this somehow or like made sure that, okay, this is supposed to be the function body.
+It's not supposed to break out of our little wrapper here, which is what happened.
+But yeah, it was really fun.
+This one, because it reminds me a lot about, uh, like the good old days when flash was still a thing.
+And that would have like a lot of these kinds of problems when it went to like external interface and it was like taking something from the browser or like, sorry, from flash world and running as a JavaScript.
+You can do, could do this stuff.
+These sort of things.
+Wow.
+That was, that was a little before my, my time with this.
+So I didn't actually see much of that, but, uh, it's cool to see past lessons, uh, being reapplied here.
+And, and I will say, you know, the rest of these payloads that were, we've talked about so far in this, uh, in this episode are pretty easy to understand.
+You know, just there's the HTMX version of the on load handler and, you know, a simple, uh, client side response header, that's HX redirect that allows you to just do window location dot href equals whatever.
+Um, but this one is a little bit, this one's pretty fancy.
+So for those of you that are actually interested in, in getting a good grip on HTMX security and how you might be able to use this in a bug bounty environment, definitely check out the notes where we'll include the actual payload of how he.
+And it looks like to me here, there's some regex that's that you're bypassing because it seems like it has to be inside of some sort of array or something like that.
+Why is there the X, X, and then the square brackets?
+So if I remember correctly, you're supposed to do like, uh, it could be X instead could be like IMG or something.
+And then it's supposed to be the name of the event inside of this hard bracket.
+Ah.
+But the name part can be used to like escape this template.
+You found this whole little, um, yeah.
+Okay.
+This little dot dot plus regex or whatever that just allows whatever.
+Cool.
+Cool.
+Exactly.
+Exactly.
+And, and the, like the HTMX source code is not that big either.
+So yeah, I encourage people to jump in and take a look.
+Yeah.
+Uryota, we're looking at you, man.
+If you're listening, we want to see more, more HTMX stuff.
+I know that Uryota in his free time instead, you know, when he's not doing his normal hacking just for fun, he just reviews, you know, JavaScript source code frameworks or JavaScript frameworks source code.
+So, uh, that's one of those weird things that makes him what he is.
+Um, so when I was looking at this a little bit, so I, that, that sort of sums up the section there.
+Um, and, and I've got a couple of comments as well, cause I was looking into HTML or HTML stuff whenever, um, you know, you said that we were going to do this segment.
+Um, and I, I, I grabbed a couple of things, but I guess I want to ask, you know, how did the CTF go and, and were there a lot of solves and any, any good feedback on this?
+Um, there was like 15 or so.
+Good, good.
+For this, this challenge.
+Um, and yeah, like I said, people seem to enjoy it.
+They didn't think it was unfair or, or too hard.
+I guess some people thought it was too hard until they sold it and then they thought it was great.
+Yeah.
+As it goes.
+Um, yeah, it's a good, uh, discussion with, with some people about their solutions.
+Uh, they had like slightly different variations.
+How did you, how did you structure the actual challenge?
+You said it combined some of these pieces.
+Yes.
+So the challenge, let me open the code for the chance actually.
+So I'm know what I'm talking about.
+Just a sec.
+So the, what the, the application that I built that they were supposed to access was like a random, random image viewer.
+So you press a button and you get, you get to view a random image.
+Classic.
+And there was like a share, share link.
+And that share link had the problem.
+Uh, and so the first problem was that, uh, this share link took the current path.
+Uh, and, uh, that's where it made the HX on, uh, request.
+Mm.
+So if you did like.
+Present five C or like present 20 slash.
+It would become like a protocol relative URI.
+And then you can make it fetch your own domain.
+Yeah.
+And then you would think, okay.
+That means they have XSS and they're done now.
+But I also, of course, as we've talked about, had the CSP.
+Mm.
+Um, I still haven't found the code.
+Sorry.
+I'm not very good at multitasking.
+No, no, you're good.
+So, so you, at this point, you've essentially established a way for them to control a request that's being made by HHTMX, which opens up a whole new can of worms, according to what you've, you've told us.
+Uh, cause a lot of the functionality is actually, um, happening in the responses of these fetch requests that are being made to pull HTML down from the server.
+That's right.
+So it's almost like a client.
+I mean, it's a client side path traversal of sorts, but there's not really a path traversal.
+It just controls the location of the, of the request.
+Yeah.
+Yeah, exactly.
+Uh, that's right.
+And so then there was two more things.
+Uh, the first thing was the CSP, um, which had unsafe eval, but not unsafe in line.
+Oh, actually three more things.
+Uh, and that you just have to bypass, but instead of doing like on error or whatever, you'd have to know that, okay, I have to use HX something here.
+Um, so that was part two.
+Part three was that the target.
+So when you use HTML, you can specify a target to say like, okay, the HTML that I get back here should be put in this div or whatever target body.
+Or you can even do, do some inline, uh, stuff like target closest div and it will like walk up or down.
+
+So it's pretty, pretty nice.
+Yeah.
+But my target was, uh, something that had HX disabled.
+Hmm.
+So if you, if yeah, yeah.
+Tricky, tricky, tricky.
+So if you only did the, uh, HX on whatever, it wouldn't pop because it would, would be put into a disabled element.
+And so what you had to do was, uh, you had to either use the HX retarget request, sorry, response header or HX location.
+Uh, and both of those can be, uh, used by the server to say like, Hey, actually this should target something else.
+And that, that is given priority.
+Yes.
+Yes, exactly.
+It's telling HMX like, Hey, ignore the target, use this instead.
+And so that's how they could avoid the HX disable.
+Uh, but then there was one final boss.
+Uh, so you can make a extension to, to HMX, which is pretty nice.
+It's like hooks.
+Uh, and you can hook a bunch of things like transform response.
+Uh, and it will be before it's rendered and HTML, uh, it will be put through your extensions.
+Uh, it will be used as a callback.
+And in there I put the dump purify.
+Uh, any HTML that I fetched.
+Yeah.
+Dude, this is so annoying.
+Dude, I can't imagine doing this CTF and just being like, Oh my gosh, why is there like 17 layers?
+Yeah.
+Well, like CTF people are, are good.
+So I have to keep them up by somehow.
+Um, but yeah, that was the last part.
+So we put all, all of those together and you give it to my admin bot that had like a nice cookie and, uh, and you win.
+Dude, that sounds like a sick challenge, you know, like, and maybe we can pivot the conversation into this a little bit.
+Like, I think I missed out a little bit on the CTF world because I got, you know, when I was in college, I was just kind of getting into hacking again after I sort of stepped away from it for a little while.
+Cause I was, I was younger and I was not hacking responsibly.
+And then I came back in and my first sort of reintroduction to it from just outside of my own ideas in my own, you know, college was doggy G, uh, showing me.
+Hacker one in bug bounty.
+And then I was like, this is all they want to do.
+Cause I'm also poor and in college and I need money, you know?
+And so I, I like never really had that, that time where I was like, oh, I'm just like mega technically curious and also not interested in making money particularly right now.
+Um, and I think there's a lot of benefit to doing these CTFs from a, um, ability to technically deep dive perspective.
+And, and just the, cause I mean, this is the whole thing that you have to do in bug bounty as well.
+It's like, you have to ingest a new framework, a new product, a new API, you know, all this stuff so fast and then find the problems with it.
+And I think you're forced to do that time and time again with a CTF at a very deep level.
+Yeah, for sure.
+
+And the, I feel like I'm, I'm a bit, uh, lucky to, to have started my journey before there was bug bounty.
+Cause otherwise I think I would have done the same and like what hacking, but not for money.
+Yeah.
+What do you mean?
+Exactly, man.
+It, it, it definitely is tricky though.
+Uh, the, the one thing that I will say about the CTF, like a little bit, like we discussed off air though, is like the fact it doesn't help you with that whole problem of knowing there's a bug or not knowing there's a bug.
+Like, I feel like one of the most important skills that you have to develop as a hacker is like your own gut instinct in your own, um, understanding how far you're willing to push to see if you can make a bug happen.
+Um, or whether there's a bug there or whether there's a, there's a, there's a, there's not a bug there.
+And, and at the end of the day, there's not always a bug there, even if something is super sketchy.
+Um, and I think a CTF, there's always a bug there.
+So I think that, I don't know that that one is a little bit tricky for me is there's, despite the way that it really equips a lot of hackers, CTFs.
+Um, that one skill is left undeveloped, I think.
+Yeah, for sure.
+Like there's a lot of the overlap between the skills you can acquire from bounty and, and CTF, but they also have their own pros and cons.
+Right.
+So in CTF is usually very technical and you have to do a lot of deep types, uh, but you miss out on like things like recon and, and also the psychological part that you were talking about.
+And like, there is 100% a bug here.
+Yeah.
+So yeah, that's true.
+And, and actually building CTF challenges is, it's, uh, has been for me a very nice way to learn as well.
+Cause you're kind of forced to, well, use the tools that you're trying to understand, let's say.
+So that's why I'm, that's why I'm switching frameworks all the time.
+Uh, and also the, uh, like languages I write the backends in.
+Yes.
+Because like, I, I see something somewhere in the bounty probably, and I'm like, okay, I don't understand this.
+My next CTF challenge, I'm going to build this.
+So I can understand.
+That's great.
+That's, that's a really good, that's a really good way to balance that out.
+Cause I think for me, it's just so often times.
+So push, push, push with bug bounty.
+It's like, uh, you know, I'm not really stepping aside to do much dev or, you know, I guess my side venture is a little bit different.
+Right.
+I'm doing a podcast or running a business or something like that.
+So, um, not as much of a, another layer of, uh, technical side, side quests, so to speak.
+Um, yeah, I, I think, but going back to that, I just want to make this clear for any listeners that are CTF players.
+Like, um, the biggest, probably, probably the biggest skill that you'll need to develop as, uh, going into bug bounty from the CTF world is that whether there's a bug here or whether there's not a bug here.
+Intuition.
+
+And I think it, you will probably almost all CTFers will lean on the side of there, there is a bug here and, and keep on pushing and pushing and pushing and pushing.
+When at some points you just got to let it go and, uh, and move on to something else.
+Cause there's always going to be other sketchy parts of the application as well.
+And, and, and correct me if I'm wrong with you, but I think there are, there are sort of distractions or like fakes in CTF as well, where they're like send you down one path, but it's actually not the right path.
+I mean, it depends on the CTF and the CTF author.
+I think, um, there's a lot of, there's a bunch of those, but you just gotta learn which CTFs are good.
+I guess.
+Do you, do you not like those?
+I, I, no, I don't like those.
+I try to always have one path and it's, it should be fairly easy to figure out what you're supposed to do, but it's supposed to be hard to do it.
+That's how I kind of think.
+And also it shouldn't involve any guessing because it's time boxed.
+So that's true.
+Yeah.
+I guessing is, is definitely not going to be helping you in the time box situation there.
+Um, so yeah, but there's also like one thing that you kind of lose in, in terms of web, uh, CTF challenges.
+And also, by the way, another good thing about CTFs is that if you're in a CTF team, you get access to people who know about other areas of security that isn't used much in, in, in, uh, bug bounty, such as reverse engineering and binary exploitation and such.
+Um, which for me has been invaluable, invaluable.
+Yeah.
+
+
+Like very, very valuable.
+
+In, you can't assign a value to it.
+Is, is how valuable it is.
+Yes.
+
+Um, yeah, no, that, that, that definitely makes sense.
+And the collaboration piece is huge from the bug bounty perspective as well.
+If you're fortunate enough to have people to work with and, uh, that are really, really talented such as yourself, Matthias.
+And actually that that's a perfect, a perfect segue into a little, a little story from the latest live hacking event.
+I figured I'd embarrass Matthias on air here.
+Um, there was this live hacking event, 2018 Vegas, where Matthias was crushing it and I was a newbie.
+And, uh, and I remember him pulling me aside, you know, or actually me pulling him aside and being like, yeah, what was that bug you found?
+And he shows me this, like, um, this bypass that he had done to essentially a laugh, uh, or, or, or a, um, reverse proxy that was walling off an endpoint.
+And, uh, and he just changed the case on a character or, you know, modified some encoding or something like that.
+And I was like, I hate that this worked.
+I hate that this, I hate this so much, you know, like, and like, how could I have not have thought to like modify the case or like change the coding up and down or something like that.
+And, um, you know, recently in a live hacking event, I, I found one similar to that.
+And I, I, in the show and tell for this, uh, for this event, for this bug, I, um, I put Matthias's face on the last slide and I was like this little fricker right here.
+And that stupid smile that he's doing right now on, uh, YouTube in my brain, just be like, yeah, just change the case, bro.
+Just change the case from lowercase to uppercase while doing that stupid face is the reason I never forgot that trick.
+And I'm always,
+That's funny. I need a new, I need a new trick.
+Yeah, man.
+It, uh, I just, it's just one of those moments where you're like, uh,
+Yeah, I remember it clearly.
+Cause I know, I know like Nafi, I remember he said the same thing about the same bug.
+So that was really, really fun.
+It's just so aggravating, you know, when you were so close and it's like something as trivial as like a case flip or like an encoding or something like that to get you there.
+Um, frustrating.
+For sure.
+Um, okay. Before we, before we move along, cause actually you did some interesting work on, um, the CD and CGI stuff that we had been talking about on the pod for the past couple of weeks in Cloudflare.
+So, um, I want to, I want to go to that, but did you see, so go to the doc and I actually added this little section right here where there's like this HX on depreciated.
+Did you, so in, in the ones that you have, um, done in your little sample section here, uh, they're all HX, uh, dash on colon HTMLX colon load or error or whatever.
+And then there's like this depreciated format, which I think might've been what you were talking about earlier when you mentioned the disable bypass.
+But essentially now the attribute in this sort of disabled or just depreciated section, um, which may still work or may not work.
+So, um, the attribute is just HX on.
+And then inside of that, you define some additional stuff like HTMX on load, HTMX, whatever.
+And you can actually define multiple handlers, um, with a new line character, which makes the new line character, a, uh, sensitive character in these environments, right?
+Where you, you know, if you can use the new line character, it's almost like a double quote or a single quote in this sort of context.
+So did you see that at all or do you, does that ring any bells for you?
+Um, no, but I'm sure there's more to find.
+So I didn't even read about this, uh, but yeah, I guess that's maybe what they meant with like the old way to do it versus the new with the colon.
+
+That's kind of what I was thinking.
+Cause it seemed like this might've been the old way that they did it that you mentioned in the HX disable.
+Um, but I was really surprised to see that you can actually define it.
+multiple handlers by putting them on a new line and using slash end in that scenario, uh, or backslash end, which, which will give you, you know, another way to define another handler.
+Um, and if you can, can, you know, so if you can finish off the syntax from before, add a slash end, then you're, you're good to continue.
+Um, and I wonder how it would handle errors.
+You know, if the first, if the first line had incomplete JavaScript syntax or whatever, and then you jumped down to the second line to find a new one, then you'd have to go.
+find a new one.
+Would that screw the second line or would it, I don't know.
+It's definitely some area for some cool research here.
+Cause there's so many funky things going on.
+I'm not thinking that though.
+Right.
+That gets out the sniper rifle, locks in nerd snipes for sure.
+Um, all right, man.
+So we'll, we'll, we'll, we'll go back to that afterwards.
+Maybe we'll do a little research off, off, um, off air on this.
+Let's go ahead and close up this one with a, um, with a little chat about the CDN CGI stuff.
+So I continued some research on this.
+I mentioned, I kind of gave an update on it on pod a while back.
+Um, I know that there are some issues here.
+I just can't seem to find a bunch of them.
+And, um, this one seems really interesting.
+So you, you were able to, I know you mentioned at one point, a CSP bypass for Firefox.
+And then this is also a, a subdomain only 307 redirect.
+
+Yeah.
+So the thing is back in 2017, there was, um, I think you mentioned it too.
+I think it was like your 53 or if it was Masato or someone talking about this.
+And I, I looked into it with France.
+I, I, I assume let's, let's just assume everything I did was France.
+Yeah.
+Yeah.
+Yeah.
+The, the Swedes looked into it and, uh, there was one, uh, HTTP only CDN CGI
+endpoint called bin rec.
+And that worked like how trace or track, uh, HTTP methods were supposed to be implemented.
+So they literally sent back the exact request, uh, that was coming.
+Interesting.
+Okay.
+Yeah.
+It's just reflected the whole request.
+And based off of that, you could use it to bypass CSP, uh, in Firefox.
+You know, by, uh, I want to say I saw something similar to this.
+Oh yeah.
+Maybe, maybe like this just was an idea.
+And I, I told Masato about this actually in some other context, and then I forgot about it.
+And then I listened to the pod and I was like, oh yeah, that thing.
+So I wonder, does, did you look into it?
+Does this still work nowadays?
+I don't think so.
+I couldn't reproduce it anymore.
+This bin rec, but I think that was just like some debug stuff.
+It wasn't officially it.
+Yeah.
+I found it in what I did.
+I think I took all of the, like, uh, top level, the top level domains, but like the apex, uh, domains of the bounty programs that I knew about back then.
+And then I downloaded like web archive from those, graph for CD and CGI and found it on one of them.
+And I was like, oh, this is interesting.
+Very interesting.
+Yeah.
+I had a similar approach.
+I just used big query and got all of it just, just in case.
+Um, but yeah, I want to say I've seen something similar to bin recently that, cause I, I see that this bin rec doesn't exist anymore on, on, uh, if you hit a, a, um, cloudflare website, but I feel like they moved it.
+I feel like they moved it somewhere and I feel like we might be able to still find it.
+And I know that there is a trace endpoint, um, that will send back some stuff to you, but I think it's not everything.
+And I know that you mentioned before there was some like magic you had to do to get the, the data to be valid.
+You had to do like dom clobbering or something like that to do, get it to be valid JavaScript that gets assigned.
+Um, but there's definitely some, some weird, weird stuff to be found here.
+And then you also mentioned this, uh, 307 redirect, which the fact that you noted down and put in my freaking document here, Matias, a subdomain only 307 open redirect.
+Like, or like semi-redirect, right.
+Right.
+Just tells me that I have the right person on the podcast right now, because like, of course, this is so interesting having the ability to specify a 307, you know, sort of, um, semi open redirect because, um, it opens up so much stuff for redirection of, of things that are, are non, uh, get based.
+Um, and so this is a really cool one.
+Talk about how you found that.
+Yeah.
+So I went to the documentation for CGN CGI stuff.
+I saw that there was something with like some image, uh, proxy stuff.
+Mm.
+And I, and then I tested it on my own page, uh, that's fine cloudflare and it didn't work.
+And I was like, Hmm.
+And then I like Googled that type of, uh, URL, like CDN CGI slash image.
+Mm.
+And I found a bunch and they worked.
+And then I looked at their DNS and rightly so they were using cloudflare.
+So I was like, Hmm, this must be some feature that's opt in.
+And it turns out it was called, uh, cloudflare images.
+Mm.
+Mm.
+Cloudflare images.
+Yeah.
+Cloudflare image optimization, I think.
+And so you could turn this on for, uh, for your domains and then you get like a local domain only image proxy.
+And you can also use, uh, for caching and stuff like that, right?
+Yeah.
+You can, you can cache it on, on their service too.
+Uh, so like a CDN, maybe self explanatory when we're talking about the CDN.
+Yeah.
+But the, the interesting part about that is that you can give it a bunch of, uh, um, flags, attributes, whatever to call it, to tell the, the image proxy how to like scale the image and stuff like this.
+Mm.
+Um, but you can also tell it to do some special stuff like on error redirect.
+And you can tell it where that redirect should be.
+Um, so if you do, you like CDN CGI image on error equals redirect, and then a URL, uh, it will issue a three or seven redirect.
+Uh, and that redirect is not bound by like origin, uh, but it is bound by top domain.
+And I wasn't able to bypass it.
+Mm.
+So you, if you're on like example.com, you can make a three or seven to hello.example.com.
+And that might sound lame, but that is very, very useful.
+Extremely useful.
+Like as like in certain SSR scenarios and other bugs too, I guess.
+Yeah, dude, the, the first scenario that comes.
+Like HTML.
+Yeah.
+Like HTML, you know, client side path traversal, um, any sort of scenario where you need an open redirect, but you can't control the query parameter.
+Um, you know, this is a path only 307 semi open redirect, right?
+Which will get you to expands your open redirect chain to any of the sub domains.
+That's right.
+Frick dude.
+I love this so much.
+Like this is like so exciting because it's anytime you're dealing with a poster and this can also be used in a C surf environment as well, where you're, you're like, you're controlling sort of like the, I guess not exactly C surf cross.
+It can allow you to hijack a post request, right?
+Via like client side path traversal, and then get that post request pointed at a different sub domain at a different path, which may trigger a C surf on that domain.
+Right.
+Um, yeah, super awesome gadget here, man.
+I'm kind of pissed that I didn't find this to be honest.
+Um, I definitely should be looking more in the image section.
+I've kind of, so there's image and then there's image delivery there.
+Those are two, two of the interesting sections under, um, CD and CGI that I need to look into a little bit more.
+Um, but this is a super handy gadget for anyone, uh, that's looking to chain open redirects or something like that.
+Um, and so many sites are using Cloudflare in front of them.
+Um, so having this in places.
+Perfect.
+Yeah, it's good to have for sure.
+Good to have.
+All right, man.
+Um, we are an hour in, uh, that is, you've dropped enough zero days for us, uh, today.
+Uh, you, you have, uh, sealed your, your spot in, uh, CTBB history, uh, for the most zero days dropped in a specific episode.
+Um, HTMX, good luck, uh, fixing all these this week.
+Uh, you've got, we're recording this on a Monday.
+We're dropping it on a Thursday.
+So, uh, hopefully they can figure that out in time.
+Um, and yeah, definitely for, for the listeners, keep in mind this.
+Um, gadget for the subdomain.
+I'll just say a semi open redirect 307 request.
+Um, because that is a great gadget in the pocket.
+Um, anything you want to close with or shout out on the way out today, Matthias?
+Um, yeah, I want to say I will, I will keep using HTMX.
+I really love using it.
+Wow.
+It's just that it's a little bit disappointing with some insecure defaults and it's easy to shoot yourself in the foot.
+But, uh, other than that, the actual way, ways of working and the using HTTP to, as a protocol for transferring hypertext is nice.
+That's awesome.
+Well, way to, way to hit him with that, uh, mega geek zinger there at the end, uh, on the way out.
+All right, man.
+Thanks for coming on.
+Thanks man.
+Peace.
+And that's a wrap on this episode of critical thinking.
+Thanks so much for listening.
+And if you want more critical thinking content, head over to ctbb.show slash discord, join the discord.
+There's lots of great conversations and chats going on over there.
+And if you want to support the show, there's the discord subscriber tiers, which give you access to masterclasses, AMAs, hack alongs, exclusive scripts, and an exclusive chat channel with us.
+We'll see you there.
+We'll see you there.
+
+We'll see you there.
+
+
+
+
+
+
+
+
+We'll see you there.
+
+
+
+
+We'll see you there.
+
+We'll see you there.
+
+We'll see you there.
+We'll see you there.
+
+
+We'll see you there.
+
+We'll see you there.

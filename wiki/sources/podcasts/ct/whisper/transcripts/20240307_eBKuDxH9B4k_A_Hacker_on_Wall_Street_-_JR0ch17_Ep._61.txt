@@ -1,0 +1,1497 @@
+I was just going to say, you know, like when someone gets a bounty and LAGs, the sound
+that is on the river, you should put that in your tool when something comes up.
+Dude, I did that.
+Maybe it'll motivate you.
+Oh, you did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+
+I did.
+I did.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I did.
+I did.
+I did.
+I did.
+I did.
+I did.
+Hey, guys.
+Real quick, I just wanted to do a shout out to the Hacker Content team.
+They've been doing an awesome job with us recently helping with the social media management side
+and sort of taking the load off of me so I can focus on delivering awesome content for
+you guys.
+So if you think your organization as well could benefit from some hacker-oriented social media
+management help, then Hacker Content is the number one place to get it.
+And I highly recommend them.
+So head over to hackercontent.com to send in an inquiry.
+And if you mention the podcast when you do, you'll get your first month of social media
+management stuff free.
+So yeah, check that out.
+All right, back to the pod.
+You know, I'm not even sure we should say this on the podcast, but the link that I sent
+you to actually get into this is the exact same link as the last one.
+So there's some sort of auth mechanism problem that's happening here with guests getting into
+the studio.
+Seems to be, yeah.
+It's weird, man.
+
+We got to figure that out.
+All right.
+Well, that aside, welcome to the podcast, J-Rock.
+It's good to have you on here, man.
+Thanks for having me, man.
+Yeah, of course.
+Of course.
+And it's just us this week.
+Joel is moving across the country.
+So it'll just be me and you.
+And the sort of impetus for this podcast is, I don't know, man.
+You send me cool stuff from time to time.
+And I appreciate that.
+You know, you listen to the pod and you comment on stuff and you add stuff and you also be like,
+hey, I've got this situation, you know, collab on it.
+So I appreciate that.
+And the other day you sent me this really cool bug that you ended up being able to exploit
+relevant to some of the content we had on the pod before.
+And I was like, dude, you got to talk about this on the pod.
+So let's do this, man.
+Definitely need to do an introduction to J-Rock and that sort of thing.
+But let's give the listener a little taste of what's to come with this meta tag plus DOM
+purify bug.
+So I'll let you give a summary of that bad boy.
+Sounds good.
+So I was testing an app where I had found an HTML injection in many places, but the latest
+version of DOM purify was used.
+So getting XSS required me to pretty much focus on DOM purify only and get a zero day on there.
+And I figured that it wasn't really worth the time.
+So I looked at, I started looking at the OAuth flow and noticed that there was a path traversal
+in the redirect URL parameter.
+So it allowed me to redirect the code back to any page that I wanted on the web app.
+So I tried redirecting it to the page where I had an initial injection and it worked.
+So I was like, I can redirect the code to my initial injection where I had the page, I mean,
+where the injection is located at.
+So I was thinking of ways to, um, leak the URLs.
+Like it's still the code.
+Right.
+Um, so started off by just testing, like with image tags.
+I mean, it worked.
+I could put in any image on there, except that, um, because of the default refer policy, um,
+it would not be the full URL to me.
+It would only leak the origin.
+So like the domain or subdomain.
+So annoying.
+Yeah.
+It used to work in the past, right?
+Yeah.
+You could just put it that way and we could leak data, but that's not the case anymore.
+Makes you miss the good old days.
+Doesn't it?
+Like, can, can you, like, I don't know nowadays I've just become so used to that, you know,
+default refer policy, uh, you know, what was it?
+Cross origin strict or something like that now where it's like, okay, that isn't even a thing,
+but like, man, back in the day we had a good, when we could just leak anything from the URL by just getting an HTML injection.
+That's that, that was sick.
+Exactly.
+Yeah.
+So I thought of like, try to see if I could change the refer policy itself.
+So I looked at the MDN docs, uh, cause I wasn't really familiar with that.
+I mean, I knew what it was, but I did not know, like if it was possible to change it with like a header or something or, or by my HTML injection.
+And it turns out that we can, uh, with a meta tag, uh, we can set the meta tag.
+Um, and I mean, we can set the refer policy through the meta tag and we can set it to unsafe URL where it'll send the whole URL in the refer header.
+Dom proof I had to catch that though, right?
+I thought so.
+Um, well, actually first I w I did not know if it would have worked because the meta tag was not the head of the HTML page, but it turns out it does work.
+It does work.
+Um, but like you said, I thought Dom purify would have caught that.
+And it turns out that it did except that first it did.
+It actually strips it out from the DOM itself.
+So when I refresh the page, um, I can see the refer policy is set to unsafe URL, but the meta tag is nowhere to be found in the DOM.
+Like Dom purify seems to do its job, but for some reason, Chrome still sets the refer policy to unsafe URL.
+So with all of that said, I was able to leak the OAuth code with an HTML direction using, um, like an image tag so that I can send the URL to my, to myself.
+And along with the meta tag that is gone, but still sets the refer policy to unsafe URL.
+Um, so with both of these, I can leak the OAuth code and get an account.
+Dang dude.
+That is lit.
+And, and this is still like a, a actively like this can be exploited, right?
+Yes.
+Uh, so I was discussing it with the program itself and, uh, it turns out that when we found the, the GitHub issue on them on Dom purify, and they said that it's like a, a Chrome issue.
+And by looking at Chrome and the Chromium bugs, we found that it's not fixed and still out there.
+So this can still be exploited.
+My favorite type of issue, man.
+Which is cool, right?
+Yeah.
+Give you a little, a little golf clap here.
+That's, that's clutch.
+You know, a lot of times we get people coming on the pod being like, look at this crazy thing that I found, you know, it's fixed now, but you know, cool story.
+And, and there's lots to benefit from that.
+But, um, but you know, this, this one's actually still active and that's, that's the best kind.
+And, and I was kind of clicking into this.
+Um, I was kind of clicking into this, uh, sort of GitHub link that you, that you gave me before.
+So on Dom purify, they're like, interesting.
+Thanks for the heads up.
+Seems like it's a Chrome issue.
+And then you, like you said, you know, you click over to the Chrome one.
+I thought this was hilarious.
+Like first they, they like this issue is kind of old from like 2020.
+So they like have migrated, um, you know, issue trackers since then.
+So it's like, I go to this issue tracker, go to this issue tracker.
+And then at the bottom of it, it says, um, David Von Cleve is no longer working at Google.
+Uh, and so this is, you know, issues up for grabs.
+And then that was like 2021.
+So it's been like three years.
+The issue has never been touched.
+And I feel like this is massive dude.
+Like this, this says really massive impact because I, what it seems to me is like without that meta tag even being added to the Dom, maybe just that meta tag being created as a, as like a tag object in JavaScript.
+That meta or that re, um, refer policy is being applied to the page, which is kind of nuts.
+Yeah.
+And it's crazy.
+And, um, so like I've been looking at other targets where, um, I saw that Dom Perify was used and see if I can, uh, abuse that somehow.
+Cause I'm sure it's pretty common in, in many places.
+Right.
+Yeah.
+Yeah.
+100%.
+And, and, and I, I see, you know, I'm looking now at this issue.
+I just sent it to you on, on, on discord as well.
+And, uh, if you, if, okay.
+So I, I misread it.
+I was, cause the, it will, will link the, the, the GitHub issue in the, in the, um, comment section or the, the description section, but you can even see up at the top, it says, uh, under headers general in the, in the, um, dev tools console says on the top picture, it says refer policy strict origin.
+When cross origin and the other, on the one in the bottom, after they've done the HTML injection, it says no refer.
+So that's, that's, that's pretty weird, man.
+Uh, that, that this is actually allowed.
+And, uh, it definitely, this is a good trick to get us back to the good old days of like, of being able to leak, leak data through the, um, the refer.
+Yeah.
+I was, I actually had never found something like that.
+Cause it's not something I used to look at.
+Um, but I was like, really, I really wanted to steal the OAuth code just because I, I, I've been looking at OAuth over the past couple of weeks or months.
+And, um, so I focused on that HTML direction, tried to see what I could do with it and started looking at the refer policy and ended up with MetaTag.
+And luckily for enough, Trump hasn't fixed their stuff yet.
+So it worked.
+Made it happen, man.
+Made it happen.
+All right.
+So, so that, that's, that's the, that's a little, little taste of J rock and J rocks work.
+Um, but one of the cool things about, about, um, about you Jasmine is that, uh, you're not, not just a bug bounty hunter.
+You're also like a pretty like high level security guy as well, which I, I, and I kind of talked about this on a podcast with, with Jason had X a while back.
+But like, I feel like there's multiple routes for me in the future.
+You know what I'm kind of thinking about my future.
+I feel like I can go the, I could go like the CISO route or like the, you know, head of information security route or whatever.
+I could go to the corporate route there.
+I could go to entrepreneurial route.
+Um, I could go the, you know, government hacker route.
+Um, or I could, I could, I could, you know, stay doing bug bounty forever, which is probably what I'm going to do.
+Not going to lie.
+But, um, if I were to go the, the, um, you know, C-suite ish route, I would want to be like you because you have, uh, while still being a top, a top dog in, in a, uh, in an organization from the security perspective, you're also very, very technical and doing bug bounty on a regular basis and in the weeds.
+Um, and you're also a model.
+I understand.
+Does that, does that, is that accurate?
+Yeah.
+No, I wouldn't say a model, but, uh, um, yeah, I guess I was approached to do, uh, the cover of a front page of, uh, of a night here or a security or computer magazine.
+Oh my gosh, dude.
+Which I did.
+I found it really cool.
+So I did it.
+Not, not just my role model.
+You're a model.
+A model.
+Yeah.
+That's great, dude.
+So we'll, we'll, we'll put the picture up on the screen, but, um, I'm not going to lie, man.
+Um, it's pretty good.
+Like, like that is a, that is a pretty, I mean, that's about as good as you could ever hope for them to, you know, have the results come out.
+So.
+Yeah.
+Well, shout out to, uh, the Hackerone photographer.
+Uh, that picture was taken in Austin a couple of years ago.
+No way, really?
+Yeah.
+Yeah.
+Wow.
+At one of their LHE's and, uh, I asked Hackerone if you can use that picture.
+So yeah, go, go ahead.
+So, uh, sent it over and the result is, uh, is, is pretty cool.
+I actually have a few copies, um, here at my place.
+You gotta send me one of those.
+I'll put it up on my wall.
+Yeah.
+Frame it.
+All right, man.
+So I've told you enough.
+Let's, uh, let's swing back around to the, to the origin story.
+How did you, how did you get into security in general and how did you get into bug bounty?
+Um, so I actually, I was, I think don't have like a typical background as many people who
+do bug bounty.
+Um, I started after high school, um, a program in, uh, in accounting.
+So I used to be good at math.
+Uh, but after years like, huh, this is not for me.
+So I stopped, um, and just like worked a student job for a year.
+And then, uh, one day on my way back home, I saw, um, a poster.
+Uh, where it said like, uh, well, I mean, on my way back home in the Metro or somewhere,
+however you guys call it, uh, of a poster of a school.
+Um, that started a new, um, I guess computer science program.
+Um, and I, it wasn't really like into computers, uh, my whole life, like as a kid, teenager,
+it wasn't my thing.
+Um, and then at that time when I was 18, I was like, Hmm, I know there's our plenty of
+jobs in that space.
+Let me give it a shot.
+Yeah.
+And it turns out, um, I really loved it.
+Um, so I, let me, let you know, I did not love it because my first course ever, that
+program was C and I hated it.
+I barely passed.
+Yeah.
+I'm not sure why I decided with, with C, like you should have started with the basics.
+Like I didn't, I didn't even know back then, like what a CPU was and they want me to go
+to C.
+I know dude, that's nuts.
+Wow.
+Um, so, um, yeah, so I ended up like passing the course, like making that, uh, the project
+at the end where I had to create like a game, like a Tetris or snake game.
+I forgot what it was.
+So I did it, but barely passed.
+And I actually like consulted with the, um, uh, when you school, um, I guess directors
+whatnot.
+Um, cause I said, I told them like, it's not my thing.
+Like, do you have any other like options?
+Like, oh yeah, we have like a networking and security.
+I was like, Hmm, let me try that.
+Uh, so in those classes, I learned all of like TCP, IP, all of the OSI layers and all
+that stuff, uh, firewalls, VPNs, and mostly like networking, like Linux, um, servers, stuff
+like that.
+I did not do any programming at all in that class, in those classes.
+Um, but it was something that I liked a lot and I got really good at it.
+Uh, so after I was done with that with school, um, started working as a sys admin.
+So working with, um, networking like Cisco routers and switches, um, like typical sys admin work, um,
+active directory, PowerShell and stuff like that.
+Um, but after a couple of years, I started to get bored.
+Um, so I started looking into, um, pen testing.
+Cause at school, we had a few classes on security.
+Uh, so we had a few classes on security.
+
+So we had a few classes on security.
+Um, but like, it was really like the basics.
+Like they told us what our firewall was, what a WAF was, what an IPS, IDS, antivirus, all that stuff.
+Um, and I knew that we, I could hack as a job.
+Um, I was like, just sounds, sounds, it sounds like illegal, but if it's a job, it must be legal.
+Right.
+Um, so I looked it up a bit and saw that it was like a, a regular job that people had.
+Um, so I started to see what I needed to do to get a job as a pen tester.
+So I decided to do the OSCP certification.
+Um, and keep in mind, uh, since I started school in 18, I only started getting to hacking with like 25.
+Wow.
+Um, which is like not common in the bug bunch space.
+Cause I think you started to do packing with your, like in your teens.
+Yeah.
+A lot of us have started really early, but there have been some really amazing people in the community that, that have, you know, done what you've done as well.
+Or even later and just kind of come into it and then just, you know, absorbed all the information and, and, you know, I have amazing results.
+So either way it works out, but this is definitely, I think probably not the typical route.
+It is.
+Yeah.
+True.
+So, uh, yeah.
+So back in 2016, uh, completed the OSCP.
+Um, and it's funny cause I actually, uh, did an interview for a, uh, cybersecurity company, Montreal.
+And they did not, it was like in January, February and they didn't take me because they thought that I was like too far back.
+So for me to get up to date in terms of training, it wouldn't cause them too much.
+So I was like, you know what, this is like the game changer.
+Like I'm going to get, I'm really motivated now.
+I want to get it done.
+And then in April I finished it was like, which is, I think pretty good because I think the common, I think timeframe is like three months where people do ACP.
+And a lot of, a lot of times they don't pass in the first attempt.
+And I did within 60 days.
+You passed in the first attempt.
+Yep.
+Dang it.
+J rock.
+You know, I, I, I failed the first attempt.
+I went through it and I, I, um, yeah, you know, I was five points shy for the, for the first attempt, which was so sad.
+And I, and I, I didn't make any progress the last five hours.
+Uh, it was like, it was heartbreaking.
+Um, and, uh, and I didn't do the lab write up either.
+Right.
+Cause I was like, oh, you know, I'll pass it.
+Right.
+Or whatever, but you get bonus points.
+Right.
+Right.
+Right.
+So if I had done the lab write up, then I could have, I could have gotten it.
+But, um, yeah, it sucks.
+I, I'm curious your thought.
+I mean, obviously you went that route with the certifications and stuff like that.
+Um, you know, the, the, I hear two major sort of groups of people in insecurity.
+Some people are like, ah, you know, training courses, certifications, blah, blah, blah.
+It's not, you know, all of it's fake or whatever.
+Uh, but the other, and then the other group is like certifications, classes, these sorts of things, they really add value.
+And I think it largely depends on the person, you know, it largely depends on like what your learning style is and whether you're able to do that.
+Right.
+And do structured learning and that sort of thing.
+But I'm curious your take on your, your academic experience, you know, doing some, some cybersecurity courses and then all versus your certification and versus self self-taught and where you're getting the most bang for your buck out of those three.
+Definitely self-taught.
+Um, so like, for example, with the OSCP, um, it's as you know, like a lot, a lot of self-taught when you do your own research, you need to, you need to, you know,
+look, look things up, learn how things work.
+But now like the reflect back to when I did it, I realized that the OSCP is like really just the basics.
+You have under basics, nothing, nothing more, especially everything that's web app related.
+Like you, like you still have like remote file inclusions in the OSCP.
+Like nowadays you never see that.
+Right.
+And it's like really like basic stuff.
+Um, and, uh, yeah, it's like, I think for me personally, um, I learned better, um, by like myself, like self thought.
+I mean, actually like me watching a course or a class, it doesn't work for like the OSCP, you know, we have like, um, videos of, of things.
+I did not watch a single one.
+I was better while reading the book, um, Googling stuff.
+Um, and so same thing today.
+I have hard time learning while watching someone talk.
+Um, I just, I'm just really better at learning and, uh, by reading.
+Yeah, I, I, I feel like there's multiple, I feel like I read somewhere that there's like visual learners, uh, auditory learners and like kinesthetic learners.
+Right.
+I don't remember like the actual term for it, but it's like, there's some people that need to just get their hands on it.
+And there's some people, if they read it, you know, it'll be good.
+There's some people, if you see it and it'll be good.
+Um, you know, so I, I guess it, it, it highly depends on the person.
+Um, but I have to say, you know, especially in an industry like bug bounty or offensive security in general, where there's so much tinkering required, where, where you've got to sit down there and you've got to like fiddle with this and like move this part around and, you know, adjust.
+And that sort of thing.
+I think the people that learn by having their hands on something really have a benefit, you know, metaphorically, of course, cause you can't put your hands on it, but like, you know, like, like playing around with it and fiddling with it.
+Um, I think that's a big advantage and I think that's a trend we do see across a lot of the successful hunters is that ability to learn from having your hands on it and, uh, and kind of grow from that, that regard.
+Exactly.
+Yeah, definitely.
+And for me personally, um, like, as you know, in OSCP, there's not much of web in the course itself.
+Uh, so I actually learned all of my web app hacking with the, um, web application hackers handbook.
+Oh, really?
+
+Nice.
+
+I read it twice.
+All 900 pages.
+It's long.
+It is long.
+It's long, but this is how I learned, uh, the most.
+I just read through it.
+Um, started thinking around and like some websites.
+Um, I remember back then I was, uh, looking at Tesla, I think, on book crowd.
+Um, this is like back in 2017.
+Um, and my first year that I did bug bounty.
+Well, I wouldn't say I did bug bounty, but like, um, after I did OSCP, I actually got a job as a pen tester.
+Oh, nice.
+So this helped me learn the job.
+Uh, this was like in February, 2017.
+Um, and in that month, I also got my first ever bounty for Microsoft.
+Hey, nice.
+Uh, since I was just new, I had, I did not find another bug or not.
+I didn't get another bounty for the next six months.
+Um, and ended up like my first year doing like 5k.
+Were you hunting on a regular basis though?
+Not really.
+I was still like in a learning place.
+Right.
+Uh, when I was reading books, I read, uh, Peter Jaworski's book as well.
+Love that book.
+To get like real life example.
+Yeah.
+Web hacking 101.
+Yeah.
+That's what it's called.
+Yeah.
+Freaking Pete, man.
+Like I love that book.
+And I'll tell you, dude, I, when I read that book, I don't know what it's called.
+Yeah.
+Yeah.
+That's what it's called.
+Yeah.
+Freaking Pete, man.
+I, when I read that book, I don't know whether, I don't know, maybe I just didn't notice it
+at all, but, um, I read through the whole book.
+I loved the book.
+I was like, this is the best book ever.
+Anyway, my wife, you know, she doesn't do any, any computer stuff, but she was looking
+at it and one day and she was kind of just reading through it a little bit.
+And she noticed a bunch of like, like grammar errors and stuff like that in the book.
+And she's like, Justin, how, like, what is going on with this?
+And I'm like, I don't know.
+And maybe I had like some sort of beta copy or something like that.
+But I like to think that I was just so intrigued by the content that I just skipped over all
+of that because, you know, the, the way he breaks down the analysis of the activity reports,
+that's exactly what you've got to do for all of the activity reports when you're getting
+started.
+I mean, I imagine you learned from that as well.
+Definitely.
+I spent a lot of time in just reading reports and activity.
+I remember like daily looking at like, let's say, let me look at XSS today.
+Yeah.
+So looked at as many XSS reports that I could see in the activity.
+And yeah, this is how I learned pretty much my, my skills that I have today is through just reading.
+So let me ask this then, did you do Bug Bounty before you got the Pentester job at all?
+Cause you said the same date or the same month you got it.
+Yeah.
+Yeah.
+So not really.
+So I started with Bug Bounty roughly after I got the job.
+So I had a colleague that, that did it a bit and he was like, Oh, you should try it.
+So I was like, okay, I'll give it a shot.
+Um, and tried it.
+And my first attempt worked luckily with Microsoft.
+Yeah.
+But then, like I said, the next six months, it did not, uh, work out pretty well, but I
+was still learning a pretty, a junior Pentester.
+So I was learning while Pentesting, I had colleagues who helped me out and, and with time,
+uh, I guess I, I gained that skill.
+That's good.
+Yeah.
+I feel like that's also a little bit like for me, maybe, maybe that's my, my opinion,
+but my, my sort of journey was a little bit, a little bit different than that, which, which
+was, I was trying to get the job.
+I didn't have the OSGP.
+Right.
+And I wanted them to pay for the OSGP for me, you know, to get the OSGP.
+Um, so I was trying to get these jobs beforehand and the way that I might end with that was Bug
+Bounty.
+So I did some Bug Bounty beforehand and I was like, Hey, you know, I found all these bugs.
+I got, you know, a thousand rep on hacker one made X amount of money off of Bug Bounty.
+And, uh, sorry, something's floating in the screen.
+I just, all of a sudden just grabbed the screen.
+Um, uh, but yeah, and that was kind of my way in was like, Hey, I've already got all the skills.
+You can put me to work on a web app right away.
+Here's the proof.
+Um, and you also did that a little bit, uh, the other way around getting, paying for your own OSGP, getting put into the company and then starting to learn Bug Bounty.
+And then, and then did you continue doing it while you were as a pen tester?
+Um, uh, yeah.
+And, and were you working on network pen testing at the time or you're doing web stuff?
+Uh, mostly web stuff.
+Um, that helps.
+Yeah.
+Uh, cause I didn't actually, I did not want to do networking stuff.
+Um, I really liked my app, even though I was bad at it.
+It's just, I had a passion for it.
+I found it so interesting that you could get access to a file on the server through the web app.
+I was like, how is this possible?
+Like what's going on?
+And I think that curiosity, I think helped me in terms of learning web app.
+Cause I really wanted to know how it worked.
+Uh, yeah, no, absolutely.
+That's huge.
+I mean, it's the biggest service exposed in a lot of things.
+You know, if you just look at it from a networking perspective, I did a lot of networking pen testing
+when I was, um, at my pen testing consultancy, but, uh, you know, you do the port scans, you figure out, okay, what services can I interact with?
+And 99.9% of the time, if there's a HTTP service, you know, HTTP based service exposed, that's going to have the biggest attack surface, you know, as compared to other services.
+So it definitely makes sense to, to focus on it just from a networking, uh, network hacking perspective as well.
+True.
+Yeah.
+True.
+So, so then you worked there, you built your, your web hacking skills and how did you, you know, turn into the bug bounty beast that you are nowadays?
+Um, I think I, so at that job actually, uh, we use one technology in particular.
+So I, since I was looking at it almost on a daily basis, uh, found a few tips and tricks, apply that to the bug bounty.
+It worked.
+Nice.
+Um, and I think in the end, just gaining an experience.
+Um, like I think what I learned while doing pen testing, I applied to bug bounty.
+And what I learned to it, like when to apply to pen testing and doing both at the same time, um, helped me a lot.
+And to build that, um, I guess reputation, like I think while I was pretty active back in like 20, 2019, um, while still doing bug bounty as a hobby.
+And now the, not full time I had made my way like in the top 40, uh, on bug crowd.
+Nice.
+I was mostly active in bug crowd that, that, um, that time.
+Um, but in 2019 is also the year my son was born.
+So my activity of the bug bounty went way down since things get a little complicated.
+Yeah.
+A bit more.
+Uh, so back then I could pretty much do like all nighters of packing.
+I remember like going to bed at five, we can make up at eight and being in the office at night and being like, like really would be fine with that.
+But no, dude, you're not one of those people that needs to sleep three hours a night.
+Are you?
+Uh, I can't sleep like three, four hours a night and be okay.
+That's ridiculous.
+Uh, but now like just last night I, I was on something, uh, stayed up until like two.
+So then submitted my report, um, went to bed at two 30, wake up at eight.
+And like, I'm tired, but I'm still like, I can go through the day totally fine.
+Wow.
+I know it's not healthy.
+Um, I, so like, I try to sleep as much as I can still.
+So like, I might take a nap, uh, literally afternoon.
+Um, but yeah, I, yeah, I can do that.
+Wow, dude.
+I'm jealous.
+I, if I don't get at least seven hours of sleep, then I'm, I'm feeling it.
+So I'm like trying to get back my, I was kind of staying up late for a little while and now I'm trying to get back to like waking up at six.
+So I'm, I'm the past couple of days have been like, you know, feeling great in the morning, getting up, getting my workout in, you know, hitting the hot tub with the coffee.
+You know, it's great.
+Nice.
+And then it gets started with the day, but then it's like, you know, at four or five, I'm like, ugh.
+Um, so I, I, I am jealous.
+I have to say, um, so, so, okay.
+You've been doing, you've been doing pen testing.
+Now where, did you ever do a stint as a full-time bug bounty hunter?
+Uh, roughly, um, like six months where I, I, where I did like the multiple time and also both like a consultant.
+Um, just like four, four years after my first fantastic job, uh, at the same company.
+Uh, so I decided to give it a stint for like six months.
+Uh, my son was roughly six months as well.
+Um, when I decided to, to do that.
+Um, but I did not, it's not for me.
+I realized after those six months that I can't do this full time because when I wake up in the morning, I don't feel the motivation to hack.
+Um, for me it was like mostly maybe just cause I was exhausted.
+I'm doing that full time.
+Like the past four or five years where I was constantly hacking day and night.
+Cause of May, I was pen testing for hours a week, hacking on evenings, um, two, three times a week, plus on weekends once in a while.
+So I probably did like six hours of hacking for the past couple of years.
+So when I did it full time, I was like, let me just relax a bit.
+Um, so I barely did any hacking.
+Oh no.
+On those six months.
+J-Rock, no.
+Yeah.
+So I actually built up, uh, um, my own recount tool in that timeframe, uh, which I don't use anymore.
+That's another thing, dude.
+Like, I feel like I often, I guess I've been doing full time bug bounty for, for four years now.
+It's like, I feel like for me, programming was a bit of a escape that didn't pay good dividends for me.
+I mean, it did for a little while, but like, oftentimes I'm like, you know, because bug bounty is so untangible, like, you know, sure you can have gadgets and stuff like that.
+Or like, maybe you'll get a vuln here or there, but like, if you don't have to submit a report, you're not really feeling very accomplished and you don't know for sure that you can go and do something.
+Right. Like, you know, you don't know for sure that today, if I sit down at the desk, I'm going to find a bug and I'm going to make, you know, $5,000 or whatever.
+Right. So instead you say, oh, well, but I know for sure that I can write a script to scan these ports and put it in a database today.
+Right. So I'm like, that's something that I know I can do. So I've got the thing I know I can do versus the thing that I'm not sure that I can actually do.
+And it becomes very attractive to do the thing that you know you can succeed in and feel like you need progress. Right.
+But but it kind of takes you away from the thing that's actually generating revenue a lot of the time. Is that did you generate or did you experience something similar?
+Yeah. And I think others have mentioned in the part as well, where the cost of maintaining the tool itself was greater than the investment that you were putting in.
+So like for me, yes, I was able to like get a database of everything that I wanted, but I will still not first on some low hanging food, free con related bugs.
+Cause there are people that they have like crazy automation. I did not. I only wanted like half data. For example, let's say there's a zero day on, on, on confluence.
+If I know I have like a pages where I can find confluence on my database, I can maybe go to it and I report it if they accept all days.
+But I found that it, I was not always first. And for the time that I was, it wasn't really worth it with my time looking into it.
+So I decided to just like do what I love and which is just using burp repeater and manual hacking.
+Yeah, man. And if I do need to read con, well, there's today's new,
+I'd be plenty of people who have data that I need. So it goes collaborate with those guys.
+Exactly. And it's pretty low cost too, you know, like, like, I mean, depending on the amount of involvement from the person, I I've done splits of 25% to, you know, 50%.
+And it's like, okay, well, you know, if you're, if you're providing the POC, they're providing the data, you know, it's like a match made in heaven there.
+So it's, it's good. It's good that we have friends like that, that will, you know, it's kind of like a vol, vol is a service there, right?
+You know, I'm just thinking about that. Yeah, exactly.
+Yeah, it's good. Because like you said, there's cost, you know, there's cost to just running the infrastructure itself, you know, just, you know, whatever $100 a month or $200 a month or whatever.
+But then there's also like, the opportunity cost of how much time have I spent coding this tool versus how, how much money I could have made, you know, hacking, and especially when you're good enough to do bug bounty on a regular basis.
+And, you know, that cost is pretty high. And, and thinking about it in terms of opportunity cost is, is pretty tricky.
+The flip side of that for me, as a full time hunter is it's very hard for me to take time off.
+Because I don't have any, you know, I'm not taking paid time off, right? I'm taking unpaid time off by nature of the, you know, the career path.
+And so it's like, it would be nice to have that automation running and, you know, hear a ding from time to time being like, oh, boom, boom, boom, boom, you know, that sort of thing.
+I do miss that from my recon experience.
+You should, I mean, do you still have a recon tool or you don't anymore?
+I mean, it's, you know, like, like you say, it's there. It's written in Python 2.7, you know, but it doesn't, it's not running anymore actively.
+I see. So Nugly is my recon tool now.
+I'm just, I'm just going to say, you know, like when someone gets a bounty and LHs, the sound that is on the reberg, you should put that in your tool when something comes up.
+Dude, I did that.
+Maybe it will motivate you.
+Oh, you did.
+So I, I like, I like Pavlovian dogged myself and my, my father-in-law too, because like, like, you know, anytime I hear it, I'm like, you know, the heart rate would go up.
+The, the, the slack ping or whatever.
+Um, and, uh, and my father-in-law also, I told him, you know, Hey, you know, whenever this sound happens or whatever, it's a, it's a vuln that I found.
+Cause this is when I was really hitting the route 53 takeovers.
+And it was like, you know, they're dropping every day, every other day.
+And so anyway, we'd be hanging out with them and we'd hear it go off and he would, he would be like, whoo, you know, he'd still get up and start doing a dance.
+It's like, yeah, um, it's pretty fun.
+You know, there's definitely fun sides of the, of the recon stuff, but I don't know.
+I think for me sitting down, actually dropping some, some crits every once in a while from good old sitting down and doing research is really big.
+And then also like, like you just shared right here on the pod, um, you find cool stuff, you know, sort of revolutionary techniques and, and, uh, innovative techniques, um, that you can share with other people and you can keep to yourself and utilize.
+Um, when you're actually in the weeds doing the research, um, rather than just trying to be the first one to find a well-established technique.
+Yeah. And for me, since it's only like as a hobby, uh, bug bounty, I don't need the money.
+So I don't live by, I don't need to find bugs.
+I do what I want to do.
+And for me, I have more fun doing manual hacking than focus on the recon only.
+Yeah. I believe that, man.
+That's one of the things that I've been kind of, kind of, um, we're going, we're going deep here, but, uh, you know, lately I'm a full-time bug bounty hunter and I do the podcast.
+So I've got like one standing meeting a week or whatever, right.
+Of like, you know, record the podcast with Joel on this time or record the podcast with J-Rack at this time.
+Um, but you know, for some reason I, I still have that, like, and I could take the rest of the week off.
+No one would be the wiser.
+
+But I still feel that like anxiety of some sort of like, why am I not working right now?
+You know, or like, even when I am working, it's like, I don't know, should I be working more?
+It just doesn't feel as free as I actually am.
+And I know in my head I'm free.
+Like I could go do whatever I wanted.
+I could go, you know, get lunch or whatever.
+So I think lately what I've been trying to do is, uh, I mentioned, you know, I talk about my hot tub time fairly often here on the pod, but you know, it's kind of like a meditation and prayer time as well.
+You know, go out there, enjoy the nature, pray, meditate, that sort of thing.
+Um, but I've been trying to reflect on that freedom in the mornings and be like, sort of, you know, gaslight myself into, into, uh, into, to feeling that freedom.
+That's actually there, but you know, it is not as easy to feel sometimes.
+So, um, yeah, I, I definitely, I definitely understand the draw of traditional employment though.
+Um, which, which brings us back to what you're doing now, right?
+You, you, you, you left that full-time bug bounty and you went back into the workforce and where did you land?
+I landed in a small company, Montreal, um, I guess in the startup phase.
+Um, it wasn't, I mean, the company had been founded like in 2009.
+So for roughly 10 years, um, 10 years startup.
+Yeah.
+Uh, so they hired me, uh, to be the head of it in security.
+Um, okay.
+And so that was the first jump there.
+Yeah.
+Um, they looked at my, my resume.
+They saw that was the testing for a couple of years.
+Um, back then my bug bounty resume was building up as well.
+I wasn't a model yet, but, you know, my, my name was like you, like our names can be Googled and they see what we do and stuff like that.
+So, um, and did you do that went really well.
+Um, and then yes, I got hired.
+So I worked with everything from.
+App set compliance, um, like all of the topics and security, physical security as well.
+Uh, for that.
+Oh wow.
+Physical security as well.
+Uh, for the office.
+Yeah.
+Uh, and then a year later we got acquired by NASDAQ, which is where I work now.
+Nice.
+Nice.
+So, uh, yeah.
+So join NASDAQ to an acquisition.
+And I currently work on NASDAQ, uh, and InfoSec as a senior director.
+Very cool, man.
+I, I, I'm, I'm wondering about that transition because if I, you know, I can say with a high degree of confidence that I understand a lot about the offensive security side of, of, of security stuff.
+I understand how to get in.
+
+I've done network pen testing.
+I've done web, you know, app sec stuff.
+I've done mobile stuff.
+I've done IOT stuff.
+I haven't done as much hardware stuff, but you know, here and there with Joel and stuff like that.
+Um, so I, I have a diverse background there, but I feel like going into like a head of, I, you know, IT security or in your case, sort of head of security and even doing some, some, you know, physical stuff at the office.
+Um, I feel like that would put me out of my comfort zone, which wouldn't, which wouldn't be bad.
+And I feel like I could figure it out, but like, how is that transition?
+Uh, well, you just said the word.
+It was definitely out of my comfort zone, but I'm the type of guy where I like to get in.
+So, and as soon as they reach out to me, it was like, man, I want this job.
+Uh, it's like, it's out of comfort zone.
+I know there's like great potential and I think this can lead to something really cool, which in the end it did through the acquisition.
+Um, but so like their main goal was to get a SOC 2 report.
+And I had heard of SOC 2 in the past since I, as a consultant, I worked with it a bit, but like I, what I never led like, like, I'm not going to get into it.
+Like a company getting to a SOC 2 report.
+Uh, so learned a lot, um, on the job, uh, had to do a lot of research on what is SOC 2.
+Um, what is ISO 200001 and what is all that stuff?
+I already knew what PCI and so like that, but we don't use it, but getting an idea of what those frameworks are and what they require.
+Um, some people like standards, like NIST, um, all of those, I guess acronyms that are important compliance world.
+Uh, what are they, whether they, whether they require something like that.
+Uh, so learned a lot on, on that, on for the compliance side of things.
+Um, also my guest created our app sec or development management program.
+Um, I already had experience in doing that as a pen tester where I kind of helped out in terms of like code reviews, uh, using SAS, LAS and stuff like that.
+Um, so pretty much started the security program from scratch.
+Um, this also includes like, um, security awareness training program, um, making sure that, um, and also, another part of my job was managing IT.
+So I was also the head of IT.
+Oh my gosh.
+I had like both umbrellas under me.
+Yeah.
+So like, you were definitely in a startup bed.
+He's like, all right, you take any, you take care of all those computer things.
+So I was alone for a couple of months and I was the first employee in IT.
+No way.
+So I had to build things up from scratch.
+The only thing that they had, uh, this company that did like, uh, or still do, uh, I was the first employee in IT.
+Like, uh, or still do, um, ESG.
+I'm not sure if you've ever heard of ESG.
+I don't know what that is.
+Environmental social governance.
+It's like, um, hard to explain.
+Um, but it's like something that's pretty, not pretty common, but it's getting pretty common out there nowadays.
+Um, so we did, uh, and there's ESG SAS tool.
+Um, so considering it's SAS, um, we do, well, I mean, we host it on the cloud.
+And so I had to make sure that our cloud was secure.
+So, um, yeah.
+So when I joined the only security, I guess, tool or topic that I had covered was passwords.
+They had a password manager for the company.
+That's it.
+So I make sure that all endpoints had antiviruses and literally build up from scratch, like 2FA, like just to get the basics covered.
+I mean, in their defense, like that, that's, I mean, at least they're using a password manager.
+I mean, that, that's, that will stop some stuff, you know?
+So if there, if you had to pick one thing, you know, that might be it, uh, which is, which is pretty cool.
+Um, I did just Google this ESG thing.
+I have heard of this.
+This is environmental, social and corporate governance.
+It says is a set of considerations, including environmental issues, social issues, and corporate governance that can be considered in investing.
+Um, gotcha.
+So you guys were building a SAS tool for that.
+Yep.
+Um, so are you almost, uh, almost the exact year after I joined, we got acquired by now.
+Wow, dude, what a time.
+Which makes sense because NASDAQ is in that space.
+That is, that is, that is awesome timing.
+And I, yeah, and you got in at a, at a pretty good, good level too, running, running all of the, uh, IT stuff for them.
+Yeah, exactly.
+And I think it's what deserved my senior director, um, role at NASDAQ is without me at that startup, uh, we wouldn't, wouldn't have gotten acquired by NASDAQ.
+Wow.
+Um, so.
+That's sick dude.
+I think it's, yeah.
+That's, that is a one boss move right there.
+I have to say.
+Um, so.
+Yeah, it's quite the jump and, uh, I learned a lot, um, while in that year.
+Um, but I'm pretty confident that I did a good job cause I think it would help.
+Like I said, we've got acquired by NASDAQ.
+So I think it's in the end, it's, I think I did a good job.
+Yeah, absolutely.
+That's a bit, that's a big dub, man.
+Um, so that's where you are now, senior director at NASDAQ.
+Um, doing similar things as you were doing at the startup, you know, managing a large secure
+security program or.
+Um, not really.
+So, um, since in the end at the startup, there were only two employees in security, myself
+as the head and I got, uh, uh, an employee as well.
+Um, NASDAQ is obviously a lot bigger, right?
+Yeah.
+Um, so I have several different teams in, in InfoSec.
+Um, and then I work mostly, well, not mostly, I still work in lots of different areas cause.
+I'm a senior director.
+So I need to look at certain stuff.
+So I do work with like the sales team once in a while, um, marketing, AppSec compliance,
+still, um, need to talk to our SOC team once in a while, in case something happens, uh, threaten,
+tell like a bit of everything, but mostly on like a non-manager type of, um, task.
+So I won't do any pen testing.
+Sometimes I do jump in cause I want to do it.
+I see something, I'll take a look.
+So I do it just for fun.
+Uh, same thing for like red team.
+We also do red teaming.
+Um, and, uh, yeah, so a bit of everything, but.
+You gotta flex on the team a little bit too, every once in a while.
+Like, like I had, I had a, um, you know, when I was working at this, this, uh, um, consultancy,
+you know, my, my boss was not in the requests, you know, at all pretty much.
+Um, and then sometimes we'd have like, you know, somebody was on PTO and like, we needed to double down on something.
+And he would like just jump in and like pop something.
+And I'm like, dude, this is lit, you know?
+Yeah, that's cool.
+And so I think, I think also, you know, from time to time, we show the people that you're working with on a regular basis that even though you're not, you know, maybe in the request every single day as a part of your job, that you can still get in there and do stuff.
+I think that that does a lot for respect as well.
+Yeah.
+And also since, um, seen as a manager, some people don't know my background.
+So I've had someone telling me what a cookie is.
+I'm like, dude, I know what a cookie is.
+Like, look, look me up a bit.
+I'm just kidding.
+But like, yeah, I've seen people like trying to think that I'm not technical.
+Right.
+And then I have to explain them like, oh, by the way, I know what this is.
+Like, blah, blah, blah, blah, blah.
+Yeah.
+So just to get an idea of like, um, um, I don't know, like, how can I say this?
+Um, get an idea of like, difference between manager type position technical.
+Some people think managers are only managers and don't have medical background.
+But I think having both definitely helped in terms of both managing and doing technical work.
+I'm just sending certain risks associated to it.
+It's a, it's a, it's a big differentiator, I think for you as well.
+Um, you know, it gives you a lot of job security.
+I know even in the, um, you know, outside of management and the sales aspect as well, you know, people that actually understand the technology that they're working with on a regular basis can do sales.
+Well, you know, if you have that additional, excuse me, if you have that additional little skillset, because it's like, um, you know, you're actually able to talk to the points that people are caring about when they're thinking about buying a product.
+So, um, it's great being technical, man.
+I love being technical.
+Uh, it applies to so many realms.
+Hey guys, real quick.
+I want to remind you about the critical thinking discord community.
+There's been a ton of great activity on the chats lately.
+People just kind of shooting the breeze to drop in new hacking tips and advice, uh, sharing cool research, that sort of thing.
+Uh, so it's definitely something you're going to want to get in on if you haven't already.
+Also, we've got the subscriber tiers in place now, which will give you access to really cool things like masterclass, AMA, uh, just random scripts that I drop.
+It's kind of like our inner circle.
+Um, so if you want to get in on that, please do.
+We would really appreciate it.
+Also, it helps support the show.
+So if you're interested in any of that, head over to ctvb.show slash discord to join the community today.
+And we'll see you over there.
+All right.
+Back to the show.
+
+All right.
+So that's, that's the career path.
+Once again, I'm going to just, you know, that move, uh, that you made from full-time book bounty to head of it.
+It's kind of nuts.
+Um, so that it's great to see your friends take dubs like that.
+And, uh, and thanks for giving me the whole, I've heard that story and little bits and pieces, obviously seeing your face on a, on a cover of a magazine or whatever, but, um, I hadn't had the full story.
+Um, so speaking of your.
+So speaking of your, your technical capabilities, uh, let's, let's go back into some of that stuff and, uh, talk about some of the cool, cool bugs that you found and topics that, um, that you had.
+Um, so the one, one that came sort of came to mind that was on my list and your list, um, was, uh, about, this is about a year ago.
+Now you tweeted out, it took five years, but I finally found my very first critical OAuth related bug last night.
+I found a bunch in the past in Pentest engagements, but never on a bug bounty program.
+Um, and so I was like, Oh, well, you know, he, he, he did the OAuth thing.
+That's great.
+OAuth is a, is a, um, uh, a commonly abused, uh, technology, I I'd say.
+Um, and it showed up in your list here as you've been finding a lot of OAuth related bugs.
+So can you talk about a little bit about how you developed that methodology and maybe talk about some of the quirks of the bugs you found?
+Um, yeah, sure.
+So I, back in the days when I started doing my bounty, I was mostly like a server side kind of guy in Salaam.
+Um, I focused mostly on, I was server side bugs.
+Um, but with time, I think I gained, um, an appreciation for what OAuth is and how complicated it is and how I would say easy we can find bugs, but like there are so many different attack vectors in it.
+That a lot of times you'll find something no matter what.
+Um, and it only takes like one extra little piece that you can train with it.
+For example, that HTML injection with the Don Purify with Meta tag.
+Since with that parts traversal, um, I only needed one more thing with, and to leak the URL.
+And so, and a lot of times like it's, I wouldn't say easy, but I've been finding a lot.
+So I find that like people are maybe not looking at it or cause I'm not finding like really crazy thing apart from one, which I was, I actually put it in the list.
+Uh, which was like, what was the, what the, what the is going on here.
+Um, it was like just basic stuff like, uh, redirect UI, open redirect, um, open read.
+I mean, uh, sometimes it allows, uh, subdomains.
+So an XSS on the subdomain works as well.
+I could sell that all code and that way, um, and just like basic, a lot, uh, vulnerabilities.
+Um, nothing like, no, like, uh, crazy technique, just regular stuff.
+You have here in the little, in the little notes that we, we created, um, you know, mentioning Franz's dirty dancing blog post on, on a lot.
+And I love that blog post so much.
+We talk about it on a regular basis here on the pod, because it's like, he, he gave a name to something that was kind of, um, I guess unnamed before this whole concept of like a not happy path where the code is not parsed.
+Right.
+Right.
+Um, you know, cause the normal flow for a lot is, you know, you go through the flow or whatever, the code gets redirected back to the callback.
+And then that code gets consumed and either trade traded for an auth token or that token gets used directly with the API.
+Um, but if you can find some way to manipulate that callback location, then that code doesn't get consumed.
+And then you can use something like a XSS and a subdomain, like you mentioned, um, to, to leak that, that code to the attacker.
+And then the attacker can provide that, that, um, you know, do that swap and get the token or use the token itself for, for API calls.
+Um, so that, that, uh, you know, my, my, my pulse starts to go up a little bit.
+Anytime I see a re you know, a lot flow where I can control any part of the redirect flow essentially, where it's not just totally static.
+Right.
+And I put the friends, uh, during the asking, uh, article in there because it is what helped me really, I guess, I wouldn't say master, but I guess understand better all up.
+Oh, wow.
+Cause I knew what it was.
+I knew how we could find a role with it, but I did not know like certain things that he mentions in that blog post that I now understand.
+Yeah.
+Um, and for me, like every time I look at a lot, I just opened the tab just in case I need to go back to it and I don't get ideas on certain things that I maybe haven't looked at.
+Um, so shout out to him.
+Like this is a really excellent, um, and blog post, not like tanks as well.
+Cause it has led to a couple of bugs of mine just by reading his blog.
+Absolutely man.
+Yeah.
+Franz is, Franz is always coming up with crazy stuff like this.
+And, and you also have here, you know, reading the RFC.
+That is one of the things that I actually haven't done for OAuth yet.
+I need to go down and, and, and, you know, check it out.
+Do you know how, how chunky it is?
+Um, well there is like, uh, the OAuth RFC, but there's also one, uh, that's like the security best practices.
+Oh really?
+Which is where I looked at the most because it says like, it shows like all attack vectors, uh, on OAuth.
+Uh, well not all, but I guess most that they have, um, thought of.
+Um, so I've looked at that quite a bit.
+Is it this one?
+Hold on, I'm gonna send it to you in the chat.
+Is it RFC 6819?
+It's OAuth 2 threat model and security considerations?
+Uh, let me look at the, nope, I don't think it is.
+Okay.
+I'm gonna, I'm gonna link this, this one as well.
+Cause these, the, dude, man, I wish, I wish more, uh, and you know, I, I suppose we should probably just read the whole thing anyway, because it's like, you know, I'm sure there are security considerations.
+That a lot of, um, you know, the RFC writers hadn't really written.
+Um, uh, oh, look at that.
+A lot of two security best practices.
+Yeah.
+This is what I read.
+Very nice dude.
+So this is not a specific RFC.
+This is a, um, no, you're right.
+It's a, it's a draft associated with it.
+That's, that's cool.
+Yeah.
+That's really good.
+I'm gonna go ahead and link this down in the description.
+I've never seen this before.
+I'm gonna go ahead and read this afterwards.
+Um, but yeah, this seems like there would be some great takeaways in here.
+Um, yeah, definitely.
+Um, so it, so it's like the best practices, but us as, as attackers, we can see if those
+are applied or not.
+So definitely helps in terms of finding dogs.
+Uh, so yeah.
+I'm pulling a Joel here and I'm getting nerd sniped in the middle of a podcast.
+I was like starting to read this.
+I was like, wow, I actually haven't seen a lot of the attacks that are kind of mentioned
+in here.
+Yeah.
+Very cool.
+I agree.
+And one of, I'm not sure if actually, sorry, recently I found the bug, uh, which I put in
+the dog, but, uh, not sure if I can just talk about it now.
+Uh, cause yeah, it's not mentioned.
+Um, so I found a weird race condition bug recently.
+Uh, so, you know, the awap flow must, must you're logged in.
+I mean, you're logged in, but after a while you need to refresh the token.
+Uh, so I accidentally noticed that I could send, uh, the call that refresh the token.
+I could send it without the refresh token and just the client ID and still get access to,
+uh, an access token.
+That's weird.
+So just using the cookies associated with it.
+No, no cookies, no authentication at all.
+What?
+Yeah.
+But it only worked while a user was getting logged in.
+So what I did was just send requests constantly to the end point without authentication, without
+a refresh token to get an access token.
+And when the user logs in, eventually it's spits out an access token that I can use until
+this next token expires.
+Yep.
+Any user.
+What the heck dude, that is the weirdest thing ever.
+What is the, what is the server side?
+What is the server side code for that even look like?
+Like they explained it to me.
+Uh, I would have to read it through.
+That's not this.
+Yeah.
+I I've never seen anything.
+And dude, it's a miracle that no one has logged into somebody else's account on accident
+because of that.
+Cause you'd think that there would be some sort of like collision or something.
+I thought about that as well.
+Like, so when I was testing it, I was just like testing the OAuth flow.
+Um, and then like, I went to the repeater, took a request, send it over, playing with it,
+remove the refresh token.
+And it works like, huh, why is this working?
+I don't have any cookies.
+There's no refresh token.
+You must have been losing your mind.
+Like you must have been like, what am I missing?
+Yeah.
+But then, but then the issue is how to reproduce.
+Yeah.
+So after a while after like a minute or two, it stopped working.
+I was like, okay, this is weird.
+So I thought that maybe, maybe it's during the login.
+So I sent the, like requested intruder, um, logged in and seek intruder.
+I got an access token and indeed I did get an access token.
+No way.
+I could see you just sitting there like, how, how did this, you know, like, you just, you've got the, the tab, you know, the repeater tab open and burp or the history.
+And you can see it giving you with no cookies, with no IDs, with nothing on the left hand side.
+Right.
+And then somehow it's giving you the access token.
+You're like, what the frick?
+It's funny cause I actually messaged, um, Sebastian and, and I was like, guys, what do you think is going on here?
+And I explained, it was like, I don't know my risk condition.
+And it turns out that it is a risk condition, but I was like, I'm not sure it's the risk conditions.
+We're not risking against anything.
+It's just like, ends up getting an access token.
+It's just out there like no one's business.
+That's crazy, man.
+Wow.
+It just, and is this on a bug bounty program or is this on a pen test?
+Uh, bug bounty program.
+No way.
+I actually got paid out yesterday.
+Yeah.
+Fixed it as well.
+So I'm happy they fixed it.
+So we've been talking about it today.
+Dude, that's nuts, man.
+I cannot believe that actually happens in a bug bounty environment.
+Cause like, you know, on, on, on pen tests, you see all sorts of weird stuff, you know, and it's like, weird as normal on pen tests.
+Cause it's like, okay, all these sketchy little apps, you know, but like in, in bug bounty, I like, like to think that people try to do some due diligence, right?
+Before they actually start a bug bounty program and, you know, essentially bet money on their security.
+Um, so the fact that that showed up in a bug bounty environment is nuts to me.
+Yeah.
+Very cool though.
+It's crazy.
+Uh, really lucky as well.
+Like what are the chances of me just trying that removing the refresh token and, and by default, there was no authentication cookies.
+It only relied on your token to get a new access token.
+So weird.
+So weird.
+Yeah.
+That's, that's one of the things too, man, is like so much of our job.
+That's one of the things that I think is a little bit unsettling for me as well.
+It's like so much of our job is luck of sorts, you know, just sort of manufacturing your own luck of sorts, just like trying everything and like trying weird stuff and then noticing when something weird happens.
+Um, and so, uh, I've had a, a really, I've been, I've been lucky of getting luck.
+Yeah.
+If I want to say that way.
+So back in, uh, in an LHE in LA, four years ago, um, I'm not sure if you can say the target or not, but, oh, I won't say it in just in case.
+Um, there was an application, um, that many people tested.
+I went through it, um, fuzzed a bit.
+So it had like a weird authentication form, like login form and just felt like I could probably bypass that somehow, but I did not bypass it.
+So I moved down a day later.
+I started getting emails from like an internal distribution list and those emails had like PII.
+Um, so with my fuzzing, somehow I got added in a DL and it was getting like access requests for two to data.
+So those emails have like, um, employee full name, phone number, address.
+What?
+And they were requesting access.
+It was like a, uh, access request form.
+So they're requesting access to certain data.
+No way.
+And I was a recipient of those access requests.
+I wonder if you submitted it.
+Did you submit an access request form?
+And they're like, CC all access requests.
+No.
+No.
+No, cause in the email itself, we could see everybody who got the email and it was all like the company email and me, my J rock.
+We are hacker one.com.
+That, on that list.
+So I had no idea what happened.
+Uh, so yeah, this is one issue.
+I was really lucky.
+Wow, man.
+Another, another funny story is, um, I was hacking on a, on a big company a while back.
+They do, uh, many LHE's and, um, I was, I had, I found a few bugs on the app.
+Um, but I was kind of stuck.
+And, um, so I just sent a few XSS payloads and a blind XSS payloads and hope that when they would pop a year later, it pops.
+What?
+And then around the same time, one guy, um, messaged me on, on Twitter and like gives me shit.
+Like, oh, you just ruined my day.
+But I was like, what the hell's going on?
+Oh my gosh.
+What?
+Yeah.
+So obviously, um, I looked at the, my XSS Hunter dashboard first, cause to me, I cared more about that than the, the Twitter.
+Right.
+But I had just, I was just coming back from work.
+Uh, it was on a Friday evening.
+Of course.
+I had my laptop.
+Yeah.
+I was at the mall and my girlfriend was like, Hey, maybe I, one sec, I'm just going to sit down at the, at the, at the desk here and pull up my laptop and see what's going on.
+So, um, I looked that up.
+And, um, from what I had understood is that that guy who would DM me on Twitter to give me shit, he, um, created a report and complaint on my behavior of putting blind XSS payloads.
+Oh my gosh.
+And that complaint got sent to, um, an email system and showing the email system and it popped on there.
+Dude.
+No way.
+So without his complaint, without his complaint of my XSS payload, I would not have gotten that, I think 9k bounty.
+Dude.
+No way.
+That's clutch.
+I was like, I'm going to send a message back on Twitter being like, Hey man, I just wanted to let you, you made my day.
+Like.
+Oh, I did.
+I did.
+I was like, Oh, sorry.
+Well, I'm doing like ethical testing.
+Like here's a program page.
+Yeah.
+Like we're allowed to, to, to hack.
+So sorry that it ruined your day for whatever you're doing.
+Yeah.
+Like what I did is completely fine.
+I asked for the policy here and was like, Oh, sorry.
+Uh, I didn't know.
+Like you guys were doing that.
+And also you just made me 10 grand.
+So thanks.
+Pretty much.
+Yeah.
+I don't think it was that much, but it was like a, a large five, four, a large four.
+That's great, man.
+Wow.
+That that's, that's a good one.
+I, I, and I have this on the list too, cause I went and watched as I do, you know, before these episodes, I went and stalked you a little bit and watch some of your, your talks you've given.
+Um, at activity con and, um, some write-ups you've done in other places.
+And it seems like you, I would say you skirt the line a little bit when it, when it comes to social engineering and bug bounty.
+Like I, I, I saw a write-up, I think of like you, you saying like, I submitted a contact form with a link in it.
+And then some admin clicked that link.
+And then that like one shot RCE to Jenkins instance at the backend or something like that.
+I love that.
+And so I, I'm wondering, so one, like one, you said you used to, so I, I'm wondering if you still do that.
+And then the other one is how, how has that been received in, you know, if you had to give a number to your hit rate on those, like how many times are they like, no, that social engineering bad, you know, hand slap versus like, oh my gosh, you just shelled my CI.
+So I'm going to give you a bounty.
+Um, it, it worked once or twice.
+And this is one case where it did work, uh, through a contact form, but I don't usually do those anymore.
+Um, because, um, I mean, it, it never pops.
+Yeah.
+Yeah.
+One thing that I do find that it did work again, back in the day before the refer policy where you're talking in the beginning is that, uh, sometimes like when you test where SRF, you put in your URL, um, it can be on webbook or whatnot.
+Um, and sometimes it does get like hyperlinked and you can have admins click on it.
+And when they click on it, um, the refer, if we used to be sent to your, to your server.
+And I was able to disclose a few, I guess, um, sensitive data with that, just being like an admin, uh, path that I had not seen, uh, certain, uh, UUID or whatnot.
+And this still works.
+Um, I had the case that happened like this week, um, where.
+Someone clicked on my, an employee clicked on my link on my link and, um, with the same program, actually that, um, the meta tag thing.
+So with the answer URL that I had said with the HM transaction, it set it to multiple pages.
+So when an employee clicked on my link and sent the refer header to, um, to my server.
+So I was able to leak data with that.
+No way.
+That's clutch.
+But yeah, it's most of the times that it did work was through like a refer header leak.
+That.
+Where it leaked something in.
+Yeah.
+Sensitive.
+I wonder, you know, I wonder how many of these applications are using Dom Purify under the hood.
+And, and I wonder if we should just start sort of spamming meta tag, uh, you know, refer unsafe URL plus, you know, some sort of image, uh, you know, tag around to try to harvest these.
+Yeah.
+Yeah.
+And then, and then, and then it'll send a request out and then you'll get the referrer.
+And then you can kind of, you know, maybe if there's like a security by obscurity or something like that, or even just knowing in, in, in internal paths could be really helpful or you might get lucky.
+And there's an auth token in the URL.
+Yeah.
+So yeah.
+Maybe true.
+Crazy man.
+I like that.
+Do you, do you do any other, I guess on the fringe of, uh, essential social engineering stuff?
+Like, like, like, like some people will do like typosquatting or something like that to trigger, you know, their payloads or anything.
+Um, um, not really.
+Um, I, I did buy a few domains in the past, but it was for a bug, for example, a bad regex or regex.
+Never knew what it is, but like, you found that in the past, for example, you actually mentioned it in a tree, I think like github.com.
+You could do like a github.com and so I bought some domains for that to chain with other bugs.
+Um, but it's not like social engineering.
+Right.
+
+Um, but like, if you're talking about social engineering specifically, the only things that I've done is what you just said in regards to sending a link to like to a contact form where I knew I was confident that if they clicked on it, uh, it was going to work.
+Cause I had recon and I knew that it was reachable through other means and whatnot.
+Um, that's, yeah, I feel like that's, I feel like that's acceptable personally.
+I don't know.
+Some programs might get a little bit pissy about you submitting a, uh, something through the contact form, but I feel like that's, that's fair play.
+Um, uh, just one, one last thing about that.
+It actually happened, um, in a life hacking van and they had a necessary sheriff.
+So in there, I obviously put my, my name to the bench by myself and it got a hit.
+Turns out it was actually an employee who clicked on my link.
+So it looked like I hit it, but I did not.
+Oh, how did they take that?
+Uh, they, they found out that it was an employee who clicked on my link.
+Um, so it wasn't, um, it wasn't a SRF.
+So just informative.
+Yeah, but it does show that's, you know, like how easy it is to get an SSRF of sorts, you know, within an organization when you just send a link to an employee, they click the link and that's, you know, depending on if they've got a privileged, um, you know, position in the network, that's, that's an SSRF of sorts.
+Um, exactly.
+Yeah.
+It's tricky, man.
+You know, I, I'm sure you as a, um, you know, head of security guy, you know, being a senior director of security, you kind of have to think about these things as well.
+But like bug bounty is great for anything that doesn't affect like social engineering and stuff like that.
+But man, it's so much easier to get in via social engineering than it is to get in these application bugs.
+For sure.
+Um, yeah, just last year or two years ago, um, the biggest event, remember what happened there?
+Yeah, I do.
+Yeah, I freaking do, man.
+Yeah, this is crazy.
+It's nuts, man.
+So I think, I think there should be absolutely, and this is, you know, my native opinion, but I think there should be a lot of resources allocated to preventing that sort of thing in an organization.
+For sure.
+Because that seems to be the easiest way to make something happen.
+Definitely.
+Yeah.
+Um, looking at the list we've got here again, um, it seems like you also are an advocate of getting intimate with the application, which is good.
+Yeah, for sure.
+And you said that there might be some stories relating here with regards to this leading to a, a Moab, which I assume is a reference to the episode with, uh, with mayonnaise, uh, the mother of all bugs.
+Yep, exactly.
+Tell me a little bit about that.
+So it's not like a mother of all bugs, but like I found many issues because of that.
+So I was getting intimate with the app, uh, reading the docs.
+I love it.
+I love it so much, dude.
+I was, uh, you know, getting, getting intimate with the app.
+Yeah.
+So I continue.
+So yeah, I was reading docs and, um, found that, um, it did like XML parsing.
+It literally said like, oh, we do XML parsing, blah, blah, blah, blah.
+Love that.
+But yeah.
+And, um, I also realized that in some cases, the docs don't necessarily mention that it parses XML.
+It'll just say like the acronym, for example, I don't know, uh, let's say XXXML.
+So there's a market language.
+A lot of times it, it is XML.
+Um, and I had found an XSC already, um, by reading through docs where it's like literally
+said XML parsing, but in those other lesser known XML formats, um, standards or specs, it
+did not say XML at all.
+It only said like refer to the spec on W3.
+Wow.
+So I, in the docs, I looked for W3.
+I found plenty.
+Wow.
+And most of them were viable Texas.
+Wow.
+Because by default they did not do like, uh, they don't protect against XX properly.
+So just by like analyzing the docs, um, seeing how they write that up.
+They don't always say X and all, but they will say like, um, we, we parsed these kinds of files.
+Um, it's referred to the doc on W3.
+So I looked at for W3, like I said, found plenty of them and they all led to more, more bugs.
+That's definitely an underestimated, I think trick when you're dealing with applications,
+because like I often see so many bugs in parsing of custom file file formats, you know, it could
+be server side bugs, could be client side bugs.
+Just the other day, a friend of mine found a bug.
+Um, I think we'll probably write this up and put it up somewhere, but, um, he, he had to
+download this, this software and like, like this proprietary software.
+And we, we were trying to do it without downloading the proprietary software, but this, each one of these
+files, because it's a proprietary software is signed by, by, you know, RSA key, you know?
+And it's like, you can't, you can't fiddle with it at all.
+Cause we were just gonna, you know, kind of reverse the binary format and just elongate a specific field to put our, our payload in there.
+Um, but, but it was signed.
+So we actually had to like boot up the software and like inject the, the payload, the XSS payload in this, you know, piece of code and, uh, or in that like field in the, in the software and then export the file and then give that file to like a JS, uh, uh, you know, file that was actually doing the signature validation, uh, in the browser, which is nuts.
+And, um, and then it would actually pop the XSS.
+Uh, and, and so like these custom formats, whether they're XML, whether they're, you know, some binary level format, that sort of thing, there's almost always bugs there.
+And, and, and so to your point about reading the docs though, I'll never forget the first live hacking event I went to.
+There's, there was 20 minutes left in the live hacking event.
+My, um, this is actually in T, um, in T was, was talking with some people and comparing notes and somebody was really close to, to finding a bug, um, or to passing another person.
+And all they needed to do was find one bug.
+So like, man, how can I find a bug, um, in the last couple of minutes of this event?
+And so he's like, you know what I'm going to do?
+I'm going to go to the docs and I'm going to control F for URL.
+Nice.
+Is what he did.
+And he went to the API docs, control that, and I'm going to control F for URL.
+Found an API request that was taking in a URL as a parameter, you know, and, and just sent that request off and is boom, full read SSRF.
+It dropped in the last 20 minutes of the live hacking event.
+He probably got it in under five minutes at the end.
+Um, and so reading those, reading those docs and searching for things like W3 or, you know, XML or URL or that sort of thing.
+Yeah, man, that always pays dividends.
+Yeah, it does.
+Um, taking time to, to read it and just, or not only to like find certain keywords, just to read and understand what is expected on application.
+Um, how it works.
+And especially when the application is really complex and many features, sometimes it's just good to read docs and get a better idea of what you're looking at and understand what's.
+Understand what you're doing in the end.
+Yeah.
+Well, we got to wrap this episode here shortly, but you have two cool bugs here that I can't skip over.
+You've got arbitrary ATO via GraphQL and SSDI to RCE via Ansible expressions.
+So where do you want to go, man?
+Yes.
+This is, I, I'm going to sit back and get my water bottle and listen.
+Yeah.
+So let's go with the, uh, arbitrary ATO.
+Heck yeah.
+Um, so let's say the app is similar to Slack where in Slack, not sure if you know, but you can add like external users to your Slack workspace.
+Right.
+Um, and they only have access to a specific channel.
+Um, it's not the same thing, but the other setting was similar where if I, as an admin, or let's say you as an admin, add me as an external user to your own tenant.
+Um, I will get access only to data that you give me access.
+Sure.
+Um, turns out though, that the GraphQL endpoints on that application did not have, um, proper authorization checks.
+So me, as an external user, I could, uh, make GraphQL queries.
+I did not have access to the data, but it did access the endpoint itself.
+Uh, I could run queries, but no data was returned.
+Um, so I was able to generate.
+Was it just kicking back like null or something like that or?
+No, just like data, like, you know, the data object.
+Oh, okay.
+Interesting.
+But some, but for some mutations, it did not work, but queries, it did.
+It's pretty common.
+I've seen this many times.
+So this is something that I need to understand here.
+Continue.
+You've picked my interest.
+So I, as the attacker, AKA external user to the application, I can, um, do, uh, GraphQL
+queries, um, and then one query itself where, um, there was like a, an ID related variable.
+I, um, put like a single quote and it generated a nice verbose, um, error message in the response.
+Um, and in the error message in response, it did have, um, an internal JWT, which, uh, the scope was assigned to, um, sys admin.
+Ah, you'd love to see it.
+Uh, it, yeah.
+And it also leaked two headers.
+Uh, one was related to the customer ID.
+For example, um, it was my tenants ID, which is just like a public ID to my own tenant system.
+I dedicated, but without authentication, you can't get those IDs.
+Um, in a way, uh, and also the current user ID, which was the, um, the admin of the application.
+Dude.
+Uh, which was like the, let's say you.
+So, uh, it took me, so I reported that bug as is, cause I felt like, um, the token is leaked as, as a sys admin or super admin.
+Um, I'll let you guys like investigate it on what I'm using now.
+Uh, so I reported it, um, ended up self-closing, um, cause the impact wasn't shown.
+So I was like, okay, I'll, I'll think about it and read the docs, uh, read API docs.
+I forgot about it.
+Three months go by.
+I was like, oh shit, let me look at this again.
+Uh, tested it again.
+It works.
+I'm like, okay, okay.
+Need to now need to find like, uh, I need showing that.
+So, um, registered the docs, found a way to, um, I mean, found the API call that it needs to do to make that token work.
+Um, or not like, like, like, like, it's not going to be like, it's not going to be like,
+um, see where the token was, was used, uh, found the end point.
+I confirmed that it did work.
+I could take over that admin accounts.
+Uh, I mean, that I'm an account.
+Um, and I can also switch that the header that was leaked with another ID, another user ID.
+So I could take any, any, um, account over from that, from my own tenant.
+But remember that tenant ID that I had said earlier, those IDs are, um, MongoDB IDs.
+Ooh, enumerable.
+So they're not, yeah.
+So it's possible to change the tenant, uh, remove, uh, so like change the tenant ID, remove the, um, the user ID in the header.
+So that you have access to only like the tenant, uh, data.
+And there is one endpoint in particular where it's listed the user, uh, user IDs.
+You love it.
+Um, so, so in the end I could take over as an excellent user from tenant A, I could take over any user accounts from tenant B, C, D, E.
+Oh my gosh, dude.
+So, uh, yeah.
+That's clutch.
+So, uh, yeah.
+It's pretty big.
+Clarifying question there.
+Where, where was the JWT leak?
+Did you say it was in a header?
+Uh, in the response, uh, the, the error message in the response.
+So, so was that like, you know, but like, was it just saying, Hey, there's an error, by the way, here's the token, you know, like, like.
+Uh, it leaked like the whole HTTP request.
+Ah, so it had like.
+So some sort of reverse proxy was going on there.
+Yeah.
+Very interesting.
+So it leaked the, the headers, um, cookies, there were none, uh, C-strap token as well, but it was like set to nothing, source, nothing as well as, so the headers did have the genibility, authorization barrier, and then the value, then that specific header with the tenant ID and the other custom header with the user ID.
+So by all of that together, uh, as an external user, I could take over any account on any other tenant.
+Dang, dude.
+Um, so.
+You, you, you love it.
+You love to see it.
+That, that whenever you get a nice verbose error, that helps so much.
+You can, you can really, you can really infer so many things about the application by using those a lot of the time.
+And even if, even if, um, you know, even if it doesn't contain a bunch of information doing error-based testing as well, I've seen Franz do that, uh, at a live site.
+Uh, at a live hacking event not too long ago.
+And just essentially using his input in such a way that it would generate an error about something that he couldn't see, you know, and, and use that to infer what kind of, you know, data type this is.
+Right.
+Or what kind of object this is.
+Really, really fun stuff there.
+All right.
+Last one.
+SSTi to RCE Ansible expressions, dude.
+I'm excited.
+Hit me.
+So, um, do you remember you just spoke about him, uh, in his talk on emails and RSCs like that.
+Uh, ever since his talk, I've always been putting, um, SSTI payloads in my email.
+For example, JROC plus seven times seven, where blah, blah, blah, blah, blah.
+And, um, it rarely works.
+It worked once, but it turned out it was like out of scope, but in this case, um, it did work.
+So I put it in my payload, like in my email as my registered user worked on the app a couple of days.
+Um, and it was like an app where people could spin up their own WordPress instances and that they would also get access to like, uh, their own PHP my admin console where they could manage like the database.
+Nice.
+And then after a few days I spent time just looking at the tables and PHP admin, uh, looked at the user table and noticed that my email was JROC plus 49.
+I was like, oh shit.
+My, uh, SSTI payload worked.
+Interesting.
+Interesting.
+But how and where, um, a few days later, literally spent probably eight to 12 hours on figuring out what engine was used.
+Um, I think, uh, I might've even asked the developer, uh, from the program on a previous report, like what could this be?
+And they told me, um, yeah, I think, I'm not sure if I figured it myself, what they told me, they probably told me that it was Ansible.
+So since you could spin up like your own instances, it did use Ansible to like configure all of that.
+Interesting.
+And in the end, my input was being, um, I mean, the sync was in a Ansible, a complete file in a playbook to be more specific.
+No way.
+So I could use, I could leak, leak Ansible variables.
+Um, uh, for example, like, remember just like as my, as my original POC, I leak, uh, like the Ansible config file.
+Uh, I could be like the current users like that.
+Wow.
+Um, and then later on, I, I was like, I can leak stuff.
+What if I can actually do stuff?
+Um, so looking at the Ansible docs, I found the, um, Ansible lookup command.
+So if you do like lookup, um, and then like in parentheses pipe, comma, followed by the command, it'll actually execute the, execute the command.
+Oh, yeah.
+Uh, there were a few restrictions on, on the characters though.
+So I could not put, um, all characters.
+I just had to, uh, hex and code them actually.
+Uh, so I actually downloaded Ansible, created my own playbook and tested to see how it worked.
+Um, and it turns out that, um, URL encoded characters did not work.
+I mean, they worked locally, but not on the application, but by hex encoding the characters that were blocked on the application.
+Um, it still works on Ansible locally.
+Uh, so yeah, it just led to, uh, a lots of reading and researching to finally an NRC, which was pretty cool.
+Dude, that's awesome.
+So this is what, you know, you have it as it's called SSTi here.
+Um, and it, and surely it is, but also it's kind of like configuration file injection as well.
+Right.
+Right.
+I'm, I'm wondering if, yeah, cause configuration file injection is something we've kind of talked about a couple times in the pod specifically surrounding some live hacking events that we were working on.
+Um, and it's such an interesting, it's such an interesting vulnerability type.
+And there's so it really does make you dive deep and reading the docs to actually figure out how to fully explain it because then you've got to become a master of this, you know, this arbitrary tool that you've never used.
+And you've got to figure out, you know, Hey, can I use hex encoding inside of this config file?
+And like that sort of thing.
+So it's definitely expands your mind a bit as a hacker to do those sort of, uh, those sorts of volumes.
+Yeah.
+I think I called it XSTi because, uh, when I originally reported it, I can only leak data.
+I could not get an NRC.
+I was like, this is probably just like, uh, some kind of engine where it was weird.
+Um, I think before even I found out that it was Ansible.
+Uh, so to me, it was like evaluating my seven times seven, it must be some kind of suicide template engine that is evaluating that.
+And then the end, it's like you said, it's not really, uh, an SSTi is, I mean, yeah, I wouldn't say it's an SSTi, it's like, it's more than one of the numbers, like, a config injection related to.
+Yeah.
+Dude, Ansible is not what I, you know, you're going through like, is it ginger?
+No, is it, is it twig?
+Well, Ansible is, I mean, the expressions are, I mean, the expressions are based on ginger.
+Oh, are they?
+Okay.
+So originally when I found out, I tried the typical tails and that did not work.
+Um, but I found out that lookup, uh, I mean, lookup is actually a plugin, but it's inside by default.
+Um, so with the lookup plugin, you can just do pipe and I mean the little string pipe in parentheses and then execute your own command.
+Wow.
+That's, that's awesome, man.
+Yeah.
+That's a good, that's a good takeaway too.
+You know, if you're really, really stumped on an SSTi or something that looks like an SSTi, I think maybe, Hey, there could be some surrounding functionality that's using a templating engine that you're actually doing.
+Right.
+That's, that's a, that's something that's a possibility that I've never considered before.
+The same thing happened with Terraform.
+Oh really?
+Actually, I had a case where I could leak Terraform variables, uh, but nothing more.
+I'm not sure if Terraform, I didn't dive too much in it since it wasn't a pen test.
+So I didn't want to spend too much time on it.
+Uh, but it has happened in the past where, um, I could inject, I guess, strings or whatnot in a Terraform config valve.
+Dude.
+Very cool, man.
+So there is, there's potential with like everything, uh, infrastructure as code related and, you know, um, so it feels like that.
+Whenever there's, there's these, um, applications that do things like spin up, uh, other services and stuff like that.
+Even the most advanced stuff I find is duct tape together.
+You know, like somewhere somebody's shelling out or, you know, or someone somewhere someone is like dynamically generating a conflict file and then, you know, having it loaded into this service.
+So, um, those are the places where it really pays to dive deep and really understand, Hey, especially if you have code, you know, it really helps if you have code, um, uh, you know, to understand where those sort of, um, uh, sort of delimiters where those, um, the line between one environment.
+I mean, one environment starts in one context, uh, starts and, and ends.
+Uh, there's so many, there's so many volumes to be found in that, in that area.
+Um, that's true, dude.
+Awesome bugs.
+Thank you so much for coming on and sharing all of these.
+This is probably, you know, you've shared a ton of own stories, uh, and lots of, lots of cool tips and tricks in there.
+So thanks for being so open with that and sharing your, your, uh, hacking success.
+Yeah.
+I'm happy to talk with you this morning.
+Yeah, absolutely.
+All right, man.
+Have a good one.
+Thanks for the care.
+That is the pod.
+Bye.
+Bye.
+Bye.
+Bye.
+Bye.
+Bye.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
