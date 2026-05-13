@@ -1,0 +1,478 @@
+Did we learn nothing from the whole Tanner, Pete Jaworski situation?
+We talked about that on the pod before, right?
+Tanner dropped a, Cash Money dropped a mega crit on Pete on Christmas Day one time.
+And Pete had to leave his family on Christmas Day to go deal with this really bad bug.
+Hey everyone, this is Techno Geek here.
+Just wanted to give a quick shout out to our latest sponsor, Project Discovery.
+Now Project Discovery makes a lot of tools that you probably know of or have even used.
+One of them is Nuclei, and the latest release of Nuclei is version 3.2.
+Now 3.2 comes with a lot of really awesome new features.
+Two that I really wanted to highlight here for you are the authenticated scanning and the advanced fuzzing support.
+Now for authenticated scanning, it used to be that you would have to do all your Nuclei scanning against unauthenticated endpoints,
+or you'd have to add your cookies manually, all that kind of messy. No more.
+It's all automatic. You can use existing login templates to automatically log in to your application,
+and then you can run all your existing Nuclei templates against an authenticated part of the application now to really increase your coverage.
+The other that I mentioned is advanced fuzzing support.
+Now Nuclei had added way back in version 2.8 the ability to fuzz different things,
+but now they've expanded this comprehensively across the board.
+So not only can you fuzz in the normal spots, but you can fuzz within headers.
+You can fuzz within cookies.
+You can fuzz within specific parts of the body, whether that's in JSON or XML or form data, and so many more things.
+So if you want to learn more about what came in Nuclei 3.2, go ahead and check out the release blog post over at Nux.gg slash podcast.
+That's N-U-X dot G-G slash podcast. Thanks.
+All right, Mr. Margo. What is that face?
+What is that face you're doing then?
+Just a reflection of my glasses. I gotta keep it either up here or down here.
+Somehow you still have energy after a 14 hour flight. So props to you on that.
+Where are you at and why are you out there right now, Joel?
+Yeah, man. Yeah. I'm in Johannesburg, South Africa for a meta Bug Bounty Research Conference.
+Nice.
+They're doing a little bit of a conference slash live hacking, that type of thing out here.
+They do one, I think, every year. Last year was in Seoul, South Korea.
+And this year it's in Johannesburg, South Africa. So that's pretty exciting.
+I've never been anywhere in Africa before, let alone South Africa.
+So I'm super, super excited and an awesome opportunity to get to come.
+Is it Johannesburg or is it Johannesburg?
+Oh, geez. I don't know.
+I'm going to say Johannesburg because that is... I'm white.
+All right. Gotcha. Well, we'll leave it at that.
+I'm sure we're going to get roasted in the comments for that.
+But Joel, I've got something for you, man. While you were on this flight,
+flight to something Hannesburg, the POC dropped for the PDF.js XSS.
+The what?
+The PDF.js XSS.
+Oh, man.
+We talked about that, I think, a little while back.
+I go to sleep for five seconds and then this is what happens.
+Yeah, man.
+They just start dropping zero days on me.
+Well, you know, this is what happens when you get a business class flight,
+when you get upgraded to business class and then you fall asleep.
+So poor Joel and his full reclining seat.
+The full life is very difficult.
+Yeah. Yeah. I believe it.
+Yeah. So this one was an interesting one, man.
+And I know the Wi-Fi was kind of shit on the plane
+and I know you probably didn't get a bunch of time to prep this time.
+So I'll take this one and we'll keep this a little bit more Q&A-y for this episode.
+But yeah, I wanted to talk about this one anyway.
+This was on the list even without the POC because I was like,
+oh, wow, you know, the advisory actually has some good information in it.
+It's like essentially the XSS occurs in the font processing JavaScript code
+that the PDF.js generates and then it proceeds to eval.
+So it's been on my to-do list to go and like find the POC for this
+because it should be pretty easy to look through the code
+and figure out where they're evaling and then just kind of work on it.
+And then just kind of work back from there.
+And but they beat me to it today.
+Codeian Labs dropped the POC for CD to any 24, 43, 67, the XSS in PDF.js.
+And what I didn't realize, dude, is this actually affects every single Firefox user
+because it uses it by default.
+Yeah, it's really crazy.
+I mean, so we've talked about this a little bit before, right?
+But browser market share for Firefox is less than 3%.
+So there are a decent amount of Firefox users.
+But I think as hackers, we're probably a little more biased towards thinking that a lot more people use Firefox than they do.
+Yeah.
+That being said, that's pretty bad.
+Yeah, it's pretty bad.
+It's pretty bad.
+And I think there's a lot of there's a lot of application as well in just other areas, you know, applications using PDF.js to display PDFs.
+So it was definitely one that I was kind of looking into and being like, okay, this is actually one to keep in your mind, you know,
+because it's one of those like JavaScript libraries where, or vuln's in a JavaScript library where it's like,
+if the library is actually doing the thing that it's supposed to do, then it should be vulnerable.
+And so whenever, like, it might even be worthwhile to put up some sort of alerting in Kaido or in Burp.
+I know that Burp does like the vulnerable JS libraries, either an extension or by default.
+This could definitely be a good one to keep an eye out for.
+And with regards to the technical details for this one, it was super simple, dude.
+Essentially, what was happening is the code that was being, they were doing glyph rendering via JavaScript inside of this PDF.js.
+And essentially, what it would do is would take a part of the PDF file,
+and it would integrate it just, just like, place it directly into a JavaScript code, and then eval that JavaScript code.
+So in the end, yeah, you could just, you could specify a string in the specific section of the font.
+And then that would actually just get placed directly into the code, you just close off the function call,
+and run whatever code you want, and that just gets executed.
+So really, really clean POC too.
+So interesting.
+And they actually dropped a proof of concept PDF file so you don't even have to generate the PDF file yourself.
+That's awesome. That's awesome. Look at that. That's super interesting.
+You know what it makes me wonder is if there's a similar type of vulnerability in PDF-yum, which is the Chrome one, right? PDF-yum.
+Oh, really?
+I think that's what it's called.
+PDF-yum. Okay.
+Yeah, like Chromium, PDF-yum.
+Yeah, I do wonder. I think it's a totally separate thing, but I would be curious if there's been any research into it from that side,
+because I'm very surprised that something so fundamental as PDF.js would have been exploitable.
+And I'm looking at the payload here, and this is super, super simple too.
+Yeah. Yeah, it'll be interesting, man. You know, I think it's definitely worthwhile to take a look at any sort of JS rendering of complex file types.
+I recently had a vulnerability with my mentee. Actually, my mentee had a vulnerability to give him full credit.
+Like, he really took it the full way. I just kind of advised along the way. But he had a vulnerability in a JS library that was parsing a complex file type and displaying it in the browser as a part of some rendering.
+And, you know, it's just hard to do securely, I think. There's lots of nuances to it. So that should definitely be...
+On this pod, we like to talk about attack vectors in areas where you can, you know, attack stuff that are probably going to be less discussed by the traditional security environment.
+And I think this is one of them. If you're really willing to take the deep dive and audit a library for displaying specific types of files, I think there's often problems there.
+Yeah. So did Codeon find this or was this a vulnerability that exists and they just got a POC for it?
+No, they found it. They didn't leak the POC or anything. They found it themselves. They reported it to PDF.js or to Mozilla and then they disclosed the POC.
+So, you know, definitely respect for Codeon Labs here dropping the POC for us, which is nice. You know, it saves us the time to go back and reverse it.
+I'm sure plenty of people reversed it, though. So, yeah, I think that's the right call anyway to just expose it once the patch is in place.
+Absolutely. I mean, I think it's also really fascinating when I'm looking at the POC, like I can very clearly see how it exploits.
+But then when I read through this whole write up, it's significantly more confusing coming from like the white box approach where it's like, how does this code actually like exploit this?
+Like what do you need to do to match all this criteria and stuff versus if you were just approaching this from a black box perspective?
+I think it actually would have been a lot easier.
+Oh, really? Wow. Yeah, I think so. I mean, maybe if you just fuzz all the fields, right?
+Like versus you have to find some sync and then going backwards.
+You have to see the flow of the data, you know, and I think that is a little bit of a tricky part.
+But it does make me think of another thing that was kind of on the to do list for day, which is the next JS SSRF that that Acid Note released, which is just another great example of sitting down and auditing some source code resulting in a really crazy set of bugs.
+Did you get the chance to read through this one before? Yeah, I saw that they they had talked about this a little bit.
+I'm glad to see that it's out now.
+I think I knew about this a little bit ahead of time. Oh, really? Okay, gotcha. You got the inside scoop.
+But this is really, really cool.
+Yeah, did we talk about this? I feel like we might have mentioned this or something, right? Or no?
+We may have. I don't know. You know, our apologies to the audience if we have already, because we've had this on the list.
+For a little while, it's also some of the other items here. But we've been so we've had the opportunity to interview such great guests the past couple weeks where it's like, you know, there's just been a lot going on.
+So but I just wanted to point out a couple couple things here. One just amazing write up, but I really liked how they won that that there if you look at the code flow, there seems to be a lot of inhibiting factors, right?
+There's a head a head request that's sent beforehand. And there's a specific content type that has to come back. And if you look at it, you know, sort of at a glance, you might think, okay, well, they've got protections in place that make this SSRF like not even possible.
+But they don't they don't give up there. They continue to push through it and, you know, find a way to bypass the content type limitation and use a redirect to get past that.
+So I just think it's a really, really high quality piece of research and just an example of the stuff that the AssetNote team has been has been pushing out.
+Yeah, I mean, per usual AssetNote, everything that they publish is going to be super high quality and super in depth and super well researched.
+So I always love to see the stuff that they're pushing out. And I just can't. I wish I could like subscribe somehow, you know?
+Yeah, yeah, I don't know. I feel like maybe they have like a we might be able to like find a like email subscribe. Yeah, they have they have updates on the research down at the bottom.
+I don't know. I'm not a huge I'm not a huge like newsletter guy only only read like two newsletters.
+But I think this is one of the ones where I would like create a filter for it and have it like automatically starred in my in my Gmail or whatever. So I think, yeah, maybe we should do that. I'm gonna I'm gonna add that right now, actually.
+Boom, there we go. Can't believe I wasn't subscribed to that before. I guess, you know, we see it so quickly, though. And we often get the inside scoop even before it happens because of the group chats and stuff. So yeah, I think there's there's lots to be to be gotten there.
+Yeah, for sure.
+All right, dude, I got a couple of things that I want to talk about with regards to smuggling payloads through sort of obscure data types that have, I guess, some caveats in the chat.
+But before we get into that, let's talk a little bit about this announcement by McKeel from HackerOne about better bounty transparency for hackers by showing you what percentage of vulnerabilities are paid at what's here. What are your thoughts on that?
+I have thoughts. I know you have thoughts. That's why I just opened up the room to you, man.
+I think generally this is coming from a good a good place. I think it needs some tweaking for sure. So I think probably the biggest complaint that I have with it is that it's not really representative of the current picture.
+Meaning that when you see these percentages and these average bounties, I'm almost certain I don't see anywhere that it's mentioned, but I'm almost certain that this is basically all time stats. That's what appears to be anyways.
+Yeah. And so I think the tricky part is that a lot of programs change bounties programs don't have a lot of reports or a lot of results reports. And those two things combined can really skew these stats pretty badly.
+All right. So say your program, you're paying.
+Okay. Let me just add something really quick. For those of you that haven't actually seen this yet. What happened? HackerOne updated their sort of built in bounty table that's a part of the platform built into the policy page to reflect how much, how many, how much the average amount of bounty paid for a specific type of vulnerability.
+So if you've got a medium and the medium range is like, you know, a thousand to 3000, they'll say, okay, the average medium paid is a thousand. So why are they never paying that 3000 essentially? Right. You've got that. And then you've also got what percentage of vulnerabilities lie in what severity in this program. So it does help because you can look at a specific program and be like, okay, well, this specific program is inclined to pay highs in credits.
+Yeah.
+But like you said, that data might be a little bit skewed.
+Yeah. So I think I would like a little bit of clarity on some of the things like percent of submissions, for example, when it says like 2% of submissions are criticals. Does that mean post triage in general or like on submission? Like what, what, what counts as a critical when it's paid out? Like, I don't know.
+So that's just one, one thing, but I think going back to what I was, what I was speaking on originally, my biggest complaint here is that it doesn't really account for changes within the program.
+Right. So let's say as an example, a program is paying very low crits. Let's say they're 1500 for, for critical. And then they decide to double their bounties, triple their bounties. They're not paying 5k crits.
+If they never pay a critical, their average bounty for critical is never, it's never going to reflect that range. Right. Like if let's say between when they updated it to now, they've never paid a critical bug. They never received one. They never paid one out.
+So there's nothing to represent that they do pay 3k criticals in reality. It's just that the average bounty that they pay for a critical is somewhere between zero and 1500 because that's what they used to pay for criticals.
+So I think that it's not super representative of that. I would like to see it be maybe like since the last time the bounty table was updated or something like that.
+That could be gamified from the program side to the den if they're, if they're getting some stats, they'll be like, all right, you know, it's not 5k for a high it's 5k to 10k, you know, like, like just making it clear, but also resetting your bounty stats.
+Yeah. Yeah. So it is interesting. I have to say, I love the concept. Shout out to hacker one for that in general. I think this sort of transparency is really helpful. And I think it, it solves one problem that hackers, like I mentioned before, it solves one thing that hackers would really want to look for, which is programs that routinely pay high in crits. Right. And, and it's not necessarily that, you know, they, their severity assessment is off or whatever, you know,
+but it's like that there are highs in crits to be found and those highs in crits are getting, you know, paid out is the biggest indicator that there are highs in crits on that program.
+And I know a specific hacker who told me that this program that he hacks on, it's just, everything is a high in a crit, you know, and he, he has a specific way of, of showing X, you know, data leakage and it just always ends up being a higher crit.
+Like, um, and, and so I bet if we looked at that program side, they're super annoyed about that, by the way.
+Yeah. I, maybe, maybe, you know, or maybe they're happy about it, you know, and on one hand, you're getting value on the other hand.
+All right. So we're not going to start this again. Okay. You're not ever going to, I'm no, we're not going to go down the whole, like program should play less bounties to the hackers.
+No, no, no, no. Um, but yeah, I think also from a data perspective, this is really interesting.
+Like you were doing a scraping, um, project, you know, a while back that, that sort of, um, correlated a bunch of data points.
+And this is another set of data points you can use for that.
+Yeah. Yeah, absolutely. Yeah. I'm curious if that was spun off from that or anything, you know, I like to think that maybe we had a, we had a piece of that.
+Um, but yeah, it is pretty interesting to see, um, you know, this data being more visible, uh, you know, from the hacker one side.
+So, uh, uh, you know, I'm always in favor of program, uh, program improvements from the hacker one side more than hacker improvements.
+Yeah. Yeah, absolutely. Yeah. It's definitely cool. I do. I do think that, that, um, caveat that you mentioned does need to be addressed though.
+Like where, what is this representing? If we slide our bounty table, you know, does everything paid in a certain range get reallocated?
+So if our crits go from 2k to 10k and our mediums go to 2k, is there like all of our bugs are in the medium bucket now?
+Like that is interesting. Yeah. Yeah. Yeah.
+Um, and then, yeah, I, but it's a step in the right direction. So I think they'll get there in the hacker one folks.
+I'm sure are thinking about some of these edge cases as well. So I imagine it's engineered, um, close to correct, but I am seeing a couple of scenarios where it's like, uh, they don't have an average bounty in some and like the, the numbers are a little bit off.
+Uh, so I don't know, I guess we'll, we'll see what they do with it over the longterm.
+Um, yeah, yeah. It seems like they're rolling it out slowly. Um, so I think it's only on the hacker one program and a couple others right now, but, uh, eventually.
+No, actually they pushed it out. Oh, they pushed it out to everything. Okay. Yeah.
+All right. So in the time, oh, it's been about a month since this was tweeted. Wow. We're really behind on news.
+Yeah, dude. That's the, that's the thing. Like, I'm really glad that you were feeling up to recording today, even though you just got off a long flight because, um, we have had the stuff sitting in the dock for a while and we need to get it out there.
+So, um, yeah, thanks for hanging in there, dude. Um, the next two, so like I said before, the next two things that I kind of wanted to talk about are sort of together, but not really.
+Um, one is a piece of IPv6 related research, uh, by Slanzer, um, which is essentially how to smuggle data into IPv6, uh, uh, IP addresses.
+And then the other one is smuggling payloads in phone numbers, which I found from a tweet from Zed Shano. Um, and both of these have similar concepts, which is there are these data types, phone numbers, IPv6 addresses, IP addresses in general.
+Can I do this?
+Go ahead.
+What was his name?
+Slanzer.
+No.
+The other one.
+Oh, Zed Shano. Oh no. Okay. So, Hey, let me, let me, let me, uh, hold up, hold up. I am an American. Where's my, where's my passport? Hold on.
+Where's your passport?
+No, no, no. I'm sorry. I'm sorry. I'm sorry. But you know, out of respect for their, their culture of mispronouncing the last letter of the alphabet.
+Oh, I like that.
+I figured I would show some respect. So thank you for-
+Continue.
+Yeah.
+Yeah. So, um, thank you. Thank you for that. Now, now you could have just let me slide by as a respectful person, but now, now I had to, had to throw the-
+It almost, it almost slipped through. I was like, Zed, what the hell?
+I don't know. Like now, I think from like a, from like a hearing perspective, I always, when I read it, I see, I read Z Shano in my head. But when I'm talking about it, I've heard so many people say Zed Shano out loud.
+Zed Shano.
+Have you not, is that not a thing that you-
+I only, I only ever say Zed Shano. That's, I'm-
+All right. Well, I'm different.
+Potato, tomato, you know, whatever it is, man.
+Yeah, potato, tomato.
+Exactly. Yeah. Yeah. Um,
+I'm sorry, dude. You're going to be a late, my brain's all over.
+Dude, Joel, you're doing great, man. You're doing great. I appreciate you. Um, so let me talk about this research. Okay. Just shut up and let me talk about the research real quick.
+Um, so the research shows that, and I like the bigger principle associated with this too, which is we have these data types that we see, you know, on a regular basis, these IPv6, um, uh, IPv6 IP addresses. I almost said domains, but we'll get to that. Um, IPv6, uh, IP addresses and, uh, phone numbers. And we think we know about these, these, uh, what these data types are supposed to contain and how they're supposed to be represented.
+But there's often caveats to these that live in the RFCs. So I really appreciate the people that have, um, taken the deep dive and uncovered some of these caveats. Um, so the, the, the TLDR of this research on IPv6, um, which we'll link down in the description as well, is that there is a zone delegation that you can, uh, a zone ID and a zone delegation that you can, um, include in an IPv6 address, which is, um, delimited by the percent sign or some
+times percent 25, you know, if it's double URL encoded in this, in the, uh, URL encoded in this scenario. Um, and what this allows you to do is just kind of add arbitrary strings after an IPv6 address. So it goes open square bracket, colon, colon, one, and then your percent sign. Um, and then the zone that you are associating with this specific, this zone identifier. Um, so what you can do then is you can say, okay, square bracket, colon, colon,
+dot example.com or something like that. Right. And when some of these, uh, host name parsing tools are, are looking at this, they will consider this IPv6 address to be a part of that domain. So in the, in the, um, in the writeup, he described some caveats in Golang and Python. I think he mentioned some stuff in C sharp. Um,
+the browser does not have any sort of misconfigurations with regards to this, which is cool. Um, and doesn't really even support the syntax. Uh, but some of the parsing that happens for server side requests, right? Like you're, if you're doing like a SSRF, um, will allow you to include data, uh, like this. So you may be able to bypass some origin checks on the server side for those. Um,
+Um, the other one from our boy Z or Zed Shano, uh, is, is a similar type of thing. Um, and it also makes me think of the email, the, the, the double quotes and the plus in the email. Um, but it's a similar thing, but for phone numbers, you can add a semicolon extension equals or phone dash context equals at the end of a phone number.
+And that is supposed to, by the RFC, that has to be accepted as a valid phone number. So if you're using any library to like parse a phone number, and then you're like echoing it straight into the, you know, the, the HTML response, then that's a great way for you to include XSS related characters there. Um, and, and break out of the context. So.
+Yeah. So one of the interesting things that Zed Shano called out here is that, um, you know, he sort of asked a rhetorical question of why aren't these things sanitized?
+And it, it's really just comes down to that. A lot of developers go, Oh, I need to validate an email. Let me get the email validation regex from stack overflow, copy paste done.
+Yeah.
+And it matches the RFC. The problem is that using an RFC blindly, I think is kind of a mistake, right? Because
+Or even libraries can do this.
+Right. Like you should be using it within the context of how you need it, right? Like you need a phone number.
+That means you need a certain number of digits. They don't, it doesn't need to follow the RFC spec. It just needs to be digits, right? Like, uh, you know, it's not that complicated, but I think it, it, it tends to get to a point where things get a little bit overcomplicated or you try to have so much of like a, uh, like a catch all or like a, uh, you know, adherence to the RFC where you use some regex.
+It's like, you know, you shoot yourself in the foot ridiculously long. Right. And at the end of the day, you should have just looked for like word up to an at symbol at it and then everything, not a space after the at symbol. Right. Like.
+Hmm. So what you're, what you're talking about, Joel is, is, is kiss. Yeah. Keeping it simple. Exactly. Keeping it simple because if, as things get more and more complicated, as you start using libraries to parse phone numbers or email addresses and stuff like that, things, um, yeah, there's lots of edge cases that aren't. Yeah. And, and, and, you know, to, to give the developers a break here, you can't just go read the RFC for every single like thing that you're, you're dealing with. And, and so it's kind of,
+um, it's kind of just, uh, a function of the complexity of modern day applications and the RFCs that are, uh, you know, the building blocks for all of this. But, uh, I think for us as hackers, it presents a great opportunity to dive a little bit deeper and see where we can smuggle specific data types into, you know, traditionally trusted data types, like an email address, like a phone number, like an IPV, IPV six address.
+Yeah. Well, right. And like, if you think about like the phone number thing, for example, like why is a developer, why does every developer who works with phone numbers need to know that this is a valid part of the RFC? They don't because most of the time they're not even using it. I'm sure it was added to the RFC for some random, you know, there's some reason for it. Right. Um, so you, you're sort of left with these options of, okay, as a developer, do I go read the RFC, find out this edge case code around it because I don't need it, but I also want to comply with the RFC.
+Do you use this library blindly because you know that the library complies with RFC and then you have these edge cases that you didn't even know about, or do you just write your own solution that just works for your use case and probably doesn't comply with RFC, but works really good for however you're using it.
+Yeah. And at the end of the day, it's only going to add a little bit more friction to the end user to be like, okay, I got to like rewrite my phone number with the area code in like dashes versus like parentheses or whatever. Um, so yeah, compliance,
+complexity there gets tricky and, um, but you know, that's where we live. That's where we live. We live in the details, man. So it's a good thing for the hackers.
+Hey guys, we're doing something new this week. We decided to launch a share a bug program through the critical thinkers sub tier on discord, which gives members of the community an opportunity to share a bug or attack vector that they really like and get featured on the show. So this first submission is coming from Monke, a hacker that we've talked about on the podcast before. And he's sharing something specifically regarding role-based access controls. So let's go ahead and listen to that now.
+There is an interesting business logic vulnerability that can occur in SAS platform sometimes, but it has two preconditions.
+The first precondition is that when new users are invited to the platform that they're assigned a default role. And this should be something built into the platform. This shouldn't be like in the settings. This should be part of the product.
+The second precondition is that when an admin invites user in this way, that they shouldn't be able to modify that user's permissions while they're in a pending state. And this is often the case because usually these users aren't like full users until after they've accepted the invitation.
+So usually admins can't modify these permissions in that state. And this creates a privilege escalation scenario because let's take Bob and Alice, for example, and Bob is an admin and Alice is intended on having the lowest possible role.
+But let's say the default role that they get invited at is like mid-level.
+But you've got a situation now where if Alice accepts the invitation while Bob is asleep, well, Alice has more permissions than she should. And this means that she can now alter resources that she shouldn't be allowed to.
+And I found this in the past where the default role was super admin, which is crazy.
+And so when Bob invited Alice, Alice had super admin and was able to like de-admin Bob and take over the entire tenant.
+So this isn't super common, but if you keep your eyes peeled for it, like you will find it.
+Awesome. Great work there, Monke. That is a cool bug.
+And I've also, it actually reminds me of another piece of research that I saw, which I think was a part of James Kettle's stuff regarding sub-states in a single HTTP request,
+which is sometimes when a user gets added to an organization for a split second, they have an admin role.
+So even if it does default them to a less privileged role, you can still have a very little timeframe, a couple, like a millisecond or so timeframe where they're an admin.
+But if it's like Monke says in this specific case, then you may just be able to join the organization, remove the previous owner and take it over.
+So great attack vector. Thank you for sharing, Monke. All right, back to the pod.
+All right, Joel, we got a couple of places we can go here.
+I want to spend more time on the GitHub Enterprise send bug and the DOM purify bypass.
+So I'm just going to mention this bug really quickly that I saw.
+Mr. Tux Racer is definitely a follow on Twitter that you should be following if you want to know.
+You should be following if you're not already. And essentially he doesn't, he doesn't tweet super often despite being a super badass hacker.
+Um, and, but he did drop the POC, the full POC for CB 2024 27956, which is an unauthenticated arbitrary SQL injection in one of the most popular WordPress plugins, automatic, WP automatic.
+Um, and that's pretty nasty.
+Uh, and, and so I've, I've already, you know, we're getting to this a little bit late.
+You know, I think he tweeted this end of April.
+Um, so it's probably not too much out there anymore.
+Plus WordPress has a decent auto updating system.
+So, uh, hopefully everyone's using that, but I love how this POC was literally just, they took the queue parameter and just stuck it directly into a, like a, like an SQL call.
+Like you, you literally just write the whole, whatever SQL, uh, that you want in this queue parameter and that's it.
+Uh, and so he, he dropped the POC to just essentially add a new, a new user to the WP admin and get RC from that.
+Um, so classic, classic move there.
+And these WordPress bugs, we got to keep an eye on a man.
+Cause WordPress is all over the place.
+
+I mean, I love this for drugs.
+Like Mr. Tux racers, one of those, you know, you said he doesn't really tweet much.
+Uh, I like to think of myself as one of those people, mostly just because I don't use Twitter.
+
+It's not cause I'm stoic or anything.
+It's just cause, uh, I don't, I, I don't say anything.
+It's not cause I don't have things to say.
+Uh, it's just.
+Yeah, totally.
+That's it's not.
+Yeah.
+Well, you know, we, we, essentially you're tweeting, you know, for an hour every week with me on the pod.
+So it's just coming out, out on the pod.
+Maybe I'll start tweeting a transcript of everything I say.
+Oh geez.
+Get like a chat GPT bot to go through and parse it and then just shoot it on Twitter.
+Justin, shut up.
+I'm trying to explain.
+That's the only tweet that goes out.
+It's so good, man.
+Um, these next two ones are interesting, super interesting.
+Um, the GitHub enterprise send bug and the Dom purify bypass.
+And I've actually got a little something to add to the Dom purify bypass.
+I ha, uh, that is not mass mass consumed.
+I don't have the POC, but I do have a little bit more information.
+Um, so where do you want to go?
+You want to do the GitHub enterprise bug first or the Dom purify stuff?
+Wherever your heart desires.
+All right.
+My heart's, my heart's feeling Dom purify.
+Um, so, uh, I haven't seen the POC out if it's out yet.
+Um, I did spend some time looking at it cause I expected it to be pretty simple to reproduce
+because of how the patch looked, but, uh, I think it's using a lot of difference, different stuff.
+Um, and I did have a conversation with Uriota, uh, about this.
+Um, that's Uriotak on, on Twitter and on Discord.
+And, um, he definitely has done a little bit more research into it and has a semi viable POC that he shared with me.
+Uh, but it only affects a certain, um, segment, uh, of the, of the market.
+So it's not, it's not super relevant.
+Um, but I also did listen to a podcast in Japanese about this, uh, because, and I'll shout them out.
+It's the, uh, uh, let me see. I think I want to get the name right.
+I think it's JP Bug Bounty podcast.
+Um, let me see if I can find it.
+Well, I'll link it down in the description.
+It's Bug Bounty JP podcast.
+Um, and it's a podcast that's put on by, uh, Mokuso, which is my name.
+And it's fully in Japanese.
+It's fully in Japanese.
+So, uh, for those of you that speak Japanese, great.
+Uh, Zeta Itanashin De Kudusai Soryo.
+And I think the, the content of that was a little bit tricky for me to get.
+My Japanese is, heh, meh.
+And especially when it's,
+He says, as he just spit some crazy Japanese.
+Um, my Japanese is, is I can speak all right, but the listening to native speakers talk about high level hacking concepts is a little bit tricky.
+Um, but they did talk on that podcast a little bit about, um, Ryota's experience trying to relate to the Japanese.
+Um, and I think, uh, I think it's a little bit of experience trying to reverse some of this stuff.
+And obviously if you look at the, um, the patch, there's, um, something to do with, with depth of nodes, um, with regards to this, uh, DOM purify bypass.
+So there's, there's definitely, you're going to need to, you know, uh, stack, uh, various amounts of, um, divs and tags together.
+Um, and then the piece that I sort of got out of that, which I hadn't seen before was then it also results in a, a, a namespace confusion.
+So at some point, DOM purify is thinking that it's parsing, you know, SVG namespace or, or MathML namespace.
+Um, and it's actually parsing HTML or vice versa.
+Um, and the, the overflow of that, you know, nesting, that's the word I was looking for nesting of those elements.
+And then also that sort of namespace confusion together leads to, um, some variants of the DOM purify bypasses that have been affecting, um, that library recently.
+So that's all I've got.
+I wish I could get, I wish I could give more, but you know, Jota is also, I trolled him a little bit on Twitter about this too.
+He's, he's very, um, he's very sensitive about disclosing information that he could be even remotely related to a vulnerability that he doesn't have permission to speak about.
+So, um, even like, even that was, so my, my mentee was like, you know, he was like pulling teeth to get it out of them.
+So we work with what we can get.
+Yeah.
+Yeah. So I will say when it first came out, I, I, I did take a look at the, uh, the patch myself as well.
+And, uh, it's not very difficult to figure out how it works.
+Um, you know, if you're, if you're curious, uh, go look, there's a single, uh, commit that has everything you need to know in it.
+Yeah. But okay. Let me say, let me say though, Joel, I also thought the same thing, but you can't get the POC out of that.
+Like you can get the concepts, but it is not very easy to get the POC out of that.
+Yeah. But it gives you a really good starting point.
+It does. It does. Um, so that one's that, um, all right, two, two things and then we can wrap it and you can get some sleep, Joel.
+Um, the GitHub enterprise bug, dude, what a masterpiece. Uh, so cool. Did you get the chance to read through that whole thing?
+Yeah, man. Uh, so I think I actually put this in the, in the doc class last week. Um, and it was so in depth that I was trying to figure out how to even like summarize it.
+Um, it's just one of those super technical, really interesting bugs that has a lot of context and a lot of like code in it. You know what I mean?
+So, um, if you're like a Ruby nerd or you like auditing GitLab or GitHub or hacker one, which I think are the only three services left on the internet using Ruby.
+No, no, everything uses Ruby, man.
+No, no, no. Everything uses next JS now. Come on.
+That's true. You're not wrong about that. Um, yeah, no, absolutely. I totally agree. Very well done. Right up. Um, technically in depth, intriguing. Um, but I'm not sure.
+Yeah, no, absolutely. I totally agree. Very well done. Right up. Um, technically in depth, intriguing, uh, long, but worth the read for sure.
+And not only that, it took, geez, uh, six months between when it was disclosed and when it got published.
+Oh, really? Oh, wow.
+Yeah, I think so. Yeah. So they disclosed this initially like end of December, man. Can you imagine POV? It's December 26th.
+Dude, that's so bad. He drops this on like.
+December 26th that you just get an RC reported to your bug that he broke.
+Yeah. Literally in the backstory section, back in early December, 2023, I was performing some research on GHES.
+Oh wait. Oh, on the day I went on vacation, I located a potentially minor bug.
+Fast forward to the day after Christmas. You're right, dude. December 26th. What the freak?
+Oh my gosh.
+That's brutal.
+Dude. Did we learn nothing from the whole Tanner, Pete Jaworski situation? Like we talked about that on the, on the pod before, right?
+Tanner dropped a, uh, cash money, dropped a mega crit on Pete on like Christmas day one time.
+And Pete had to like leave his family on Christmas day to go deal with this like really bad bug.
+Um, so.
+Yeah.
+Security research.
+Listen, bug bounty stops for no sleep. Okay.
+Seriously, man. Seriously. No, no man.
+Um, yeah.
+Very cool one.
+I did have a couple of takeaways from this one.
+One, just read it.
+Cause we're not going to talk about it.
+It's too technical, uh, to actually try to talk through on the pod.
+Um, but there is a takeaway from this, which I tweeted about and, uh, it didn't, the tweet didn't do as well as I hoped it would for the sole purpose of people understanding how this works.
+So I'm going to, I'm going to sort of reiterate a little bit of what I talked about on the tweet, uh, in the tweet here on the pod.
+Um, it, I outlined a couple of ways or a couple of things you should pay extra attention to when doing source code review.
+And one of them was, uh, indirect method invocation.
+And I, I sort of nested it down a little bit further on purpose for the people that dig a little bit deeper and are going to just not read the, the, you know, between the first fold of my tweet and kind of like click in a little bit.
+So for those of you that spend the time reading my tweets, thank you.
+Um, but I also want to reward our listeners here.
+So, um, I, I did want to call out, this is something that I've seen.
+This is a trend that I've seen, um, where vulnerabilities occur due to this whole indirect method invocation thing.
+And there are lots of ways to do this in, in different languages in Ruby, uh, as we saw in this writeup, it's, it's object.send in PHP.
+In PHP, you can actually just call a string and it will, and it will execute that function.
+In Python, you can access the globals.
+Um, uh, you can do a call to globals and then provide a string name and then call that string.
+And it will, um, and it will run that.
+Um, in Java, there's lots of ways to do it.
+In JS, there's lots of ways to do it.
+Um, so this whole concept of taking input from the user and allowing some function to be called, whether it be on an object
+or whether it's just be, you know, sort of evolved and you can just kind of, you know, run an OS system or whatever, um, and run a command.
+Uh, it's not normally that simple.
+And so looking, looking for scenarios where it's limited, but you can call things on various objects or like parent classes and that sort of thing is really powerful and has resulted in a lot of bugs.
+Yeah. I will say, um, one interesting thing I've noticed when I look for stuff like this, typically if I find something like this, I'll go and I'll look for other instances of it and it almost never exists.
+I don't know if you find this too, but like, it's so weird.
+Like if I find something super complex and like crazy like this, I'll go and be like, Oh, maybe they're doing the same mistake elsewhere.
+And it's like, I've literally stumbled on like the only instance in the entire code base where this happens.
+Yeah. Yeah. It happens, man. I mean, uh, we ran into a couple of things like that in a live hacking event a while back, but I will say the time that you and I went ham on, uh, on some source code review at a live hacking event last year, there were multiple instances of, of things.
+So I think it depends on the situation. I think it depends on the situation.
+Um, but definitely I'm going to just read out some of these really quickly.
+Um, templating is like really big when it comes to getting RCE on a service, when you're actually looking at the source code.
+If you can figure out a way to get your input as, uh, to be interpreted as templates, that's massive.
+And of course, um, uh, you know, any sort of interaction with files, any sort of interactions with external services, whether it be APIs, whether it be like a Redis, you know, something like that.
+All of those are, are really big, um, deserialization of binary formats of YAML, of JSON.
+All of these things can result in unintended stuff.
+Um, whether, you know, sometimes you can get prototype pollution.
+Sometimes you can, um, just get straight RCE if it's, it's, uh, um, arbitrary deserialization.
+Um, so I think sometimes I get just speaking from personal experience when I, I look at these massive applications and I finally have access to the source code.
+I'm like, all right, let's go.
+Like, let's, let's get it.
+And then I open it up in VS code and VS code takes like an hour to opens up cause it's so freaking massive.
+And then I'm just like a little bit intimidated.
+I'm like, how am I ever going to find this?
+Where do you need to start?
+Um, but having a sort of a list of, all right, let me look at this, this, this, and this, and work back from the sinks.
+And I know, Joel, I know that you're going to give me that stupid face that you're giving me right now.
+Uh, because of, of, of what I've, of what I've said in the past about, about sources and sinks, um, and light preferring sources.
+Listen, I think that everybody has their own.
+Some people listen, everybody's a little bit different.
+Some people go sink, some people go sources.
+Um, I think there's arguments to be made for either one.
+Yeah.
+And, and I think there are, and I think for me, it's a largely a function of app size.
+If your app is not that huge, um, I think it makes sense to go after sources.
+And I think going after sources is a really good investment of time for you in a lot of ways, because you can understand the app, how it's architected much better.
+But at the end of the day, if you're trying to take that and you're trying to turn, if you have a very specific goal, I want unauthenticated RC on this.
+I want, you know, SQL injection, whatever it be.
+You got to work, you got to work backwards from the sinks.
+Um, and then, because if you don't that a lot of times these apps are too big and you, you, you just going to burn too much time.
+Yeah. Like trying to find potential, you know, entry points is like anything can be an entry point. Right? Like I agree with that. Right? Like I think depending on the size of the app, like certain things you might end up falling down rabbit holes.
+You're like, Ooh, there's an evil call here. And then it's like, you spend four hours looking at every single evil call. It turns out it's like a systemic way that they've safely done it.
+Yeah, that's fine. Like, I think that's also a good use of time.
+I see you speaking from experience here, Joel.
+I don't know what you're talking about. This is a random example I pulled out of my head.
+Dude, I love how you just like straight up read our, our chat from that event, man. They're like, there's eval everywhere. This is going to be a shell.
+And then, you know, eight hours later, we're like, not a single freaking use of eval is actually, so funny, dude. Screw that, man. That, yeah. Well, at least we shelled it, man. So that, that helps.
+Yeah, yeah.
+All right, cool. So I've said my piece on that. Last thing before I let you go, Joel, is I wanted to give a shout out to my boy Riddle. Riddle has been doing some awesome dev on Kaido.
+And I just was in the kind of chat and I was like, oh man, wouldn't it be cool if there was a button in replay that would go through your HTTP request history, grab the latest request and extract certain amount of headers and update your cookies for you.
+So, so like when your session dies, you don't have to go back to your HTTP history and like grab the, the latest, you know, cross site request forgery header or like grab the latest cookie and like paste it in and update your session.
+And if you're like working over multiple sessions or whatever, and you've got like all these named tabs and it's all organized, but all the sessions are dead.
+So it doesn't work anymore. It's just, it's a pain. And so I put that in the chat and then I like looked back a couple hours later and Riddle's like, I got it. And he, he had pushed it. He had built it.
+It works awesome. And he's actually got it pushed to the ever, um, or even better extensions, um, sort of manager as well for Kaido.
+So, uh, essentially you install even better extensions and you just click the install button on refreshes, replay headers.
+And now there's a button right next to the send button, um, in your, in your replay tab. And you just press update headers.
+You can specify what headers you want in a little dropdown menu and it will pull the latest header from HTTP history, update your, your current replay tab and just get your session right back on track with one click.
+Um, it, it's just so clutch, man. It, it like that sort of thing is, it just smooths over your whole experience and just.
+I'm going to throw some shade here. It's almost like, uh, well, you don't have to write your plugins in Jython and Java.
+Uh, it's so much easier to extend the application.
+Yeah. Yeah. I, I, I don't know any software that, uh, is architected like that.
+Yeah.
+It was just a random thought I had just, just, I mean, I'm glad you shared that, you know, just out of the, out of the, as it bubbles up, you know?
+Yeah. And, and to be honest, man, I, as a Python fan boy, I did critique Kaido in the beginning for leaning towards JavaScript, but JavaScript is great, dude.
+You know, JavaScript is, is in a lot of spots, you know, you're not really context switching, you know, from between the front end and the back end so much.
+Um, it's very versatile. It's, it's pretty fast in this environment. So.
+Yeah. Like 95% of hackers know how to read it and use it.
+That's, that's, that's a great point as well. You know, you, it is mandatory for you to be, if you know, if you're using an HTTP proxy, you need to know some JavaScript.
+Um, so I think it was a great decision and, uh, I think we can see dividends being paid from it because the, the Kaido development community is really, um, thriving right now.
+And there's a lot of really good, uh, uh, extensions being added into the, into the flow and, uh, especially Bebex and Riddle have been really crushing it lately.
+I'll be really curious to see if Kaido decides to do any sort of like centralization or anything with the plugins like, like Burp did.
+Cause, um, I don't think it's necessarily like a bad move, but it is kind of interesting to see them sort of like take over, so to speak, like the plugins and whatever.
+Yeah, we, we are going to do that. Um, just for those of you that aren't aware, I, I'm an advisor for Kaido.
+And so I do have a little bit of insight into that, that, that will be, um, something that happens in the future.
+Uh, I, whether it be something like this, like the, the even better extensions library, um, where it's controlled by the community.
+And then there's like, you know, a pull request into a certain GitHub repo or whatever, or whether it's done at the Kaido level, um, in, in a similar format, uh, there will be some sort of centralization of plugins.
+Um, and, and even now with the, with the, uh, even better extensions library, uh, it makes it really, or plugin, it makes it really easy to just one click install plugins and that sort of thing.
+So, um, really, really excited to see that progression.
+Yeah, absolutely. That's super exciting. I, I like having a man on the inside. It's, uh, yeah, dude, you know, I'll try to provide as much context as well.
+You know, I, I, I've, I've gained a lot of value from it too, as well. You know, um, uh, it's been cool to see, to have, to help guide the vision of how people use the tool.
+Because I use the tool all the time, constantly. It's literally open every day, all day in my, in my computer. Um, so I think from the perspective of literally just using it 24 seven, um, I think there's a lot of value that can be, be added from having that experience.
+So, uh, it's been fun. It's been fun. And we're going to continue trying to, to really serve the power user community and get people really comfortable in there. Um, and remove that friction of, okay, I have to think about using this tool and more.
+Just, you're just focusing on the hacking. Yeah. Yeah, absolutely. Yeah. Yeah. That, and that's been my biggest thing about Kaido is like the less I have to focus on using the tool and the more I can just use the tool, the better.
+Right. And there's going to be friction, man. That it's the problem is, is I've even talked to them a little bit about like, wouldn't it be cool if there was some sort of like, not like burp compatibility mode or something like that.
+Like something that makes that transition a little bit easier because when you're moving from burp to Kaido for the first week, it sucks. I'm not even gonna lie. And there are a lot of great features like that. You're like, Oh, I really like this.
+Um, but you're going to have to think about how to use the tool for the first week. But then once you get in there and you start using the tool and you start understanding the power of workflows and these extensions that are in place and, and the distributed architecture, and you're just popping back and forth from your couch to your desktop, you know, with ease, without having to move your files and anything like that. Um, there's a lot of added value to that for me. Uh, but you got to get over that hump in the beginning. So yeah, it's tricky.
+Yeah, absolutely. All right, man. You got anything else you want to add about? I mean, I guess you haven't really, really done anything at BountyCon yet. You just got off the plane. So we'll, we'll do it next week.
+Yeah. Yeah. Yeah. We'll see. We'll see. All right, man. Sounds good. Get some rest. Have fun. Thank you. All right. Peace. Peace. And that's a wrap on this episode of Critical Thinking. Thanks so much for listening. And if you want more Critical Thinking content, head over to ctvb.show slash discord. Join the discord. There's lots of great conversations and chats going on over there. And if you want to support the show, there's the discord subscriber tiers, which give you access to masterclasses, AMAs, hack alongs, exclusive script.
+And an exclusive chat channel with us. We'll see you there.

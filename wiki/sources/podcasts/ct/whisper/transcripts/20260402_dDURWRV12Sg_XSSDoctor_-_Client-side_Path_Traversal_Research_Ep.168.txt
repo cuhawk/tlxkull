@@ -1,0 +1,915 @@
+ it didn't look like catching to me when i was watching jd redo it it looked completely
+ no it's legit man it's freaking legit it's legit yeah
+ best part of hacking when you can just you know critical thing
+ i'm not sure you all know this but two of the most respected hackers in the ctbb
+ community bus factor and xss doctor are now running monthly hack alongs on the ctbb discord okay
+ you've got to check this out ctbb.show discord we find bugs almost every time we hack it's crazy
+ and and oftentimes it's not even the people running the hack alongs it's the the community
+ members that are hacking along with us it you definitely increase your chance of finding a bug
+ by being on these hack alongs so check them out ctbb.show discord join bus xss doctor and yours truly
+ and let's pop some bugs all right let's go back to the show
+ all righty doc it has been a long time in the making thanks for joining us on the pod
+ um we got we're starting like 30 minutes late because we got so distracted talking about
+ all the research and the fun stuff um in advance so we got to bring it to the people as well um but as
+ always let's start off with the bug and then we'll we'll get into intros so um you put four here in the
+ doc let's uh let's start with the or no let's start with the i like that one first i think we're gonna
+ have to mute that one that word out that you just said that's good thanks for having me on i'm super
+ excited to be here i've always wanted to be on this podcast um so fine let's talk about this bug from a
+ um so i'm gonna uh the the bug is uh from let's say a a company that makes home automation
+ software uh that can sometimes be controlled by an ai okay and that ai um is what i was hacking and so um
+ actually it starts with grep me asking me to collab and i was like pretty excited every time like a big
+ hacker asked me to collab i say yes and i get really excited about it um and i and like we started hacking
+ and like he found something immediately you know some idor and put me on the report so i was like all right
+ i have to like really show up talk about motivation you know yeah i hate it when that happens oh my god
+ and i was like i was kind of busy at work too and i'm like all right enough like like we got i got to
+ get this bug done so i'm like looking at this particular ai and um the ai it was is a very powerful
+ ai it has access to basically everything that the user of this has in their whole life including if they
+ have home automation set up it is this particular you can just control the house you could just type
+ into the ai turn off my alarm and it will turn off the alarm so it's extremely powerful so like the
+ first thing you look at is i'm like if i can prompt inject into this ai i'm like god uh for this for
+ this situation so i obviously i look for all the parameter look for a q parameter i mean a q parameter
+ would be extremely silly to have on this app and it was correct we didn't have it but there was a post
+ message listener that you could send a post message through this listener and it would it would just
+ pop up um as a prompt injection now it i think it was meant for a chrome extension to use um but
+ the origin check had star dot this target dot com as as part of the origin check so if you had xss on any
+ anything in the entire ecosystem of this program you could send this post message into this ai and
+ control the entire their entire life so i'm like okay like i need to get i need to get access i mean
+ it's a huge ecosystem so i i you know i figured there was probably excess i've actually had found xss
+ before but didn't know about this gadget so i'm looking around and i actually the first thing i look at
+ when i'm looking for xss is usually file upload um when i'm like looking for easier xss um and so i i
+ actually uploaded a file to this ai and uh and and and i could upload arbitrary html and i could visit it
+ but um but um it was an attachment so then i'm like i think that there are there are like pre-production
+ uh domains on this on this ai so i i go to all the pre-production domains i which are identical
+ and i upload the my html payload and one of them did not have it as an attachment no that is that is a good idea dude
+ yeah and so i i make the bug i submit the bug and i get and when i do that when i do the file upload i
+ always test it on a guest profile to see if it's if it's not a self xss right there are no login c
+ surfs on this on this target it's extremely locked down for login c surf so a self xss cannot be escalated
+ or i couldn't find a way so i i tested on the guest profile and it pops so i'm like i'm good i'm solid
+ like all i have to do is send this and it sends a post message um and i'm and the the setup of the
+ of the bug was kind of interesting because you couldn't have the ai in the background you had to
+ have it on the foreground because for some reason it wouldn't send the prompt in the background um
+ so i yeah it was really weird which actually kind of takes away from the impact of the bug a little
+ bit because yeah they're seeing they're seeing like turn off for your alarm system
+ i wonder if you could do the same sort of thing we did in that hack along that one time though where
+ we like popped it up in a little box yes you know like oh yeah and i did it i popped in a little box
+ and make it made a little bit a little bit better looking uh but it still looks like and that's what
+ i did i popped it up in a little box yeah but i didn't like that popping up in the front thing yeah
+ so i looked further into it and what was the what was it doing when you were turning on the alarm
+ system there was an api it was calling an api had the same cores as the post message had so it had
+ access control allow origin star.target.com with the pre-flight so i didn't even need the post
+ message anymore but then i hit same site same site lacks default cookies or are they same site none
+ explicit it no the the auth system of this program is uh at the level of the tlt you know like there's
+ not a separate off for every oh yeah every no no no because you've got an xss so you're saying i have
+ an xss exactly so i didn't even need the post message anymore i could just get the xss and have it hit
+ this api so i'm like thinking i'm this is the greatest bug i've ever found in my life yeah yeah i submit
+ it i'm i first thing i do is i message grep me because you know i want him to be impressed with
+ me yeah and uh and he is yeah and he is impressed with me we know that he is and he is yeah i think
+ around the same time i got a message from grep me like dude jd is god you know like yeah yeah and i
+ message everybody about this everybody i know i'm so excited i think both of you got messages from me and
+ and and bus factor everybody that i know and about a week later i get that they couldn't reproduce it
+ and i'm like oh my god it turns out that that guest profile i had tested it on i had logged into the
+ app on a different window in that guest profile no and it was indeed a self xss oh my gosh yeah and
+ yeah so i'm like i'm like ready to die like i i've never i i had told everybody about this bug it was
+ the best book i've ever found and so i messaged them back like listen give me a week please to find
+ another xss please and then i'll close it if you don't find it and they're like fine and so i'm i'm
+ going crazy i have ai armies out there trying to find xss i have everything i'm messaging demo do you
+ have an xss here like i need that on the last day you know yeah and so on the last day i had looked at
+ this other ai this company had a lot and i'm like i'm just gonna do this one last time and then i'm just
+ gonna close it and just tail between my legs that's the end of hacking for me forever and i upload
+ i upload the same thing on a different ai it again is an attachment and i'm like you know i
+ think this also has a pre-production endpoint but this is a little bit different this bug because there
+ was like a parameter that said path on the bottom so like if you uploaded it to but then it said slash
+ uploads okay if you upload html to slash uploads it would it would fail but you could put after the
+ word uploads slash hello and then it would upload anything you wanted to slash upload slash hello slash
+ whatever this md5 something was and it would let me know what anything i wanted unauthenticated and that
+ was nice and i was an authentic xss and then you weren't getting attachment disposition nope on the
+ pre-production endpoint with that path thing i could i just visited it it was the last day of my testing
+ and i got the everything and i submitted everything and it went through and gret me was again very
+ impressed with me dude i love the conclusion of that story that was what it was all about in the end jd you
+ have nothing to prove man you've yeah seriously for a very long time no but still it's still you know
+ you're no he got that eye door and at least i got at least i found a fun ball no i totally get it though
+ i mean i feel the same way actually i'm hacking with franz and every time i hack with franz and matthias
+ we have hacked with franz videos for years but every single time i hack with franz and matthias i feel the
+ same way because those bastards pull out like all the vulnerabilities like as soon as you start hacking
+ they're like oh i just found this and i'm like what oh my god all right now i gotta keep up with that
+ so um yeah no i totally get it and uh yeah i think that there's a couple really good takeaways from
+ that story one which is pre-prod might allow you to bypass the the content disposition stuff so
+ excellent excellent insight the fact that it worked twice in your scenario is very interesting and then
+ um also kind of that's another really interesting thing to check for content disposition is uploading it
+ to a different directory because maybe directory specific download rules are in place where it's like
+ okay if it slash uploads then we do it as a attachment but if it slash you know whatever else anything
+ else yeah very nice dude very nice dude two very solid takeaways you're impressed too it was totally
+ worth it the whole thing was worth it well i think that's probably the world's best xss escalation too like
+ like you know xss to your alarm systems off you know like i know that that was the real world impact is
+ like the best yeah i love real world impact i and i that's my goal for the year just just you know text
+ your victim right text your victim be like your package is here they click the link now their alarms
+ off you know like they're getting to the house and rob the house that's exactly right a real criminal could
+ use that that like i love the idea that a real criminal i have stopped a real like maybe they
+ could have maybe they would have stopped i mean i think i actually think smart lock i think smart
+ lock or smart garage door is even more impactful though like if you can just open someone's garage
+ door up or unlock their door this could do that too right this could do all of that stuff it could
+ open everything i love that dude i feel like jd is the kind of guy you know he's so context y'all he's a
+ doctor already so he's making good money right yeah but i feel like he's the kind of guy that would do it
+ and then just rob the house just for like i exploded it and i did it i would do i wouldn't
+ just rob it i would put stuff in the house i would put stuff inside the house yeah exactly get
+ in the house still get in there put a picture of this report as a critical yes dude we have to tell
+ that story jd oh my gosh we can't tell the company but we have to tell that story that should be the
+ next bug okay all right um jd i mean you got a couple more bugs man i'm a sucker for a good bug story
+ what do you want to do next all right i'll tell one more bug that actually is rezo and i's bug if
+ you notice i hack better when high level hackers ask me that hack with them i i like try to bring my
+ game and that's it so we rezo and i were hacking on another site that um is an e-signature platform
+ um and basically the way it works is that you um the you make a uh you make a contract and the contract
+ you send it to the person you want to sign it and they get it in an email and then they click that link
+ and then they sign it and that and uh and we found that the the person who creates the contract there's
+ another api endpoint that really wasn't that visible that you could get to that would let the creator of
+ the contract see the link that was sent to the recipient of the contract so you put you basically
+ make a contract and then sign it on behalf of the person who you were sending it to and it just said that
+ they signed like when you clicked the sign thing it was their name that was that was signed and so we
+ i mean to me that's the highest level that this this app can offer right but when we submitted to
+ them they tried to close this thing like three times on us justin yes no joke they're still debating
+ whether or not they're going to accept it yeah so like they basically said that it wasn't it wasn't
+ the triage or it was the actual like developers or like we made it like this so that because we didn't
+ want the recipient to to anyway it doesn't matter what they were working about it's a design principle
+ thing is it was a design principle but you do run into these issues from time to time where the
+ programs are a little bit more resistant because it's like okay well for the business use case the use
+ ease of access is like oh we should be able to sign this unauthenticated or whatever but at the end of
+ the day if you're leaking the url they should leave the url that's the bug the bug is the leaking if
+ they don't want to do that anyway but so what i did is i used this to create a contract with the
+ security team of the program of the company saying this is a critical bug and will be paid as a critical
+ bug and that you and that you agree and i signed up on their behalf of them and i sent it in the report
+ oh my gosh yeah you're contractually obligated to get a critical yeah and i and i i i was thinking
+ when they pulled back again of being like you signed the contract it says here you signed the
+ contract i don't know what you're what we're debating about now can you prove to me you didn't
+ sign this contract because if not yeah you can't prove it's not in the audit trail says you signed
+ this contract yeah we can go to court over this like you agreed to it yeah in the in the contract
+ like it shows what their email or like what yeah their email their name there's nothing that identifies
+ the creator of the contract as the signer do they need to have an account on that website or is that's
+ why they say that's their argument that they don't want the recipient to have an account on the website
+ they want anybody to be able to sign it but that's great but then the link should be yeah private
+ the link is the security feature yeah the security mechanism then is that you got that link via email
+ right and then the only reason that it's not just anybody signing it is because you got that link in
+ your email right so if you thus you have access to your email and nobody else does thus it must be you
+ signing it right so that's it that's exactly a little sense man that makes little sense it's a good bug i
+ like i said that in the contract that was part of the contract that was funny oh my gosh very good man
+ well i feel like uh i feel like we could kind of go back and forth all day on um on stories but let's uh
+ let's actually intro you um so uh guys this is xss doctor he's been running hack alongs for us for a
+ while now so most of you guys that are like hardcore in the community know him um but i will just say i'll
+ brag on you a little bit and then i'll let you do a self intro as well but i think xss doctor is like
+ one of the people that has kind of grown up in bug bounty in this community in the ctvb community that
+ i am most proud of like if i think of like oh you know what effect says the ctvb community hat you know
+ had on a bug bounty at all at large and the fact that xs doctor has you know grown up in this environment
+ is like one of my proudest you know things um and yeah i just have so much respect for
+ you as a ackerman like the amount of passion you bring very very rarely does the amount of
+ passion somebody brings to bug bounty actually rival my own but i i feel i feel like uh you know
+ we have very very similar very compatible levels of a passion for bug bounty and it's very contagious
+ and passion for front end and passion for front end right and uh just seeing the way you you tear apart
+ frameworks and apps and like and just get right to the meat um it's just it's very inspiring man so
+ you're definitely a hacker i respect a ton and i'm very glad to have you thank you well i mean i'm only
+ for real i only learned front end because of you like i i'm not i'm not that's not a joke like i i
+ didn't even know about it like i would listen to the podcast and i'm like this guy seems that's it seems
+ fun what he's doing and then that's why i learned all this stuff dude that's i'm so glad to hear that
+ man um you're also also a doctor right your name is xss doctor um so to give us a little bit of
+ background of like how you landed on bug bounty as a cardiologist and uh where you're at in life now i
+ guess like oh yeah so i basically i was uh i started practice in 2019 i finished fellowship and then like
+ i was like all about you know being a cardiologist and then like covet happened in 2020 2021 and like
+ coveted it was really crazy time in medicine uh for a lot of reasons but like for me it was weird
+ because like everyone was dying of coveted and nobody was coming into the hospital for heart disease
+ but i was still consulted for all the coveted patients because they had high cardiac enzymes that's
+ kind of a side of them anyway and so i was like both very stressed and depressed about everybody dying
+ that i was seeing and kind of bored uh because i wasn't doing any cardiology and i had a very small
+ child that my that like when you have one kid it's mostly your my wife now i have two kids and it's
+ like kind of half and half but so i was like getting home early and i was bored and depressed and kind of
+ like didn't you know and i'm like scrolling on my phone and i see this like learn to be a hacker in 12
+ hours go from beginner to intermediate level is what it said i'm not going to say the name and this was
+ like one of these fake classes yeah but i i'm like i want to that sounds awesome like that's the coolest
+ thing i've ever heard what i took an algorithm showed you that like that's what i want to know
+ like i just want to know what was in the algorithm of like instagram or whatever that's like okay jd is
+ the most nerd snipable human uh and what could we get him to think that is cool that you know like
+ and they're like hacker that's amazing it was on flipboard yeah oh you ever heard of flipboard no
+ that's like that's because i'm old that's like predates i still have it on my phone it's like when
+ you flip and it like will show you a different article every time and so i took the class it was
+ obviously fraudulent but um but it was i was like obsessed i like didn't know about cali downloaded
+ cali linux and um and then like i'm like all right i i even realized then this was bs but i i'm like i
+ go on reddit r hacking and i'm like you know how they had that like thing on the top and when they were
+ like um how to be a real hacker like and it's like don't be a script kitty do ctfs that's what that posted
+ thing said that ctf players if you could be ctf player you could hack anything is what that thing
+ said so i spent the next like year and a half doing cts uh mostly hacked the box and like obsessed
+ with ipsec which i still am by the way i love ipsec and um and doing like if i'm like i don't even care
+ about hacking if i could just do extreme box i'm that's all i care about in life you know like i was
+ just so into it and like i spent that time i'm like learning python and like i'm like i'm like trying
+ to do these boxes and i'm and then by the time i could do an extreme box i'm like all right right
+ post said i'm a hacker yeah i am a master hacker in fact yeah you know i'm an extreme hacker and so
+ i'm like i think like what kind of hacking am i legally allowed to do and i knew about bug bounty
+ so i started to look at bounty bug bounties and i'm like i don't even know what i'm looking at right
+ now like i've never what that is this you know like i it's i don't know how many people have had
+ that experience like where you're doing ctfs and to hack the box and try hack me when you look at the
+ kaido output or the burp output of a real website it looks drastically different than that oh yeah
+ totally and the types of bugs you look for are drastically different like i thought everything
+ was going to be like php to rce yeah you know a vhv lfi to rce to me that was i was going to find that
+ every day yeah um and then i took jason's haddix's bug bounty methodology course and i found my first
+ couple bugs during that um and i started hacking sort of in that method for a while
+ but it with that um type of wide scope packing you need a competitive i find that you need a competitive
+ advantage like extremely good automation or like some something that makes you better than the people
+ with the automation which i did not have and then i started listening to podcasts and that's kind of
+ where i and i i realized i'm like why am i finding that many bugs and and then you were finding a lot of
+ bugs so i'm like let's let's see what the hacking like this guy would be like yeah and and that's kind
+ of how i got into client side dude that's that's amazing man yeah that is a that is such a amazing
+ journey and i'm so glad that i was a part of that uh that just gives me goosebumps that's why we do pod
+ um i i i do want to jump back to i guess a function of your rhetoric that keeps coming out which is and
+ this was the most important thing in my life you know and like and you're like this was and then i felt like
+ you know that i if i could just solve an extreme box then it would just be like the whole purpose of
+ my existence you know like like and i i often find you know myself talking like that as well as like
+ if i could just like pop this this bug this would like make my life you know um i can't sleep yeah i
+ think i think i think that is if i had to to if i had to guess i think that is probably one of the
+ reasons why you have the success that you've had is that like super strong passion all in like this is
+ what is this is the thing i am very decided and focused that this is the thing that is the most
+ important to me right now you know yeah it's very goal oriented too and i think that it is and it's also
+ kind of hopeful like it's optimistic i think the mix of passion optimism and goal-oriented thinking
+ is like a really really um strong mix for success and a lot of top hackers that's a really good way to
+ put it i agree with that and i see a lot of hackers like fearing towards negativity and i think that
+ hurts them a lot when they don't find bugs or when they when they get some bad situation with triage
+ you know i think that's a really good way to do it because i think that's a really good way to do it
+ and i think that's a really good way to do it and i think that's a really good way to do it
+ and i think that's a really good way to do it but i think that's a really good way to do it
+ and i think that's a really good way to do it and i think that's a really good way to do it
+ and i think that's a really good way to do it and i think that's a really good way to do it
+ and i think that's a really good way to do it and i think that's a really good way to do it
+ and i think that's a really good way to do it and i think that's a really good way to do it
+ um and it's possible that your passion is just you know bottomless and endless but i also heard a
+ little bit of like if i don't pop this bug i'm gonna quit bug bounty forever and this is the end of
+ my life and i i hate my life you know so there are a lot of ups and downs with this right so i in more
+ so than i i would ask the normal um you know guest on critical thinking i want to ask you how do you deal
+ with the ups and downs of this being such an extreme person and is burnout a part of your your flow
+ yeah i'm not gonna i'm i'm i'm actually not the right person to ask about this because i'm
+ completely different than everybody i not everybody a lot of people at least because i i don't like this
+ is solely for fun and so when i don't like doing one aspect of hacking i will switch completely at a
+ whim to a different completely different like i'll like like i stopped hacking once for four months to
+ learn go you know what i mean like yeah like i just i don't care about doing that and if i'm into doing
+ that like i i was i did a lot of i did coding for a while i helped with that fat with fabric uh and
+ that's i did that like for months i didn't hack basically because that was just really into that
+ and i think that that that stops me from burning out um like just following like a like a passion and
+ being able financially to do that is very helpful and i think it's made me a better hacker in the end but
+ it's made me make less money in the end because um like i don't go five days straight on a target in
+ order to find 50 bugs yeah which would make me more money um i don't think i can do that uh like in my
+ life i don't have enough time to do that right um but anyway that's that's my answer i'm not gonna burn
+ out because of that i've asked you before though like if you have such passion for it would you go
+ full-time bug bounty what is that i spent a lot of time being a doctor like i spent a lot of time
+ trying to be a doctor like it might like it i i finished training when i was like 2019 i was like
+ 36 like i i basically like i it was like decades of my life and it's hard it's fun being a doctor i
+ love being a doctor and i have like all these patients that need me i don't think i can not i
+ don't think i can stop doing that i will say justin this thought has crossed my mind a lot too
+ because uh for listeners that don't know basically my entire hackbot system me and jd
+ are just kind of 50 50 on and there's a lot of reasons for that like i think there's a lot of
+ really cool things like you know he's able to triage like front-end stuff that i'm that i would
+ struggle to triage and lots of other things i actually think that people should probably
+ partner half and half on on um hackbot creation because you get twice as much velocity and anyways
+ i'll i'll table that for now but um the one thing that i have thought a lot about justin is like if
+ if he and i do you know a million in bounties this year just like completely crazy it goes
+ really well well could i talk him into it and i think that the best i could do a million dollars
+ i know we never mentioned a million dollars here and i think the best i could do is talk him down
+ to like part-time work you know yeah i don't know it it it depends on a lot of things it's it's hard
+ there's no such thing as part-time it's a cardiologist it doesn't i know part-time
+ cardiologists and they still work full-time it's hard to be a part-time cardiologist yeah yeah i
+ imagine so and it's and it's something i think there's also a weight to that as a as a physician
+ like you and this is something we've talked to i think when we went out to dinner that one time it's
+ like well you know if you're so passionate about bug bounty but you're also a cardiologist like you
+ you've got to really be disciplined in that you need to be paying you know sufficient attention to
+ your profession because it's not something that is like you can just skate by on as if you're like a
+ government employee you know yeah yeah it's a lot of pressure there's a lot of pressure for your
+ patient and you can make one mistake and like their life is over obviously your life is is also harmed a
+ great deal yeah by that one mistake but yeah so that's intense man i think that you're living a
+ very intense um you know environment there but but i think you've also mentioned like your work hours
+ are pretty good and that you can still find time to hack and stuff like that and you can reschedule
+ patients and it's too efficient yeah it's my efficiency yeah it's which anyway yeah i can do a whole podcast
+ on efficiency yeah well i i know we actually should do that i think it's like a superpower yeah i i know
+ we said we were going to focus on the research but the research but so one last question though you
+ context switch a lot right which i think is something that is a lot of hackers struggle with
+ particularly me i need focused i mean actually you know sort of the the the environment around you
+ you know forces you to evolve so now that i have kids i am getting a little bit better at like
+ you know dealing with distraction then coming back but you do it in a way that i've never seen which is
+ i've got a patient now i've got six minutes to hack and i hack and then i go back you know like yeah so
+ that's that's not uh that's not a super that's in my disease like i have add uh that used to be
+ medicated when i was in high school right and then i did i stopped medicating my add and i just figured
+ out how to live my life in such a way that works with my brain and that includes if i'm doing something
+ that i'm not having fun doing i can do it in short spurts and then switch to another not
+ fun activity and then switch back and i'm able to do that but if i'm obviously if i'm into a thing
+ like if i'm in the middle of a bug chain i could do that for like a week without sleeping but if i'm
+ doing like recon on a target which i'm i'm not a huge fan of that then i have to context switch
+ frequently in order to complete the task but that is my brain thing and not like what i suggest for
+ others around me but it helps me in context switching to like medicine and hacking and my kids
+ um and stuff but that's wow very interesting dude i don't i don't know how that works for you but uh more
+ power to you because it's clearly getting results you have the opposite you have something that nobody else
+ has which is you have like the the hyper focus of add without having add and you just have it all the
+ time like that's like that's like that's an actual superpower like we we have i have a problem yes
+ actually actual i i wish i could get on something like ritalin so i could do what justin does but
+ i literally it's unreal yeah it's unreal it is it is a little bit odd too man i i do think um just as
+ like a you know i don't know self-proclaimed neurotypical here uh like i do i do really value
+ the fact that i can just sit down and focus for a very long time and like you know stay locked in
+ and stuff like that but i mean you really do feel it when your body is off too like if you get a bad
+ i've got this whoop right if you get a bad you know night's sleep or you know you're just not your
+ body's not at you know good performance levels or whatever like i'm sitting here i'm trying to focus
+ i'm like man why can i not like focus on this you know so it is crazy when as you become more aware
+ of it you you learn how to like optimize your your life around that if you're really trying to focus
+ hard um i have to feel physically good in order to hack well i agree if even if i have one drink the
+ night before i'm older than you guys so i like one drink is a lot is a lot for me i mean even though
+ i do it but uh but i'm a worse hacker the next day even with one drink yeah i stopped being able to
+ process alcohol at like 25 like at 25 like i started you know if i had a glass of wine i would
+ feel it like the next day actively and i'm like all right well guess i'm done with that so i i don't
+ drink anymore um but yeah so all that aside let's get to the technical meat well richard go ahead and put
+ in a cut here as well you know for like if people want to like jump to this point uh in the podcast
+ um let's get to the research okay so you i messaged you about this episode and i was like hey man you
+ know maybe we could do something with like client-side paths or like client-side path traversal and then
+ you're like sure thing and then like i come over and there's like this book on client-side path traversals
+ there's an app on client-side path parsing there's like the nuances of every single framework outlined
+ i swear dude that and and i've read through it all and it's like beautifully written uh did you ever see
+ the prices right you ever see this other prices yes i have you know when they call the person down
+ and and that person is all excited to be on the prices right because they've been watching it for
+ years right i am currently right now on the price is right and you have called me down like are you
+ gonna are you gonna is this gonna be a bad episode no no this is not gonna be a bad episode this
+ better be a fantastic episode this is so funny because we just view you as our friend and you literally
+ lead hack along it's like you've popped bugs during justin's stream like you're not different
+ you're not so you guys every thursday that's my routine for years for years oh man that's amazing
+ dude frick i love this i love this community okay um so we now have a very long research paper uh that
+ will be going on the research lab so uh you can find that at lab.ctbb.show and uh that outlines
+ client-side path traversals across every single major framework by our boy exercise doctor yeah you
+ should take one minute to tell us uh how you wrote that because justin loved it okay yeah okay so yeah
+ let me set the scene for that great great lead in rezo um as i read through this i was like oh man
+ like jd sat down here and like wrote this like by hand every single line and you know that's so rare
+ nowadays with ai is that actually what happened because it actually actually the answer is this what
+ you're reading was written by me but the the process by which was written by me is slightly different so like
+ basically this is let me talk about the research first then we can talk about how i did it basically
+ um i started out by i uh i love client-side path traversal is my favorite bug uh class and i love
+ playing with client-side paths the first thing i look at ever on a on a target is is all the client-side
+ paths same and i when i'm looking for clients like that traversal i basically i don't even look at the code in the beginning i just like find a path that looks like it's custom
+ like slash settings slash xss doctor and then i'll start putting in coding at the end of that percent
+ 2f percent 25 2f percent 5c sometimes unicode all but for some reason now i understand why but it never
+ it doesn't work the unicode uh often and so and then i'll i'll look for an api call on the back end
+ i'll often also use bus factors fantastic uh gecko extension which i do all the time which basically
+ is just looking for reflection in the api call and then um if i find that and i find traversal
+ on the back end i'll then look to see if um if if there's any impact of that whether it's a c-surf
+ or xss um but when justin asked me to do this client-side path episode i thought it would be cool to
+ like look through every framework and to find out why it was sometimes working why percent 2f sometimes
+ works it doesn't 5c like is it just like the developer doing something weird or is there something
+ that is unique to the frameworks so i looked at uh nine i actually looked at 10 frameworks in
+ the beginning but i i thought it was too long so i ended up just doing it on eight and so that's uh
+ react uh next ember view angular something called solid state um am i missing one so nuxt i did nuxt
+ also um i think that's it and so um and spell kit and spell kit yeah and so the way that i
+ did it was that i had ai build me labs that's the first thing i did is i say build me a lab for react
+ i want it to have um this so basically like take a path parameter and and uh put it into an api call
+ take a query parameter put into api call how is it doing that and then i would i would look at it
+ play with it and then ask ai um yeah ask ai that's really good that's a really good flow sorry i know
+ i was i was gesturing with my hands here for those that are on audio but um yeah that's a really good
+ way of doing it too because the ai of course is going to produce the code that is most common
+ that it was trained off of right so if you're looking to like replicate common code patterns
+ used by developers in the specific language then that's like ai is right you know like that's
+ that's so so you had to generate all the labs and then you work back from there or so i st i would do
+ the labs and i'd i'd find the places that it worked on and then i would ask ai to point me to the code
+ in the developer code like in the react code for example to it's like where is this parsed how is this
+ parse like like when um so like thinking about let's say that's client-side path example for um so like
+ you're a developer and you want to make a you want to make a path to um the slash about like that's
+ easy right like you just like basically say slash about this is the javascript you want to be on that
+ page this is what you want the page to look like but let's say you want slash settings slash xss doctor
+ that xss doctor is going to be custom for every user and so that is going to be defined a certain way in
+ every different framework um and so like in react for example um it would be like slash sledding
+ settings slash colon user id and so then i thought the developer needs to get that somehow and then use
+ that in a way that however they want to use it they have to get that information because
+ if i was a developer and i wanted to make let's say slash settings slash xss doctor and then i would
+ make an api call to slash api slash xss doctor right api v1 xss doctor uh they would what they would
+ do is they'd get that value as a variable and then pass it into the api call which is actually how it works
+ you know and in react that would be on the front end sometimes it's on the back end we talk about that
+ and so um i had ai point me towards the exact code and i would keep asking questions i'd be like
+ what's it doing here like why is it doing this like what is this what is this um and then i would look
+ at it with ai to find out so that's how i did the research to trace it through the various components in
+ yes reacts internal repository or whatever framework correct okay and then i would i would say why is it
+ you are all decoding here like what's happening here like what's the function show me that function
+ so i would i would do that um and then i had all the research done for all the things and then i'm like
+ write the blog article for me just write it you know here are some blogs i've written before put make
+ it sound like that yeah that's literally what i did and i wrote it and i'm like this is pretty good so i
+ sent it out to like rezo and and demo and you although you didn't read it thank god um and that you
+ and they wouldn't have liked it and uh bus factor and everyone's like this is okay but like i could just
+ get ai to write me a blog like why did you get ai to write me a blog true true so then i rewrote it all
+ myself yeah i think i think it feels okay so so then what you did is you looked at the blog post
+ and then you like hand rewrote it is that is that right yeah i hand rewrote everything i know i just
+ started at the beginning i didn't like hand rewrite line by line like i i just wrote my own blog article
+ okay there are certain lines i left in from the ai yeah and some of them maybe you could tell they're in
+ there uh but i couldn't personally there were many there i i left mostly it was me uh in this particular
+ one uh because i once uh uh submitted a bug with you and i had ai write the report and you were quite
+ unhappy with that report um and i felt bad it wasn't good bro it was not good i know i felt really bad
+ it when you when you when you so i'm like i can't submit a blog article in your defense it actually
+ did get triaged got paid i don't know two days later it did i i like i said i messaged you and i was
+ like look jd this is like this is awful and this doesn't have like a a very actionable poc like everything's
+ terrible where is the click and see impact right yeah like i really think that that's essential like you
+ you you and you did have a you know there's a ton of stuff there's a lot of detailed information it
+ was like you know it outlined everything but as a as a you know as a i don't know as a person reading
+ the report i wanted to see go to this link click and then note what happens on their site you know
+ that sort of thing i didn't see it but somehow you're right it was a terrible article it was a terrible it
+ was a terrible no you were right and i felt bad not because of you but because i i'm like i that was not the
+ best work i could have done there but it's so it's so seductive to have ai write the report for you it
+ is because it's so boring sometimes to write the report sometimes it depends on the bug if i love
+ the bug if a bug is part of my heart i like writing it but if the bug is not part of my heart and it's
+ just like i like i don't like writing it the bug is part of my heart dude let me give like a like just
+ like two really quick tips from for writing better reports you know 90 people listening probably already
+ do this but if you don't definitely tell it to be concise and just technical and leave out any kind
+ of fluff but the other thing that i found that is really really um good for having it right good
+ reports justin especially for what you're talking about is i've told to always use attacker victim
+ language and be extremely clear about when the victim does or like sorry given these preconditions
+ because like often the ai whenever it starts to write that would be like wait the precondition is that
+ you're already a super admin oh man this actually isn't a bug right so like you know
+ make make sure it gives the preconditions for what the victim is and what the attacker is
+ and then make sure that it frames it in attacker victim language so you know an attacker would set up
+ this and then a victim would do this and then this outcome will occur and that massively improves our
+ reports yeah yeah i imagine it's i don't know it depends on the bug it's it's it's very hard for me
+ because sometimes i just want to i found the bug i just want to submit it yeah i think at the end of
+ the day like you should definitely write concise technical you know to the point reports right i think
+ and this is actually something i said on the goals a goals episode at the beginning this year you know
+ i want to do better detail you know in my reports but i think if you're gonna skimp somewhere skimp on the
+ report and don't skip on the poc like if your poc speaks for itself there is a high chance that the
+ company will like take that report seriously right if you're if if you're you know and when justin says
+ poc he doesn't just mean like the actual script he means like the video showing exactly what happens
+ yeah the video the the actual script it's itself you know all of that it you know they will fill in
+ the blanks on the report right uh or they will ask you to fill in the blanks on the report if you
+ write a report with no poc and no you know video then it's it's hard for them to go from zero context to
+ oh i read through this thing and i know you know how it works and i can actually implement it myself
+ you know given none of your pre-knowledge right so um i don't know i think that's i think if you're
+ going to skimp on on one area definitely don't make it the the poc um i'm going to try to do them all
+ myself anyway yeah i think that's good i think that's good all right let's get to the research so um
+ i mean just having read through it essentially what this research shows and you can correct me
+ where it where i'm wrong in any way is an analysis of the these frameworks how um path parameters career
+ parameters hash parameters are parsed across the frameworks and even some server-side rendering stuff
+ which was very interesting to me um and then uh how these cspts actually which is a client-side path
+ traversal get um in they how they occur within these frameworks what what parsing of the of the
+ parameters what parsing of the routes should we be looking for and understanding okay you know in this
+ scenario our percent 2f is going to turn into a slash and we've even got percent 25 2f now that we can
+ you know utilize in this specific environment uh versus like um understanding where you know what
+ single page application frameworks are not going to do that um and you're wasting your time looking
+ for for uh cspts is that is that accurate yeah i mean basically like when we're in this situation
+ the source is going to be something in the url bar and the sync in this just in this for this gadget
+ is going to be the fetch or the api call so if you think about that like what is the process by which
+ the the thing that the thing in the url bar gets to the api call to in order to exploit it there's
+ another sync right there's going to be either the the uh the c surf sync or the xss sync or however
+ else you want to exploit this or the or the ssrf or secondary path traversal sync um on the server but um so
+ if you you know in the url bar the um oh good nice yeah i've got the the three places that you that you
+ may um that you may your three sources there are either the path itself the query parameter or the
+ hash parameter um the query parameter everyone is always testing this from the query parameter but i like
+ to start from the path to be honest with my most impactful um cspts have been from the path same
+ not from the yeah i agree i think i think it actually very often happens in in in the path
+ parameter more almost more often because there i feel like the developers are looking for it from the
+ query parameter more or something i also feel like they often take query parameters and put them in
+ query parameters versus like path values get put in path value yes does that make sense yeah that's that's
+ yeah and interestingly in my research the path was the most interesting um i found the most interesting
+ things basically there so um you can even go down go down to like the all the way on the bottom to that
+ to that um so so like basically for people who are like not client-side people it's like again it's
+ like the way you have to think about it is that there is each the a front-end javascript framework i
+ guess just to introduce that is there the pat the path parameter in the url bar is not mapping to a
+ folder on the server or a file on the server like it would be for like php or like a multi um a multi-page
+ framework and all these older framework is um instead these uh javascript frameworks they the url bar they
+ they take what's on the url bar and uh the path in the url and and that will be sent to the code and
+ the code will use that to determine what shows up on the page what code paths are going down what lazy
+ loaded javascript files are loaded um what api calls are sent out from from that place and so um when
+ you have a dynamic path parameter a path parameter that's not like just slash about but like slash
+ about slash xss doctor slash files slash md5 sum you know um the way that they reference those
+ as the developer there's a function that they call either on the front or the back end that gets that
+ value back for the developer and then the developer can do something with that okay and so let me let me
+ let me pause and and try to summarize and make sure i'm tracking with you okay so unlike you know php or
+ ias right those are sort of file system based hgp servers right um we've got those and then we've got like
+ apis right modern modern paths where um a program is actually handling the the parsing of these routes
+ right so those are two types of paths that we're familiar with then there's also like a third one
+ which is like a client-side router right which is a a router that is occurring within your own browser
+ for single page applications so um the javascript code on the client side is parsing the the the path
+ from the url and then routing you to some specific you know view or or some page within the single page
+ application uh and that's what we're talking about is dealing with the parameters of those paths so
+ um the you know like you mentioned slash about slash xss doctor whatever xss doctor might be a
+ dynamic value there could be slash about slash rhino rater right and what we're while we're looking into
+ here is how these client-side routing engines parse that dynamic component is that am i am i tracking with
+ you that's exactly right that's what i wanted to look at that was like the the you know uh for this
+ part of the research yeah and so um and then another question i had was that which functions in which
+ frameworks decode by default so if you put in slash xss doctors slash percent 2f or percent 25 2f or percent
+ 5c which i actually have to put back and put in there um which ones are url decoded by default because
+ that would if it was url decoded by default that would make the developer less likely
+ or more more likely to have a misconfiguration putting that directly into the api call
+ um and i found that they all all the frameworks have at least
+ almost all the frameworks have a way to to have a um a vulnerable way to a vulnerable primitive a
+ vulnerable function exactly that will take the path parameter and auto decode it as if it was a query
+ parameter yeah and sometimes double url decoded that's that's crazy man the w i'm looking at the
+ table here there is on react there's a double url decode the worst thing about react is that there was
+ actually a issue a github issue um saying that there was a w r l uh decoding bug they fixed it but then
+ reintroduced it later in a different manner uh so it's there's still anyway uh react it's called the
+ use params which is important yeah if you're going to take anything away from from this research you should
+ look at this because this is a great way to to find in the code what's going on um like you know if you
+ if uh in in use uh in react uh basically the developer would say let squiggly squiggly bracket
+ user id equals use params and that would bring back that user id um into the code and then if it's
+ passing that directly into a fetch that's a cspt or it could be doing other stuff with it it could be
+ putting that directly into a dangerous set inner html you never know um but that's a good way
+ thing to look at and it will double url decode that okay um view everything is is uh everything is
+ vulnerable to this angular uh it's pretty vulnerable um uh next
+ is mostly not vulnerable except uh next has this thing called uh also has a use params function which
+ is does not auto decode uh the parameter but on the server side it uses something called await params
+ which is the async version of of use params that is often is almost always used on the server side and
+ that is auto decoded and if you think about what that means is that if on a next app if you're using
+ uh server side routing um and you are using a back-end api as opposed to a front-end api
+ which is next you can kind of choose what you do it can kind of be more front-end or more back-end and
+ that's kind of why a lot of people use next but why else use next if you're not going to use some
+ amount of back-end right fanciness and so if you await params uh and then pass that directly to the
+ back-end api that will lead to secondary context path traversal okay so i'm gonna that's the one
+ we're gonna double click into for a second okay that's in the in the sync section of this is it okay
+ so let me see if i can find it here all right so we found it um i'm looking at this so this is a very
+ interesting case so what you're saying here is that as an it's as an attacker on the client side we can
+ send a send a request we can make the victim's browser send a request that request uh will not
+ trigger a a client-side path traversal because the use params on the client side in next will keep the
+ uh percent 2f encoded rather than um decoding it to a slash incur incurring a traversal when that actually
+ gets passed to the server side in some capacity there if a weight params is used it will it will actually
+ resolve those percent 2f's to uh slashes and incur some sort of server-side path traversal with the victim's
+ credentials that were sent from the browser correct and the reason behind this is that next has two
+ routing systems next is weird right because next is is supposed to be like the developer supposed to
+ kind of choose how much front-end and back-end they want there's a front-end only uh next which i didn't
+ really look at that much but in this situation that i'm describing which is basically a hybrid model
+ the the path is sent always starts at the server there's no front-end use params in this situation
+ the the url bar is sent to the server which parses it um in however way they want to do it
+ if they use await params that's what it's called the await function await params
+ that's url decoded by default and then if you're doing that and you pass that to a
+ slash api slash you know internal api.com slash uh slash this param you'll get secondary context
+ patch traversal okay so this doesn't rely on any client-side code at all
+ in this particular circumstance of of next uh there's no client-side code in this situation
+ it's going straight to the server the server's parsing it and passing it to the back end api
+ okay um there are front-end implementations but those mostly use um uh the the the non-vulnerable
+ code path yeah it's a little interesting though because like so so essentially what this is is a um
+ secondary context patch reversal yes is that is that what you're describing here that's correct
+ yeah i wonder if there's another layer though i wonder if there's a
+ client-side induced uh you know secondary context path reversal that that is happening here where it
+ doesn't you know i don't even know how this and maybe maybe i'm thinking about this wrong but like
+ if there is a client-side route that takes a path parameter puts that into an api request that is not
+ so we're not incurring the path reversal at this point right puts it into that api request with off
+ you know cookies which is not something we could have triggered from cross-site context puts it into
+ that you know sub resource request it is not incurring a path reversal at this point because it's not
+ decoded then that is sent to the server the server uses await params then it is decoded
+ and then that's not how that's not how that's not how next works yeah yeah the in this situation uh
+ you have to think of next a little different than react the um there there could be as you're
+ describing like a fetch request on the front end to an api but that is usually a different thing than
+ the back end of next yeah i see i see what you're saying because you see what i'm saying yeah it's
+ almost like a it's like a server-side single page yeah yeah next is weird i i guess some people want
+ server-side functions but but svelte is the same way where svelte has uh has a back end and a front
+ end and then maybe external apis and svelte is also vulnerable to the secondary context path traversal
+ and i did the the second answer to your question is i didn't look at the front and only implementation
+ of next js i only looked at this what i consider to be like the normal implementation of next js which
+ is that the path is sent to the server and the server does the stuff okay um but uh i'm not a next
+ developer so uh maybe uh there's other implementations that are have different um
+ i have different things um so that's that's one uh anyway sorry yeah no that that makes sense uh i
+ think that that's uh that's a valuable route and it's helpful i mean even if for no other thing than
+ just to feed this to ai as well and just be like hey point out to me the various spots in a code base
+ in a next code base where they're using await params versus you know whatever other way you're
+ supposed to process it i'm not gonna test for cspt on next using the path anymore i can i may
+ tech for secondary context but like there's no reason like next will not be vulnerable to that
+ interesting um in based on this research uh and neither will um solid solid which i had actually
+ hadn't heard that much of before this start solid start yeah because there's no vulnerable code pass
+ in those situations um for various reasons very interesting yeah that's that's uh but i will test for
+ it like crazy and view view is very vulnerable um yeah it seems like react is the most right you know
+ view is even more really okay you're right you're right you're right the wr encoding thing yeah is
+ uh is it makes it the most vulnerable yeah um but i hope they don't i mean i guess i hope they do
+ patch it i hope everything's secure right well we were kind of talking about this a little bit beforehand
+ like it's it's impossible to like sea surf you can patch right because there's some something you know
+ they did a really good job patching it with same site cookies right you know and ceaser still exists
+ but i mean for anybody who experienced the prevalence of sea surf prior to same site cookies
+ like our same site lacks default cookies it was way more um back then and and uh but this one you literally
+ can't fix because there's no way that they can fix it at the sync level right because uh you're doing
+ string oftentimes you're doing string concatenation prior to passing it to fetch or whatever right so
+ all it sees is a concatenated string right you know a one string that's all together and you can't fix
+ it at the source level or else you retroactively break a bunch of stuff um so i really think i think it's
+ it has to be on the developer level that's the problem and that's why it's always going to be
+ around because the developer is going to need the url decoded value at some point yeah that's that like
+ they need to url to code it if they don't do like it's going to break things if you don't do that so
+ then you have to always re-encode it when you're passing it to a a back-end to it that's the answer but
+ but it's not going to be fixed on the framework level i suppose i have a question i got a good
+ question if you all were on an app and you you can pick a framework if you want and you could only
+ register one username because i mean obviously we could just create a bunch of accounts or whatever
+ but you could register one username that would just break cspt if they're not blocking the right
+ characters what's that single username you would pick oh like what it'd be just like doctor percent 2f dot
+ booyakasha it's got to be booyakasha in the end dude so you would actually you would put it in
+ all three characters encoded i i to be honest i never i don't do it like that i don't that's not
+ how i test i don't like i don't create i would always test it low the nice thing about client-side
+ is you could you don't have to actually save the malicious username in order to see if it's vulnerable
+ you could always set a match and replace or just do something like that because it's client-side
+ yeah yeah i do think that certainly if you could smuggle uh those characters in the um you know
+ percent 2f the slash the backslash the um question mark the hashtag all of those sort of have meaning
+ from uh from that perspective um i also think just going back to what you were saying before though
+ about fixing it jd i think one of the things that could be interesting is providing developers with a
+ almost like prepared queries primitive inside of your your framework language so if you're doing a fetch
+ you provide like a base url and that base url has i mean you can't use a question mark or whatever
+ because question mark is you know query parameter start but like you you've got like a maybe like a
+ tilde or something like that that will get substituted with your prepared query you know values that
+ you provide in either in an array afterwards or in like a sequence of parameters to that function
+ and then it will handle the string interpolation itself because the value that you're providing is
+ always supposed to be you are you know just the value not not some path piece right does that would
+ that solve it you think no that that's the answer but i i will come back and say that is definitely the
+ answer that's right answer but like what did it take for sql injection to be this rare it took like an entire
+ the entire developer community getting together and and prioritizing this because it was such an impactful bug
+ and i would argue that the developers do not consider this as impactful as a bug and it would be
+ like think of how often they use dangerously set in their html when they shouldn't you know they i mean
+ i see that every app i see it every time every every react app they're using it like crazy they're
+ passing user controlled stuff in there passing api responses in there because they don't care as much
+ i mean maybe they do but it feels to me like sql injection is something they took much more seriously
+ certainly and i and i think also another piece of that was that the whole ecosystem turned over
+ since sql existed right sql was one of sql injection was one of the first you know vulnerabilities that
+ really got prevalence and then since then every single framework has been rewritten and you know has
+ you know shifted to a different framework or evolved in a serious way so it makes it easy for them to like
+ have those primitives change right but i do think like if a good step in the right direction against
+ cspt would would maybe be the chrome team pushing a fetch um a fetch version or a fetch uh alternative
+ that has the string interpolation safe fetch yeah safe yeah that's a really good idea but see you can't
+ rename i was gonna say like or renaming fetch bad fetch you know bad fetch yeah you can't can't do it
+ fetch is very vulnerable yeah fetch is the most vulnerable thing and i mean that's not true
+ everything in javascript is vulnerable but fetch is not a safe function it as you have said it takes out
+ tabs yeah um that which is the best waft bypass i've ever it's honestly i mean i don't know i'll say it
+ percent two f percent zero nine percent five c is i'm sorry dot dot dot sorry percent two f percent two e
+ percent zero nine percent two e percent five c is the best wap bypass i've ever used in my entire life
+ i love it i use it all the time and it works 100 of the time i haven't seen a wap oh i don't know i don't
+ know if we're gonna let that i don't know if we're gonna let that run uh richard we might bleep that i
+ don't know that's it's so good but it's so good i mean i'm sorry to say you can't bleep it on this
+ podcast you're true you're true that's the point of this podcast yeah so anyway that is a very powerful
+ laugh bypass ryan i know you're listening to this don't you ryan turn the ryan turn it off man turn it
+ off i was just thinking about ryan i was thinking about him freaking when i said that providers
+ listening to this podcast um but yeah totally i i agree i think that that is very strong um and and
+ fetch certainly is vulnerable um i will say there is one more vulnerable though which is the freaking um
+ which one is it i think it's axios some version actually was really yeah that will like auto run
+ the js code in a jsonp callback if you know that yeah yeah there's like there's one of them i i gotta
+ go look it up maybe i'll put it in the show notes but there is i believe some versions of axios or maybe
+ it's one of the jquery um ones if you know if you pass traversal if you client-side pass traversal it
+ to a jsonp endpoint it will just run the javascript callback oh my god you know i think axios is a
+ wrapper around fetch yeah like i think my axios uses fetch right like it's like i haven't looked at the axios
+ code but i guarantee you axios demo has looked at that code and i'm going to ask him right after this
+ yeah he knows exactly why it's doing that i think it's probably xhr um request uh because axios is a
+ little older and i think fetch is like a uh a newer i say newer now i'm getting i'm aging myself a little
+ bit here but like uh you know newer primitive um okay awesome yeah so that we did go down a little bit of a
+ bit of a rabbit rabbit trail there but fixing cspt you know it would be cool if the browsers put in
+ some string interpolation included um fetch function call uh to try to get those resolved and then have
+ the frameworks try to adopt that at a framework level yeah that that's a good fix uh so let's continue
+ to go through some of the research here uh on the path stuff i mean we can just look at this maybe it's
+ easier for everybody in the audio medium to just you know talk through this table essentially but we've
+ got react router that decodes react routers use params decodes percent to f to slash and percent to e
+ uh percent to e to dot dot everything and w rld codes as well yeah and w rl um the only other place we
+ see w rl encoding there's no other place we see w rl encoding without developer sourced code in any of
+ the other top frameworks is that accurate in the path that's correct in the path yes um in the path
+ where it gets really hit or miss is do they double decode percent to e across various frameworks um most of
+ the time we see yes but there are some no's that's at solid start and nuxt server level they'll just leave
+ it straight as is right okay that's right and then um another thing is i need to include
+ backslash in this i i didn't do it partly because this is the longest article i've ever written
+ including in medicine this is very long um it's very long and i and i could i also like kind of
+ didn't do as much on the hash because it's so i think it's like 15 pages it's like some amazing amount
+ of yeah uh so i break down the code paths for each individual framework it's very helpful that's
+ kind of what i i wanted to do it and also um i'm also going to include the labs that i made so you
+ could test this yourself uh you can run the lab and then i'll show you one of the labs yeah while
+ you're pulling that up i would like to ask you can you can you explain the difference between um
+ wild card params and i think there's two ways of describing wild cards right so we've got you know
+ in our classic example about about slash xss doctor right that xss doctor is a dynamic piece
+ i think they're called dynamic parameters and wild card parameters or something like that can you
+ explain the difference of those and how those are different frameworks the answer is actually uh
+ something we didn't talk about is that basically what is what is happening in each of these functions
+ is that it's building a regex whenever you have a dynamic parameter or or a query parameter uh it's
+ basically building a unique regex uh in a particular way so uh like the use params is going to have one
+ regex and then the splat parameter is going to have the splat the uh the wild card is going to have
+ another different regex and the use params for example breaks on slash whereas um like the splat
+ parameter it's just anything anything you've put in between whatever you know in that area is gonna be
+ taken exactly there's not gonna split on anything it's a dot star that's that's what it does in react for
+ example it's basically slash dot star slash okay and it won't differentiate so that's that's something
+ i want to make a little bit clearer for the listener so um let me see if i can find it in the report while
+ i'm talking about it but what what is the difference between like where do we see what what does a splat
+ parameter look like or a splat path look like in the definition and what does its alternative i guess
+ a dynamic parameter look like oh so like a dynamic parameter it reacts a great example for all
+ these things so it's like it would be slash colon user id would be uh a regular dynamic parameter
+ and then it would literally say like slash files slash star is a great example um for a splat parameter
+ because it um it's like anything you put in there and i think one of the reasons to do that is
+ uh they may have file names they may have you know it may be different you may want to capture the dot
+ stuff like that whereas um that that's the reason you do it it's oftentimes that was the example i gave
+ a slash file slash star it's the most vulnerable code pattern okay in react okay so two ways of of
+ defining dynamic path you have we're going to stick with our same example about slash star and that will
+ match about slash xss doctor slash abc123 yeah and and we've also got um about slash colon username
+ yeah whatever right and that's right and when we do that if we put in something like about slash rhino
+ reader then username gets populated as rhino reader but if we put about slash rhino reader slash abc123
+ that abc123 is not put into username just or it doesn't match the route or or or does it just populate
+ it depends what you're doing it depends how you're doing it but if it if it's like slash file slash star
+ you could put anything in the world after that files thing whereas if it's just the user id uh it
+ depends i think uh the for for use params for example you can't put a real slash it will it will be it
+ will uh if that's where it land um that's it you could put a percent two f even if you okay so let me ask
+ you this one splat plus no no splat isn't going to end up and use params so correct it's a different
+ so if if they're using a splat route which is just about slash star and then it's like anything after
+ about just gets put in there but it doesn't get populated as a parameter it just okay okay so one of
+ these is a wild card path and one of these is a dynamic variable in the path is that yeah accurate
+ that's exactly that's exactly that's how it's it was meant to be used yeah and they and that's that's
+ how it's meant to be used and it again it's all as vulnerable as the developer wants it to be they
+ could easily just take a splat parameter and do save things with it okay but it's harder to do that
+ that's a really good that's a really good signal piece for us though is is when there is a splat
+ parameter b or a splat path defined right which is these star wildcard paths and we see them trying
+ to parse a path parameter out of that wildcard defined route splat splat route so to speak um
+ then that is something that should go ding ding ding ding in our head like hey maybe we should look
+ into that a little bit more because that's not how that's supposed to be done yeah okay
+ i think what i'm gonna do is i'll just to show you this differentiation i'll um i'm gonna show you
+ the lab this is kind of how i learned it and this helps this can help you so like let's say here right
+ this in this situation we're using use params and so what's happening here is that this is what's the
+ developer is actually doing there's making a constant called user id and that equals use params and that
+ is running through this function right so it's taking this which is the user id which i've url encoded
+ and then it shows what gets back so user id equals the decoded version okay and then you could see that
+ i even fetched yeah see and then it's requesting this so i could even do my favorite is that dot dot percent
+ two f by this he means it makes the request that is constructed based on the decoded username yeah
+ and then you know as this is how i would do this um now i even uh where i put in three percent two f's and
+ then that's we're back at the api secret endpoint okay yeah so what this this is a hands-on lab that is
+ demonstrating for those of you all uh you know that you can traverse all using use params the use the
+ encoded path that you say parameter that's set in by the path gets pulled into a variable by use params
+ that is decoded and when you can concatenate that with fetch it traverses all the way back and one of
+ your parts of your flow uh jd is to um go all the way back down to the document root so you can hit yeah
+ and then if you're if there's something appended at the end um you know you could put throw that in
+ there too the hash and then also if you see the w r l encoded i threw it the percent 25 to f now what's
+ interesting that i found that i couldn't figure out was a lower case all right i don't know well you've
+ got 25 to f to f um well anyway the lower case 2f here won't work really yeah if you do it like that you
+ see very odd oh it's very odd right hey that is a super good takeaway whoa i totally just got screwed
+ on a bunch of bugs then probably so what you're saying is that percent 25 to f lowercase functions
+ differently than percent 25 to get f uppercase and i cannot figure out show me show me you have to do it
+ we have to do it we have to do it we have to do it in a different window you have to do it in a different
+ window uh because if you do it in the same window so wait well it cashed
+ yeah yeah that's why add a cash buster all right uh i just do it like this because i and i always
+ preserve disabled cash all right so you got this so big percent 2f see yep okay so it's being converted
+ on percent 25 to f so that works right wow yep whoa here the lower case doesn't work okay whoa what
+ that that seems like something are you sure that's not your lab bro i don't know man i don't understand
+ it i couldn't figure it out from the code either so it could be my lab we had to kind of i i couldn't
+ figure it out but i mean your lab has got to be a reflection of at least some production systems it's
+ just doing this yeah like i don't understand that would do it is literally just taking a vanilla modern
+ react and doing this and then and then reflecting it when we when we um when we ship this research
+ that needs to be like bolded and at the top that is like i have been screwed by that tell us tell us
+ why justin tell us why just okay because like i off i'm only do percent lowercase percent uh to lower
+ case f i've never capitalized an f for i mean what he's saying is because you're like typing it fast
+ right like it's like you're just like yeah it's the same thing me too and then what is what he's saying
+ here is that if you have a lowercase f it is not being decoded in an uppercase f it is being decoded
+ what the but you should see that stuff right like we should be seeing that when we're testing that
+ it's not working but i guess we would just say it's not working and wro encoding is not working
+ yeah what the heck dude it's weird right okay i'm tripping a little bit we're gonna have to
+ even see it like i my my app is extremely simple you know it's just taking the thing and so i i don't
+ i can't imagine that it's my app because wow listeners i'm sorry i know that we're kind of freaking
+ out uh and for those of you that are listening by audio you probably don't have a lot of a big idea
+ of what's going on here but essentially what he just showed is that in react use params which is
+ one of the most common ways i would say probably the most common way to get path parameters in single
+ page applications period uh if you use percent 25 2f lowercase it does not decode to slash and if you use
+ percent 25 2f uppercase f it does what the frick let's see let's see what it's like with with with
+ backslash yeah and a bunch of and you know what's weird is is okay dude there's some sort of caching
+ no it's got to be some caching bro well what is that no no no no wait no it can't be it didn't
+ look like caching to me when i was watching jd redo it it looked completely dude no it's legit man
+ it's freaking legit it's legit yeah holy crap but i don't understand why that's the case let's get
+ demo i mean let's get hold on all right we just summoned the the client side you know conclave of
+ minds or whatever here to try to figure out what happened here and yeah this is legit so uh exercise
+ doctor dude give me something man like this is a very legit finding one of the best ones we've had live
+ on the pod i think uh but the tldr of it if as i understand and you can correct me if i'm wrong
+ is that the reason why react double url encoding only decodes back to a slash for the capital f
+ in percent 25 to capital f is because of this line right here line 118 in match path um i don't know the
+ name of the file in the source code but it does a replace for percent to capital f and swaps it to
+ slash and it does not do that in a case insensitive way so uppercase f will be mapped to this slash and
+ lowercase f will not be and that is where the differential is occurring is that correct yeah
+ and that actually was put in after another double url encoding bug was reported to react
+ as an issue not as a as a bug bounty bug and they and this is how they fixed it and they reintroduced
+ this problem and i guess made it wow dude i have missed so many cspts because of this i never use a
+ capital f i will always be using capital f now yeah that's crazy maybe both or maybe you have
+ to try both in all these situations another thing to try both on man it's like oh here we go but yeah
+ dude that is a zero day gadget in react router that is uh super nuts so great find and uh yeah i'm glad
+ we get the truth is that to the community there's a lot here like there's way more than i've found too if
+ if you if you just like look at any of these frameworks and you look deeply into the way that the routing
+ happens you're gonna find weird stuff that goes on i think just conceptually as well like looking for
+ replaces that are not case you know insensitive is really good idea you know uh i think that there's
+ a lot of scenarios where that will slide past and allow you to bypass something yeah um very cool man
+ well we just got super derailed and burnt a bunch of time um rezo do you have to go or are you good
+ to stay for a little bit longer yeah i'll drop here in like a minute or two so you'll just see me drop
+ off but okay all right well thanks for joining us man um so we're getting the rest of the path stuff
+ uh you know essentially you've outlined all of the different frameworks here so far we've talked about
+ wild card or or um splat paths and actual dynamic paths that's good um double url encoding happens
+ in react router but everything else does not um and our fetch will automatically pull out you know
+ percent zero nine or tabs uh which helps with wi-fi passes um let's let's move unless you've got
+ anything else on path parameters maybe we we talk a little bit more into the server-side rendering thing
+ or yeah that's interesting just quickly on query parameters yeah they're almost always decoded and
+ that's kind of how it should be yes like that you know that is what it is they it's it's a feature
+ not a bug uh but if the query parameters pass to a fetch it's gonna almost always lead to um cspt
+ um or uh but the i think the more before we even went into this capital lowercase app the most interesting
+ thing i found on this in this research was like i was looking for cspt but there are a bunch of these
+ frameworks that are that are hybrid or or server-side and those it is a risk of secondary path traversal
+ yeah secondary context path traversal for sure yeah and that's because the the client-side route is
+ not encoding in the in the back end it is right just like we talked about with the um with the next
+ such a situation was there anything else that you wanted to cover there i know that there was some
+ some pieces of like um there's actual ssrf versus client-side or secondary context path traversal
+ where do we land on and one of the frameworks that bypasses like a hook as well or something or
+ i think the interesting the thing to really focus on is when you're doing the secondary context
+ path traversal it's blind in the beginning right because it's happening on the server as all secondary
+ context possible is but in something like react you're going to get 500s when you have stuff like
+ that so you should be testing in things like svelte which are not that much written in svelte but uh and
+ next you should be doing putting these path traversal payloads um to test for secondary context
+ path traversal but you should be doing the thing that was spoken about uh on the pod with secondary
+ kind of path traversal where you do the percent 2f let's say slash settings slash xss doctor percent 2f
+ dot dot percent 2f xss doctor yes and uh and that if that doesn't give a 500 that is suggestive yes
+ that you're that means that there's some context path normal is that you take a valid value valid value
+ slash dot dot slash slash uh you know yeah value valid value all right let me say it one more time
+ valid value slash dot dot slash valid value right yeah okay and basically you do invalid value and you
+ get 500 let's say and then you do valid value and you don't like next give a lot of 500s right uh if
+ if you're messing up on the back end uh and that that's a nice takeaway of that sort of research excellent
+ excellent man um see you guys all right yeah you're dropping peace rezo um all right well that that
+ brings us through um sort of out of the path related stuff so query parameters almost all decoded
+ but you and i were saying you know we do find more path reversals in path parameters rather than
+ query parameters i did want to bring up a little bit of a interesting one though you can get a sort of
+ variant of client-side path traversals a little bit more frequently in um career parameters where
+ you're either injecting into a part of the domain or you are in injecting into a relative path where
+ you control the full relative path and it is just i know the target i know what you're talking about
+ but that that's very impactful when that happens when you're injecting into a domain uh it's it's like a
+ built-in uh open redirect as well yeah right so i guess do you have any nomenclature you use for
+ those sort of scenarios or how do we yes like fetch hijacking or right no like what if what if the
+ beginning of the what if it's you're injecting into into the username and password part of the url so i you
+ know because sometimes they don't they they don't realize you're doing that and i'll use the same my
+ favorite website in hacking is the port swigger academy url parsing what's it called a lab or something
+ uh pull that up because it's the best it is the greatest thing ever to study this thing i use this
+ every day i'm obsessed with this for a lot of a lot of reasons right here that thing yes first just
+ study it like without using it like this just study it because this will tell you everything you
+ need to know about about how urls are parsed um and about what you could try to try different things
+ and i i'll use this in that situation because you don't like you're injecting into it and you don't
+ really know how it's being handled or you have to figure it out and you could do all these different
+ cool things totally dude yeah this is a super helpful cheat sheet and i really appreciate that
+ port swigger releases this uh yeah and then another trick maybe i shouldn't i is that i will every
+ single time i'm looking at oauth if you could inject into that a username or password before the at
+ only if that is the case i will run this entire list over that um that and and i've found like a lot
+ of bugs do oh yeah yeah very common very common and now we know thanks to your to your research today
+ that we also need to upper and lower everything as well which is great uh crazy for us so yeah this is
+ definitely a good cheat sheet we'll put it in the um we'll put it in the description of the episode um
+ okay awesome so that that is it largely for query i i call that other that other variant um fetch
+ hijacking i don't know if that's the correct term or maybe like client-side request hijacking uh but
+ then it c s h h or r h yeah it's a little off but um you know hijacking a client-side request that is
+ being sent uh pretty rare very impactful typically when you can do it um if you're injecting into the
+ hosting anywhere i once got uh the only time i've ever had a web worker injection is that is that they
+ were injecting into the host name from a query parameter i love that i love that too man and then
+ also um it's so definitely the the query parameter uh you know actually just controlling the host name
+ itself but also if it's a relative path and you've got it that's one of the things that won't pop up in
+ network so you've got to actually change you know the network tab you got to trace the sync or the
+ source um no trace the sync right where it's actually sending the request put a you know breakpoint
+ right at the fetch request and see what is being passed into the fetch request because if they're
+ passing in a slash rather than the full https colon whatever and you can make it to slash slash or slash backslash or
+ slash tab slash right all of that's going to get resolved to slashes uh which is going to allow it
+ to become an arbitrary um you know an absolute path rather than a uh relative path and speaking of that
+ it's actually pretty hard sometimes to find those and it's also very hard i find to find the sync of the
+ fetch where it's parsing the jason that is i spend but if you guys if whoever wants to get into client
+ side like do that a couple times and that will help you with dynamic analysis a lot because sometimes
+ it's in a completely separate place uh i don't know it's not it's not always like fetch then uh jason jason
+ parsed like it like it's not they pass the promises around it's like they're all over the place yeah
+ yeah one time i was looking at something like that for like a day and demoed found it in like four
+ seconds freaking hate that man and i'm like how did you find that he's like looking at the app
+ he's just one of those guys that uh just has that like just you could just slurp it all up him and
+ uriota are the two and dude i'm so salty that demo lives right up the street for me too i'm so mad that
+ he is in my city like that makes me so mad um yeah thank god nobody in miami can hack yeah oh yeah
+ there are some great if you're a great miami hacker i apologize and call me i'd love to hack with you
+ he'll really try to impress you if you submit a report first if you submit a report first i'll go crazy
+ you know what would be like the best troll ever would be to like say hey access doc you want to
+ like do full collab on this like you know target and then but secretly you've been working on it for
+ three weeks beforehand and you have like 10 bugs and then and then as soon as they're like oh i found
+ one i found one it'll cost you a couple grand but it'll drive jd nuts you know like how do you find
+ that looking at the app yeah looking at the app just look i just looked at it did you you didn't look at
+ it because i looked at it yeah jd could you like spend more time hacking i feel like oh my gosh
+ um all right last piece of of stuff from this uh research that i'd like to go over is uh the
+ custom sinks that uh you know incur fetch requests to be made in the various frameworks so i'm gonna go
+ ahead and share my screen again can you talk a little bit about those that you discovered in various
+ frameworks so i mean there are actually others uh this was like uh like that are a little bit more
+ like like i keep talking about demo turbo he did has wonderful research in react xss sinks that i did
+ not include here because that's his research but like the most basic ones are dangerous to set inner
+ html for react and next shares that in view and nuxt there's something called a v dash html which is
+ similar angular uses um this bypass secure security trust html um svelte kit has just curly braces so
+ there's a bunch of different ways to get html triggered in all the various frameworks and i think that that is
+ certainly it's nice to have this list at the end right that you they included at the end but what
+ i'm talking about more is this guy um this guy right here the url for find record so this is a
+ built-in version of fetch essentially right like fetch is powering you're talking about the sinks yeah
+ yeah yeah yeah is that yeah that's it yeah that's that's basically the whole thing but yeah it's very
+ interesting there's a couple of those but that's that's the most uh that's the most the most prominent
+ one where they like wrap something around fetch that makes it more vulnerable okay so explain this
+ one for me so an ember you obviously you can use fetch right but then there's also a built-in utility
+ that you see them using a lot of times that also is not doing um traversal even though you're passing
+ in say what seems weird to me here right is you're passing into this id and model name or whatever right
+ and it's actually like so you're not it's not like you're passing in a url you are passing in
+ it's almost like the interpolation thing that we we said we wanted right but then they're just not
+ sanitizing it right exactly right yeah they're introducing they're basically introducing a bug this way
+ in this custom right it's very it's very interesting behavior okay and this is an ember and and is it
+ always url for find record or is there a different structure no that's it that's what the function's
+ called okay all right and yeah i think this is a really good thing to keep looking for in other
+ frameworks is like when i'm you know scrolling through the code when i see url for find record
+ um you know i'm not necessarily thinking oh this is going to be vulnerable right but uh this guy right
+ here will be creating these you know urls that uh will be then passed to fetch and it's doing the
+ string interpolation but it's not actually encoding any of the values itself and that's another thing to
+ think about too is that there's another sync that i didn't even talk about here which is the server
+ the server may normalize url encoded and that's very common uh the api itself that's a great point
+ yeah so um i always that's usually the first thing i test because then you don't have to think about
+ this then it gets passed to fetch fetch could do whatever it wants and the back end is gonna url
+ to code for you yeah um then you could triple url encodes react oh my gosh we're getting to crazy
+ layers here triple url encode yeah and then also sometimes you know if you can smuggle in a percent
+ 3f or something like that in those sort of environments that's a really strong signal you
+ know if it's taking your percent 2f it's still processing it as a path separator very strong
+ signal for um for cash poisoning um very much so and it would be hard for waft to get all these oh yeah for
+ sure yeah i mean there's too much variation yeah all right well if you guys haven't uh seen the value
+ already of reading this write-up by xss doctor that will be on lab.ctpb.show then uh you're crazy
+ uh so definitely go read it read it thoroughly uh and i'm not gonna lie to you guys i sat down and it
+ took me a long time to get through it even as somebody who's you know professional with client-side
+ stuff but the value that i got out of just reading this is very very high and i think you guys will as
+ well and do the labs the labs is is even more important because if you do the labs with it you'll
+ understand you like play with it and you'll find stuff i didn't find you know with with those labs you
+ do weird stuff to the parameters and see what you get yes totally um dude thank you so much for for
+ coming on and for dazzling us with all this uh it was awesome and yeah it's the price is right i am on
+ the price is right right now and i am a contestant i'm that excited and like those people on that show
+ awesome man well well gg let's get back to the hacking itself then yeah peace that's the pod
+ and that's a wrap on this episode of critical thinking thanks so much for watching to the end y'all
+ if you want more critical thinking content uh or if you want to support the show head over to
+ ctbb.show discord you can hop in the community there's lots of great high level hacking discussion
+ happening there on top of master classes hack alongs exclusive content and a full-time hunters guild if
+ you're a full-time hunter it's a great time trust me all right i'll see you there
