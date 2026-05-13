@@ -2,7 +2,12 @@ import type { Chain } from "./chains";
 
 export type Verdict = "tp" | "fp" | "undet" | "none";
 
-export type VerdictRecord = { verdict: Exclude<Verdict, "none">; note?: string; ts?: string };
+export type VerdictRecord = {
+  verdict: Exclude<Verdict, "none">;
+  note?: string;
+  ts?: string;
+  chain_id?: number;
+};
 
 export type FilterState = {
   sourceTaxonomies: Set<string>;
