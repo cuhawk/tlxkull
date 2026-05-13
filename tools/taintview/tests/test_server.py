@@ -100,3 +100,25 @@ def test_snippet_404_when_source_file_missing(client, target_factory):
     r = client.get("/api/target/t1/snippet", params={"qname": "a.js::foo"})
     assert r.status_code == 404
     assert "source file missing" in r.json()["detail"]
+
+
+def test_post_verdict_appends_and_get_returns_latest(client, target_factory, targets_root):
+    target_factory("t1").chains(all_=[_chain(1)])
+    r1 = client.post("/api/target/t1/verdict/1", json={"verdict": "fp", "note": "first"})
+    assert r1.status_code == 200
+    r2 = client.post("/api/target/t1/verdict/1", json={"verdict": "tp", "note": "second"})
+    assert r2.status_code == 200
+    r3 = client.get("/api/target/t1/verdicts")
+    assert r3.status_code == 200
+    body = r3.json()
+    assert body["verdicts"]["1"]["verdict"] == "tp"
+    assert body["verdicts"]["1"]["note"] == "second"
+    # And the underlying file is append-only (two lines)
+    lines = (targets_root / "t1" / "verdicts.jsonl").read_text().strip().splitlines()
+    assert len(lines) == 2
+
+
+def test_post_verdict_rejects_unknown_verdict_value(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)])
+    r = client.post("/api/target/t1/verdict/1", json={"verdict": "maybe", "note": ""})
+    assert r.status_code == 422

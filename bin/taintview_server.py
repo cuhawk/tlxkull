@@ -16,6 +16,14 @@ from fastapi import FastAPI
 
 import json
 from fastapi import HTTPException
+from datetime import datetime, timezone
+from typing import Literal
+from pydantic import BaseModel
+
+
+class VerdictIn(BaseModel):
+    verdict: Literal["tp", "fp", "undet"]
+    note: str = ""
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -124,6 +132,33 @@ def build_app(*, targets_root: Path) -> FastAPI:
             "end": end,
             "source": slice_,
         }
+
+    @app.post("/api/target/{name}/verdict/{chain_id}")
+    def post_verdict(name: str, chain_id: int, payload: VerdictIn) -> dict:
+        target_dir = app.state.targets_root / name
+        target_dir.mkdir(parents=True, exist_ok=True)
+        rec = {
+            "chain_id": chain_id,
+            "verdict": payload.verdict,
+            "note": payload.note,
+            "ts": datetime.now(timezone.utc).isoformat(),
+        }
+        with (target_dir / "verdicts.jsonl").open("a") as f:
+            f.write(json.dumps(rec) + "\n")
+        return rec
+
+    @app.get("/api/target/{name}/verdicts")
+    def get_verdicts(name: str) -> dict:
+        path = app.state.targets_root / name / "verdicts.jsonl"
+        collapsed: dict[str, dict] = {}
+        if path.exists():
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                collapsed[str(rec["chain_id"])] = rec
+        return {"verdicts": collapsed}
 
     return app
 
