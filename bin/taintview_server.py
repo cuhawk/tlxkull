@@ -14,6 +14,20 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
+import json
+from fastapi import HTTPException
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    out = []
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line:
+            out.append(json.loads(line))
+    return out
+
 
 def build_app(*, targets_root: Path) -> FastAPI:
     app = FastAPI(title="taintview")
@@ -33,6 +47,29 @@ def build_app(*, targets_root: Path) -> FastAPI:
             if d.is_dir() and (d / "chains" / "all.jsonl").exists()
         )
         return {"targets": names}
+
+    @app.get("/api/target/{name}/chains")
+    def get_chains(name: str) -> dict:
+        target_dir = app.state.targets_root / name
+        all_path = target_dir / "chains" / "all.jsonl"
+        if not all_path.exists():
+            raise HTTPException(404, f"target {name!r} has no chains/all.jsonl")
+        hot_ids = {c["id"] for c in _read_jsonl(target_dir / "chains" / "hot.jsonl")}
+        reachable_ids = {c["id"] for c in _read_jsonl(target_dir / "chains" / "dom_reachable.jsonl")}
+        unreachable_ids = {c["id"] for c in _read_jsonl(target_dir / "chains" / "dom_unreachable.jsonl")}
+        chains = []
+        for c in _read_jsonl(all_path):
+            cid = c["id"]
+            if cid in reachable_ids:
+                reach = "reachable"
+            elif cid in unreachable_ids:
+                reach = "unreachable"
+            else:
+                reach = "unknown"
+            c["is_hot"] = cid in hot_ids
+            c["reach"] = reach
+            chains.append(c)
+        return {"chains": chains}
 
     return app
 
