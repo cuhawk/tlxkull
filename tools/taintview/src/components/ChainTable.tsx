@@ -37,8 +37,10 @@ export function ChainTable({ chains, selectedId, verdictByChain, onSelect, onAni
               <tr
                 key={c.id}
                 className={`cursor-pointer ${isSel ? "bg-zinc-800" : "hover:bg-zinc-900"}`}
-                onClick={() => onSelect(c.id)}
-                onDoubleClick={() => onAnimate(c.id)}
+                onClick={() => {
+                  onSelect(c.id);
+                  onAnimate(c.id);
+                }}
               >
                 <td className="px-2 py-1">{c.id}</td>
                 <td className="px-2 py-1">{c.source.taxonomy_id}</td>
