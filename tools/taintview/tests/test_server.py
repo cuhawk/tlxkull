@@ -64,3 +64,39 @@ def test_opus_endpoint_404_when_missing(client, target_factory):
     target_factory("t1").chains(all_=[_chain(1)])
     r = client.get("/api/target/t1/opus/1")
     assert r.status_code == 404
+
+
+def test_snippet_returns_source_slice(client, target_factory):
+    src = "\n".join(f"line{i}" for i in range(1, 21))
+    target_factory("t1").chains(all_=[_chain(1)]).index(
+        nodes=[{"qname": "a.js::foo", "file": "a.js", "line": 8, "end_line": 12,
+                "kind": "function", "parent": None, "name": "foo"}]
+    ).source("a.js", src)
+    r = client.get("/api/target/t1/snippet", params={"qname": "a.js::foo"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["qname"] == "a.js::foo"
+    assert body["file"] == "a.js"
+    assert body["line"] == 8
+    assert body["end_line"] == 12
+    # ±3 lines of context => lines 5..15 inclusive
+    assert body["start"] == 5
+    assert body["end"] == 15
+    assert body["source"].splitlines() == [f"line{i}" for i in range(5, 16)]
+
+
+def test_snippet_404_when_qname_not_indexed(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)]).index(nodes=[])
+    r = client.get("/api/target/t1/snippet", params={"qname": "a.js::missing"})
+    assert r.status_code == 404
+    assert "qname not indexed" in r.json()["detail"]
+
+
+def test_snippet_404_when_source_file_missing(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)]).index(
+        nodes=[{"qname": "a.js::foo", "file": "a.js", "line": 1, "end_line": 2,
+                "kind": "function", "parent": None, "name": "foo"}]
+    )  # no .source() call
+    r = client.get("/api/target/t1/snippet", params={"qname": "a.js::foo"})
+    assert r.status_code == 404
+    assert "source file missing" in r.json()["detail"]

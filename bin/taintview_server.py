@@ -29,6 +29,27 @@ def _read_jsonl(path: Path) -> list[dict]:
     return out
 
 
+_node_cache: dict[tuple[str, float], dict[str, dict]] = {}
+
+
+def _load_nodes_index(nodes_path: Path) -> dict[str, dict]:
+    if not nodes_path.exists():
+        return {}
+    key = (str(nodes_path), nodes_path.stat().st_mtime)
+    cached = _node_cache.get(key)
+    if cached is not None:
+        return cached
+    by_qname: dict[str, dict] = {}
+    for line in nodes_path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        rec = json.loads(line)
+        by_qname[rec["qname"]] = rec
+    _node_cache[key] = by_qname
+    return by_qname
+
+
 def build_app(*, targets_root: Path) -> FastAPI:
     app = FastAPI(title="taintview")
     app.state.targets_root = targets_root
@@ -77,6 +98,32 @@ def build_app(*, targets_root: Path) -> FastAPI:
         if not path.exists():
             raise HTTPException(404, f"no opus writeup for chain {chain_id}")
         return {"chain_id": chain_id, "markdown": path.read_text()}
+
+    @app.get("/api/target/{name}/snippet")
+    def get_snippet(name: str, qname: str) -> dict:
+        target_dir = app.state.targets_root / name
+        nodes = _load_nodes_index(target_dir / "index" / "nodes.jsonl")
+        rec = nodes.get(qname)
+        if rec is None:
+            raise HTTPException(404, "qname not indexed")
+        src_path = target_dir / "sources" / rec["file"]
+        if not src_path.exists():
+            raise HTTPException(404, f"source file missing: {rec['file']}")
+        lines = src_path.read_text().splitlines()
+        line = rec["line"]
+        end_line = rec.get("end_line") or line
+        start = max(1, line - 3)
+        end = min(len(lines), end_line + 3)
+        slice_ = "\n".join(lines[start - 1:end])
+        return {
+            "qname": qname,
+            "file": rec["file"],
+            "line": line,
+            "end_line": end_line,
+            "start": start,
+            "end": end,
+            "source": slice_,
+        }
 
     return app
 
