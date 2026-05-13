@@ -102,6 +102,16 @@ def test_snippet_404_when_source_file_missing(client, target_factory):
     assert "source file missing" in r.json()["detail"]
 
 
+def test_snippet_rejects_path_traversal(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)]).index(
+        nodes=[{"qname": "evil::x", "file": "../../../etc/passwd", "line": 1, "end_line": 1,
+                "kind": "function", "parent": None, "name": "x"}]
+    )
+    r = client.get("/api/target/t1/snippet", params={"qname": "evil::x"})
+    assert r.status_code == 400
+    assert "invalid file path" in r.json()["detail"]
+
+
 def test_post_verdict_appends_and_get_returns_latest(client, target_factory, targets_root):
     target_factory("t1").chains(all_=[_chain(1)])
     r1 = client.post("/api/target/t1/verdict/1", json={"verdict": "fp", "note": "first"})

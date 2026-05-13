@@ -120,9 +120,16 @@ def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
         if rec is None:
             raise HTTPException(404, "qname not indexed")
         src_path = target_dir / "sources" / rec["file"]
-        if not src_path.exists():
+        sources_root = (target_dir / "sources").resolve()
+        try:
+            resolved = src_path.resolve(strict=False)
+        except OSError:
+            raise HTTPException(400, "invalid file path")
+        if not resolved.is_relative_to(sources_root):
+            raise HTTPException(400, "invalid file path")
+        if not resolved.exists():
             raise HTTPException(404, f"source file missing: {rec['file']}")
-        lines = src_path.read_text().splitlines()
+        lines = resolved.read_text().splitlines()
         line = rec["line"]
         end_line = rec.get("end_line") or line
         start = max(1, line - 3)
