@@ -51,3 +51,16 @@ def test_chains_endpoint_returns_hot_and_reach_flags(client, target_factory):
 def test_chains_endpoint_404_for_missing_target(client):
     r = client.get("/api/target/nope/chains")
     assert r.status_code == 404
+
+
+def test_opus_endpoint_returns_markdown(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)]).opus(1, "# verdict: FP\nreason: setTimeout callback fn")
+    r = client.get("/api/target/t1/opus/1")
+    assert r.status_code == 200
+    assert r.json() == {"chain_id": 1, "markdown": "# verdict: FP\nreason: setTimeout callback fn"}
+
+
+def test_opus_endpoint_404_when_missing(client, target_factory):
+    target_factory("t1").chains(all_=[_chain(1)])
+    r = client.get("/api/target/t1/opus/1")
+    assert r.status_code == 404

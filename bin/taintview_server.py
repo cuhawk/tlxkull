@@ -71,6 +71,13 @@ def build_app(*, targets_root: Path) -> FastAPI:
             chains.append(c)
         return {"chains": chains}
 
+    @app.get("/api/target/{name}/opus/{chain_id}")
+    def get_opus(name: str, chain_id: int) -> dict:
+        path = app.state.targets_root / name / "opus" / f"{chain_id}.md"
+        if not path.exists():
+            raise HTTPException(404, f"no opus writeup for chain {chain_id}")
+        return {"chain_id": chain_id, "markdown": path.read_text()}
+
     return app
 
 
