@@ -13,6 +13,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 import json
 from fastapi import HTTPException
@@ -58,9 +60,12 @@ def _load_nodes_index(nodes_path: Path) -> dict[str, dict]:
     return by_qname
 
 
-def build_app(*, targets_root: Path) -> FastAPI:
+def build_app(*, targets_root: Path, spa_dist: Path | None = None) -> FastAPI:
     app = FastAPI(title="taintview")
     app.state.targets_root = targets_root
+    if spa_dist is None:
+        spa_dist = Path(__file__).resolve().parent.parent / "tools" / "taintview" / "dist"
+    app.state.spa_dist = spa_dist
 
     @app.get("/api/health")
     def health() -> dict:
@@ -159,6 +164,21 @@ def build_app(*, targets_root: Path) -> FastAPI:
                 rec = json.loads(line)
                 collapsed[str(rec["chain_id"])] = rec
         return {"verdicts": collapsed}
+
+    if (spa_dist / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=spa_dist / "assets"), name="assets")
+
+    index_html = spa_dist / "index.html"
+
+    @app.get("/", include_in_schema=False)
+    def root() -> FileResponse:
+        return FileResponse(index_html)
+
+    @app.get("/{spa_path:path}", include_in_schema=False)
+    def spa_catchall(spa_path: str) -> FileResponse:
+        if spa_path.startswith("api/"):
+            raise HTTPException(404)
+        return FileResponse(index_html)
 
     return app
 

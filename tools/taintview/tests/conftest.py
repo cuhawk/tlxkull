@@ -19,7 +19,8 @@ def targets_root(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def client(targets_root: Path) -> TestClient:
-    app = build_app(targets_root=targets_root)
+    spa_dist = REPO_ROOT / "tools" / "taintview" / "dist"
+    app = build_app(targets_root=targets_root, spa_dist=spa_dist)
     return TestClient(app)
 
 

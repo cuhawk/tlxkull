@@ -122,3 +122,15 @@ def test_post_verdict_rejects_unknown_verdict_value(client, target_factory):
     target_factory("t1").chains(all_=[_chain(1)])
     r = client.post("/api/target/t1/verdict/1", json={"verdict": "maybe", "note": ""})
     assert r.status_code == 422
+
+
+def test_root_serves_spa_index_html(client):
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "<div id=root>" in r.text
+
+
+def test_unknown_non_api_route_falls_through_to_index_html(client):
+    r = client.get("/some/spa/route")
+    assert r.status_code == 200
+    assert "<div id=root>" in r.text
