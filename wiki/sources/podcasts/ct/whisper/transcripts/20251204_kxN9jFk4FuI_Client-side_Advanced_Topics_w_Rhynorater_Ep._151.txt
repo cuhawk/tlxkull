@@ -1,0 +1,680 @@
+ there could be an iframe on their page there could be an iframe on your page you could be
+ iframeing your own page iframeing your own page to create a null origin which is a separate origin
+ from your attacker page and then use that null origin to open up another page
+ best part of hacking when you can just you know critical thing all right hackers i was just
+ looking into this and i think i figured out how threat locker elevation control works okay so when
+ a user launches an elevated processor they try to threat locker agent will hook that into its own
+ elevation flow so we don't see any uac prompt or anything the threat locker admin will be able
+ to grant that process elevated permissions for a certain amount of time or whatever very granular
+ control there and then the threat locker agent on the user's device injects a modified process
+ security token which will elevate that process directly this is awesome because it avoids things
+ like uac which um leaves ntlm hashes and stuff like that in memory right in lsas.axe it creates a time
+ bounded elevation right and it does the elevation to the process rather than to the user really great
+ stuff but of course there's always like maintenance mode and that sort of thing if you have to get in
+ there and do a bunch of administrative activities great stuff by threat locker once again all right
+ let's go back to the show all right my guy this is the episode of client-side advanced topics i freaking
+ love this man i freaking this is your uh this is your dream yes um all right so we got a lot of stuff on
+ the docket today about client-side advanced topics essentially the the vision for this episode was just me
+ kind of brain dumping all of the things that i think are a little bit above um you know intermediate
+ tier uh as far as client-side hacking goes so i'm going to kind of lay out all those things that i think are really cool
+ and you are going to play the listener and try to repeat these back to me and try to ingest this information
+ and make sure i'm not like going too fast or too over the top with the explanation yeah yeah it's really
+ easy to make mental leaps whenever you're the you know quote-unquote expert on it right so exactly
+ perfect quote-unquote expert on it what is that supposed to mean okay this is actually this is actually a
+ really good point i never know how much flattery someone can take right i think you're a super expert
+ whenever i talk to anybody and someone asks me like you know who do i think the most talented hacker
+ is like you're almost always the first name out of my mouth and so but then i never know people
+ want to hear that to their face like i feel like usually you'd be like nah or whatever right so
+ anyways it makes me feel awkward i do that you know if you if you're if you're playing it up then i play it down
+ and if you're playing it down that's right what are you talking about you know so there's always
+ some back and forth i guess i like it um appreciate you though joseph um before we hop into that
+ we actually have a couple news pieces that i did want to show that are relevant to uh this topic
+ the first one is there's this guy on twitter that's been tweeting out some interesting stuff
+ lately and it's like um yeah i think there are some people commenting on it be like yeah this is like
+ well known you know but you know it is what it is uh i i thought that this was very interesting
+ material so i'll go ahead and share it with you guys um the guy is noaskijr um on twitter and he
+ shared that uh if you create a uh xss payload that looks like this which i'm putting on the screen but
+ for audio listeners it is a less than bracket with a question mark and then less than bracket a
+ and then an href that contains an svg onload in it then that will actually fire and the reason for that
+ is because um these you know if you do not have an actual um spec compliant uh tag so you know a less
+ than sign plus an a through z uh character then it's going to encode those and not treat anything
+ else as a uh actual uh attribute which means they won't be url encoded which means the things inside
+ of the href there will become the actual html and everything else surrounding it is just text
+ uh that gets encoded so um this these are kind of interesting uh payloads yeah uh there's another one as
+ well which is less than zero that's the one that's not a valid tag yeah um they need to start with an ascii
+ letter um and and if they don't they're not going to be treated like a tag and the encoding is not
+ going to be applied to the attributes or anything like that um a couple of the comments in here were
+ saying hey this is pretty much only going to trick like syntax checkers and like you know uh syntax
+ highlighters and stuff like that but i think it might also be relevant in some waft bypasses as
+ well they try to do contextually aware um encoding or blocking it makes me think about like what i'm
+ sure someone's on this before but basically all of the possible um what's the opposite of compliant
+ spec non-compliant yeah yeah spec non-compliant characters like um that could occur in the first
+ character and the tags like that and i'm sure that someone has fuss for that or whatever but oh yeah
+ shazer i'm sure has has a list for that or something like that yeah um so anyway i just thought this
+ was a really interesting piece here uh i think this is the kind of stuff that makes waft bypasses
+ um pretty pretty doable and we talked about this a lot in the ryan barnett episode but like
+ why laughs are fighting a losing battle because they just don't know what's going to be happening
+ if they're trying to do any contextual aware um stuff so i do think it's kind of an interesting
+ discussion on like the novelty required for stuff to be shared on social media because i think that like
+ there's a lot of people who kind of hate on anyone that shares like more beginner information like this
+ is known but that's clearly a spectrum right and so it's like where on that spectrum should you like not
+ post stuff or where on the spectrum is like because it's still useful for beginners still like this is
+ still like news to me maybe a lot of people know it but it was news to me when i saw this tweet i
+ thought it was neat right but um yeah just kind of interesting kind of meta topic on you know what
+ you should be sharing because there definitely are some um x accounts and some other social media
+ accounts that share like such basic information that half of it's wrong and they've kind of just feels
+ like more like snake oil or engagement farming whereas i don't think this is that at all
+ no this is this is this guy sharing cool cool stuff that he you know either stumbled upon or learned and
+ just wanted to disseminate the information i think you were the one that told me this a while back but
+ like it's something like only 20 or 30 percent of your followers will see on average will see like
+ your actual post just despite how many views it gets you know there's going to be a larger percentage
+ that are not going to be you know followers or whatever um so if you really want to disseminate
+ information to your followers you kind of need to post it like two or three times yeah uh which is
+ also interesting because it's like okay well even if it even if somebody else posted it you know they've
+ got a different audience base you know and it does make sense to repost these things and reshare these
+ cool tips and i mean to be honest that's what we're going to be doing all day on this episode is like
+ all the stuff that i'm going to talk about here very little of it is actually like just in research
+ there's like right maybe one or two areas but it's super useful to have it rehashed and it's super
+ useful to have it explained and it's super useful to have it in one place formalized and and organized
+ yeah i agree so good stuff here by nawaski thanks for sharing that um the other one is this is an
+ interesting one i don't know if you saw this dude but there's this guy um boar abdelhadi who is
+ creating uh something called rep plus which is a lightweight http repeater inside of chrome dev tools
+ and i just think this is a really interesting place for this to live uh because uh you know a lot of
+ us are in dev tools anyway have our dev tools open while we're hacking and yeah makes sense that you
+ might want to replay requests in there especially if you are like you know trying to do some lightweight
+ hacking or something like that so um really cool project i think it is a little bit handicapped
+ because i think it is not uh http one compliant i think it uses fetch and it forces everything to be sent over
+ like http two um but very cool project nonetheless yeah i think in an ideal world if you had to modify
+ requests you would want to modify it without going through a proxy a proxy is almost like an extra step
+ right and so i don't think we'll ever get away from using proxy proxies for a long time but i think in
+ like an ideal world you could just like hack the request in the browser itself that you're using
+ yeah yeah totally that that is interesting well this is one of the things that is also nice about
+ kratos like uh client server architecture is like we could probably iframe kaido into dev tools actually
+ i think i saw somebody do that all right that's funny and cool um so if you really wanted to keep
+ everything in one spot you could actually put kaido in dev tools um interesting interesting thought
+ yeah um all right so that's all i had on the news you didn't have any any news items this week that
+ cropped up did you no i did not have you played with opus 4.5 dude it's really good like not only
+ do i think it's good but i've seen multiple people okay so let's actually clarify this because gemini
+ 3 is also incredible um i guess one big takeaway is they're both better than 5.1 in my opinion but like
+ a pretty large margin but um i think opus 4.5 has like a very particular strength when it comes to
+ debugging and coding i mean gemini 3 is obviously incredible at those as well but i think that opus
+ 4.5 is kind of like a really new state-of-the-art when it comes to front-end frameworks when it comes
+ to debugging any kind of issue um like it you know i feel like models sometimes would break down when they
+ were like trying to debug an issue or they would like get a recurring loop like i've seen a lot of people
+ comment on 4.5 breaking out of that finally where it like doesn't get in these like intense failure
+ loops and it can often like solve its own problems so yeah that's pretty sick man that that is a big
+ jump forward and i know that the clod models in particular are pretty sick with uh um like tool
+ calls and stuff like that which is super important as well so yeah i'm excited to see if you use it
+ much or if it comes in handy with your project for your nahamsec talk so yeah the naham whoa the nahamcon
+ uh talk that i'm doing that i'll i'll also drop on the pod um later this month uh we'll be doing some
+ you know a b testing with different models and stuff like that but so far man it's claude nice it is you
+ you know the the gemini models as much as i love them and i use them primarily you know outside of this
+ specific project um which is essentially agentification of our hacking workflows um it's it's not it's not
+ doing as well with tool calls yeah the tool calls just they'll seem like a larger percentage of the time
+ right yeah it's a little odd kind of a bummer i i i'm i i am rooting for gemini though i think i think
+ gemini if they can fix that i think that they're going to be the the best but yeah i'm very bullish on
+ google in general yeah i think they have the customers the distribution and their models are incredible
+ um i mean actually we should talk about this for just a split second nano banana banana pro is the
+ wildest image editing piece of software it's basically um photoshop in a single tool call like it's crazy
+ ridiculously good i mean it can create advanced slides with lots of text and advanced diagrams like
+ it would not surprise me if it can yeah i mean i've seen some that are like that are extremely good
+ but like um it would not surprise me if it could one shot some like flow diagrams for like hacking like
+ oh off flow diagrams so you should you should test it for that it's really good yeah but when you use
+ it on 4k res it's also 25 cents per image so be careful that gets expensive fast i mean yeah you
+ could just use the 1k resolution and then it's like yeah four cents or whatever but wow not four cents yeah
+ that's that's pretty doable um all right dude let's get into let's get into the meat of it i've got a
+ lot of fun topics i want to go through today and i'm actually they're kind of not that related so i'll
+ kind of let you take your pick okay we've got post messages uh third-party cookies cspt's iframe tricks
+ url parsing and client-side routes any of those stand out to you as like the one we want to hear about
+ first yeah let's hear about third-party cookies all right third-party cookies is actually uh this is
+ actually probably the shortest section so um this should be pretty quick in the beginning um i wanted
+ to talk a little bit on this episode about chips um which is uh essentially how cookies are partitioned
+ uh when the partitioned value is uh or attribute is attached to a cookie in chrome um because this is a
+ something that i think we're going to see gain more adoption than it currently has even and um
+ uh it is helpful for sort of uh threading the needle in some of these cookie situations that you're
+ dealing with um the the main thing that you need to understand about this is that with chips um cookies
+ are no longer scoped just to the to the um domain that they're on but they've also got a key for them
+ uh that is tied to the top level page if that scheme plus eltd plus one so whatever the tld is and then
+ the the domain um and then inside of that right if there's an iframe or something like that it's tied to the
+ host so let's say you've got um reinerader.example.com iframe framing in you know um example.rezo.com right
+ uh so so you used a different cld there i did i did but that's that they need to be different they
+ need to be different so let's so let's do okay let's let's keep it simple let's do reinerader.example.com
+ and as iframing rezo.example2.com okay the the the key for that is is going to be um so first the etld
+ plus one which is example.com right cut off the reinerader piece so there's that and then there's
+ going to be the whole uh second host which is rezo.example2.com right that smush together is going
+ to be your your your context for that specific cookie so uh if you have a different you know key
+ there then it's not going to be able to access that that cookie in a different environment
+ um however you know if there's you know grep me or whatever.example.com and it iframes in rezo.example2.com
+ because the tld is the same example.com yes and you know rezo.example2.com that key is going to
+ collide right and they will be able to share cookies but otherwise you're not going to be able to have
+ access to cookies inside of an iframe um if the partitioned this is if the partitioned value is set on that
+ specific cookie um so so the way so right now most sites don't have that you're saying yeah that's
+ right um but just just you know that's a new cookie value or attribute that has been attached
+ so something that i wanted to make people aware of to be on the lookout for that and is the primary
+ mechanism for implementing that the fact that they want iframes to be more secure yeah yeah and it's
+ also related to some privacy pieces as well okay um so anyway that was all i had on that that one
+ doesn't have a ton of like exploitation pieces it's just something important to understand is that
+ that how that key is generated etld plus one our scheme plus etld plus one and then the actual iframe
+ toast and will the parent one always be kind of wild card like that or can the parent can the parent
+ one have a subdomain as well no it's going to be it's going to be etld plus one every time okay plus
+ scheme um all right i'll pick the next one we'll go into post messages next okay post messages are my
+ shit do you know what all right tell me what you know about post messages joseph do you understand
+ anything about post messages or should i start from the beginning very little you should start from
+ the beginning yep okay i'll start i'll start from the beginning so post messages i want you to i want
+ you to in your explanation explain it in such a way that there's an analogy such that like i can create
+ a mental picture of it because i think the biggest issue for most people's comprehension of a new
+ concept is that they don't have a mental picture for it so i think s3 bucket is the best example of this
+ ever made like the name of the thing is the analogy of the thing right that's cool and and and so like
+ because of that everyone knows what a bucket is it's like this place you put data right and so i think
+ like with post messages it's it's never like clicked strongly for me even though i understand that it's
+ like this site is sending a message to this site but it but it's not um the different ways in which
+ you can do that are not overly clear because i don't have a good mental picture so if you have a good
+ good analogy do it and there's also some like overlap too like i remember trying to teach my mentees
+ about post messages and also post requests you know and those are not the same thing even remotely
+ right yeah and so um yeah there is some difficulty there post messages i mean do kind of have that
+ same imagery though if you think about it as like a little like a little post like a little um postcard
+ that letter like yeah like a little letter i was like the only thing i could come up with japanese
+ but yeah the little letter um and you're kind of sending it from one tab to the other is it always
+ via javascript yeah it's always via javascript okay that helps me understand a lot okay yeah it's
+ always via javascript it's it's a feature of javascript um and the browser you know uh kind of
+ collaborating together and the concept is you have multiple windows right those windows can be in an
+ iframe or they can be a tab to be honest it's probably most most easy to think about it being a tab
+ okay maybe this is one big problem when you say windows everybody knows what you mean from a
+ front-end perspective yeah if i'm not a front-end guy when you like what do you know windows is it
+ literally tabs that are open okay so good good differentiation so a window can be a bunch of
+ different things okay um you you've got a window when you've got a tab open right in your browser it can
+ be a new window in your browser right so you've got a new actual window right um it can be inside of
+ an iframe um and those are those are the main ones really uh there are other niche scenarios like okay
+ technically it's not an iframe it's like a picture in picture you know there's various sdks or whatever
+ that you can use to do yeah different stuff but um those are the main ones uh and what post message
+ allows you to do is just do communication between these windows directly rather than via some api cool
+ yeah that's how i always understood it okay yeah so um you know you use the sdk and it sort of comes
+ with the browser right so it's you know window.post message you get a window reference you know some
+ way and then you do window.post message and it just allows you to send a json blob essentially or so the
+ other window always has a listener um no so the other window has to register a listener so that's one of
+ the things that's interesting right is is like the other window is going to get it but the code isn't
+ going to react in any way if you don't register a listener right right yeah um and so yeah that's
+ that's like a key part of that and then you know the the listeners are kind of what we look at often
+ and also messages being sent right because sometimes what will happen is you iframe a page
+ and then it just yeets sensitive data up to the parent right no matter who it is right yeah yeah
+ because there's some code that just says like parent.post manage or something along the lines
+ exactly yeah and it just yeets information up so that's sometimes how that works um but other times
+ uh you know you also got to look closely at the the listeners on the page send it a specific kind
+ of message then it'll send other data out or do something yeah makes something like that so um anyway
+ post message not necessarily like an advanced client-side topic i would consider this like a
+ intermediate or or or lower client-side topic here are some of the things that are more advanced
+ about post messages that not a lot of people know okay so um one when you register a post message
+ listener there is an event object that's being passed into the uh the um listener so that event is
+ what contains the data okay so if you do event.data that's the data that got sent in the post message right
+ if you do event.source uh it will it will uh give you a reference to the window that sent that that post
+ message if you do event.origin it will give you the origin of the event that sent the uh origin of the
+ the window that sent the post message okay okay yep um and what is interesting here is there are such
+ things as null origins uh in iframe so we're gonna we're gonna sort of pop a little bit over to our our
+ iframe trick section as well yeah but um essentially uh a lot of times what you'll see in a post message
+ listeners you'll see okay event.origin needs to uh you know match window.origin which means like this
+ the same uh origin as sending the event or sending the message is the same one as me right so i'm like
+ i'm talking with myself pretty much on a different page right um what's really cool though is if you
+ iframe a uh if you're doing a sandboxed iframe the origin for that uh iframe becomes null and then
+ here's the really really interesting piece here okay um if you do a uh if you allow that sandbar or
+ sandboxed iframe to uh control pop-ups to pop open a new window yep you can have it pop open a new
+ window to any site right you know any arbitrary site and it will inherit the null origin of the page
+ that opened it weird okay so so now you've opened google.com or whatever right it was an origin
+ yeah but if a post message pulls the event.origin of that page it will be null still
+ exactly so and and it's going to compare it to its own window.origin right which will also be null because
+ it inherited the null origin so now you've just completely bypassed event.origin equals window.origin
+ that's really cool so if you ever see that there is a way to bypass it basically there is yeah um and it has
+ some constraints because now you're in a win uh a um null origin iframe you know on this page and a bunch
+ of stuff might break sometimes the javascript doesn't run quite right and stuff like that um but
+ it is it is possible to uh invoke that communication uh and and bypass that check if it's using um the
+ objects window.origin or just origin is that a security feature like is does that get set to null
+ automatically because whenever you are trying to give sandbox um iframe execution to something it gives you
+ some sort of security from the parent yeah so the the reason that exists is and i'm going to read it from
+ the from the docs here because i've actually got it right here um so uh a sandbox resource is otherwise
+ so unless if you don't specify allow same origin in the sandbox attributes then so just what it is by
+ default when you're using sandboxed a sandbox resource is otherwise treated as being from an opaque origin
+ which ensures that it will always fail same origin policy checks yeah so they said it's a null so that
+ it fails same origin policy yeah and and it's interesting because it's not just null right because
+ if you if you have two iframes that are both null origin they're gonna say hey we're both in or or
+ null origin that fails the same origin check and i'm like no that's the same origin but but no it's
+ not it's a different null right um so those nulls aren't the same but their their string representations
+ are the same are the same yeah right and so when you do window.origin equals the string and ull back
+ and you compare that to the other null origin yes that and ull then you're going to get a hard match
+ yeah right so so the practical tip here is to basically look for places where that is the security
+ constraint if it's if it's checking uh like if it's saying event.origin equals event.source then
+ you know you've probably got a bug because you can set on both the null exactly yeah yeah yeah so uh
+ essentially i i double checked it i i was like confused for a second because i was like window.source
+ wait which one was it but it's it is you know event.origin essentially is what needs to be used
+ to get the null piece out of the the null iframe sending a post message and then you compare that
+ to window window.origin yep so it's event origin and window origin that if they're doing that
+ comparison check you're able to uh bypass it by having them both set to null because it does a string
+ comparison of that value exactly now here's the interesting thing typically if the origin was null on
+ that page then you know there's not a lot of other stuff you can do you can't iframe hop or anything
+ like that um but you can do requests uh still fetch requests still work and like so you can do a bunch
+ of uh stuff with it if you're able to like pop an xss inside of it or something like that um and this
+ so um yeah so i guess that's where do i go down some other post message stuff or do i go into the
+ iframe stuff now tricky tricky tricky yeah just whichever one's the most relevant to what we're
+ talking about yeah i i guess i'll stay in post message and then we'll go back to it really quick
+ okay a couple couple other quick shout outs is that post messages a lot of people don't know that post
+ messages the first parameter in you know dot post message is your message and that can be uh an
+ object not just a string a lot of people think it's a string and then they run like json dot parse on
+ it or whatever right that can be an actual object okay so you can just pass in curly brackets you know
+ whatever um inside javascript and it will work just fine um uh what's also interesting there is that you
+ can send complex types through uh post message some of them um for example big int is it is a javascript
+ object or like type that is not like you know json's stringifiable uh and you can send that through
+ post message interesting so um so if there's ever something on the other side that's expecting only
+ json stringifiable things you're probably going to go down a weird code path that's not unexpected
+ yeah and it can also send some regex related stuff it can send like there's a ton of stuff that that
+ you can do with that yeah if if it is um not doing like strict type checking um so keep in mind that
+ you're not just constrained to the basic json types right string array object you know integer that
+ sort of thing you can send more complex types through post message as well cool yeah that's awesome okay
+ last one on last one on post messages is this concept called message ports okay so you said you
+ wanted a little analogy i'll give you an analogy for this one i tried with the other one you know it's
+ like a letter you're throwing it back and forth between the different frames right um but message
+ ports are very much like one of those little cans you know with a string on the other end yeah right and you
+ kind of put the can up to your ear and you can listen and you can like throw somebody else the other side
+ of it and then you know talk into it and then they can listen um that's kind of like what these message
+ ports are okay so essentially instead of post messaging into a window you post message into a uh a
+ message port okay and only the person that has a reference to the message port on the other side will be able to listen
+ to that message um so you're you see this sometimes nowadays um so that people don't lose references to
+ windows and like try to figure all that out they just shoot a port the person that the you know the
+ other side has the port and then we just communicate over this port now um and depending on which tool
+ you're using to like monitor message ports um you know or your post messages it may or may not hook these
+ messages ports so understand that there could be some some post message communication happening in the
+ background that you know fancy tracker for firefox or fronds is old post message tracker they may not
+ be hooking into okay yeah so these are not your traditional style ports this is like another place
+ where we're overloading like the word message is overloaded and the word port is overloaded here
+ yeah yeah so it's a little different so these are not ports like on like a web server and these are yeah
+ yeah these these are just these are just like essentially it's an object you throw data into it
+ you know and and uh and the data comes out the other side regardless of what frame has the the reference
+ um so yeah i could see your face fitting a little bit well what i'm curious about is like does does this um
+ is this uh resilient to like closing the other tab and reopening like is it stored like some sort of
+ like local storage where it's like it knows that that page can like reopen the same port it had
+ opened before the same message port like i'm just curious like what value it adds i don't know i don't
+ know how i don't know how you would store it i i think i i think that it is not resilient of that okay
+ you know but but it is still a browser feature it's not like a web page feature yeah it is and it's
+ facilitated via via the browser and you know um you know you're throwing these messages into instead of
+ a window you're throwing them into a port okay and then it's coming out the other side right it's
+ kind of the thought behind it yeah besides that is it treated very similar to post message like does
+ it still have a dot event or like an event um yeah okay yeah it does and um and i will also say if you
+ in the past i have been using some weird tooling for these and like not been able to catch message
+ ports and i think even fancy tracker for chrome which uh is really good i think it sometimes it has
+ some problems with message ports recently i i've seen so um whenever i i suspect there's some
+ communication happening in the background i just find the event listener and set a conditional breakpoint
+ inside of it uh that just does console.log and just logs to the console okay um as sort of like a
+ redundant hook to make sure i'm monitoring all communication that comes through those those um
+ those message ports yeah that's a sick tip right i mean people like we're immediately going to ask okay
+ if it's if if the things i'm using to listen to post messages aren't finding this how do i do it right
+ and so yeah good tip yeah all right so that's what i had for post messages um let's go and jump over to
+ iframe tricks since we were talking about that just a second ago so um the first thing that's really
+ interesting about iframes is you know knowing how to create this node origin which is essentially
+ specifying the sandbox attribute um inside of that sandbox attribute you can specify a bunch of different
+ um like permissions that uh the sandbox attribute or the sandbox iframe has okay a couple of these are
+ allow same origin allow scripts you know allow pop-ups those sort of things right um and understanding
+ what each one of those does is really important to be able to craft um really good payloads um using these
+ okay i have a really i have a really kind of like dumb but maybe smart question here i think when it comes
+ to talk about iframes especially around front end hacking it's it's like um always a little bit
+ unclear in my mind like who like if you're working in an iframe or if you're the one creating the iframe
+ to then do the hacking right because like obviously a normal website can have an iframe but then also
+ like a normal website that you're hacking can be iframed by you on your domain which i assume is often
+ where you're hacking but then i know sometimes if you have like html injection then you're like on one of
+ their domains putting in your putting in an iframe to one of their other domains to pop a bug right
+ and so i think that some i think that sometimes is like a little confusing to my brain to wrap around
+ it so in this case the majority of attacks come from you taking your domain and you just putting in
+ code that creates or instantiates an iframe to the vulnerable domain right and that's almost what you're
+ always doing or or are you then also using that to then do post messages to it to the uh to the other
+ window it's it's all of the above you just described the the beauty of iframes and like
+ freaking client side yeah loveliness dude um is that yeah all of those right there could there
+ could be an iframe on their page there could be an iframe on your page you could be iframeing your
+ own page iframeing your own page to create a null origin which is a separate origin from your attacker page
+ and then use that null origin to open up another page you know like there there's just like a ton of
+ fun okay aren't you just aren't you just thrilled you're not looking as thrilled no no no no i'm just
+ thinking i'm just thinking through like if there's like an easy way to conceptualize this is it kind of
+ like um is it kind of like post messages basically have and not just post messages but i guess other iframe
+ tricks as well but is it basically like you have a a set of tools in your toolbox which are both the
+ ways in which um like the different parameters with which a message can be sent which are like kind of
+ the things that you mentioned above right like whether it is yeah a null origin or not or and like
+ the domain that you're on and then also depending on the cookies that exist for that domain and then
+ those um those sets of attributes control both what you can do and what might be vulnerable and so you
+ have to like basically test all of those different things this is good this is elevating my thinking a
+ little bit here from my nuts and bolts okay so let me try to abstract it a little bit yeah for you um
+ uh having you know an iframe is for several purposes one is a window reference right so i need to be
+ able to reference a a victim's you know window of that origin right so that's useful for scenarios
+ where you're like sending post messages or or something like that right um so getting a window
+ reference an iframe is one way to do that another way to do that is window.open which just opens up a
+ new tab by getting a window reference you mean like the victim would go to your website
+ then you would you would load an iframe to the website that has a vulnerability on it and and then
+ you can reference that window now and you can now attack the victim exactly but before that you didn't
+ have a window to even reference you need a place to stand right you know like you know what's that
+ that quote from like some philosopher like give me a lever and a place to stand and i can move the earth
+ archimedes lever yeah yeah that's it and and and so you know that's kind of how i think about this a lot of
+ what i think about this a lot of time is i need a place to stand when i'm when i am you know using
+ these window references um so that's one one way the other the other piece is oftentimes or sometimes
+ you can incur constraints on those domains uh when they are in an iframe or um yeah you can control the
+ context in which they load that maybe that's a little bit better right um and you see this with
+ credentialless iframes you see this with um sandboxed iframes right um these are ways that you can
+ control the context in which interesting okay this is making sense to me now because you control
+ the parameters of the iframe being loaded if you load it with different settings if you want to
+ think about it that way then that actually can change what occurs inside of that iframe exactly yeah
+ so so a really good example of this is um one that i mentioned just a second ago let's say you
+ you create a attacker controlled page and that attacker controlled page has a null origin attacker
+ controlled iframe right so i'm iframing myself yep i've got it set to null origin and then i from there
+ i i have in the sandbox i have allow pop-ups and allow scripts right so i can run javascript and i
+ can uh allow pop-ups for this sandbox iframe yeah so from that sandbox iframe i do a window.open to
+ you know with the victim's site or whatever now that victim's site has the null origin as well right
+ um it it inherits this is one thing that i really want to emphasize here it inherits the sand boxed
+ properties of the attacker control null origin page yep okay so if you if you said um let's say you said
+ no no script right let's say you said no script and you did the pop-up via a uh an a tag or something
+ like that right in straight html right that victim page is now running without any job script
+ that's so weird so that's so if they ended up on router.com and you did this all of a sudden a new
+ window would pop up to the to the victim website google.com to google.com with no javascript with
+ no javascript javascript is not allowed to run okay you know and and and that's one of the beautiful
+ things about this is like you are incurring constraints yeah unanticipated constraints on
+ these third-party sites yes right um and another example and i'll give a shout out to um uh to jordan
+ in the the uh cool research channel on the critical thinking discord he's just constantly dropping cool
+ shit in there man um hopefully by the time this episode goes live he'll have his write-up um on
+ lab.ctv.show up on this sort of thing but um one of the things he dropped in the chat recently was that
+ he was able to use this and he the things he specified were allow same origin allow pop-ups allow scripts but
+ he did not specify allow forms so what was happening is there was a page that was auto submitting a form
+ right and he needed it to not auto submit a form so that he could he could attack it right uh and so
+ he used this constraint it inherited the sandboxed properties of the other origin yeah right of the
+ other and it doesn't necessarily have to be a null origin right in this scenario he he said allow same
+ origin so it was just the normal origin for this page yeah but it did inherit the fact that it's not
+ allowed to submit forms so when it went to auto submit the form it failed it failed right and so
+ there are lots of ways that you can sort of manipulate these target pages that have been
+ spawned from sandboxed iframes does that make sense yep yeah and you know a lot of these again are
+ affecting different code paths like they may have expected that to always auto submit and so when it
+ didn't what happens some sort of fallback right you know like it's man sometimes you see the craziest
+ fallbacks like uh i think i've seen one of the fallbacks i've seen for like not being able to parse json
+ was just run eval on the string oh my gosh and it's like what um fallback execute rc yeah exactly it's
+ like okay uh yeah so a lot of these fallbacks can trigger unanticipated code paths um so knowing about
+ these uh sandboxed uh like attributes that you can apply to these third-party sites can be really valuable
+ yeah um i will say there is an exception to that so i i said i talked about sandbox inheritance here
+ um the exception to that is allow top navigation so there is this specific um flag that you typically
+ need to specify in your sandboxed uh iframe yep that's that will allow it to navigate the top level
+ page there is a specific exception made in the docs for inherited window you know windows that have
+ inherited those sandboxed properties from a iframe uh but it was opened via window.open so it's in its
+ new tab right because it's saying okay well hold on a sec like we can't not let them navigate themselves
+ right right and because it's in a new window so that is going to have implicitly have allowed top
+ navigation associated with it cool and it will be able to navigate itself what does allow top nav do
+ allow top navigation allows you to navigate the url bar for that tab okay yeah so i just wanted to
+ make sure i put that that um caveat out there are you tracking with me so far i know that that's very
+ convoluted i'm tracking extremely well with you and that's that's great because i you know came in
+ not knowing you know nearly as much and so i think even our beginner listeners will have followed almost
+ all this so that's great i i think um i think a lot of times like i mean i love this stuff obviously but i
+ i you know whenever i go to talk about it it's so nuanced and convoluted i'm sure i'm i'm sure freaking
+ demo or like some some turbo or whatever jorian some of the listeners are going to be like find
+ something that i said in this episode i'm sure in the corrections channel so please do because that's
+ how i learn as well but um this is uh is my best my best shot at representing these concepts you're
+ doing great all right so uh let's talk about two more things uh credential lists is one of them which
+ is another attribute on iframes and this one was it's fairly new actually uh but the thing you need
+ to know about this we've covered it on the pod before is that if you apply the credential list
+ attribute to an iframe yeah it just means that it is using a new ephemeral
+ context so no cookies no local storage no no nothing associated with that domain is going to survive
+ that credential list context cool um and and so that's useful if you've got you know a cookie that
+ you need not to be set for your attack to happen but of course that cookie is going to be set if the
+ if the user even uses this website right right so you need to like get them in a state where
+ they don't have the cookie set but they're still logged into the page or something like that right
+ um credential list uh is really good for this um and here's something that i should have looked up before
+ the pod actually maybe we'll pause and i'll look it up right now i'm not sure that credential lists
+ inherits on window.open so let me go check that right now okay it doesn't look like it inherits the
+ credential lists uh attribute so this one's only uh helpful if you're like inside of an iframe itself which
+ does make this a little tricky because not every page nowadays is is iframeable due to like extreme
+ options and csp so yeah so that's uh interesting little nuance but it has saved our butts a couple
+ times um you got that one i know we've covered that one before yeah no that's great i was gonna ask are
+ there any other iframe attributes that you think are key that we haven't mentioned yet or that you
+ think are interesting or we've mentioned most of them um yeah i mean these are the ones that's just kind of
+ popped into head um there there are a couple things the name attribute is really important right that
+ that controls the name of the frame yeah um and we'll talk about that one in just a second with
+ window hijacking um there are lots of interesting other attributes like you can specify a csp that
+ uh the victim page must conform to and if it doesn't load that csp then it's not gonna load you know
+ so there's there are some interesting things you can do with that um but we'll we'll save those for a
+ time when i've uh researched them a little bit more recently and can talk about them more uh more
+ clearly um the one i did want to specify though was window hijacking which goes back to the name
+ attribute that i was mentioning before so um here's a really cool thing um you can name your windows and
+ your frames and stuff like that various things so uh let's say you name your win uh your window abc or
+ whatever right if uh there there is a scenario where you can force a victim page to open their window.open
+ into that iframe so so consider this scenario okay and actually if you want to visualize it joseph so you
+ can see click that um frame hijacking attacker page uh link that i put in the in the um doc there yeah
+ consider this scenario you've got an attacker controlled page um you embed inside of that
+ page an iframe to the victim site called abc sure okay so that's the name then you do a window.open to
+ a victim page that victim page uh you know goes through some a lot flow whatever and then does a
+ window.open with the name abc right of course it wouldn't be abc it'd be like a login session or
+ whatever right what will happen is it will look for any other pages before in the browsing context
+ yes that are the same origin as itself so it has to be the same as victim.com sure and then it will
+ open into that iframe rather than doing a window pop-up right and since you embedded that iframe in the
+ first place right you control where it's pointing to so then you can you know redirect it to something else
+ and then or like put something in the hash or something like that and then when it redirects
+ back to the victim page and that thing is still in the hash it might try to read the hash and do
+ something with it right um so this is what i'm talking about like having iframes open allow you
+ to control the context in which pages are running and in this scenario we just hijacked a pop-up right
+ and instead we put it in our attacker controlled page that's super we have control over it that's super
+ weird and cool that that works isn't that amazing yeah i do think that another disjoint in my
+ understanding is from like what is possible inside of an iframe that is iframe from it like attacker.com
+ right sure like yeah that's interesting you can't redirect it for sure like that that is what you said
+ you can't just like reach in and then get those cookies right yeah you can't right yeah because
+ there's yeah there's still and you can't even you can't even see them on the way in even though you
+ i-framed it right right right yeah so it's interesting it is a little weird like knowing the
+ nuances about what's possible with that iframe is another reason why i think there's like a gap in
+ understanding between people who are like really in the front end versus those that aren't
+ yeah yeah and and the only way to get that is experimentation yeah is for you to listen to this
+ podcast and like pop open your browser and like build pages that represent the scenarios we're
+ talking about and toy around with it yourself yeah um or you can do what you do which is understand it
+ at like just a deep enough level where you can say hey this is weird hey justin yes this is your
+ shit and this is what i do for you with ai stuff you know and uh and then we kind of bounce off of
+ each other which is great no i think this is huge though and honestly i think all of this front-end stuff
+ is extremely uh important and good even for kind of this like new ai hacking stuff because there's so
+ much html injection and so much like room for xss and other front-end like um sensory when it comes to
+ all of these different ai apps that are popping up because they very often are either i-framing it in
+ or doing translation between markdown to html or they just straight up have xss to begin with so
+ no i think this is like all extremely um beneficial so so so here's another really interesting thing
+ okay oftentimes what will happen is let's say you're on like some ai page right and it's generating
+ a markdown output which has a link in it yep um if that link is allowed if that a tag is allowed to
+ have the target attribute then you've got something really cool here okay uh because what you can do is
+ let's say let's say we're on gemini for example okay gemini uh has an invisible iframe you know in
+ it to do like analytics or like you know supply whatever feedback form or something like that right
+ that that feedback form or whatever is named you know abc what if you can get the ai to spit out a
+ a tag that has target equal to abc when they click that link it's going to open into that iframe wow so
+ now you've got like a persistent invisible iframe with your attacker controlled page inside of gemini
+ right and unless that iframe is sandboxed you can also do like you you can uh do like top dot location
+ navigate and and change the top level page right and there's just or you can send post messages from
+ like an advantaged position and bypass coop like i'm gonna go i'm gonna go find you this a place
+ where we can control target and libraries i'm gonna go please please let me know because like um the
+ target unfortunately the target attribute is a little bit tricky to smuggle in there but if you can
+ there's like a ton of really cool stuff you can do with it yeah so keep that in mind um all right dude we
+ man i your boy can yap about client-side stuff hey this is great okay um let me see where we want to go
+ next let's talk about url parsing okay um this one is kind of an yeah i want to make sure we hit cspt
+ before we uh sign off too okay we can skip that one we'll hit cspt as well um let's jump to url parsing
+ first sure uh start us off with a basic one oftentimes backslash slash gets converted into
+ uh double back or double slash yep which uh will allow you to actually produce an absolute url rather
+ than a relative url that causes so many bugs so uh like always keep that in mind yeah yeah that's also
+ probably applicable to ai because like yeah the like i just had the best bug of a amazon ipc and it was
+ that's a bypass where the um markdown image rendering happened with slash slash so if they
+ then go fix that with slash slash then backslash forward slash would potentially work to bypass it
+ right exactly yeah and and you can do you know if it's inside of an attribute or whatever you can do
+ all sorts of you know encodings html encodings that sort of thing so there's lots of lots of depth that
+ that can happen there um this is one that is is also quite interesting is that recently and i think we
+ covered this on the pod as sort of like a side note when it first came out but recently uh chrome
+ conformed to safari's behavior about parsing javascript uris such that javascript uris can now have a
+ a host name associated with them so so if you do javascript colon slash slash rhinerrader.com
+ slash rhinerrader.com is the host name for that javascript uri which doesn't make a lick of
+ sense that's really weird because like that's not what the uri is for yeah right and they had it
+ the safer way before which is that it was null yeah but then they were like ah well you know
+ the spec says that it should be like this and safari's doing it this way so we're also going to do it
+ this way and the hackers were like yes um so have you seen this use already oh yeah yeah yeah i've
+ used it many times and i've seen many people use it um but this now makes it so that if there is a
+ new url right you know parsing of this this um scheme and it does dot hostname and compares it to
+ like the hostname of this page or something like that then you can have that but then when they do
+ location dot uh you know window dot location equals this it will run javascript and you can just do
+ like percent away at the end of the javascript to create a new line because slash slash is a comment
+ in javascript right yeah so do you see how that works right like javascript colon slash slash now we're
+ in a comment there's a comment yep then you get the next line who cares what happens there right
+ it's like just the stars aligning in so many good ways isn't that awesome that's cool yeah um so that
+ one's a really good one it's very seldom you see new features unlock a bunch of bugs
+ yeah yeah which i mean i guess people probably reported it as like firefox only bugs already right
+ but yeah and i've reported it as a safari only bug but last time i reported it uh you know before they
+ they changed it i saw in the you know in the critical thinkers channel we've got like the data
+ feeds or whatever and i saw uh on the intent to ship feed that uh they were gonna change it and i
+ put that in my report and they paid me the full thing like it wasn't gonna because they like chrome
+ is gonna ship this so it's you know we're just getting ahead of the curve and i was like yes that's
+ awesome um so that one's a cool one the other one that's really interesting and sort of relates
+ back to post messages as well is that you know then then the string no that represents the null origin
+ uh is kind of weird because it is just a string and uh the that string like can be perceived in
+ different ways so here's an example of how this might work one of the before they i think the
+ prevalence of uh the url parsing um framework that they have in in in javascript now uh one of the
+ ways that you would commonly see to parse a uh a url is to create do document.create an a tag and then
+ set the href to a specific url right um and so let's say you got a post message and you wanted to
+ extract the host name from that post message in a in a reliable way logic that i've seen before is say
+ document.create element a a dot href equals event dot origin right so you're setting the href of that a
+ tag to the origin of the post message and then grab the host name of the a tag which is pre-populated
+ into that like object yeah um what's interesting is that if you send this from a null origin it passes
+ null into the href of the a tag and null if you just put null as a string it says oh that's a that's a
+ relative url that's slash null right and so what is the host name of a relative url oh that's the current
+ page that we're on right and so it just fills in the very helpfully fills in the current the current
+ pages host again by the stars aligning only exactly right and and and then it compares it to itself and it's
+ like always passes right that's cool um so i've seen that logic a couple times when they use um create
+ element a as like their their way to extract the host name this does not work in new url unfortunately
+ like uh uh because of some constraints that they have in the system for that uh but it does work
+ in other methods of extracting the host name yeah um okay you said you wanted to go to cspts next yeah um
+ dude like the thing is i've talked about cspts so much on this podcast so i don't know i could go a
+ little bit deeper than what i've got in the in the doc there but um yeah i guess i'll go a little bit
+ deeper okay so um this is advanced techniques all right all right cspts i'm not going to explain what
+ cspts are you know tldr you get data from the url or from the path you stick it into a sub resource
+ request and you can induce path traversal there's also another subset of these i will say that i don't
+ really know what to call them i kind of think maybe it's like request hijacking but this is when
+ you take something from a query parameter or a path and you inject it directly into the domain
+ of a fetch request right so it's not a pass traversal you're just overwriting what host
+ the the fetch request the sub resource request is is actually going to right so be on the lookout
+ and this is common in like cloud providers and stuff right yeah totally yeah you you know what i'm
+ talking about actually um yeah but these sort of um these sort of vulnerabilities are are pretty common and
+ uh i would say one thing that that is really uh useful to exploit these is knowing that you can
+ exploit the difference between what what the browser perceives and what actually hits the fetch sync
+ uh and this was a great shout out by turbo i think he mentioned it on his episode or maybe it was in
+ the the chat but anything like percent zero nine or like new lines and stuff like that all of that just
+ get straight stripped from anything passed passed into fetch as a part of the hosting so you can do
+ you know rhino raider tab dot com and and it will just pull the tab out when it does the fetch
+ so if there's any sort of like parsing or like um an analysis of that data that you're passing in
+ you can really you can oftentimes finagle it by adding white space throughout there yeah um and
+ then and then also just be on the lookout for different levels of encoding here like i think
+ that's where a lot of the vulnerabilities occur you're not always just going to be able to
+ insert like a slash or you know a backslash or something you got to try percent 2f percent 5c percent
+ 25 2f percent 25 2c percent 4 4 0 right for the at sign you know like all sorts of things like this that
+ can sort of break these various contexts yep um okay um going from there let's talk a little bit about
+ client-side routes um client-side routes i don't know man like i feel like i don't really know how to hack
+ applications that don't have client-side routes anymore man like it's just so overpowered that in
+ single page applications that you just have access to essentially like the full app in the js files
+ like right in front of you yeah i've been doing um hacking on hacker one challenges that don't have
+ that and they're it's so frustrating i mean it's also really rewarding when you find a new path
+ especially if it's one that like you're not supposed to have access to and the page actually loads
+ it's like a massive adrenaline rush but it is weird to go back to those because so many pages are just
+ single page apps these days yeah i think we talked about it on the pod like last week or the week
+ before but like you know there's just a totally different approach you've got to take where you're
+ just like you know looking for patterns brute forcing stuff it is a lot more brute force heavy
+ whereas with spas um all you have to do is just figure out how these routes are defined and and i i think
+ the best way to do this in so many levels is just reverse engineer what you've got right what page am
+ i on okay well that page has got a route somewhere so just take the page put it into con you know
+ control shift f in dev tools where you're searching all of the js files and then find where the place
+ where the routes are defined and then just look at every single route right that's like one of the
+ first things to do on my checklist uh is just like you know go through every single route understand
+ everything that's happening and go from there um yeah yeah yeah i like that second tip that you have
+ here that's basically you do it seems like you almost do the same thing for parameters like what what
+ what and how are all these parameters used how are they parsed what do they do yeah totally and and
+ and you know look for the nuances in the route definitions as well uh you know because sometimes
+ there'll be like parameter like uh colon you know path id or you know object id or whatever in there so
+ they're taking path parameters right um and then also like you said look at the way they're the
+ framework they're using they're probably going to do consistent parsing or access to given uh query
+ parameters so are they using url search params are they using like you know a react or a view um
+ uh piece here to grab grab query parameters and that sort of thing and then look at every single
+ query parameter that ever gets parsed ever in the whole app right and and understand every single
+ piece of data that you can pass into this application by a by a force by by forcing them into a specific url
+ okay so i've obviously heard you talk a lot about client side paths versions and i've seen them a lot of
+ places but it's just dawning on me that i think that i've failed to test for a ton of places because i
+ definitely see like the slash colon id or whatever but if that's ever controlled by me i can always
+ check for if i name that object or if it's like attacker controlled if i have like for example let's
+ just say it's a username like if it's like slash slash user slash reso if i go make my username dot dot
+ slash what happens right like yeah yeah there's there's scenarios where you can get stored cspt with that
+ where it will load you know from the database your name and then that gets causes a path traversal
+ right what is going on yeah um yeah and then yeah you can also just do you know it's a little bit
+ trickier when it's path parameters because you got to do like various levels of encoding and stuff like
+ that but let's say you've got slash user slash you know user id yeah you know do slash user slash percent
+ to f you know dot dot percent to f you know yeah and you know have that encoded version and if that
+ if it's resolving those then do percent 25 to f right so you can still find path traversals inside of
+ path parameters um so definitely be on the lookout for that uh the other thing is that one of the
+ ways that you know with with the on-site of same-site cookies which you know i think is i feel like
+ that's a little bit more of an inter intermediate topic but um uh with it with the onset of same-site
+ cookies um sea surfs are getting a little bit more challenging and one of the ways that you can
+ exploit sea surfs um pretty reliably nowadays is just by making sure that the request originates
+ from the attack the victim's page um and a lot of times that happens via these callback routes
+ where it hits a third-party provider whatever i want to link my account and then it comes back to
+ this page on a specific route that is responsible for completing that linkage right but if you can just
+ grab your attacker control data redirect the victim to that finalize route right then it will send a uh you
+ know a post request or whatever to modify the victim's account then boom you got a sort of a c-surf oh
+ that's cool that's really cool yeah um and then sometimes you can hijack those as well right maybe
+ there's a cspt inside of that and it's sending a post request so you use it to hit a different endpoint
+ and then do a different c-surf right um so it's this whole cspt to c-surf idea that was really covered
+ well by um doyan sec in their in their cspt uh paper they did a while back um so lots of lots of
+ neat nuances there um dude your throat going out my throat is getting a little raspy i'm going to close
+ it up with um just uh one two more little quick shouts and that is one i kind of mentioned url search
+ params earlier but that is a uh a class in javascript that is used to parse create like query parameters
+ right so really good place for dom dom logger plus plus um hooks and also uh just control effing for url
+ search params to see where parameters are being parsed yeah um so that's just a little tip i'll
+ throw out there and also do not ignore on hash change events because hash change is something that
+ you can control as a as a hacker right on your evil page i don't know if this is something that's commonly
+ i didn't know that yeah so how does this happen yeah so let's say you do a window.open to a victim
+ page right and you know what url they're on you can do that same window.open again to that same url
+ with a different hash and it will swap the hash without refreshing oh interesting and it will
+ trigger the on hash change event on that page and sometimes when the hash changes various things will
+ occur on that page um so that's really cool yeah is on hash change how like um it like jumps to
+ um different like table contents buttons or no uh sometimes depending on yeah or is that there is some
+ page load uh there is some functionality for that but i i think like most of the stuff now that i'm
+ talking about here is just hooked into this event that you can register it says hey whenever the hash
+ changes i want this code to run and you look at that code and you say oh okay well one of those is a
+ redirect so i redirect to this hash and then it you know drops your javascript source or something like
+ that you know your javascript uri into a window location or something yeah um so great stuff there
+ um the last thing that i had here this is and this is just like a random piece that i decided to throw
+ into this episode i probably should have bumped this up to the top uh when covered it during news but
+ it's actually a post from tear jank back from 2021 wow that somehow recently came across my my uh x feed
+ um and he was saying that something that really blew my mind which is and this is something i guess to
+ cover a little bit more from a higher level perspective is like there's this concept of the
+ dom right which is the rendered um uh the document object model that it's like your html that's been
+ shown on the page and a lot of times for stuff to run you have to create an element in js and then
+ attach it into the page right you could do document.body.appendchild or something like that
+ so you create the element now it's just living in javascript land and then you insert it into the
+ dom makes sense what's really weird here is that uh what terjank tweeted out was that like you can
+ create an an element so let's say you do document.create element div or whatever and then you say div dot
+ inner html equals you know image source equals x on error equals alert one right that still has not been
+ inserted into the dom yet so it's not like it shouldn't be rendering uh but for some reason that will run
+ uh that on event on error handler will run uh are there any protections like obviously dom purify
+ uh implies that it's purifying the dom yeah would that like not get purified because it's not
+ uh that's kind of the first thing that came to my mind as well was like i feel like some of these
+ parsers are probably like depending on the fact that they can like take the html and stick it inside
+ of like another html element that they crafted in the javascript you know vm or whatever and then like
+ do stuff to it right but but if you even get it to that point you're already done because it's gonna run
+ it makes me think it makes me think that there are a lot of cases where people have like tried to get
+ xss but failed but they never try to dot enter html yeah yeah well it it's very it's very interesting
+ and there could be other nuances around dot enter html because i know that that's you know that is a
+ pretty dangerous function that a lot of um uh people will try to uh avoid when they're doing these
+ parsing but i i still wouldn't have thought it would have triggered i i wouldn't have thought that it
+ would trigger even without being inserted into the dom and and it is interesting as well because i know
+ this is just making me think a little bit i know that there is a bug in dom purify where if you put a
+ meta tag in into the dom purified like uh parser that meta tag will be applied to the page uh even though
+ it got sanitized away so so they are like definitely taking that in doing something with it where so i
+ don't i don't think this is a dom purify bypass because that's like a very vanilla paper that i'm
+ saying here but like but like um there's definitely some weird nuance of uh of that because that's the
+ same thing that's happening with this meta tag that uh jrock mentioned back on his episode back in the day
+ so something on something odds happening there i got to double click into that a little bit i'm sure
+ something is will come out of this episode almost definitely yeah for sure man um all right that was
+ a lot of justin yapping you got any questions about any of that or do we think we're uh we're good for
+ now no dude i think you explained it super well i uh it's funny this is like the advanced episode but
+ we also were like super beginner all the way to the advanced stuff so i think this will be super useful
+ for both sets of listeners which is probably great because if it was only advanced then i feel like half
+ people stop listening immediately but there will be enough listeners like me that will like hang on for
+ the ride because you uh you bridged it so well so thank you for that of course man yeah i think there's
+ a lot of a lot of both here a lot of you know covering some of the foundational concepts but also like
+ this super weird like double null origin iframe stuff that's that's pretty whack so hopefully we
+ triggered some some advanced minds out there to go down some some paths with some of this stuff and help
+ some of the beginners along as well yeah dude sweet all right man peace good episode
+ and that's a wrap on this episode of critical thinking thanks so much for watching to the end
+ y'all if you want more critical thinking content uh or if you want to support the show head over to
+ ctbb.show/discord you can hop in the community there's lots of great high level hacking discussion
+ happening there on top of master classes hack alongs exclusive content and a full-time hunters guild if
+ you're a full-time hunter it's a great time trust me all right i'll see you there

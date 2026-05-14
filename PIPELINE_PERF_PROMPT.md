@@ -258,3 +258,52 @@ Add a section to `skills.md` titled "Context discipline":
 - Replacing ChromaDB with a different vector store.
 - Touching the wiki RAG collection's existing 3072d Gemini embeddings
   (grandfathered).
+
+---
+
+## Deferred — h1-brain integration (decision pending)
+
+**Cloned:** `wiki/_external/h1-brain/` (PatrikFehrenbach/h1-brain, MIT).
+LFS blob `disclosed_reports.db` already pulled (17MB, 3673 rows, FTS5).
+
+**What it is:**
+- `server.py` — MCP server. Tools: `hack(handle)`, `search_reports`,
+  `get_report`, `search_disclosed_reports`, `fetch_rewarded_reports`,
+  etc. Needs `H1_USERNAME` + `H1_API_TOKEN` env for personal data sync.
+- `disclosed_reports.db` — SQLite + FTS5 over 3673 publicly disclosed
+  bounty-paid H1 reports. Schema:
+  `id, title, vulnerability_information, weakness_name, program_handle,
+   asset_identifier, asset_type, cve_ids, bounty_amount`.
+  Top weaknesses: Info Disclosure (302), Improper Access Control (248),
+  Uncontrolled Resource Consumption (221), XSS-Stored (185), Memory
+  Corruption (185), XSS-Generic (170), XSS-Reflected (130).
+
+**Three integration options:**
+
+| Option | Cost | Win | Loss |
+|---|---|---|---|
+| **MCP only** | zero | live `hack()` w/ H1 API + ad-hoc disclosed-report search via tool calls | reports stay opaque to wiki/RAG; no `[[]]` cross-link to local techniques |
+| **My method** (export rows → `wiki/sources/h1-disclosed/`, ingest via wiki RAG) | embed cost (3673 pages) — Claude Code path = no API spend, but blocked by CLAUDE.md rule 7 ("no bulk-embed external corpora into `wiki` without user OK per ingest") | reports become wiki nodes, queryable via `docs_query(collection="wiki")`, distillable into `techniques/<weakness>/` pages | static snapshot; loses live `hack()` API integration |
+| **Hybrid (recommended)** | MCP only upfront | `hack()` + `search_disclosed_reports` immediately; when a query surfaces a report worth keeping, `/wiki-ingest` per-report grafts it into wiki organically | none |
+
+**To enable MCP later:**
+```bash
+cd wiki/_external/h1-brain
+python3 -m venv venv
+venv/bin/pip install -r requirements.txt
+claude mcp add h1-brain \
+  -e H1_USERNAME=<user> -e H1_API_TOKEN=<tok> \
+  -- /Users/soural/Documents/TLX/wiki/_external/h1-brain/venv/bin/python \
+     /Users/soural/Documents/TLX/wiki/_external/h1-brain/server.py
+```
+
+**Open questions for user:**
+1. MCP yes/no? (recommended: yes)
+2. Bulk-ingest disclosed_reports.db into wiki? (recommended: no — let
+   reports flow in organically per-query via `/wiki-ingest`)
+3. If bulk-ingest: into existing `wiki` collection (grandfathered, free
+   to re-embed) or a new `h1_disclosed` Chroma collection (cleaner
+   separation, but rule-7 blocks new external-corpus pipelines)?
+
+**Status:** Cloned, LFS pulled, inspected. No code changes. No MCP
+registered. Awaiting user decision.

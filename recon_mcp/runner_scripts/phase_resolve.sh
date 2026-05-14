@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Resolve all collected subdomains to IPs via dnsx bulk resolver. Reveals IPs missed
-# by initial input. Replaces a serial `dig` loop (≥25 min on wildcard targets) with
+# by initial input. Replaces a serial `dig` loop (>=25 min on wildcard targets) with
 # dnsx at ~500 qps (~2 min on the same input).
 # Inputs:  /opt/recon/out/subs/all.txt
 # Outputs: /opt/recon/out/resolve/{resolved.json,all_resolved_ips.txt,new_ips.txt}

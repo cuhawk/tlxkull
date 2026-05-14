@@ -1,0 +1,997 @@
+ We're reading through this research and we're like, oh shit, I can definitely hack something
+ I'm hacking on right now with this.
+ Best part of hacking when you can just, you know, critical think, right?
+ I'm not sure y'all know this, but two of the most respected hackers in the CTPB community,
+ Bus Factor and XSS Doctor, are now running monthly hack alongs on the CTPB Discord.
+ Okay?
+ You've got to check this out.
+ CTPB.show/discord.
+ We find bugs almost every time we hack.
+ It's crazy.
+ And oftentimes it's not even the people running the hack alongs.
+ It's the community members that are hacking along with us.
+ You definitely increase your chance of finding a bug by being on these hack alongs.
+ So check them out, CTPB.show/discord.
+ Join Bus, XSS Doctor and yours truly.
+ And let's pop some bugs.
+ All right, let's go.
+ Back to the show.
+ All right, man.
+ Well, we just had a false start where I didn't press the record button.
+ Yeah, I made so many good jokes.
+ Oh my gosh.
+ But we're back.
+ Guys, this is the Portswigger Top 10 Web Hacking Techniques of 2025 episode.
+ And guys, I know I complain about it every year, but this episode is a monster to prep for.
+ Because these are very technical pieces of research.
+ And now we are going to try to articulate them to you in the audio medium, which is
+ still challenging after three years.
+ Yeah, hacking is kind of like text first in the same way that coding is, right?
+ Yeah.
+ Yeah.
+ Yeah.
+ So it's going to be a beast, but we're going to give it a shot.
+ There was a lot of other awesome research also in the nominations, which I think
+ we definitely should go back and review.
+ I think 163 pieces of research contended this year, which is significantly fewer than 121 that was
+ submitted last year.
+ Yeah, you and Brandon should do an episode on that, so.
+ Yeah, yeah.
+ Dude, okay.
+ I see you trying to weasel your way out of that research.
+ All right.
+ Well, let's get to it, man.
+ We've got it kind of divvied up by capability rather than by order.
+ So what's going to happen is Joseph is going to take 10 and nine.
+ I'm going to take eight and seven and we're going to kind of go back and forth.
+ So we're going to jump around a little bit.
+ But first one up is parser differentials when interpretation becomes a vulnerability
+ and you're going to take that one, right?
+ That's right.
+ Yeah.
+ So this got 10th place.
+ It's a video.
+ It's not like an official white paper or anything like that.
+ Yeah, it's just a YouTube video.
+ It was a talk at Offensive Con 25 by Georgian.
+ But he is a GitLab engineer and it's a pretty, it's a pretty great talk.
+ I think I really love parser issues.
+ And so it's the reason I grabbed this one because I got into the doc before Justin did
+ and was able to snag this one.
+ So, I mean, you should just go watch the talk to anyone.
+ I mean, it's not that long.
+ It's 28 minutes.
+ And I'm sure if you're watching on 2X, you know, it's even faster.
+ But what's really neat was that he looked at a bunch of different parser differentials
+ and he was mostly thinking about them in the differences of like, you know,
+ if there's a tech stack that has like Go running at one point and then Python later,
+ how does it handle specifically YAML or actually, sorry, no YAML was one of the later ones.
+ Yeah, no, YAML was like the bulk of what he found in the end, but he was looking at different
+ things between like Kubernetes and Java and other things.
+ But I just wanted to bring to the audience, like basically the lowest hanging fruit here,
+ like the stuff that's like most valuable to try.
+ And basically the first one was just parameter injection.
+ So there was two role parameters.
+ One was like sending it to admin.
+ One was just setting it as like role, like an empty list.
+ And because the parsers handled it separately, it basically bypassed the JavaScript check,
+ which was checking the second one.
+ And then whenever it actually got to the Java implementation,
+ it read like the backend server side code, read the first one, set them to an admin.
+ And I think I can actually share my screen on that exact screenshot.
+ Yeah, let me share it real quick for the people who are watching on YouTube.
+ This one right here.
+ So this is in a parser differential in HTTP rather than in YAML or something like that?
+ No, it's JavaScript and Erlang.
+ I don't know where it was actually, like what repo was in or what project.
+ Oh, it looks like this is JSON here.
+ Yeah, that's what I'm saying.
+ Yeah, it's like a JSON input.
+ And Erlang, like whenever it's parsing this, it accepts the first role.
+ But whenever JavaScript is parsing this, it accepts the latter role here.
+ So for the listeners, basically, it's what I said just a minute ago.
+ It's just like the key is roles.
+ And there's two of those keys.
+ And the first one is a list that includes admin.
+ And the second one is not.
+ And so you're able to get, you know, JavaScript saw an empty array, whereas Erlang saw the
+ underscore admin role and granted that to the user.
+ So, you know, kind of neat, pretty cool.
+ We've seen stuff like this before.
+ The second one, the second example he thought he showed, which I thought was pretty neat,
+ was a double auth tag, a double authorization header.
+ I bet this exists in way more places.
+ So the first one was a none signed fake admin JWT.
+ And then the second auth header was a legit bear token that the application gave you.
+ And you could put, exactly, it's really cool.
+ You could put basically attributes that you want into that first none signed one.
+ You know, I think all of us have tried this, but I've only ever done it with one, right?
+ You change the legit one to none signed, you don't do both.
+ Wow.
+ Okay, so he's smuggling in a second authorization bearer.
+ And the middleware, you know, the front piece is checking for that second bearer,
+ which is a legit JWT signed low priv.
+ But the back end is actually grabbing the auth bearer that is algorithm none
+ with all of our stuff in it.
+ And that's not checking the signature.
+ It's just accepting all of our crazy attributes.
+ Yep.
+ That's exactly right.
+ Dang, dude.
+ It's really cool.
+ Yeah.
+ And then the rest of this talk is really neat.
+ It's all about YAML.
+ And there's a bunch of cool things that YAML had that I didn't know.
+ So one is this like binary thing.
+ You can just like prefix a line with like exclamation mark, exclamation mark binary.
+ And then that key or it's like, sometimes it's key.
+ Sometimes it's values get like are allowed to be interpreted as base 64 encoded content.
+ Oh, it's really weird.
+ So for the listeners, I'm sharing on screen a couple of different things, but he, yeah.
+ Yeah.
+ So that, that one is go back to that really quickly.
+ Okay.
+ So here we'll hear, let me read this to you.
+ The bang, the bang, bang binary tag can be used to base 64 encode arbitrary binary data inside of YAML.
+ So I think this is most useful for like sending in like audio or images or things like that.
+ Wow.
+ Yeah.
+ That makes sense.
+ So essentially, and you can use that in a key or in a value, right?
+ So it's like an operation that is being run on top of a, you know, the value that is
+ being provided in, in YAML here.
+ So in the example right there that you've got up on the screen, it's saying LANG is Python.
+ Okay.
+ Okay.
+ Okay.
+ It's saying LANG is Python, but then it's doing bang, bang binary.
+ And then providing the base 64 encoded version of LANG, which is overriding.
+ Yes.
+ Yes.
+ Oh my God.
+ And, and then bang binary.
+ And then it again.
+ And so the output of this, as you, as you watch here, uh, or as like the listeners
+ is like, I don't know why this is first and second.
+ Instead of, he should have kept this going with the same vernacular, but I see what you're saying.
+ But anyways.
+ Yeah.
+ So, so basically you can, you can trick things and then later on he does this other thing with it's, um, merge.
+ Or actually, so actually I'm, I get this a little conflated because listeners, honestly, I took this
+ and I told cloud code, extend this research and look for more stuff like this.
+ There's another thing called merge.
+ And I can't remember if he used merge or if my cloud code thought of the idea of using merge,
+ but there, there is a YAML and there's a YAML thing called merge.
+ Yeah.
+ I think it's totally my cloud code and not in this talk.
+ Basically there is a, um, another YAML, um, declarative or whatever it's called function.
+ That's like a great, or it's less than, less than, and it merges the next key that you have
+ into the first key.
+ And this is also very problematic for parser differences.
+ Um, so anyways, pretty cool talk.
+ I think people would get a lot out of it.
+ Um, and you should definitely go watch it.
+ Dude.
+ Yeah.
+ What the heck are these shorthand tags in YAML?
+ Do you just want to do you want to share?
+ Do you want me to?
+ No, no, no, no, no.
+ You, you go ahead.
+ I'm just like, you got me nerd sniped a little bit right now.
+ How, wow.
+ There's like all sorts of transformations you can do on YAML, man.
+ There's just going to be an absolute insane number of problems because of this.
+ Yeah.
+ This is the table I showed you.
+ Yeah.
+ There's lots of crazy stuff too.
+ Where like, uh, if you put like yes or no, or true or false.
+ And like in some, it gets interpreted as a string and therefore results out as true,
+ even though you wrote the word false, but it's a string and strings equate to true.
+ Like, dude, there's so many YAML parser issues.
+ And what's what I'm really hopeful on this with, with my own research and finding is that,
+ in places like GitHub CICD, this will be like mega critical, uh, as far as actual impact.
+ Wow, dude.
+ Yeah.
+ That's sick.
+ So definitely something to look into there.
+ I'm very surprised to see that being used in keys as well.
+ Right.
+ Cause the, the YAML file that you showed, you know, it defined an attribute laying equals,
+ whatever the length, um, colon, whatever, but then it provided a binary version of laying.
+ Right.
+ And then provided an alternative value.
+ And then depending on how those are prioritized with the binary decoding, one may do the, the,
+ you know, tag resolution before parsing the line above it, or it might be after.
+ That's right.
+ So, so much opportunity for parser differentials there.
+ Yes.
+ That's sick.
+ Very sick.
+ Wow.
+ And, and I just, and you know, of course I love.
+ AI stuff.
+ All the AI stuff is marked down to HTML.
+ Same exact thing.
+ Right.
+ A bunch across a bunch of different libraries.
+ And so I want to actually apply the same research logic that he did.
+ And that I had cloud code do like, as like a followup to that research,
+ to the mark down to, um, HTML parser.
+ So I'll let you know if that finds anything.
+ Yeah, dude.
+ It was so funny.
+ Cause I did the exact same thing that you did with this, which is like,
+ you were reading through this research and we're like, oh shit.
+ I can definitely hack something I'm hacking on right now with this.
+ So you just like, you know, kicked off a cloud code.
+ And, and I'll, I'll explain the one that I just did later.
+ But, um, I, I kicked off a, a cloud code instance as well.
+ And I found a bone while I was reading this research, which is nuts.
+ Um, so crazy world we're living in here.
+ It really is.
+ All right.
+ Number nine is playing with HTTP2 connect.
+ I'm going to let you take that.
+ But first I'm going to jump down to XSS leak leaking cross origin redirects.
+ And this was kind of a, of an interesting one because, uh, it's called XSS leaks,
+ but it doesn't have anything to do with XSS.
+ It's a cross site subdomain leak, which is a variety of excess leak.
+ Okay.
+ Um, and essentially what this research is about is leaking cross origin, uh, redirects,
+ which is a very specific situation.
+ Uh, it's kind of CTFE to be honest, but, um,
+ the website is a little CTFE too.
+ Yeah.
+ It looks great for all the listeners.
+ It's like a beautiful, like, um, yeah, purple and black website.
+ That's like very typical, like hackery.
+ Yeah.
+ Terminal vibes.
+ Uh, yeah.
+ Um, but, and there are some, some applications for this research, for sure.
+ Like I've run into a situation where I need to know a sub domain like this, uh, in cloud
+ environments where it'll generate like an arbitrary sub domain or whatever.
+ And if you can leak that sub domains, that sub domain itself, then that will be helpful
+ for like explaining an XSS or something.
+ Um, but essentially what this writeup is focused on is how do we abuse the Chrome connection pool
+ to, uh, leak those, uh, cross origin hosts.
+ And, um, the TLDR behind this is that Chrome has a connection pool cap at 256 concurrent requests
+ and six requests for a given origin.
+ Okay.
+ So what the, um, the attacker here does is he fills all the way up the, uh, Chrome connection
+ pool and then abuses the order that free spot spots are filled within Chrome.
+ Okay.
+ So you might think it's like first in first out.
+ It's not, that would make too much sense.
+ The way that Chrome actually does this is it will sort by port scheme and then host, right?
+ So if you have, let's say you have 255, you know, concurrent requests in the connection pool
+ and a slot opens up, right?
+ And there's two requests pending.
+ Uh, Chrome will first look at the priority of those requests, right?
+ Which we can override to high using like fetch.
+ Um, and then it will, you know, if the priority is high for both of them,
+ then it will then sort by port, then scheme, then host, right?
+ So the lower port is better.
+ So if you've got a, uh, request to port 80, that's going to be, uh, prioritized over something
+ that's, you know, port one, one, three, three, seven or something like that.
+ Um, but the real magic comes in when you make the port and the scheme the same.
+ So all you're doing is actually, uh, having Chrome compare the host, uh, lexicographically
+ and I had to look up that word, Joseph lexicographically, but essentially.
+ I can't say it.
+ Yeah.
+ Well, I was also mispronouncing it.
+ So I had to look up how to say it, you know, before this episode.
+ Um, but essentially it's just like an alphabetical order, right?
+ Um, so if you have a host that, you know, uh, starts with an A or whatever,
+ that's going to be prioritized over a host that starts with a B, right?
+ And because of that, you can do a binary search, uh, and figure out whether the request
+ on, on the cross origin page was issued or was let into the connection pool first
+ or whether your request was.
+ So here's how you do that.
+ Okay.
+ So first you fill up the connection pool.
+ Then you use in this scenario, it was a hash change event to trigger a cross origin request.
+ Okay.
+ So now that request is requesting to get access to the Chrome connection pool,
+ but then it cannot.
+ Right.
+ And then we also at the same time trigger our guess for what that subdomain might be.
+ Right.
+ So now there's two requests competing for that, for an open slot in the connection pool.
+ Then you release one of the, uh, slots in the connection pool
+ and you trigger how long it takes for your request to go through.
+ Okay.
+ Um, and if it's a longer piece, you know, if it takes longer,
+ then you know that it actually let first the cross origin request through,
+ and then your request.
+ Right.
+ Right.
+ And if it's shorter response time, then it knows that, you know, your request got priority
+ over the cross origin request.
+ Right.
+ Which means your, um, request was lexicographically smaller than the one that, uh, you wanted to
+ trigger on the cross origin request.
+ Right.
+ So this gives you a binary yes or no on whether your guess is lexicographically
+ greater or less than the target origin.
+ And you can then just perform a binary search on that to very, very quickly extract the full
+ subdomain of that, uh, target page.
+ Um, so not gonna lie.
+ It's pretty, pretty big brain dude.
+ And I had to read it like three times to understand it.
+ Um, I think there's very few situations where this will be helpful,
+ but one of the things they did, um, you know, mention as well is that you can use this to
+ determine things about the user.
+ Sort of like a cross site leak on whether the user is an admin or not.
+ Um, and that just requires, you know, you being able to do one or two of these things by.
+ Cause you already know the host.
+ Exactly.
+ So, so you can just hit, you know, slash slash login or whatever.
+ And then that makes the user redirect to either admin.localhost.com or, you know,
+ uh, regular user.localhost.com.
+ And by, you know, creating a, um, request that splits the difference between those two,
+ you can determine where the user landed, um, which will give you information about the user.
+ So there's, there's lots of sort of hackery ways that you can abuse this,
+ but understanding the nuances of the Chrome connection pool, um, is yet another cross site
+ leak vector that we have, um, in our pocket.
+ So I don't know if it'll be useful to anyone, but that it definitely was for this CTF.
+ Is it possible that I'm just wondering, like if there are ever,
+ um, so this can't, this doesn't do anything with parameters though, right?
+ No, no.
+ Just the host thing.
+ Well, if there's ever a secret stored as a sub domain, then you could binary search it out.
+ What I was thinking was like, if it worked in parameters, if there's ever like an endpoint
+ that takes a secret as a parameter, and then like does something different, if it's valid versus
+ if it's not, then you could binary search it to exfiltrate out the parameter.
+ Yeah.
+ Yeah.
+ There, there are some weird situations with some of Google's, um, like user generated content stuff.
+ Yeah.
+ That where the actual hash of the content gets placed as a sub domain and they use that as an
+ isolation factor.
+ So there, there could be some applications there.
+ There could be some applications in cloud where you need to know, you know, the, the sub resource
+ that is being loaded there.
+ Um, so yeah, it was, it was a cool, it was a cool one for sure.
+ I definitely see why it made the, the, um, the top 10.
+ So shout out to Salvatore and, uh, shout out to, uh, CTVB's own Jorian as well.
+ Uh, who was able to solve that, uh, in the CTF.
+ It looks like.
+ Hey, question.
+ What happens if the host also matches?
+ I don't know, man.
+ Yeah.
+ It's probably just some Chrome logic, right?
+ Maybe it becomes random or something, but I was just curious if they touch on that.
+ That is interesting.
+ I think it would actually, I think it's a hash actually.
+ So I think it would just overwrite, but that, that doesn't make any sense.
+ It would just conflict.
+ I don't know.
+ Maybe that would trigger an error or something.
+ Yeah.
+ That's an interesting edge case.
+ Yeah.
+ All right.
+ You want to jump back up to nine?
+ Yes.
+ Yep.
+ So, um, until we just did a whole, uh, another breakdown of this, uh, personally, me and
+ Justin off camera, we, where we realized the actual impact of this.
+ You can't call us out like that, man.
+ Yeah, I can't.
+ It's fine.
+ The audience needs to know the back room, the back, what's it called?
+ The back office talk that happens here.
+ Yeah.
+ Uh, so basically this was a, this is, um, a blog by flomb.
+ Um, F L O M B, um, on their blog, which is blog.flomb.net.
+ But, um, the connect verb, first of all, I just love like underlying stuff, right?
+ Like HTTP verbs and stuff like that.
+ For some reason, like they're just so OG and cool.
+ But anyways, yeah.
+ And you just, you don't get to use them that often.
+ Like when trace works, it's, uh, it's, uh, always like neat.
+ And so anyways, this is the connect verb.
+ And in HTTP one, the connect verb was just like, kind of like just a raw connection.
+ Everything from the client went to the server.
+ Everything from the server went to the client.
+ But what he talks about in this is how HTTP connect, HTTP two connect.
+ Sorry that I speak so fast listeners.
+ Um, it, um, it's completely different.
+ And so it uses this binary protocol where the fundamental unit is called a frame,
+ just like usual.
+ And the frame carries like a stream identifier.
+ And there's like, um, yeah, a bunch of different fields.
+ This is the structure of HTTP two.
+ Yeah.
+ That's right.
+ And it, it even like does like a, like a settings set up at the beginning.
+ But the TLDR is that it's complex and it's like, so there's, you know, lots of room for
+ new things to happen.
+ Basically new vulnerabilities or just new issues to happen.
+ I think the, uh, the, the key line is here.
+ I'm going to read from it.
+ It says streams allow multiplexing, which means a single HTTP two connection can host
+ multiple simultaneous connect tunnels.
+ Right.
+ Yep.
+ And what's really interesting is it allows you to connect to arbitrary IP and
+ ports through that tunnel.
+ So what this person did, which was they, they built a scanner and go.
+ And, um, even though there wasn't like good support for HTTP two yet, there is a
+ package and they basically Swiss army knifed what is effectively a port scanner and
+ full blown SSRF through the connect verb.
+ Um, yeah, I, I don't understand how this is not just like a straight up vulnerability.
+ I guess if you're supporting HTTP two, you should just block the connect verb.
+ Um, cause I don't even know where you would add the logic to protect against this, but, um, they show here
+ that whenever it's a successful connection, it shows a status 200.
+ If it fails, it shows a headers frame with a status 503.
+ And so after this, if you listen to this podcast, you should go check if any of your bug bounty
+ targets support the connect verb on HTTP two, because if they do, you can basically scan via
+ SSRF for any internal hosts.
+ Yeah, it was kind of weird, you know, cause we read through this thing and we're like control
+ F-ing for SSRF.
+ Like we can't find, you know, why he's not like just calling this SSRF.
+ And I guess it's because it is actually sort of like the intended functionality of the, you know,
+ HTTP server at that point.
+ Right.
+ Doing those connect things.
+ But I mean, if you scroll down to the bottom, he's like, yeah.
+ And then you can just write a raw HTTP one, you know, 1.1 request here and just request example.
+ Yeah.
+ Example.com.
+ Um, and that'll be returned back to you.
+ So, uh, definitely another attack surface here for HTTP two, um, to go after these.
+ Is that also basically a free proxy?
+ Like, could you just like use this as Tor nodes in any company that has connect turned on?
+ Just like, I'm sure it's rare, bro.
+ I'm sure it's rare.
+ Okay.
+ It's gotta be rare.
+ But it is, it is good to see nonetheless.
+ Um, so I'll definitely, uh, add that to the mass scanning for sure.
+ Um, all right.
+ Any, any final call outs on that one?
+ Or should I jump to the next one?
+ Let's move on.
+ All right.
+ Next up is the OG research, of course, that we've covered on the pod before.
+ Next JS, uh, pwnage by zero.
+ Um, like, like I said, we've covered this, but I do want to go back and kind of break it down
+ again because there are some things that I, I realized after looking through it, uh, as a part of the top
+ 10 list that I think are really valuable.
+ Okay.
+ So of course, um, this research was, you know, caused a big, a big problem in the next JS community
+ and essentially was a cash poisoning vulnerability, um, that allowed you to just DOS any page and,
+ uh, later on get stored XSS, um, under a certain set of conditions.
+ Um, and this vulnerability breaks down to two component parts.
+ One, getting the route perceived as a data request, which I'll, I'll talk about in a second.
+ And two, making sure that the correct, uh, cache control response header was getting passed through.
+ And since he was able to do that, he was actually able to affect the, um, internal caching mechanism
+ of next JS as composed or as, uh, compared to, you know, how we're normally doing cache poisoning,
+ which is the difference between a CDN and a backend server, um, and break any next JS implementation
+ that was just sitting out there in the raw, um, which was pretty sick.
+ So, um, first I just wanted to double click into that, um, internal cache poisoning piece,
+ which is like not something that we've seen a ton of.
+ And these frameworks like next JS have their own internal caching mechanism sometime.
+ And that is what Xero is going after here.
+ Um, so when you're doing source code review of frameworks, uh, this is a really good thing to look at,
+ uh, because it can often result in, um, this sort of, uh, internal cache poisoning scenario.
+ And I feel like everything, everything now with AI writing code and stuff,
+ and then also just companies wanting to converge onto the biggest frameworks.
+ Things like next JS are super impactful because there's so many sites running on them.
+ Totally.
+ Yeah.
+ And so, I mean, targeting these frameworks as a whole, I think is just a really good idea.
+ And it worked out really well for him.
+ I think he said in here, let's see if I can find it.
+ Yeah.
+ Uh, this led to numerous reports being submitted, cumulatively amounting to a beautiful six figure sub
+ in bounties.
+ So he definitely like cleaned up with this.
+ Um, and so, yeah, that's the first piece is like, make sure you're looking for that internal caching
+ mechanism piece.
+ And then the other thing here, which, uh, Xero does a really good job of is looking for, um,
+ these internal, uh, query parameters and headers.
+ So next JS here is looking for this, um, uh, underscore, underscore next data request or
+ rec, uh, query parameter.
+ And that is being used to determine whether this is a data request or not.
+ Right.
+ And what, what a data request is, is a request that should be responding, you know, with,
+ with just the data associated with this endpoint, not the like HTML, you know, that goes back to the
+ user to be displayed on the page.
+ Yeah.
+ Um, and for me, that's kind of reminiscent of like the Ruby on rails, you know, dot JSON thing,
+ right.
+ Where you're able to like hit an endpoint, it'll return HTML, but then, you know, if you hit dot
+ JSON at the end, then it'll just dump a bunch of JSON data back to you for that endpoint.
+ Right.
+ Yep.
+ Yeah.
+ And, and so like, I feel like there's definitely other situations where this sort of data request
+ concept is, um, is present.
+ Um, so I could see that being applicable to other frameworks.
+ Um, and then the other, uh, thing he identified here was this X now route matches header.
+ And what that allowed him to do was gain control of the cache control header, um, to get a value where
+ he could get this actual, you know, um, data requests cached.
+ And, um, so as I was reading through this, I was like, yeah, but like, you know, that,
+ that next data request query parameter is going to be a part of the, the cache key.
+ And that's going to, you know, heck it up.
+ And that's actually a really essential part of this is that next JS is not actually considering,
+ uh, the query parameters as a part of the cache key.
+ Got it.
+ Um, which is, I think fairly unique, uh,
+ cause I think normally they are, but not in this scenario.
+ Um, but what comes along with that is that now you don't have a cache buster, right?
+ So how the heck do you not just like nuke the homepage of these websites when you're trying to
+ detect for this.
+ Right.
+ Um, and that's where the, uh, technique, another technique that I really liked came in,
+ which is, um, zero because he didn't have a, you know, cache buster that he could put in the
+ query parameter, he actually addressed his problem using the accepting coding header.
+ Um, and so the accepting coding header was a part of the cache key here.
+ And, uh, if we send them, I'm going to read from the, from the, um, actual right up here to address
+ this, we can check if the accepting coding header, uh, is a part of the cache key.
+ And if it is, we can send the malicious correct request without the accepting coding header,
+ allowing us to check if the site is vulnerable without impacting it.
+ Right.
+ Because the browser will always add that header to the request, which is going to make sure
+ that the normal users don't get hit with that same, uh, cache poisoned.
+ That's so genius.
+ What do you think he would have done if he didn't have that opportunity?
+ Yeah.
+ I don't know, man.
+ He would have had to find like, he would have just had to nuke shit left and right and things
+ would have been going down.
+ It would have been bad.
+ Seriously.
+ It's just like, oh man, how convenient.
+ There just happens to be a header that allows you to test this without bringing down everything.
+ Yeah.
+ No, I think that's a really great technique.
+ And, um, so at the end of the day, you know, what he ended up doing was, you know,
+ being able to hit the endpoint with the underscore, underscore next data request equals one and the X
+ now route matches header.
+ And that would return a cacheable JSON representation of that specific page.
+ Right.
+ That has some of the data passed into it.
+ Um, and so then that JSON representation would be cache.
+ Anybody going there, you know, to access the HTML version of the page would just see the,
+ you know, JSON version, which would cause, you know, catastrophic problems.
+ Right.
+ Um, and then later on he was actually able to get stored XSS because it was still actually
+ rendering that JSON with the text HTML content type since the underscore.
+ Oh my goodness.
+ Yeah, exactly.
+ So it's like, oh no.
+ Genius.
+ And then anything, any data passed into that, you know, JSON blob could be used to trigger.
+ So he said a lot of the times the user agent was actually getting passed in, you know,
+ into that JSON, um, and then, you know, triggering on the page
+ of stored XSS, which is just like an absolute nightmare situation for, for Next.js.
+ Absolutely insane dude.
+ Yeah.
+ So this is a really good story.
+ Zero puts out so much stuff.
+ Yeah, it's, it's good, man.
+ Um, it's really good stuff.
+ So definitely a good thing to take a look at, uh, if you're ever targeting Next.js or if you're
+ going to go look at a framework in general, these internal caching mechanisms, these, um, you know,
+ internal, uh, headers and query parameters that affect the internal functioning of these frameworks.
+ Really, really valuable scope.
+ I think.
+ Yeah.
+ Genius.
+ You want to jump to the next one?
+ Yeah.
+ Um, you want me to take it or you got it?
+ No, I'm not. I'm up next. I'm going to jump to five. Okay. All right. All right, dude. So this
+ is soap pwn or soap. Oh geez. I'm glad you do this straw. Yeah. I sent this to Justin. We, we got,
+ we kind of split this up a little bit with like server side, client side. And, uh, I claimed this
+ one. And then when I opened it and it was 93 pages, I sent Justin the meme of, uh, from Brooklyn
+ nine, nine of him going cool, cool, cool, cool, cool, cool, cool. Uh, so it happens every year,
+ man. I think Joel last year got like a 120 page, like paper as well that he had to go into on.net
+ stuff. So it's always the.net stuff. That's just so long and complicated. Yes. Um, I'm not going to
+ share my screen. It's 93 pages. I don't need to scroll through it, but I will, I did actually use
+ AI to like process it and understand it really well. And so I think that, um, yeah, so I'll give
+ you a good overview and if you're obsessed with.net or you think this is interesting,
+ then you should go dive into it. But basically actually, let me get a little bit of author
+ attribution here. So this is from watch tower by Piotr Basidlo. Oh dude. Yeah. This guy's a beast.
+ This guy's a freaking beast. Yeah. He's the principal vulnerability researcher at watchtower.
+ So, uh, the full title is poning.net framework application through HTTP client proxies and WSDL,
+ which by the way, I loved finding WSDL files back in the day, all over Yahoo. I don't really
+ find them much anymore, which is kind of frustrating, but did you ever run into those?
+ Oh yeah, dude. Those things were great. And they really just give a bunch of insight. So I'm excited
+ to see how he's going to handle these here. Cause I've read, I've read a bunch of his stuff,
+ but I have not sorted through this 93 page paper. So. Yeah. So it's a quirk in how.net handles HTTP
+ client proxies and then the WSDL. So the, and just upfront, I know sometimes I think things are way
+ more interesting when you state the, the impact first. So they downstream impact of this was arbitrary
+ file, right? Then NTLM like credential theft, and then actually RCE. And so, um, and there's some
+ drama around it, but I'll get to that in a second. So the core, the core vulnerability is basically
+ there's some code that is casting input into, um, and the classes that it's in it's HTTP web client
+ protocol, but this class is used to cast like SOAP messages into HTTP web requests. And whenever it's
+ initializing it or whatever, it's, it's, it's always attempting it to cast it with, uh, the as operator.
+ And what that means is if instead of using like an HTTP, uh, URI, you use a file or NTLM or whatever,
+ URI, it gets cast to a different object type. Dude, I did see this. I did see this. And here's
+ the really weird part is that when it fails, if it doesn't cast it, it returns null, but then it,
+ and then there's no checks. Oh, at the end, it does check if it's null, but if it is null,
+ it just skips the HTTP specific setup stuff, but continues in the rest of the flow without throwing
+ any other errors. So, so your, your object, which you got past all of the HTTP processing is now just
+ going to be processed normally by the rest of the code. And it only skipped the part that would have broken
+ and save the day had it actually occurred. Right. That's amazing. Yeah. So it gets cat like, so with
+ the file operator, it gets cast into a file web request instead of an HTTP web request. So then it
+ skips the HTTP processing, but then the rest of the code still basically just writes it straight to
+ disk. So, so you're able to write the XML straight to disk. And when you do that, um, apparently you were
+ able to, I didn't actually get that deep in the document, but apparently he's able to store that
+ as a CSHTML or an ASPX file. And so then it's just an instant web shell. And then in the, yeah,
+ which is amazing. Right. And then in the cases where that, where that doesn't work, you can supply
+ UNC path. And when the server tries to write to that UNC share, instead you get the NTLM, uh, hash,
+ like off hash from that request. And then you can go crack it offline. And then now you've cracked the
+ NTLM hash. So, um, yeah. Insane. Oh my gosh, dude, this is, yeah, this is lit. I, I, I, so I,
+ I realized what happened with this. There was a, you know, I don't know, friendly version of this
+ research that was, uh, in a, you know, in a web writeup, not like a 93, you know, page research paper.
+ And that was what I read. And I just, and I think we actually even covered it on the podcast where,
+ you know, it's just like, Oh, just like yeet this whole HTTP requested to a file, you know?
+ Yep. Um, so dude, I freaking love stuff like this, man. It is, uh, it is hilarious to see that this
+ actually worked and that it skipped that one block of code that it needed to actually break everything.
+ Because if it tried to parse it and it was a file instead of a web request, it would have just broken
+ at that point. So anyways. Wow.
+ All right, dude. Um, okay. So yeah, definitely, definitely gonna, uh, take a look at that again
+ and understand a little bit more about, um, when this is actually applicable. Uh, it, it says,
+ it said up here, it's basically a quirk in how .NET handles HTTP client proxy. So whenever we're
+ dealing with client proxies and stuff like that, that's when we should look into this and maybe get
+ our cherry file. Right. And I see that's crazy, man. Um, okay. Where am I jumping? I'm
+ Am I jumping back up to six? Yes. All right. Jumping up to six. Uh,
+ we actually also covered this on the pod. Um, but this is the, um, research by, uh, Kaneko Takeshi,
+ uh, which is cross site e-tag length leaks. Um, and I actually feel like last time on the pod,
+ we did a pretty good job of explaining how this works. Um, so I'm not gonna like go super in depth on
+ this, but I did want to highlight a couple of things that, uh, I just want to make sure you guys
+ understand about this because, uh, I think there are some misconceptions about how, yeah, well, I think
+ a lot of these things that are originating in CTFs have some pretty difficult preconditions that are,
+ of course, are contrived for the CTF purpose. Right. Yeah. But are not always present in, um,
+ in the actual, you know, exploitation scenarios. So, um, the first piece here was that, uh, if you read
+ this cross site e-tag length leak and had a difficult time understanding it, uh, one of the,
+ the, the preconditions for this attack to actually work was that you have to have a sea surf that can
+ allow you to control the length of the response where you are doing this, uh, you know, cross site,
+ um, request here. So, you know, what they do here is they use, um, let's see if I can find it here.
+ Uh, they use a sea surf to create notes, right. Um, which you can see right here for those of you
+ watching on YouTube, uh, where they, you know, but the, um, you know, the response size of their guests
+ right up to the, um, e-tag juncture point. And, um, the reason that's important is because the way that
+ this cross site leak is triggered is by creating a one byte differential in the e-tag header, right.
+ Um, which is, uh, returning the response of the request and then gets included by the browser in the, uh,
+ next request that gets sent to that same endpoint. And that one byte difference, you butt right up to
+ the node.js, uh, 431 maximum request size, um, uh, you know, buffer, right. Where it says, okay, we
+ only can have 16 kilobytes as the request size. And if you go over that, we're just going to return
+ a 431, right. Um, so it's very important that you have a sea surf to be able to get the response
+ size right up to, um, a certain juncture point where just your notes and the actual secret, if searched via
+ across site search will push it over that, um, juncture point with the hex representation of the content
+ length, uh, and create a, uh, you know, one byte difference in the e-tag header, which will then result
+ in the 431. Um, so it's kind of a monster to explain from a verbal perspective, but what I want
+ the user to understand here or the listener to understand here is that the sea surf is a really
+ important part of this exploit. So, um, just keep that in mind. And really what I, what I think is
+ more applicable for bug bounty is the Chrome, um, history API piece here, where the 431, if you're
+ able to trigger it, right, which is a, an error status code, um, request header fields are too large.
+ Um, Chrome is not embedding that, um, is not considering that as a navigation in the Chrome history
+ API. It is actually replacing the current navigation. So if you are able to trigger this, you will not see
+ a change in the history length. Uh, it will, it will just be the same. Um, and I think that is a very
+ applicable piece that can be used in other cross site, um, leaks, uh, in other, in other areas, um,
+ in other applications, that's a little bit more applicable, um, than the whole e-tag piece here.
+ Uh, so I know that that's a little bit complicated. Did you, did Joseph, did you get any of that or am
+ I just like, am I talking to the wind here? No, it's perfect. I think that I feel like you said,
+ the initial explanation that we did on the other episode was really, really good. And then on top of
+ that, I think that the clarification, the most important thing you're saying is that basically
+ in this case, there was like, it was a bit contrived. It's not that realistic that you'd
+ have CSRF where you can control the content length in that type of granularity. Um, but I do think,
+ I do think that really blogs like this, when you read them, what it helps you hone is your ability to
+ spot, um, things that should not be possible. Right. Like I think that anomalies here. Yeah.
+ Anomalies like, like, you know, the fact that the e-tag can like move by one character and that that's
+ influenceable cross site is very interesting. And I think that things like that will lead to bugs when
+ people are thinking about, you know, specifically like the little gadgets they have for anything that
+ happens cross site. That's a great point because it's actually that, and that goes to another point
+ that I had on this too, which is, you know, it, the e-tag header that is returned in the response,
+ right. Is actually getting reflected into the if none match header when you re-request the same URL.
+ Right. And so actually what's happening here is something that's extremely unique, which is,
+ you know, a response header is being reflected back into a request header. And that request header is
+ being used to, to, you know, overflow the request header maximum size. Right. Um, which is, I think,
+ very interesting and that you don't have access to that if none match header value, you know, if you did,
+ even though it's a part of the request, you know, you don't have access to that. Uh, you have no control
+ over it. That's something that's controlled by the browser. So I think that principle is a lot more,
+ you know, cross applicable to other, uh, exploitation scenarios probably than exactly
+ this e-tag scenario. Right. Yeah. So anyway, not, not, not to shit on the research at all. It is like
+ mind-blowingly beautiful as a client side hacker. When I read this, I, I weep tears of joy, you know,
+ cause I'm like, wow, what a masterpiece, what a breakdown of primitives, right? Like, you know,
+ and the one bite differential allows you to, you know, exploit this. Uh, so yeah, I, I think
+ that it still makes me very happy to read for sure. Oh yeah. It's insane. That's even possible.
+ Yeah. Yeah. All right. We got 20 minutes. We gotta, we gotta crank these out. Um, I have two left and
+ you have two left. Perfect. All right. Number four is lost in translation, exploiting Unicode normalization
+ by our boy, Ryan. And he also presented this to the critical thinkers, um, on top of doing it
+ at black at USA. So, and so, yeah, I would say go check out the recording, but I don't even know if
+ we recorded it cause it's on YouTube under black at USA. So the link will be in the bio, but what, uh,
+ Ryan and it was his daughter, right? Yeah. Yeah. Isabella as well. And we did,
+ we did record the critical thinkers as well. So that I don't know if it was different or what.
+ No, it'll be in the exclusive content in discord and it was different. So. Okay. Perfect.
+ Very good content there. Sweet. Yeah. Um, so anyone who has not done that, I'll do a quick overview
+ of basically what he, what, what they covered. Um, the first was that the agenda really is talking all
+ about Unicode in a Unicode normalization, but to break that down, break that down further, they talked
+ about decoding errors, truncation, confusables, casing, and then combining diacritics. What are you
+ laughing about over there? Dude. It's just such a, you know, crazy piece of research. Like,
+ yeah. Like you went to hear you like just rattle off those various sections to this research is like
+ insane. They did such a good job on it, man. Yeah. Yeah. So I think the coolest part about
+ the decoding errors was that they talked about over long encodings. And, uh, I loved his analogy of
+ basically it's like a box in a box in a box you get from, uh, Amazon or whatever. Yeah. Yeah. Yeah.
+ And so basically you can over long encode typical ASCII. So you can have an A that instead of being
+ one byte is two bytes or three bytes, and it's still just a normal A it's not like some weird Unicode
+ character. It's still just a typical A, but it's called an over long coding. And so sometimes that'll
+ let it bypass specific, specific regular expressions that are checking for malicious things on the, like
+ at the beginning before it's then decoded or normalized later. Um, and so that can be really
+ valuable. The second thing they talked about was byte truncation, which is where, um, certain bytes,
+ which are long, like the, uh, three byte Chinese character that can then be, you know, converted down
+ or truncated down into like a CRLF feed, um, or like a carriage return or line feed. So, um, this
+ specifically had a lot of impact in a bug bounty finding where, and by the way, I'm not showing
+ anything on screen cause it's a video, but they're, they're slide decks really good though. Um, and so
+ you can, uh, and they suspect, they suspected that this was due to differences between little Indian
+ and big ending, big Indian ordering. And, um, they show a really good example that uses a cyber chef,
+ um, to, to actually, you know, show how this would, would happen. Then the, that diagram, man,
+ that, that was such a good representation of it. I never have, I looked so closely at Unicode and felt
+ like I understood what I was looking at because Unicode is hacked, bro.
+ Dude, I actually, so hot take, I think that's why this did so well, both in the top 10 and just for
+ people, they finally made it super understandable. Like even just the way that I just described over
+ long encoding. I like, you could have talked to me about that 10 different times over the last two
+ years and I wouldn't remember it, but, but, but the way he described it with the boxes, it's just like,
+ okay, now I understand this. Right. Same for what you're talking about. Um, so then there's one
+ called confusables, which are, I think this is probably what most people think of when they think
+ of Unicode normalization. It's like these characters get confused due to like best fit mappings or worst
+ fit. And this is like kind of harkening back to all of the orange side research for worst fit.
+ Um, and they share a few more examples of that, which I thought was good. Then casing. I'd never
+ heard of this one until the talk, which I thought was really neat. And it's so good that they use
+ something. So like web app specific, they used a script tag where the I was a Latin small letter
+ dotless I. And then basically if the backend application did something like, um, decoded it and
+ then called like dot upper that, that weird dotless I becomes an I, even though it wasn't normally an I,
+ it now gets converted into an I. And so if there's any kind of detection logic or any kind of laugh
+ that's before that, it would have never been caught. But when that happens on the second half,
+ it actually does get caught and works quite well. Um, and then they did combining diacritics, which,
+ uh, to be clear is the one I understood the least, but it's also really cool. So like there's some
+ Unicode that's basically combining characters, for example, like greater than, and then a slash becomes
+ like not greater than, and then the not greater than symbol sometimes gets like, uh, converted to
+ greater than, which obviously when you're looking for like HTML tags or script tags, that's like when
+ that's really valuable. So yeah, I think that's all the things. Um, that I just wanted to add,
+ because I had to pull it up while you were talking about that. Like the casing thing was actually my
+ first introduction into, um, you know, Unicode. Oh, really? Yeah, actually it was from a live hacking
+ event back in like, man, it's almost 10 years ago now. And I was talking to Bit K, the researcher at
+ YesWeHack actually, let me flex my YesWeHack hoodie right here. And, um, and he gave me this website,
+ you know, that he built that showed some of the Unicode transformations on, on JavaScript, whenever
+ you run dot two uppercase or dot, uh, two lowercase. And, uh, you know, his handle is bit K and one of the,
+ the most impactful transformations is actually one of these weird Unicode Ks that I, I couldn't find the
+ Unicode value for in this moment. But, and if you do dot two lowercase on that, it turns to a lowercase K,
+ right? A lot of the other ones are like two uppercase, right? Which is a lot more rare,
+ but, uh, there's a ton of situations where you do dot lowercase. Yeah. Um, and so this special K will
+ get converted into a, uh, a lowercase K, uh, if you run dot lowercase on it. Um, yeah, so it's pretty,
+ it's pretty cool stuff. And I've, I've, I always thought it was awesome to do that it aligns with his name,
+ bit K because he can use the special K and his, as the last character. And when it gets,
+ uh, turned into a K. Yeah. I need to come up with a handle that, that has some like acrylics or
+ something in it. The, um, yeah, they, they used a K in their talk too, and it was the Kelvin K. So it
+ might be the same one. Oh, it might be the K. It actually looks like the Kelvin K. I gotta grab the
+ Unicode code point for this thing. Hold on. Yeah. Yeah. They talked specifically about Kelvin K and how
+ there was like some check in active scanner or something in, in verb or something that like checks for that.
+ Dude, I don't know how to get the Unicode code point for this quick, quick enough here.
+ Yeah. No, you're fine. Okay. Oh no. Yeah. So it's Unicode code point 21 to a, uh, so whatever that is.
+ Nice. All right. What's up next. You're up on ORM leaking more than you joined for. This is second place.
+ This was such, this was such cool research, man. Um, okay. I'm excited to talk about this. So we've
+ covered some of this research before on the podcast. I don't know whether we, uh, covered this exact one,
+ but after reading this, I am thoroughly convinced that ORM links are the new SQLI bro. Because if you're
+ looking through each one of these, um, you know, frameworks that they're just like slaughtering
+ in this, uh, writeup, uh, it's pretty, it's pretty gnarly. And, um, so the TLDR of the situation is you
+ get a lot of, um, frameworks that allow you to do, you know, filters and searches and queries and stuff
+ like that. And, um, depending on the way that that is implemented and mapped to SQL on the backend,
+ uh, there are a lot of crazy things you can do. For example, filtering, if you're searching through
+ users, filtering on like their password field. No. Um, yeah. And it affects a ton of different, um,
+ uh, ORM, um, you know, frameworks for, for all this stuff. My brain is like a slot machine,
+ like rolling and just thinking, or maybe a Rolodex of all the times I've had, like, um, for example,
+ like user, I know we're like user searches where like you put in like one or two characters and it
+ shows a few of them. Is that the, is that the times when this will be, will this be applicable?
+ Yes. Yes. And, and also, you know, you can, you can, um, also do some situations where, uh,
+ like if you have a field and an operation that you're able to like search on, then you can do,
+ for example, like password underscore underscore starts with or whatever. Um, so anyway, the,
+ the writeup goes through a bunch of different ways to bypass, you know, filters and blacklists for,
+ um, these types of, uh, ORM filters. Uh, and there's a lot of really good takeaways in there.
+ There's actually, uh, a section in a lot of the areas called key takeaways. Yeah. You can see right
+ here. I'm, I'm showing it on the screen where it talks about what things they learned about these ORM
+ leaks from each framework, uh, that they audited. Um, and a couple of them are, uh, that I'll,
+ I'll just mention right here are look for areas where you can provide a field and an operator.
+ Cause that really like enhances your ability to, to search. Um, definitely look for these sort of
+ underscore underscore situations, right? Like I've seen these inquiry parameters all the time.
+ Where is it right here? Me too. Yeah. Um, there it is right here, you know,
+ like email, email, underscore, underscore starts with or something like that. Right.
+ If you're seeing something like that, then that's definitely something you want to double click into.
+ Um, additionally, they say, even if the operator like starts with and stuff like that are not available,
+ don't sleep on the logical operators as well, like greater than or less than, because you can still do
+ sort of binary searches, right. Uh, on that, you know, using that operation. Yeah, it's huge.
+ Yeah. And, uh, they, they do add a whole list at the end. Let me see if I can find it. Um,
+ but you do run into some difficulties with that, uh, based on database collation. Um, so some of the
+ databases will not sort characters the way that you think they will sort characters. So, um,
+ you may have some difficulty performing those searches, uh, based off of, uh, the way that the
+ database collation works. Um, but they do some really in-depth research on each of the databases
+ here, MSQL, MariaDB, MySQL, um, Postgres, all of these sort of explaining how to, um, understand how
+ the databases compare strings, uh, if you're trying to do like a greater than or less than comparison. Um, so really
+ good stuff there. Some databases are also, um, like not case sensitive, which causes a problem as
+ well. Uh, but they have solutions for a lot of this stuff inside the article. Dude, I cannot wait to
+ add this as a skill to my cloud code. I'm like dying to do it right now. I'm not joking. Okay. That's
+ what I was saying before, um, was when I looked at this, I was like, oh man, you know, I feel like
+ I've seen something similar to this in this target I was hacking on. So I kicked off cloud code to go
+ hacking. No, I found it finishing up research and it found, I just gave it the article. I was like, Hey,
+ like apply some of these techniques to this host. And then it came back with a bunch of PII dude.
+ You know, it's crazy when you're, when you're, your cloud code just like, and here's PII. I'm like,
+ Oh my gosh, I love it. Mine's usually the opposite. It's like critical CSRF cores issue. And I'm like,
+ no, it's not shut up. No, no, no, stop. Um, the, the other big takeaway I had from this one
+ is that a lot of times, you know, there will be some filtering on like what, um, operations you can
+ use like not, or starts with or whatever. And one of the, um, tricks they gave to bypass that is if you
+ use the, um, sort of query parameter format of key and then square bracket, another value square packet
+ equals, you know, value, right. Then sometimes that will map to the JSON representation that is needed
+ for some of these ORM, um, operations. So the, the example they gave is reset token square bracket,
+ not close square bracket equals E, right. So that would map to reset in JSON, reset token colon new
+ object, not colon E. Yeah. Right. And, uh, and so when that, that maps out a lot of times that will allow
+ you to pass, uh, bypass middleware parsers for, um, sort of malicious queries going into the ORM.
+ Nice. Yeah. I love, uh, the way that when you convert embedded or like deep JSON back to, uh,
+ you're all encoded forms or whatever, not or post body forms. Yeah.
+ XWW form URL encoded. Yeah.
+ Yeah. I'll never forget that string. I'll never forget it.
+ Yeah. It's super useful, uh, to do those conversions. I, I still find GraphQL where,
+ uh, it's like you, where you don't have CSRF because it's JSON, but then you convert it and it works
+ fine and you have CSRF via GraphQL. Yeah. Okay. That's a good one.
+ Yeah. Uh, for the listener in case that wasn't super obvious, basically, uh, what we were just
+ talking about or not what we were just talking about, the comment I just made was for anytime you
+ have GraphQL, that's cookie protected and it's happening via JSON request. If you convert it to
+ a URL encoded form, it will, if it still works, then you have CSRF and you can just go ahead and report
+ that. So yeah, I mean, there's a mutation. Yeah, exactly. You have to have mutation because
+ otherwise it's just a get requests, which you don't, you can't, uh, see the response of.
+ All right. We have like five to 10 minutes left and we've got two techniques to do.
+ Luckily, uh, number three, which I'm doing from, uh, search, uh, server search, light cyber
+ team, uh, shoves his company that was acquired. Um, is, and actually, did you see like their CTO or
+ or something, his partner? Michael became the CEO, dude. Right. But it was, he was the CTO for
+ asset note. Right. And then he became. Shoves was CTO. Michael was, um, CEO of asset note. And then
+ he got, he became CEO of search, light cyber, which is pretty sick. So who's acquiring who I'm
+ the captain now. Right. Come on. Um, yeah. So we covered this actually really well back then and
+ it's a very short ride up. So it will, it'll take just a second here, but, uh, just as a recap,
+ they were, they had a blind SSRF that they wanted to escalate. And as everyone knows,
+ blind SSRF kind of sucks. So they were trying to make it full read. And the first thing they do
+ is play with redirects. And it was kind of, it was not, it was not useful. Basically they just kept
+ getting exception, colon, invalid JSON and they, but they increased the number of redirects. And for some
+ reason they could like get it to follow up to 30 and then it got a different exception. And it said like
+ network exception instead of invalid JSON. So that kind of got them like thinking like, oh, what
+ should we do here or whatever. And, um, they moved on to testing other status codes because they thought
+ they might be treated differently. And sure enough on a 500, it gave them the full response. So that
+ kind of just like got them thinking like maybe there's some way to get a full response if we do other
+ response codes. So they wrote a little script that would, and this is so still so confusing that it
+ worked. I don't know if you remember how confusing this is. Basically they had to do multiple redirects
+ and on each redirect, it increased the status code. So the first response was 301, then 302, then 303.
+ And, um, and then at the very end they would have it go to the AWS, um, metadata, I am endpoint. And
+ when they did that, when they hit the cloud metadata endpoint, after a bunch of those redirects,
+ it actually worked. And, um, and they still were like really confused just like you and I about how that
+ works. And I'm just going to read this paragraph because I still don't, it still doesn't really,
+ it's still, it's not a satisfying answer, but at least makes sense. It says, well, why did it work?
+ This drove us nuts. Hold up. You know, like I also just have to appreciate like whoever's writing this
+ here. I don't know if it's Shubs or the other people from the Asino team, but he says, this drove us
+ nuts. This was crazy. You know, like he's saying a bunch of things in here and it's like, it makes you feel
+ a little bit better that he's also like, what the frick is going on? Yeah. Yeah. Yeah. This drove us nuts.
+ Was there something special about the 305 status code? Even though we performed a redirect from 301
+ to 310, why did we only get the responses starting at 305? So they ran that script. It started at 301.
+ It escalated up to 310 and then they had it, uh, do the, the, the redirect to the cloud metadata.
+ But for some reason in the final response they got, it included all of the responses, like all of the,
+ um, all of the redirect, uh, server side response is that include like, you know,
+ the, the, uh, response headers, like content type content, like connection server location.
+ Um, but it only started at 305. It didn't show 301 to 304, which is super confusing. So anyways,
+ that's why he's saying, was there something special about 305? Even though we performed a redirect from
+ 301 to 310, why did we only get the responses from 305 and beyond? Was it an issue with libcurl?
+ After extensive analysis, we're convinced. No, we don't think so. Instead, we think that the application
+ was happy to follow a few redirects and was failing on that JSON parsing we saw initially and was not
+ happy about following more than max redirects configured for libcurl. However, there was an
+ error state when it followed more than five, not handled by libcurl, but rather by the application
+ itself says this technique may sound obscure to you. And I agree, but it's now worked for us in several
+ different situations where we would not have been able to see the full response code. I just, I'm, it's so
+ weird. It has to be like a configuration of a tech stack. That's not uncommon. That's like pretty
+ common, right? Like lots of companies are using because otherwise how would they have found it
+ multiple times? But anyways, this drops me nuts, but it's so freaking cool to go from a blind SRF to
+ a full re-SRF with this technique. Oh my gosh. Dude, like, can you just imagine, like, I'm getting
+ a little high from just thinking about it. Like, it's like, oh my gosh, this, uh, how much of a high it
+ would be to go from a blind SSRF that, and you know, I'm thinking about it in the context of the
+ live hack events too, where everybody's like, oh yeah, I got that blind SSRF and you go, you know,
+ you go there and you're like, hey, did you get anything with it? No, did you get anything with it?
+ And then freaking Shubs comes in. He's like, yeah, I got full read. And we're like, how did you do it?
+ I don't know the script. Anyways. All right, dude, we got like five minutes. Do it. Do number one.
+ And by the way, everyone, this is the number one voted Portswigger top 10. So yeah. Um,
+ really love that passive research. So fun to review that. And, uh, yeah, I'll jump to number one now.
+ Um, this one was really cool. And this was just really well-performed research, in my opinion.
+ Um, this is by vladco312. Um, and essentially is providing new techniques for exploiting, um,
+ SSTI. Okay. And, uh, these two techniques are called, uh, error-based exploitation and Boolean
+ error-based blind SSTI. And, um, he borrows a lot of the concepts for this from,
+ Hey, sorry, he, he just pushed improvements yesterday to this.
+ Oh, look at that. He did. I'm sharing my screen so we can see. Oh, wow. Dude, he's adding. Oh my gosh.
+ He's adding new, uh, freaking dude template. Oh my gosh. What a baller. He's adding new templates to it
+ right away. Uh, I guess probably something to do with, um, you know, getting in the top 10.
+ Um, that's amazing. So yeah, this research, dude, let me tell you, this was some of the most
+ thoroughly done research I've seen in a long time. Okay. Not only is he bringing two new ways to
+ exploit SSTI, but he's also cross-referencing this across a bunch of different templating engines,
+ a bunch of different programming languages, and, and providing generic payloads that work across
+ multiple programming languages, uh, that you can use. Amazing. That's amazing, dude. So it's freaking
+ sick. And he's integrating all of this into SSTI map, a tool, um, to exploit these kinds of vulnerabilities.
+ So, um, let me kind of go through some of these techniques. Um, a lot of you guys that are familiar
+ with some of the OG, you know, uh, SQLI exploitation methods will kind of, this will make a lot of sense to
+ you. Um, but essentially the first one is error-based exploitation and it's essentially getting,
+ um, and this is actually also used often in XXE, but getting, um, an error to trigger in the templating
+ engine and having that error displayed on the, on the screen to the user. So, uh, he was experimenting.
+ He kind of goes through a pretty long intro there where he talks about how he discovered this stuff.
+ Um, but the way he ends up, um, you know, exploiting this is, uh, triggering an error, um, using get adder in
+ Python, uh, which is for getting attributes and then concatting, whatever he wants the output of.
+ And that will, will trigger, um, an error, uh, that says, you know, string has no attribute,
+ whatever, right. Whatever output you passed in. And that output then in a scenario, um, you know,
+ the contents of Etsy password will then be leaked in that error, uh, in that actual error message.
+ Um, and if verbose errors are on in the application, then that full, uh, output will be displayed to the
+ user. Um, which is really, really helpful. Um, and he mentioned that he tried to do integer conversion
+ with this as well. Um, but integer conversion truncates the data at, I think, what is it like?
+ 199 characters. Yeah. Um, but he found in Python that you can use get adder, which does not have
+ a limit on the amount of data that you can pass into it and leak out. Um, so he does this. I think
+ Python is a really good example of how to do this. Um, and he provides a sort of polyglot that works,
+ uh, across all tested Python based template engines, um, which was amazing. Uh, but he also provides
+ polyglot payloads, um, for detecting these, these error-based oracles. And for that, he does, uh,
+ a division by zero, um, payload. Uh, and the way that he does that is, uh, I guess, quotation mark. No,
+ no, no, no parentheses parentheses one divided by zero dot ZX, Y dot ZX, Y. And this will result in an
+ error in any programming language that he tested here. Um, and if that error comes back, then you
+ can use that as a way to determine, okay, wow. Um, error-based oracles for SSTI in this scenario is
+ kind of the way to go. And then you, you pick from the variety of, uh, you know, error-based payloads
+ he gives you in Python, PHP, Java, Ruby, Node.js, Elixir, all of these. Um,
+ so can we respect the fact that he's doing a lot of this testing via some sort of like discord bot?
+ Is he knows that there's a bunch of the screen, there's a bunch of the screenshots where
+ like go to the, go to like the, Oh yeah, yeah. He's doing like slash test and then putting in some
+ content and then it's doing some sort of test under the hood and then it's showing him the response.
+ He's like testing stuff from discord. I love it. What a badass man. Yeah, dude. This is exactly
+ how you use cloud code too. You, you just like, uh, just talk to it all the time in discord, which is
+ great. Um, so that was the error-based exploitation. We see similar stuff in XXE error-based, um, you know,
+ leaks for XXE. Um, and then the second type he mentioned was Boolean error-based blind SSTi.
+ Okay. And this is a similar situation where, um, you've got an error-based SSTi, but it's resulting
+ only in a 500 from the server. Right. Um, so what he does here is use a similar concept with, you know,
+ one divided by some expression and that expression should be cast or evaluate to zero. And if it does,
+ then it triggers a divide by zero exception and will cause a 500 from the server. And so using that,
+ you have a Boolean yes or no. Did my expression resolve to zero? Uh, and that can allow you to leak
+ valuable data in the application when you have the full set of SSTi, um, expressions at your disposal.
+ Um, so he also provides some generic detection payloads for this. Uh, these ones actually take
+ advantage of, uh, syntax errors for generic detection. Um, those are located at the bottom
+ of the article. Um, I, I won't read them out because it's just going to be hard to like explain
+ to you that there's syntax errors here, but for any of those of you watching on YouTube, you guys can
+ clearly see the syntax errors in the location of the print or the, um, yeah, parentheses in this, uh,
+ in this expression, which will trigger the, the error message, um, whenever you're using your scanner.
+ So very thoroughly done research, um, built it into a tool, documented all of the nuances in
+ different programming languages. There's no wonder this was number one. No wonder. It's so good in
+ every way. It makes me want to go test for it everywhere. It's like insane. Dude. I, I very rarely
+ find SSTi. I think that is one area where I really need to improve as a hacker is looking for SSTi, because it's so
+ valuable too. Um, all right. Shout out to Vladco for that. Um, I did want to say, I know you got to go,
+ Joseph, so feel free to drop if you need to, but I did have one little quick story. I actually combined
+ the ORM research with this blind Boolean error-based attack one time, and I kind of wanted to tell them
+ about it. So I'm going to do a quick little story here. So, um, I was testing an application where I had
+ a secondary context path traversal, and I've talked about this on the pod before, uh, this specific instance.
+ I won't tell you which one, but, um, we had a secondary context path traversal, and I was actually able to
+ inject Microsoft graph, uh, OData, um, filters, um, in there. And this allowed me to do stuff like, okay, if
+ username equals Reinerader, then, you know, return that in the response, right? Uh, apply filters there.
+ So they patched that whole thing and made it so that I couldn't get the data back out, but I knew
+ that I was still getting this OData injection, right? In the backend. Yeah. So what I ended up doing was
+ crafting an OData query, um, where, you know, it was like, starts with a specific ID and username is
+ equal to whatever user I wanted to target. Uh, first name is equal to this or divide by zero, right?
+ Divide it, you know, ID by zero. And so if, you know, if the first name started with whatever,
+ right, then it would not hit that second divide by zero condition, divide the ID by zero. But if it
+ didn't, then I w I would hit it and it would trigger an error. Right? So, and I was able to detect that
+ error out through the secondary context path traversal because it was reflecting error conditions back up.
+ Sure. Yeah. Even though it blocked the JSON response. Um, so using that, we were able to also
+ arbitrarily leak data. Oh my God. The fact that the fact that you and him both converged on a divide by zero
+ payload, like just goes to show that you're all genius. I think personally, I just think that's
+ like really neat that both of your all's heads, like that two people who are really intelligent
+ who are looking at this, like similar problem came to the same conclusion is like very cool.
+ Yeah. Yeah. I like it too. It's very valuable for triggering error based, uh, oracles in my opinion.
+ So, all right, man, GG. I think that's a wrap on port swigger top 10. Yeah. Perfect. Yep. Peace.
+ All right. Peace y'all. And that's a wrap on this episode of critical thinking. Thanks so much for
+ watching to the end y'all. If you want more critical thinking content, uh, or if you want to support the
+ show, head over to ctbb.show/discord. You can hop in the community. There's lots of great high
+ level hacking discussion happening there on top of the masterclasses, hack alongs, exclusive content,
+ and a full-time hunters guild. If you're a full-time hunter, it's a great time. Trust me. I'll see you there.

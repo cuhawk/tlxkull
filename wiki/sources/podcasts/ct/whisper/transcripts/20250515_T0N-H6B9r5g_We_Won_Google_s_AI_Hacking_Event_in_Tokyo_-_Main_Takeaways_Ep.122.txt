@@ -1,0 +1,1809 @@
+ And we already paid out like $220K.
+ $220K.
+ Which is a record for a bunch of it.
+ That's a record.
+ And we haven't even finished going through all the bugs yet.
+ Most of the reports.
+ So I will definitely say, I think there's more room for people to look at this area.
+ What's up hackers we have been working tirelessly for the past couple of weeks to try to get
+ this Google podcast through approvals, and finally, we are done.
+ However, the end result is quite chopped up a little bit.
+ There were a lot of edits that needed to be made.
+ So you may see a couple of times throughout this podcast where the video jumps or the conversation
+ doesn't follow as smoothly as we would have liked to.
+ And that is because of the fact that we had a lot of edits.
+ And we try to toe the line of what we can talk about publicly on this podcast.
+ And I think because of that, we add a lot of value to the community.
+ And sometimes when we play with that line, we go over it.
+ And so sometimes we run into results like this.
+ But I know you guys will still get a lot of value out of the podcast.
+ There's a ton of good content in there.
+ So listen closely.
+ And our apologies about the delays and the little bit of choppiness in this episode.
+ All right, let's go.
+ All right, guys, so Zach came on this episode.
+ And afterwards, we were just kind of sitting around and Zach was like, oh, yeah, I'm hiring.
+ So here's what we're going to do.
+ We're launching the critical thinking job board, which I think we've mentioned on the podcast
+ at this point already.
+ If not, you can find it at jobs.ctbb.show.
+ And Zach, we're going to post some of the job listings on there.
+ If you want to come work with this guy at Google, definitely check those out.
+ Can you give me like a little brief overview of what the job descriptions are?
+ Yeah, we're hiring.
+ I don't know if you know them off the top of your head.
+ Of course I do.
+ Okay.
+ All right, we're hiring in AI agent security, AI product security, and AI system security.
+ So the super quick rundown, right?
+ Working on the agent frameworks to secure how agents interact is with agent security.
+ Working on product security is how the models interact with products.
+ So a lot of what all of you have been working with and what this event was focused on, as
+ well as AI system security, which is kind of lower level, the infrastructure, looking at
+ the services that support, that store the models, that serve the models, making sure that they
+ are all secure.
+ Sweet, dude.
+ All right.
+ I'll just say, guys, I've worked with Zach a lot at this event.
+ He would be a lot of fun to work with.
+ I'm tempted.
+ I am personally tempted.
+ If I wasn't a die-hard full-time bug bounty hunter, that's where I'd be.
+ Check it out.
+ We've got Zach here from Google, and we were going to have him talk about the Google
+ VRP, but actually, he's got a bug, which is pretty sick.
+ We just kind of threw it out there in the beginning, and we're like, hey, you know, if you want
+ to talk about the program, that's great.
+ But normally, we have people talk about a vulnerability right in the beginning.
+ So, I'm excited, man.
+ What have you got?
+ All right.
+ So, I've got an RCE.
+ Oh, shit!
+ Oh, shit!
+ It was via memory corruption in...
+ This was in...
+ Dude, no way.
+ What?
+ Yeah.
+ Without disclosing too many details about it, what made this so fun.
+ The vulnerabilities were actually kind of boring, like it was traditional heap overflow, and
+ you could leverage that into either an info leak or write for corruption and getting execution.
+ But what was the coolest part of it was the tricks we had to do for exploitation.
+ Sorry.
+ I have to...
+ Yeah?
+ I got my...
+ Okay, it is.
+ Good.
+ Okay, continue.
+ Continue.
+ The tricks you have to do for exploitation.
+ Yeah, the tricks we had to do for exploitation was what made it super fun, because you're uploading
+ this custom binary file format, and you don't control what backend it goes to.
+ So, the leak and the overwrite are going to be two separate transactions.
+ So, you could land on very different places.
+ So, let's say you do the leak.
+ You're like, "Great.
+ I've defeated ASLR.
+ I know where everything is."
+ But you're then not going to...
+ You're probably not going to land on that instance again, because, you know, the scale
+ of this.
+ Massive.
+ Yeah.
+ So, you could...
+ We briefly considered spray and pray, which is like, "Okay, well, we'll just crash
+ them until we land on the right one."
+ Oh my gosh.
+ But we felt that was maybe ill-advised.
+ Yeah, frowned upon perhaps.
+ Frowned upon perhaps.
+ You know, this is an internal exercise to show the vulnerability, not trying to, like,
+ actually DOS, you know, cloud.
+ Sure.
+ So, we brainstormed and worked with some crazy smart people, Andy and Gwen on cloud
+ vulnerability research.
+ Yeah.
+ Big shout-out to him.
+ He's brilliant.
+ We came up with this conditional corruption.
+ And so, what it was is we knew, you know, we had the leak.
+ And so, we're like, "Okay, these pointers are going to be the machine that we want."
+ And then we made it such that when it's parsing this file format that the objects leaked were part of the calculation.
+ And so, if you landed on a different machine, you would error out, versus if you landed on the right machine, it would then continue to the overwrite.
+ No way.
+ So, you did spray it, but every machine you landed on that wasn't the target one would gracefully error out.
+ Wow.
+ And then only the actual target would continue.
+ It would read that pointer, it would go to a valid offset instead of an invalid offset, continue the corruption, and then we'd get execution.
+ So, was the conditional payload based on, like, the name of the box or, like, the IP of the box?
+ Like, what was that actual switch and then the thing?
+ It was a pointer within it.
+ So, you know, we had heap grooming with these various objects.
+ And so, when it's parsing this format, one of the offsets was a heap groomed object.
+ And so, it would use that to then go where the next one is.
+ And so, if then the next one we had it filled with, like, I think it was like a bunch of negative ones or something.
+ Like, it was a bunch of invalid except for the offset that would designate the correct pointer.
+ Oh my gosh.
+ So, if there was any other pointer object there, it would then hit the invalid offset and then bail out.
+ But if it was the correct one, you'd continue parsing the object, and then eventually it would lead to the overwrite.
+ That's crazy, man.
+ In those environments where you're dealing with something that's, you know, you often see these, like, load-balanced applications, right?
+ Where you're like, "Ah, am I going to hit the same app?"
+ You built a payload that would only target the correct one and wouldn't affect availability.
+ Wow.
+ Yeah, the unknown was just a skill issue.
+ You should have written your payload such that it worked only on the right host.
+ Exactly.
+ Exactly.
+ Very cool.
+ Well, thank you for gracing us with that, Zach.
+ Yeah.
+ That was not what I expected from the guy that runs the Google VRP.
+ I don't run the Google VRP.
+ I'm leading AI product security right now.
+ So this event was all about AI product security.
+ Okay.
+ Yuji, the monitor went dead there.
+ Can you get it back on?
+ Thanks.
+ I'd just like to be able to see that for my own sanity.
+ But I have to say, you know, Google, obviously, is a high tier of a company for this sort of thing, so it doesn't surprise me all that much that someone involved in running this live hacking event is also able to come on a podcast with literally zero notice and talk about this crazy exploit.
+ That's actually my comfort zone.
+ I'm actually more comfortable talking about these crazy bugs than that.
+ Dude.
+ Okay.
+ So tell me a little bit about that.
+ You're leaning AI product security now.
+ Yeah.
+ What's your role at Google?
+ Where were you before when you were finding this exploit, that sort of thing?
+ Yeah.
+ So I did some time at the government.
+ That's where maybe some of these skills come from.
+ Yeah.
+ And then after that, I was at Blizzard Entertainment, the game company.
+ And I led the anti-cheat.
+ Dude, did you work with Zayat?
+ Brett?
+ We overlapped, but he was on the red team and I was on the game security team.
+ Oh, really?
+ Okay.
+ Oh, game security.
+ Sick.
+ Okay.
+ So you were at Blizzard.
+ So yeah, Blizzard.
+ I led game security, so that was like anti-cheat and anti-prod.
+ Still a lot of low-level things working with the operating system internals and all of that.
+ And then I came to Google about three years ago where I wanted to get more broad, do a wide range of things instead of being so niche.
+ And so this bug was actually at Google.
+ I came here and I was still managing this group, but I was focusing on a variety of different product security issues.
+ It wasn't until about a year and a half ago that I, like many others, got pulled into, you know, by AI.
+ The black hole of AI.
+ AI just sucked everything in and me with it.
+ Very nice, man.
+ Yeah, so I guess, you know, the black hole of AI opens up and then you guys decide to run this AI bug squad event, which was such a blast, man.
+ Let me tell you.
+ And for the listeners, the reasons we have these trophies right here on.
+ Let me turn the label around.
+ We've got the MVH trophy from Team Critical Thinking.
+ And also, is this the most creative?
+ Creative.
+ We do not have the third trophy that we won in this competition.
+ Three out of four awards, which was the best meme award to our boy Ronnie Carda, which we'll bring on the show in a bit.
+ But yeah, I mean, it was this was a really unique event.
+ And I kind of wanted to pick your brain a little bit about it because Google does live hacking events completely differently than a lot of the other companies running live hacking events.
+ The big thing for me here was that there is a one to one hacker to engineer ratio at this live hacking event.
+ So pretty much every hacker at any given point, if we want to, we can sit down with a Google engineer, review code, figure out where our, you know, vulnerabilities are, you know, what code base our vulnerabilities are hitting.
+ And that's and we did and we did and we did a lot so many times so so many of those bugs that I that, you know, we're reviewing, you know, we could see, you know, they were as creative and amazing as you guys are that you hit you get stuck.
+ And yeah, it's just amazing that, you know, we can we can quickly and help unstick and provide context that you wouldn't have gotten, you know, from just completely black boxing it.
+ Yeah, it's a totally different experience.
+ And I just, you know, that was something that I just, I guess, I just wanted to comment on because it changes the game completely.
+ And, and, you know, a lot of times when we do these live hacking events, it can be a little bit like, even adversarial sometimes, right, with the with the with the program, right.
+ And you guys are the opposite of that, you take the bugs, you escalate them for us, you help us figure out the path through.
+ That's a clear win. What are some of the other things that you think that Google does differently about their live hacking events that results in such a great outcome like we had at this event here in Tokyo?
+ I mean, I think you said pretty well, we're, we're advocating for you and it's definitely, definitely not the opposite.
+ We want these bugs to come in because you know, you are, you're helping us, we see, we see all the researchers as an extension of our security group.
+ And but you come in with a completely different perspective. And that's why I know, I think we'll get to this later.
+ But you know, maybe some frustration in the scope being broad or unclear, but that's also because we didn't want to like say, oh, go to go to here, because then, you know, we knew you'd come up with off, you know, these most creative award, like all this crazy stuff.
+ We wanted you unbound, you know, to find this.
+ Absolutely. Yeah, I think that that is a big piece of it. And I guess we can move into that other that other piece now of like, one of the challenges we ran up against in this event is the event was largely AI focused, right. And AI is sort of a realm that the threat modeling isn't fully well known. You know, there's not a lot of people doing research on it. It's not a it's not a
+ it's not a very, I guess, just well researched area as far from us from a security perspective goes. So I guess what what are some of the lessons you've learned from, I guess, having these, you know,
+ group of 25 or so hackers at this event, look at AI and try to try to hack it for from Google's perspective. I know that that's tricky because Google has so many different products, right.
+ And they all have AI now. And they all have AI. Every single one has AI. Yeah, I'm sure a lot of those are going to come out in post. I know that was part of the reason you all ran this event was because you wanted to figure this out in a way in a place where it's very collaborative and you can speak with the researchers and all that.
+ But you all have any takeaways as Justin was just asking like already that you all are excited to implement or, you know, talking about implementing and not necessarily specific technical details, but just from like a top down perspective or view.
+ Do you think this has helped you all iron out like how duplicates are going to work between like with prompt injection is confusing because the delivery might be the same, but the impact is different.
+ You know, that sort of thing. Yeah. Oh, oh, it's such a good question. Yeah.
+ Yeah. Part of part of the reason we came out and we're like the scope, the scope is unclear is I don't think we could actually define it going in like as much as it's like, oh, you'll figure it out.
+ You know, you're smart and nothing. They just don't want to tell us. And we're thinking like, I hope they don't know that we don't know.
+ Like, yeah, because this problem space is so, you know, we're it's vast.
+ We're connecting this this giant multiplexer. Now we have we have this connection and we don't we're, you know, we've got pretty good ideas of ways that can break and we've tried to protect as best we can.
+ But we know there are more ways to break it. And that's where that's where you all have been a huge help so far.
+ We found a lot. And we had we had 70 reports.
+ 70 reports. That's crazy. Yeah. On on a on AI, you know, was pretty much the scope of this event.
+ Right. So that that is a lot of data for you guys to work with on how to approach AI stuff.
+ I do think one thing that's really unique and really nice about hacking on Google is their scale.
+ Like I think a lot of times and other other companies, especially ones that are pretty small, that when they're thinking about the risk of something getting abused or the risk of something getting exploited,
+ it can be quite low because the number of users or what have you. Like I was previously working at App Omni and it was a SaaS security product for the enterprise.
+ And so it's only targeting like, you know, Fortune 100 companies. And then within the Fortune 100 company, they'll have like one to five users in the app.
+ Yeah. So it's like things are probably not going to get exploited. Right. That are required post off.
+ But then the really nice thing about Google is that at your all scale, you all basically respect any attack vector because you know that at the count of users you have and at the and that both on the attacker side of things,
+ but then also on the, on the kind of dumb user side of things that people are likely to do anything that's possible.
+ Yeah. There's, there's a saying, I'll probably butcher it here a little bit, but it's something like one in a million happens like every second or fraction of a second at Google.
+ Yeah. At the scale that we have. So, so, so I guess I was hoping we could jump a little bit to the part of the conversation that we had in the triage room earlier today.
+ Cause you know, they, they called me up to the triage room to talk about a couple bugs.
+ And then Zach and I kind of gotten this debate over the table about how AI vulnerabilities can be, you know, the different components of AI vulnerabilities.
+ And I think that those components would be really helpful for the, for the viewership to understand.
+ Um, so I, and, and as we were talking through it upstairs, you know, we, we sort of were realizing, okay, you know, depending on the product.
+ Well, let, let me preface this a little bit. There's three major components that we kind of came upon during this event.
+ Um, you know, for what an AI vulnerability constitutes, there's like delivery, which is, you know, how do we get attacker controlled input into the LLM context or, um, you know, activating these AI features.
+ There's, uh, access to information right after we have the, the prompt injection or whatever.
+ Um, you know, this could be from, you know, tools. It could be from other places.
+ You know, how do, how do we get access to that information?
+ And then the third component is, is exfiltration.
+ Yeah. Exfiltration. How do we get that data out to the attacker or how do we, you know, the alternative to exfiltration is how do we, um, you know, incur some, uh, impactful action.
+ Yeah. Impactful action on the, thank you, dude. My brain is so fried after this event, dude.
+ Oh my God.
+ We might have woken up at 4 a.m. because we were jet lagged and started hacking immediately.
+ Exactly. We've been literally hacking for the past 16 hours and somehow think we can do a podcast right now.
+ Um, it's the best time.
+ Yeah. So, you know, we're in curse and impactful action, right? And the debate that we were having upstairs was, you know, it's really products specific, how important delivery is versus exfiltration.
+ Um, so I guess our hands are tied a little bit because we can't talk specific about, uh, about, you know, specific products, but, um, you know, when, when is one, you know, do you guys, would you guys consider paying for those, for one aspect of those gadgets and when are, when is delivery versus exfiltration important in an AI product?
+ Um, so I think most, most important is, is that last phase is the either exfiltration or what we often call like rogue action or state changing action.
+ Sure.
+ Like something, something user doesn't want to happen or is irreversible.
+ Uh, so proving those is, is the most interesting, um, because that's, that's where we're, we're trying to implement the most technical controls of, you know, the model's going to behave like a person.
+ It's going to behave semi-randomly. It can be convinced to do things that it shouldn't. These are known issues.
+ Um, but at that point, it's like, okay, we know it shouldn't, you know, this X should not happen after Y and we have a control in place to prevent that.
+ Mm-hmm.
+ And then if you find a way beyond that, it usually doesn't matter how you got to that point.
+ Mm-hmm.
+ It's certainly nice to have the full chain, but that's the most important piece.
+ Um, we, we had some, I think the middle piece that you described is probably the least important, which was the, uh, connecting the dots.
+ Because that's what Gemini is kind of built to do.
+ Right.
+ So it's, it's a, it's a technical exercise that you have to make it do the thing you want to do, but it's kind of intended to do that.
+ You know, you would think that Zach, you would think that, but, but the difficult piece of it is, you know, is that sometimes our delivery mechanism or whatever will invalidate that middle piece, you know?
+ And it's like, okay, well, you know, if the prompt injection is coming from the specific scenario, Google has a lot of, you know, very quality defense in depth measures to prevent.
+ I'm sorry.
+ I can't do that.
+ Yeah.
+ That was, that was the biggest challenge because you, it wasn't communicated or you didn't, you didn't know all the scenarios of coming in.
+ Like, do I need to show indirect prompt injection to get to this point?
+ Or can I just, can I say, you guys know that can happen and just start from prompting directly and say, assume indirect prompt.
+ That's actually kind of though, I feel like a really great thing about Google.
+ I would say on 90% of programs, especially outside of live hacking events, it's like POC or GTFO.
+ Like, you know what I mean?
+ Like they're not going to accept a component of it, but I do love that with the Google team, there is an opportunity in some cases, both in AI, in the AI world and outside of the AI world where they might say, Hey, this is a vulnerability to us because we know the other pieces of the chain will exist or have existed in the past.
+ I think that's like a pretty, you know, key feature.
+ Yeah.
+ Yeah.
+ And I guess in line with that, how, I guess this is something we were also debating was how, what do you,
+ how do you think about gadget reuse in an AI environment?
+ Right?
+ Like I'm trying desperately not to talk about the things that we've found at this event, but you know, once you find a gadget that allows you to establish, you know, prompt injection and allows you to trigger some of these, you know, other exfiltration methods.
+ Right.
+ Obviously you guys want the full chain and we always want to give you the full chain, right?
+ Um, you know, what do you think the dynamic for that is?
+ I think reuse is fine if it's the mechanism, not if it's, it's like we're using, you know, uh, Rob gadgets or other, other bits, right?
+ It's the mechanism that delivers the actual bug.
+ Like, so if you, you have some exfiltration method or let's say you have two different exfiltration methods, that's what we're rewarding.
+ We're not necessarily like the full chain gets you there, but if they had the same full chain leading to it, like that's okay.
+ Yeah.
+ As, but if, if the full, if, if the gadget was what we're rewarding, like, oh, we didn't realize you could do, you could connect the dots in this way.
+ Well then reusing it, you're not going to get rewarded because that's, that's the key.
+ So identify what the key thing is that's going to be rewarded, which yeah, ask Gemini and it might give you a few different answers.
+ Yeah, exactly.
+ Um, yeah, that that's, that's very solid.
+ I, as I, as I reflect on the event, you know, there's a lot of conversation that we had that about identifying that most impactful, you know, piece of the chain and, and then, uh, bringing in sort of supplemental gadgets around it to create the full chain.
+ Um, but at the end of the day, you know, you, you could have a delivery mechanism that's being rewarded, um, that uses a well-established impact already, or you could have novel impact or exfiltration, you know, with a reused, uh, other piece.
+ Um, and so.
+ Yeah.
+ And I felt, I definitely felt empathy for the researcher when we're, when we're looking at it and we're, you know, this whole environment is so complicated.
+ So we're trying to say this root issue is fine on its own without end to end, but then for some of them we're, we're not sure.
+ We're like, okay, can you please provide the full chain?
+ Because we don't know if it's possible.
+ Like we don't know if it's going to work the right way and we would love to reward you, but we're, we're making assumptions too.
+ And it's not, it's not, it's not good.
+ That's one of the, one of the really great differentiating features about, about Google VRP is the fact that, you know, I saw how hard you guys were working there in the triage room to find a way to, you know, justify a high reward, you know, in these scenarios where the threat modeling is really complicated.
+ Um, so I appreciate that, man.
+ There's, there's no other company that I would rather be, uh, you know, charging into the AI bug bounty frontier with, than with Google.
+ Um, so.
+ And we, we already, we already paid out like 220 K.
+ 220 K.
+ So.
+ Which is a record for.
+ Yeah.
+ That's a record.
+ And we haven't even finished going through all the bugs yet.
+ Most of the reports.
+ Yeah.
+ So I will, I will definitely say, I think there's more room for people to look.
+ Hell yeah.
+ At this area.
+ For sure.
+ And, and we would love, we'd love all of you to look at it.
+ Yeah.
+ It's definitely worth, you know, I'll, I'll speak candidly about this.
+ You know, I know Rezo here is a big, you know, AI hacker.
+ Um, I, you know, enjoy traditionally a little bit more of the, you know, web to just hard tech in that arena.
+ Um, this event has been an extremely fascinating crossover.
+ Um, where we are, we're really getting to the point now with a Google AI products.
+ That there is enough.
+ Hard, hard tech backing.
+ Backed into the AI.
+ Exactly.
+ Yeah.
+ Yeah.
+ Where it becomes a really interesting scope.
+ Don't you think?
+ Yeah.
+ That's a great point.
+ Yeah.
+ Yeah.
+ I agree.
+ Cause I mean, even though, you know, I might be known for AI hacking stuff.
+ I think that I even have kind of, uh, admitted to you that I feel the same way.
+ It gets frustrating.
+ Yeah.
+ And I think that, uh, you know, a year ago, a lot of us saw this coming, like the AI app sec
+ implications, but companies didn't have enough kind of like hard tech, like you're saying baked
+ in where it was actually interesting.
+ Yeah.
+ And so it's really interesting now.
+ And I think just as other companies add agents and stuff, it's going to keep being interesting.
+ Yeah.
+ And it's all fresh.
+ They're pushing so much code on AI related stuff all the time.
+ While we've been at this event, the products have been changed.
+ Firebase studio has came out.
+ Yeah.
+ AI dev completely got reworked.
+ Yeah.
+ There's like new features added to it.
+ Agent space is releasing soon with Google.
+ They're pushing feature flags on the reg, you know?
+ And also they have the best AI model.
+ Like it, it tops a bunch of different charts for like Gemini 2 pro is now the best model
+ by considered by most people.
+ And so yeah, it's, you can both use it and it's high quality and be hacking on it.
+ Yeah, absolutely.
+ Well, Zach, thanks for coming on, man.
+ I appreciate it.
+ We're going to, we're going to take a segment now and go talk to the MBHs of this event,
+ which, oh wait.
+ Us.
+ And two friends.
+ And two friends.
+ You'll get to see in just a second.
+ Ronnie and Monke.
+ Ronnie and Monke.
+ I'm excited guys.
+ All right.
+ All right.
+ Thank you so much.
+ Thanks man.
+ Appreciate it.
+ They spin so nice though.
+ Look at that.
+ So beautiful.
+ I am going to talk until we have like something technical to say.
+ Yeah.
+ Because you're not going to the right direction right now.
+ Are we rolling, YG?
+ Are we good?
+ Yeah, yeah.
+ Sweet, dude.
+ So what are these, Justin?
+ Dude, these are our freaking MBH trophies.
+ Let's go, boys.
+ Let's go.
+ Even I also got up.
+ Well, we did a little bit of a recording last night with Zach from Google.
+ And we were just pretty much toasted after the Google live hacking event.
+ So we decided to get some sleep and record the rest of the podcast this morning.
+ In the hacker house.
+ In the hacker house.
+ In the hacker house, right?
+ In Japan, which we love.
+ So essentially, guys, what I wanted to do with this was one, you know, just kind of talk
+ about the experience of the Google live hacking events.
+ You know, we've all been to other live hacking events.
+ And this one was super different.
+ So just kind of go address that from the hacker perspective.
+ And also sort of talk about in as much detail as we can, because our hands are tied a little
+ bit by the NDAs.
+ But, you know, what kind of techniques we used to win the live hacking events here in Tokyo
+ as MVHs.
+ So, I guess, let me start off with this.
+ Ronnie, you spent a lot of time on this event focusing on AI and sandboxing and essentially
+ how that works within Google's environment.
+ What are some takeaways that you have that we could give to the audience about how to
+ approach sandboxes in an AI environment?
+ Yeah.
+ I think the most interesting thing about this kind of scope is, like, all complex there.
+ Yeah.
+ When you're talking to LLM, you're not just talking to LLM.
+ You're talking to classifiers that will check your user intent and then are going to pop
+ a sandbox code, some Python code, to write inside the sandbox.
+ And when there is this Python code, it needs to be interpreted.
+ And I think, like, the most interesting thing here would be to actually learn, like, the research
+ papers that made those kind of technologies.
+ And especially, like, the React reasoning and active research paper and the CodeAct.
+ Yeah.
+ You talked about that a lot in the recent blog post from the WriteUp in Vegas as well.
+ Yeah.
+ Definitely.
+ And just the fact that we have LLMs now implementing chain of thoughts and basically for every action
+ that are going to generate a reasoning, a plan, and then an action upon the plan.
+ And with the CodeAct research paper, the action is made with code.
+ And why you want to do that is because instead of using function tools and just looking to APIs
+ and just having the LLM reason with API, you pop a sandbox and you have the LLM code.
+ And instead of having multi-turn thinking, you have, like, just one sandbox that does the entire logic and then gives back to the LLM.
+ And like this, you actually save a lot of tokens and you save a lot of GPU and you get better benchmarks.
+ So it's amazing, like, to know that we managed to do that and that it is implemented, for instance, in Gemini.
+ Yeah.
+ And I think that more companies are going to eventually migrate or end up in that place.
+ They're going to end up using that style of agent because of the way that it is, like, fast, accurate.
+ The time is first token is still quick.
+ I've noticed a lot of companies converging on that infrastructure.
+ So I think developing a skill set where you know how to hack, code act, and react based agents is going to be really key for our listeners.
+ You've got all that linked in that recent write-up that you did, right?
+ Not the code act, but, yeah, in the last blog post, we talked about not this event, but last year's event in Las Vegas and how we managed to execute some part of confidential protos inside the sandbox.
+ Yeah, dude, I think that there were a lot of really interesting, you know, pieces of how last year's, you know, Vegas event kind of flew into this event as well.
+ And I really like how Roni, in particular, you built on the knowledge that we had from last year and brought that into this event and how that really helped a lot.
+ It definitely, you know, focusing on that react framework.
+ And I know you spend a lot of time reading the research papers before the event.
+ Yeah.
+ That paid off for you big time.
+ And also, like I was a security researcher and as someone that never went into an academic background, reading a research paper is like a bit weird and awkward.
+ Yeah.
+ You're not used to the verbal team they're using or like the entire logic.
+ But once you manage to figure out like how to read the research paper, they're actually like a goldmine of information.
+ Yeah.
+ And I think, you know, one of the notes that I had down because I just took a couple quick notes on like lessons learned from hacking AI products during this event was that, and one that I learned specifically from you, Roni, is that, you know, using the technical details of how, you know, this react and code act thing utilizes, you know, how it's implemented as a part of your prompts can really help stabilize, you know, exploits as they get developed.
+ Yeah.
+ Right.
+ And because one of the problems that we run into as researchers so much in the AI hacking space is like you get something to work once and you're like, okay, great.
+ I got my prompt.
+ It's going to work.
+ And then it works like, you know, one in 50 times or something like that.
+ Yeah.
+ And, you know, you proved to me this event that by adding technical details, sort of this meta prompting piece, right, of like informing and this specifically applies to react, right?
+ You know, this piece of meta prompting, you know, trying to tell the AI how to implement the, the request that you are doing really, really stabilizes the exploit.
+ Yeah.
+ To be explicit, both for Google, if people are hacking on Google, but for other companies in react and in Kodak, there's very often what's called a planner.
+ And so you can talk to the planner so you can say, you know, the planner details or have an XML based tag that says for the planner, which is kind of what Ronnie did.
+ And then I also think at least in the way that Google implemented it, there's user intents.
+ So Ronnie did a great job of basically saying like, hey, my intent is to do this.
+ Or even from a system perspective, system language perspective, saying the user's intent is to do this.
+ Right.
+ And here's the notes for the planner.
+ And then you also always want to name the tool calls, whatever they're named under the hood, if you can figure it out.
+ Yeah.
+ We saw that in our research and other hackers that show and tell did that exact thing, like call this tool call or never call this tool call if it's a protection mechanism.
+ Right.
+ Yeah.
+ Yeah.
+ Those are those are definitely high value strategies to implement there.
+ And I feel like a lot of mistake that we do as researchers trying to get into AI is to go to the gaslighting route of the model.
+ Yeah.
+ And trying to reason as if the model was human.
+ But first of all, like model is a probabilistic machine.
+ Right.
+ It's just statistics.
+ And you need to understand like deeply how this machine is built in order to then exploit its flows better.
+ Right.
+ So Ronnie, you know, we had a debate about this in the middle of the event.
+ We stayed up, you know, late when we were too tired to hack.
+ Ronnie and I sat down at the table and debated this whole thing.
+ And my side of this, while I totally agree with you, Ronnie, I think my perspective is that there is a degree to which that is true.
+ And I'm sure if we were, you know, AI engineers or machine learning experts or whatever that we would be able to attack the LLM from a technical perspective a lot more.
+ But I think the, I wonder what that, you know, graph looks like of like the, you know, the noob, the intermediate guy, and then the hacker.
+ The midwit meme.
+ Yeah.
+ The midwit meme.
+ Thank you.
+ That's what it's called.
+ Yeah.
+ The midwit meme of like, okay, you know, the.
+ Just tell the LLM to do it.
+ Exactly.
+ Over engineer it.
+ Just tell the LLM to do it.
+ You know, the whole, they are engineered to think like humans think and to reason like, like humans reason.
+ Well, it's trained on humans.
+ It's trained on humans.
+ Human language and a bunch of human thoughts.
+ And surely, you know, as hackers, we should be able to exploit the reasoning of the system.
+ Right.
+ But I also think there's a degree to which, you know, when we are trying to reason with these LLMs, so to speak, using normal human logic, it might be the fastest way to an exploit.
+ Or at least an unstable exploit.
+ Roni, let me just say this.
+ It's an unstable exploit.
+ Right.
+ Because in bug bounty, we don't necessarily have to create something that works 100% of the time.
+ Now, if we were an actual threat actor, you know, trying to craft an AI exploit that would work 100% of the time, then I would say, you know, yes, we need to add every stabilization mechanism that we possibly can.
+ But as bug bounty hunters that just need the POC, you know, and the screen recording, I feel like, you know, half engineering the prompt, you know, to get the LLM to do it most of the time and improving that a certain set of functionality is possible is enough to prove that a fix needs to be made.
+ I mean, like, I don't know like how much of that is true when you like when you think about output, like the output needs to be understood by a human and have like similar benchmarks to like the benchmarks.
+ I'm going to grab some water, but continue talking.
+ And the benchmark are actually checking like, like on the human levelness of the AI if it managed to pass the benchmark or anything. Right.
+ Yeah.
+ But in terms of inputs, it's not exactly the same.
+ We had like some planner.
+ We had like a lot of different tokenization strategies.
+ We had like a temperature even choosing the model.
+ Like there is a lot of parameters that are highly technical and that will change entirely the output.
+ And so understanding those first parameters and actually Rezo, the the prompt engineering guide that you gave me from Google, like it's a 60 page white paper on how to do prompt engineering.
+ Yeah, super interesting.
+ Yeah, it's it really starts by saying this is a probabilistic machine and you need to remember that.
+ How convenient was just telling us.
+ I read it.
+ It actually says Ronnie is right.
+ Of course.
+ So I won.
+ Google releases a paper the next day that says, yeah, Ronnie's right.
+ How convenient.
+ Dang it.
+ Yeah.
+ But I mean, it's super interesting also like about how it can detect user intent.
+ Yeah.
+ And that's where I join you.
+ Like if you can use your human compression to bypass the machine comprehension, then this is super useful.
+ Like you use human concepts to bypass technical concepts.
+ And that's where I think what you say really makes sense.
+ Can we rewind back to the fact that you said POC?
+ You've said this a million times this event.
+ He has said this many times before this event.
+ I've never heard anyone call a POC a POC.
+ Really?
+ Really?
+ Yeah.
+ I've said that on the pod.
+ On the pod?
+ I'm sure I've said it on the pod.
+ You got to POC this out.
+ No?
+ Yeah.
+ Yeah, I think so.
+ Yeah, I think so.
+ What do you think about that?
+ You've been quiet.
+ Where do you think the balance lies between trying to exploit LLM at a more like probabilistic
+ machine level versus using human level reasoning and how it applies to POC bounty?
+ I think it's a balance of both, to be honest.
+ Like, of course, naturally, if you understand how the system is built, then you will have an
+ advantage if you can directly address the planner.
+ Yeah.
+ That's great.
+ But I also had success with saying like, I am blind and I have no hands.
+ It's more likely to actually act on it because it has moral guidelines on which to act, which
+ are okay.
+ You can say that's also part of the system.
+ Yeah.
+ Right.
+ But, you know, that's less technical and more just kind of the human aspect.
+ But I would say like, okay, let's follow what you were saying, Justin, and like the AI
+ over time is going to be more and more prone to human comprehension, right?
+ Yeah.
+ Those techniques are going to go away because like you will detect user intent.
+ It's like he's trying to manipulate me.
+ Yeah.
+ Right.
+ And so how can you sustain that over time?
+ I think it's the opposite.
+ I think if you take a prompt injection payload like the one monkey is talking about and you take
+ yours and you put it into an LLM three years from now, the future LLM is going to be like,
+ this guy's trying to hack me.
+ He's just like, he's pasting in a massive Base64 payload with like a bunch of XML tags.
+ And the monkey is going to be like, it's going to be, it's just going to trust you and be like,
+ oh yeah, maybe this guy's struggling.
+ I just need to help him out.
+ Right.
+ There's only so much you can like say, no, you're trying to hack me.
+ It's like, what if I actually am blind?
+ What if I actually have no hands?
+ Right.
+ Yeah.
+ It's never going to be able to be like, no, you're not.
+ I mean, not just the technical of pasting like code to execute, but for instance,
+ like there was some vulnerability.
+ And what happened is that they somehow managed to understand that if you were repeating the
+ same kind of tokens on loop, the model will go in a deterministic mode and just going to
+ give you what it knows, which means the training data.
+ And every time they were doing that, like there was like a threshold in the research paper
+ that they're saying we are like more corpus data from the training data than actual garbage.
+ And so we were exfituating the training data of ChatGPT.
+ Right.
+ It was a very small percent.
+ It was like less than 10%, but it was interesting that they did it.
+ Yeah, but ChatGPT fixed it and then Dropbox research team managed to bypass the fix.
+ And so they had to fix it again.
+ And just the fact that ChatGPT acknowledged that those were the training data is more than enough.
+ Yeah.
+ No, that's really interesting.
+ And just to be clear, you know, you guys saw how I struggled with this at this event.
+ You know, I'm all in favor of more technical, stable exploits.
+ Like the way I approached a lot of this target and the way that I will continue to approach AI is how can I use, you know, the hard tech surrounding AI to cause havoc.
+ Right.
+ You know, like that just seems so much more manageable to me than fighting with this, you know, LLM for so long.
+ So, you know, I'm all in favor of stabilizing the exploits and I'm trying to approach it from a technical perspective.
+ And I would definitely like to see a little bit more of like a like a an intro guide into actual LLM layer hacking to see what that what that looks like.
+ Maybe that's something we'll try to put together for the podcast and bring bring to the people, because there's there's how to hack LLM like power tools.
+ Right. Which is a lot of what we talk about. But I would also really like to understand how to attack the LLM at the at the technical level.
+ And I think that there is a very limited set of vulnerabilities that I can even ideate on that would be able to affect an LLM like essentially corpus data, you know, training data getting leaked.
+ You know, maybe there's some like lower level issues with like, you know, memory corruption or something like that.
+ But I think the fact that they're designed just to output text, you know, input text and output text is a very limiting factor for us as far as attack vectors go.
+ Yeah, there's also the other attacks like during training poisoning of training data, stuff like that are really, really interesting and impressive.
+ But as buck hunters, like our ability to exploit that stuff is like basically zero.
+ Yeah, that's APT shit.
+ I mean, I mean, you yeah, you're you'll be like planting an exploit in some training data a year before the thing gets trained and then potentially using it later.
+ Wasn't the, you know, was it Pliny or something?
+ He like his tweets ended up being used in training data and cause prompt injections just by being referenced.
+ You can literally just say God mode enable and stuff and Pliny's and now Pliny the prompters.
+ Sometimes models will just like jailbreak on mentioning his name or mentioning like some of his stuff.
+ I've seen I've seen like the the tweet from him where it's like the LLM recognized him.
+ Yes.
+ And like it was having this conversation that was like, oh shit, you're Pliny.
+ Like you're the guy, you know, like this is a small reason why some of our listeners, if they are, you know, interested should like start a blog.
+ Because it's really interesting because you probably will want AI to know you eventually.
+ It's kind of Nate or Cole is like just a future thing.
+ A hundred percent.
+ I think I'd like to going back to that technical aspect.
+ Yeah.
+ There's like a concept I kind of explored a bit with Ronnie during the event during the hacking phase where it was like one lens you can look at it all through is the tokenization standpoint.
+ I'm just like looking at how it's tokenizing things, looking at purely the technical, the technology behind LLMs and abusing that.
+ What you prefer to do is more stable.
+ But each of these models also has filters on what you can can do and can't do.
+ And we were looking at like exploring nuances between cultural understanding and like interpretation of certain phrases to bypass.
+ Yeah.
+ And if you've got a model that's like multi like a multi Asian framework talking to different models, there's going to be disparities between how certain models are interpreting certain phrases and others might be.
+ And that's a way to bypass.
+ Yeah.
+ Filters of the content.
+ One of the things that's a great point.
+ And it reminds me of what Ronnie was saying at one point in the event, which was that the tokenization.
+ Sometimes I believe you referenced some research or a paper where, you know, you can grab parts of words from different languages and put them together to like create.
+ Me and Ronnie have used it since the previous hacker one challenge.
+ Have you really?
+ Yeah.
+ What's the work for you?
+ I'm sorry.
+ Let's give the listeners a little more context.
+ Could you give us a TLDR on that?
+ And then we'll swing back around to.
+ Yeah.
+ Sure.
+ So basically when you are trying to attack image generation, your goal is like not a security vulnerability, but more like an abuse risk, right?
+ Or a safety and trust risk.
+ More and more hack-worn challenges and other companies are asking to be able to generate unwanted images like NSFW stuff.
+ Whether it's violence or nudity or whatever.
+ Yeah, political stuff like that.
+ And so how you create filters.
+ First of all, you have the filter on the prompt.
+ Then you have the image generation and you have a second filter on the output of the image.
+ And some AI researchers will say that there is also a filter on the training model.
+ So there is like three filters, right?
+ Right.
+ And so the first filter is like basically trying to check user intent.
+ Or even string based things.
+ Like they might block the word breasts or nude or whatever.
+ Sure.
+ Yeah.
+ And the second filter is going to check out the image and give a probability on how much stuff like unwanted stuff there is on the image.
+ But those are guidelines and like headlines, I would say even, that were said by human, right?
+ So it's a yes or no.
+ And there is no nuances in between.
+ However, human mind can comprehend nuances and that can be exploited to bypass filters.
+ So, and that's especially for the second filter that checks the image.
+ So for instance, if the image is saying, hey, is there any sexual content on the image?
+ It's either yes or no.
+ But as human, we can understand the nuance of, well, this is an enough explicit, but the model didn't put this line.
+ So you can say that you are trying to flirt with the line of the filter.
+ Yeah.
+ I'm interested in that.
+ But to be honest, I'm more interested in the string based thing, right?
+ Where it's like, you know, you take parts of words and you put them together.
+ Yes.
+ He has a term for this.
+ What's that term?
+ Yeah.
+ I'm going to get there.
+ And so the first filter is way more technical.
+ And that's actually like trying to, like not the human comprehension, but more like the comprehension of the model.
+ And a machine can understand way more stuff linguistically than us.
+ And because it is trained on so many different languages and all those languages needs to be passed inside the tokenization.
+ What you can do, and I call that like the Frankenstein technique.
+ He calls it Frankenstein.
+ That's what it's called.
+ Basically, you take the same word of different languages.
+ So for instance, bird in English, oiseau in French, pajaro in Spanish.
+ And you're going to split the each words at the exact tokenization, right?
+ And then you are going to put them back together like a Frankenstein monster to create a new word that doesn't make any sense to a human being, but that the model will understand.
+ Or you can even do that with two words from the same language.
+ Like, let's say you're to get off of the sexually explicit stuff and go into like violence.
+ Like, let's say you're trying to get an image of a gun.
+ You might say like, you know, to take the word firearm and then take the word gun.
+ It's called like a fire gun or, you know, something that's like a bad example because the word gun is still a substring of that.
+ But you take basically two or three or four words and put them together.
+ And when you go multilingual, it basically never stops it.
+ And the major reason here is because the classifiers are often smaller.
+ Like the user intent models are smaller, faster models.
+ They have to be because you don't want high latency.
+ And so they won't detect those.
+ Whereas the bigger model fully understands multiple languages and user intent.
+ So the idea here in these particular contexts where you've got like an LLM filter based filter that's in front of something is because these LLMs need to work faster, their tokenization may be a little bit more techie.
+ What is it?
+ Aren't always LLM.
+ Yeah.
+ Okay.
+ Really?
+ Yeah.
+ That's interesting.
+ A little bit more rough, you know, rough estimates.
+ And then we abuse the difference between that, you know, filters LLM and the actual target powerhouse LLM on the back end to, you know, incur some reasoning to the back one that the first one can't proceed.
+ Is that correct?
+ Yeah.
+ Okay.
+ It is for short words.
+ Yeah.
+ It is for like the, like for many words, but it's not for all words, especially longer words, because there's not enough tokens as there are words in English.
+ And there's multiple languages.
+ Yeah.
+ So it's interesting because it drew the line.
+ It's very odd.
+ And I'm interested to see where Gemini does it.
+ If there's some Gemini tokenizer, but it drew the line at MULT.
+ And then e-lingual.
+ No, it's actually, oh yeah.
+ Do you see that?
+ Yeah.
+ Like that's a little weird, right?
+ It also is different.
+ It can do uppercase, lowercase, Unicode, like make it capitalized below.
+ Oh, really?
+ You can just put more on new lines so you can keep seeing.
+ Yeah.
+ So multi-lingual like that.
+ Oh, dude, it's super wack.
+ Yeah.
+ Tokenizers are very strange.
+ I would say even though they're trained this way with, we're getting it broken up in different
+ ways, LLMs are still wildly smart enough to still understand that as a word.
+ So it's not always going to screw that up.
+ How does that work?
+ That's crazy.
+ Because they're so deeply trained on all of this, right?
+ Yeah.
+ Because basically it can still view those two tokens as a single continuum.
+ And I guess they see this multi, this all caps multilingual, you know, in the context of whatever
+ conversation it's all within the training data.
+ That's right.
+ Okay.
+ But you can now see why they can't count letters.
+ Because it sees that as, it saves us as like basically an integer and another integer.
+ Yeah.
+ Yeah.
+ Yeah.
+ That makes sense.
+ So, okay.
+ So that's one of the technical exploits we can think about when creating.
+ To go to the second one.
+ I think the second one you were mentioning is also interesting, even though you don't
+ think it's that interesting.
+ No, no.
+ Go for it.
+ I mean, if you have an image classifier just for the listeners, let's say they get into
+ an abuse-based, and we can circle back to abuse discussion in a minute, but an abuse-based
+ AI safety thing, if you need to get past the input filter and the output filter, on the
+ input filter, you can use what he's talking about.
+ Use the Frankenstein thing to put a word in French with a word in English, shove them
+ together with other words and maybe it works out right.
+ Pliny will sometimes post, you know, his output whenever he's jailbroken these image
+ bottles.
+ And I know that in Ronnie's challenges that we hacked on, in similar things, we basically told
+ the image generator to put it, make it glitchy.
+ And a little bit of a glitchiness on a screen would make the output filter fail.
+ Wow.
+ So basically you want a good technique for getting out images that it's going to try to block
+ is to kind of ask it to add a filter, like make it a different color or make it inverted.
+ And then you have like a blue overlay or something on it.
+ Exactly.
+ Things like that are very common.
+ Very, very interesting.
+ That's a technical technique that you can use.
+ Also, you can use nuances and ambiguity.
+ Again, the human comprehension, because like a model cannot understand nuances.
+ And that's where I really love our discussion is that when you use human concepts that goes
+ outside of the machine comprehension to do technical bypasses.
+ And so when you have like those different filters, you need to work with the first filter
+ and bypass the second one at the same time.
+ Yep.
+ And that's for me like really interesting prompt engineering.
+ Yeah.
+ Because you're threading the needle.
+ When you are training an LLM, imagine that you are creating like millions and millions of data points.
+ And so one concept is really near another concept.
+ Yes.
+ Like especially you can imagine.
+ In the neural network.
+ Yeah.
+ In the neural network.
+ Imagine like a 3D plane.
+ If you say romantic necklace, you might get cleavage.
+ Right.
+ It's like.
+ Oh, interesting.
+ Yeah.
+ But and so imagine like you have a dog and the dog has like new concepts to hair, puppy eyes.
+ Yeah.
+ And then it's all about like the distance from one concept to another.
+ But there is a research paper that actually wanted to bypass image generation.
+ And they train a model to fuzz the image generator.
+ And they figure out that if you start a sentence and the trigger word, you will change that by one, two, three, four.
+ I think it was or triple A or stuff like that.
+ It was generating sexual content.
+ So weird.
+ Yeah.
+ That's odd.
+ And their theory is that somehow some random words.
+ In a neural network.
+ Yeah.
+ In a neural network.
+ Some random words that doesn't make any sense to humans are really close to sexual content.
+ In the latent space.
+ In the latent space.
+ Yeah.
+ So what we need to do then as attackers is we need to take some of these models that are open source and figure out,
+ OK, here is the-- what is it called for when they convert all of them into integers?
+ The vector for--
+ Vectorization.
+ Vectorization for this concept of sexual content.
+ And then find whatever is close to that in that sort of vector space and try to utilize that to get at this target concept that we do not want to have addressed by filters.
+ Yeah.
+ That'd be interesting.
+ I wonder if there is a tool that could be made where you could pass in these, you know, 40 gigabyte model.
+ Right?
+ And it will pass in this 40 gigabyte model.
+ Give it a string, you know, cleavage.
+ And then have it say, OK, here is some of the related context.
+ Reverse cosine search the same way that Ragward.
+ Yeah.
+ And so essentially, you know, obviously you're going to get like breast, you know, this, but then all of a sudden A6413 pops out and you're like, what?
+ You know, like that could be very interesting.
+ Since this research paper, like it was a black box model, so I guess they need fuzzing.
+ I really don't know much about once you have the model weights, how much like you can go back to the training data.
+ And I don't think it's that doable.
+ So I don't know if you can just search a concept.
+ Yeah, that doesn't mean.
+ Yeah.
+ Like, I think it's just a blur about like what happened when you have the training model at this point, at least for me.
+ But I would love someone to try to reverse.
+ I think it's possible.
+ Yeah.
+ So on the AI safety perspective of actually breaking this with LLMs, like getting them to like say things they shouldn't break AI policy.
+ Companies like Hayes Labs and White Circle AI do basically run algorithms that do algorithmically find words and strings that get desired output.
+ It's pretty neat.
+ That is super neat.
+ We can pivot.
+ Yeah. Let's pivot from there.
+ I want to talk about something that we discussed with Zach a little bit in the Google segment, but essentially discussing the way that we've approached AI related exploits this event, which is delivery access and exfiltration.
+ Excuse me, delivery access or exfiltration or impact to the actual account.
+ Let's kind of run the gamut here.
+ We'll talk about delivery, data access, exfiltration, and kind of talk about, I guess, in as much detail as we can, you know, some of the techniques we use for that.
+ So delivery.
+ It's going to be tricky not to cross what we can and can talk about.
+ Yeah.
+ But I think there's definitely some clarity that needs to be provided on part of people running these programs about just what part of that entire chain is considered a bug by itself.
+ Yeah.
+ Where do they draw the line here?
+ And I think that'll vary by company.
+ But generally I find delivery to be maybe more difficult than exfilt.
+ Interesting.
+ Yeah.
+ I think, you know, in this event, you know, and in other other other experiences with AI, there's a very limited set of ways to get, you know, some some data in a.
+ And I'll say this with nuance because obviously there's a lot of, you know, data ingestion into the into the LLMs, right, especially in well integrated environments.
+ But what of that data is going to allow you to, you know, pivot into prompt injection?
+ We can really systemize this.
+ Yeah.
+ Your inputs are multimodal.
+ Yeah.
+ You've got audio, you've got images, you've got text, and you've got maybe the web, you know, web, mobile, whatever else that they're delivering these these modal means through.
+ And then on the outside of like how to exfilt, you've got tool calls, which is, you know, expanding continuously.
+ There's only a limited amount of delivery vectors that you actually have.
+ That's fair.
+ And also, you have tool calls, but you also have like injections on the front end side of the client.
+ Like, for instance, when we use the markdown images to expatriate emails, stuff like that.
+ So you need to really check on the exfiltration, like, yeah, the tools that are available for you to contact outside of the LLM sandbox when they're using Kodact.
+ But once you have that, you also have like, hey, how the data is then transmitted back to the front end and how are they injected into the DOM.
+ And if you can have an HTML injection, you might be able to change that to expatriate data.
+ Yeah.
+ Yeah, 100%.
+ I think breaking it down into the different modes, right?
+ You know, your text, your image, your audio, your video, whatever.
+ And as the LLMs get more integrated into things, there's lots more routes to get there.
+ But I also think on top of that multimodal piece, you actually have to think about where each of these things can originate.
+ You know, text can originate from documents.
+ It can originate from, you know, usernames.
+ It can originate from, you know, other apps, you know, anything.
+ It's difficult at the moment, but I think as systems get more and more integrated, you will begin to see a lot more delivery vectors.
+ And as they reduce friction, you know, to integrate different products together and bring LLMs into lots of different apps, there's lots of more ingestion methods.
+ Yeah.
+ But I know what we were, you know, what we're always more focused on when it comes to delivery is, you know, something very low social engineering based, right?
+ So we could upload a picture that has, you know, one color code off of text that says, you know, do what I say, whatever.
+ But we really like to try to force the user to put this prompt in.
+ And I think that is those sort of forced prompt injections that are really valuable.
+ You know, that's maybe like our top tier, right?
+ And then you've got like indirect prompt injections, which is like, okay, the user does some reasonable action.
+ You know, summarize this.
+ Yeah.
+ And then you hijack it.
+ And then the final layer would be like direct prompt injection.
+ Can we try to coin a term here?
+ Sure.
+ Instead of saying like it's prompt injection where basically there has already been a prompt and then you're trying to change the instruction far above because you can just append.
+ What we're trying to do is like more prompt hijacking.
+ Yeah.
+ Or prompt expansion.
+ Yeah.
+ Yeah.
+ Well, we tried like to force the user to overwrite the entire prompt.
+ And so the user will never write its own prompting.
+ It was the attackers writing the prompt on the user account.
+ Yeah.
+ And I think this is like way different type of injection because you are not using like other kinds of vector of trying to put an image or anything.
+ It's basically you control the entire prompt that the target runs.
+ And oftentimes there's, you know, a whole bunch of data that's getting put into a prompt, right?
+ And you as the attacker only control one piece.
+ So I think there's also this concept of like prompt invalidation where you say like, okay, you know, ignore everything above, ignore anything below.
+ I'm the shit, listen to me, you know, sort of situation, right?
+ Like, look at me.
+ I'm the captain now.
+ I'm the LLM now.
+ I'm the user now.
+ So that's definitely relevant, you know, to getting your prompt to become powerful in the presence of lots of extraneous data.
+ So I think that's a good summary of delivery running, you know, in as much detail as we can, all of these LLMs are getting more weaponized, you know, I say that as an attacker, right?
+ More connected, more access, more agency, right?
+ Are you proud of me?
+ I use the LLM boy term.
+ You know, what, I guess, as attackers, what do we need to know about utilizing the agency of LLM models to get data or incur negative actions to the victim?
+ Yeah.
+ I think like, you can see the, all the agency modes as like expanding the attack surface.
+ Yeah.
+ And like, when you, you want to hack a model, you also want to hack everything that surrounds it.
+ Like, if you can, for instance, with MCP being like the big thing right now, MCP, if you can like, hack where the instructions are hosted, or if you can hack like the server, if you can hack the clients, you will inherently change how the model will reason and act.
+ Right?
+ Is this a deputy advertisement?
+ If you can hack the library, it's important.
+ Oh, wow.
+ Okay, we see you.
+ Okay, we see you.
+ I was getting there.
+ I was, I was, that was actually, my point is that it really looks like software supply chain attacks.
+ What did he say?
+ Software supply chain attacks.
+ Of course.
+ That's real.
+ Like, you're basically hacking what surrounds it without really impacting what's in the middle.
+ Prompt supply chain attacks.
+ Yeah, exactly.
+ And basically, when Zach was talking about jobs opening, it will be more like AI security engineer on the platform side, where you are going to try to secure like where the model weights are or like the tools, the backend that communicates with the function toolings, like how are they integrated?
+ Or like every debugging that you have on AI, if you can access that as an attacker, it's like insane data and you want to secure that.
+ Because everything that's surrounding their AI and the more complex the entire app is, the more attack surface there is.
+ And you can have like so many different entry points are so interesting.
+ Yeah.
+ Yeah.
+ I think, you know, kind of the reason why you brought up that second piece before I go to the execution and sensitive actions.
+ The reason why you brought up, you know, the delivery, then the data access and then the exfiltration is because in some apps, you might have a way to get something into the context or prompt injection.
+ And you may have some way to exfil, but there's not anything interesting to exfil, right?
+ Because some of these systems are, they don't even have history.
+ It's like one off prompts.
+ Usually I think that people can think about at least exfiltrating the chat history.
+ You know, that's kind of, as we've seen these models and these applications get more advanced, there's more to do.
+ Like there's more exciting things to hack on.
+ But you know, a year ago it was like, I'll exfiltrate the chat history.
+ That's just like always what you went to because that was the only thing there.
+ But now with memory, you know, to kind of expand on Ronnie's section, it's like now there's memory.
+ And now there's also access to files in your Google Drive.
+ And now there's also access to emails and now there's access to calendar events.
+ And so the more data we give access to, the more data there is to exfil.
+ I feel like there's like a security, like from the perspective of actually securing the model,
+ maybe you could chunk up data into like only what it needs to complete the task.
+ And that would prevent it from accessing the larger body of data.
+ So like chunk it up, give it to the small model to like act on.
+ So that's exactly what Kodak does.
+ And Google has another paper.
+ Yeah, so Google has another paper called .
+ The idea is that the planner and all those async calls are a bunch of like, you know, code tools.
+ And some of them are LLM tools, but they're only given the specific small amount of data that they need to execute their individual thing.
+ And then it's all handed back to the big model at the end.
+ I need to go read these papers.
+ That's very interesting.
+ I mean, what's interesting with AI security is that we go back to an old security internet, I would say.
+ And like people are deploying apps so fast and it's like a product driven market and not a research driven market that we forgot entirely about how we do security.
+ Yeah.
+ Like the S and MCP stands for security.
+ Yeah.
+ Like authorization, integrity checks, authentication, identification, those stuff that like normally people always get.
+ Now we completely forgot about them.
+ And like we've seen some apps like not on Google, but basically a chatbot assistant that were helping you with your data inside your account.
+ And you basically say, hey, what's my last history search or something like that.
+ And it was giving you the data.
+ And then you just say, but what's the user ID that is to research.
+ And because the API that they hooked was having like a tool like search user history and then user ID, and they were trusting the LLM like a probabilistic machine to actually get the right tool calls.
+ And they were not trying to think about that this could be influenced by the user.
+ And so the goal here in terms of security is just to say the user asked me that.
+ So the tool call needs to be influenced by which user it is and have the AI never trying to guess the user ID or implement that into the tool as an argument.
+ However, so many people do that.
+ They trust the LLM.
+ Well, we saw that a little bit in some of the AI we've hacked.
+ If you get into the deeper level of it, you'll actually see from a technical implementation perspective, the company stripping out data.
+ Because a lot of times they do an API call, they dump the data back into the LLM and parse it out.
+ But they'll actually be like, okay, we need to remove some of this metadata that's in the APIs and stuff like that.
+ And that's why it's important to do the research that you did very thoroughly in this event and in other events, Ronnie, of really understanding every bit of what the model sees.
+ And down to, okay, the model got this object back from the Kodak flow or whatever.
+ What exactly does this have?
+ What are all the properties?
+ What can I get it to yoink out of there to use for illustration?
+ Yeah, one key way to do that is often to ask what the ID is for things.
+ I've noticed that like even Groff will like sometimes accidentally leak like some of that metadata from like the tweets that come back.
+ It'll be like, I've had it because often it'll reference a bunch of tweets.
+ Yeah.
+ I've had it say like, and in tweet 1, 2, 5, 6, 7, 8, 9, 10, you know, like it said this and I'm like, user 1, 3, 6, 5, 6, 4, 5.
+ Yeah, it does this.
+ Yeah, yeah.
+ So it has the ID for the user and the tweet, which is fine.
+ Those are public because like you can see those in the API, but it's really funny.
+ And so that's actually a strategy I use when I'm chatting with it and it's coming back with like documents or other data.
+ I'll be like, you know, what was the ID for that?
+ And sometimes it'll have it.
+ And that's kind of it.
+ That's that's very interesting and could definitely be a useful gadget for ID or, you know, identification, getting the IDs needed for that.
+ Yeah.
+ Let's move to exfiltration and sensitive action.
+ Yeah.
+ So just to wrap this back together, we went out a bunch of rabbit holes.
+ We're talking like we talked with Zach and we're kind of recapping here that, you know, in our opinion, the kind of the components of an AI exploit are often the delivery.
+ What access does it have to data or other things?
+ And then the either exfiltration or sensitive actions.
+ And I think, you know, for us, for Google specifically, they cared the most about that last piece.
+ And I think that's often what we were looking for is how can we extract this data?
+ Which, you know, there's a million different ways, any way it can communicate out, any way it can send sensitive data.
+ So sometimes those are native to the app via tools like send email, send text message, make a phone call.
+ And then there are, of course, the other ways which are like create a link requires user interaction, create a markdown link, which doesn't often these type of things.
+ But anyways, when it comes to those sensitive actions that can be taken, it goes from a few small things like modifying user object,
+ or modifying objects into this app in the agent space, it becomes modify anything you want for anyone's account.
+ Because if they're logged in with their cookies as their agent is backing on their behalf, all of a sudden it can take actions in any of the systems they have access to.
+ And so that's going to be a huge problem going forward.
+ Oh, also something super interesting about like how agents work is basically you have like all the tool codes, you have the prompt and everything, but you have the model.
+ And like a lot of people and companies used to swap the model, but then the model are like so different from one another that the chain of thoughts will be way more different.
+ And also they are not specifically trained to the same kind of prompts.
+ And therefore, like just swapping the model will have worse results or better results.
+ We understand this event between Flash and Pro, right?
+ Yeah, but you can actually use that as a security bypass of a lot of different stuff.
+ Like I cannot say, but that they implement and just from one model to another, they will not be trained to understand the security concept because the development teams are going faster than what we can do in security.
+ And because we barely understand as an industry or those models will work with certain prompts that by the end of the day, you can have like so much bypass just by changing the version of the model.
+ Absolutely.
+ Yeah, definitely good takeaways there.
+ We're going to take five now.
+ When we come back, we're going to go ahead and talk about just sort of rapid fire what kind of takeaways we got from talking to other hackers at this event.
+ You know, whether it be vulnerabilities that they found at the event or the, you know, the time that we spent talking to the hackers about ones that they've found outside of the event.
+ And also why the event is so different than other HEs.
+ Yeah, dude, we have a lot of stuff to cover with that and also the Google VRP.
+ So let's grab some water and we'll get back in five.
+ All right, gents, we're back.
+ So essentially what I was hoping for this segment was, you know, at these live hacking events all the time, we are talking to other hackers about the vulnerabilities they've found.
+ We're kind of gaining Intel.
+ Obviously, we're finding bugs at this live hacking event.
+ So I've got a list of like takeaways and to be fair, you know, a lot of people always say like, oh, these top names in bug bounty, they get so much more, you know, bounties and stuff like that because they're well known.
+ And to be honest, one of the one of the reasons and that gets up for debate, but definitely one of the things is 100% true.
+ If you have the privilege to go to a live hacking event, your skill level just goes like this because you get to like talk to so many people about what exploits they're finding, you know, what vulnerabilities and and that's just a really big learning experience.
+ So I've got I always, you know, at the end of these events, I always try to take all my takeaways, consolidate them into a little doc and then pepper them on the podcast over the next, you know, over the next couple of episodes.
+ So what's interesting in this event, like the goal events is that all the researchers are not, I would say, when known on the Twitter community.
+ Yeah, like not a lot of people follow them, but they are like amazing, super technical, and I wish like more people knew them.
+ They don't have a podcast, like none of them, none of them.
+ Listen, critical thinkers. I took so much heat, so let me just, let me just, now shut the frick up, Ronnie.
+ So when we went to the Google Live Hacking event, they were like, okay, we're going to do researcher introductions.
+ Everybody say your name and you know what you're up to in life.
+ And I went first, of course, because you know, and so I was like, hey, I'm Justin, you know, full-time book bounty hunter.
+ Also, I have a podcast. You should check it out.
+ Super casual.
+ Super casual, just super chill.
+ And then, you know, I think it's Ronnie that goes next. Ronnie goes next.
+ Hey, I'm Ronnie Carta. You know, I run this startup or whatever. I don't have a podcast.
+ And everyone was like, oh, so funny.
+ And then literally every single person said, for the rest of the event, said, I don't have a podcast.
+ Except for, except for Rezo, who does have a podcast.
+ There was one or two people in there who put it on their head, which I thought was very cool of them.
+ Oh yeah.
+ Was it Simon-ish?
+ Yeah, yeah, yeah.
+ He was like, and I listened to Justin's podcast.
+ Yeah, that was sweet. That made me feel better.
+ But then I took heat for the rest of the event. Everyone was like, all right, if you have a podcast, you go over this way.
+ And if you don't have a...
+ The program manager of Google rusted you at the end of Show & Tell.
+ So many times, man.
+ So many times.
+ That was amazing.
+ That became a meme, yeah.
+ Best meme over here.
+ Yeah.
+ It's just you.
+ Justin is the meme.
+ Oh, geez.
+ Yeah.
+ Well, let's also talk about that really quick.
+ Awards.
+ Obviously, the full group here.
+ The four of us won MVH together.
+ Kieran got most creative report, which was stunning.
+ And one of the most brilliant out-of-the-box things I've ever seen.
+ Can't wait to talk about it.
+ We're going to definitely blog about that, right?
+ Yeah, we will.
+ 100%.
+ And then Ronny won Best Memeer Award.
+ So we actually took three out of four awards at this event.
+ Yeah.
+ The second place we didn't get.
+ Dude, yeah.
+ Valentino.
+ Valentino took it.
+ And I'm really interested to talk to him.
+ I was hoping I could snag him and bring him on the pod.
+ But he had some plans and such.
+ So we'll try to catch up with him a different time.
+ But as far as technical takeaways from the event,
+ there were just a couple of things.
+ And as we were working with other hackers throughout this event,
+ sharing stories related to the attack service that we're working on
+ from other programs and the findings that we found at this event.
+ One of the things that came up that was super interesting to me
+ was that-- and maybe you Mac users might know this more than others--
+ I did not know that you could not have a file with the same word,
+ uppercase and lowercase, in a folder in Mac.
+ Like the case sensitivity does not matter on Mac.
+ Because if you try to name a file something with a different case,
+ it will not let you.
+ Right.
+ So if you have a file named ABC, you cannot have--
+ lowercase-- you cannot have a file named capital ABC on Mac.
+ That's right.
+ Which is just super weird and very inconsistent with Linux and Windows.
+ And there-- I was talking to another researcher there,
+ and he had utilized that in an environment to cause a vulnerability.
+ So I just-- when I saw that, I was like, wow, this is like so niche.
+ And we often see casing issues in security causing overlaps and stuff like that and overrides.
+ And it's a little bit less relevant to like server architecture because nothing runs off of Mac,
+ you know, from a server perspective.
+ But when you're attacking local machines, then there's definitely some impact there.
+ Yeah.
+ Yeah.
+ One takeaway for me.
+ Sure. Yeah.
+ So one thing I was going to mention was I think that I noticed that they're kind of on some--
+ from the same researchers that you're talking about, that the things they were looking at,
+ the interesting vulnerabilities were in this kind of tool that allows you to go from zero to app.
+ And I think that there are a lot of those already, right?
+ Like there's V0, there's Replit, there's Lovable, there's Bolt.new.
+ These apps basically allow you to use an LLM to go from zero to deployment.
+ And I think what's interesting is that there is user interaction-- or sorry, there is user input there
+ and also cases where there could be prompt injection.
+ And it can lead to things downstream at the deployment step.
+ Because if you think about deployment, it's basically code exec in many levels.
+ Yeah.
+ And so one, it's highly impactful.
+ Two, another kind of key thing that's unique across things in this event and mentioned by other researchers
+ and in the app I just mentioned is the ability to share.
+ Yeah.
+ And so like sometimes user trust, there's a user trust barrier there that it's like,
+ of course, if someone is sending you code execute, it might not be safe.
+ Right.
+ But in other places, there's not.
+ And that was actually one thing that one of your bugs relied on that I think is really interesting to know.
+ Like I know that we talk a lot about, hey, in these live hacking events, you get like more intimate with these programs
+ and you learn what they care about deeply.
+ Yeah.
+ But also a lot of these basically deployment or CI/CD related AI features and apps are going to have tool calls.
+ I don't think you were in this conversation.
+ I was talking to Jakob and he has been kind of interested in and finding SSRF in AI related deployment things where there are tool calls.
+ Interesting.
+ Yeah.
+ And so I don't even know the technical details there.
+ But if you think about CI/CD in general, it does have to often fetch files either locally.
+ Yeah.
+ Files remote, zip and unzip things remote or locally.
+ Right.
+ I think those are like very interesting high impact features.
+ Yeah.
+ Could you imagine like asking the LLM and then just seeing it like print out AWS metadata on the way.
+ Oh, my gosh.
+ That would be so sick.
+ I'm sure someone has found that.
+ I'm sure.
+ It's because of the web fetch feature.
+ Right.
+ Yeah.
+ And if it's running inside of a cloud environment.
+ That'll be awesome.
+ Monke, Ronnie, what have you guys got?
+ I'll go for it.
+ Monke.
+ I think a lot of my technical takeaways were actually just from hanging out with this guy.
+ That's because we have such different ways we hack.
+ Yeah.
+ I'm, I think a lot less technical than I am.
+ I tend to go for more like weird bugs, you know, as you can tell.
+ Yeah.
+ Just weird stuff.
+ Weird stuff.
+ And you actually sleep.
+ Yeah.
+ I don't have midnight Red Bulls.
+ Yeah.
+ But I think it really, the big takeaway for me is you need both.
+ Like not just the sheer technical skill, you need creativity and not just creativity, but you need like a due diligence in maybe how, how thoroughly you look at these various kinds of systems.
+ Like, because I, before this event, I had this idea in my head of like, it was all going to be kind of probabilistic prompts.
+ Yeah.
+ That might work maybe 50% of the time.
+ Yeah.
+ And then he comes over here with this, like, he's read a research papers.
+ Yeah.
+ He's done all this on like tokenization stuff that I had no idea could like reduce the probability aspect to like near certainty.
+ And it made me realize, of course, AI models are just, they're, they're probabilistic, but they behave in very predictable ways.
+ And they are systems that we can work with.
+ Like you work with a web server, like an AI model is just another bit of code.
+ Yeah.
+ Yeah.
+ And that like blew my mind.
+ I think the creativity piece is really interesting because your bug that paid really well was extremely creative in my opinion.
+ It was like hard tech, LLM tech, you know, like interesting kind of social engineering aspects and all that.
+ And I think that that was true for so many of the show and tells that I just would have never imagined some of those vulnerabilities.
+ Do you think that there's like kind of room for even more creativity?
+ Yeah.
+ It kind of harkens back to some of the CSS injection stuff based on a long time ago.
+ Well, for sure.
+ And I think one of the interesting pieces about Google is they take their, their security extremely seriously and they value, or I think they have a better understanding than most programs do on how much user action you can get, you know, like you can get a lot of user interaction, you know?
+ And at their scale.
+ Yeah.
+ At their scale.
+ And they really value having exploits built that are beautiful and clean and very convincing.
+ Right.
+ So I'll be general about this.
+ This is something I've used in my Google hacking, you know, over the past three months as I've been focusing on them as my main target, is that they really value when you go the extra mile and find, for example, like UI elements that you can manipulate to make your attack a little bit more convincing.
+ Yeah.
+ Like maybe you just pull in this little, I've got this little thing that can hide this thing or like, I can, you know, push this off the screen.
+ So the user has to go do whatever, you know, all of those pieces where you're making your attack just a little bit more convincing and clean, really, I think goes the extra mile with Google to, to prove impact.
+ Yeah.
+ And I mean, I'm sure that in a perfectly logical world, it wouldn't affect the value, but it's like, of course it affects the likelihood of exploitation.
+ Yeah.
+ And so it does impact the value.
+ Absolutely.
+ Yeah.
+ I think as far as other technical takeaways go for me, you know, you, you talked about AI and how AI has to get integrated into these different product groups.
+ And I think one of the things that we saw at this event, which I did get clearance to say, by the way, I'm not going to go into full details, but I did talk about that.
+ And they said, I could say this was that there's a lot of iframe work that happens, right?
+ Right.
+ Because you are, you know, you've got to establish products and then you're pasting, you know, AI into it.
+ Right.
+ And so for those of you hackers that are more familiar with client side stuff, there are a lot of attack vectors that you can put into place when you have an iframe, you know, on a page and getting a reference to that frame.
+ You know, what, what, what sandboxing properties that frame has, you know, what kind of permissions that iframe has, we saw that used in the event.
+ And when I was speaking with other hackers, you know, outside of the event as well, it's something that is pretty consistent across the whole LLM space.
+ And that was a, that was a really, and I consider myself very, very, very well acquainted with iframes and client side, you know, permission stuff.
+ There were like three things that I learned that I can't give the specific details on right now, but I will bring to you in the future about how iframes work in these key environments.
+ And it just shows that even somebody who is a client side hacker, you know, thoroughly, there's so much more you can learn about all that.
+ And I think I touched on this a few, a few weeks ago with Joseph, but there is, there's a lot of like chat widgets in LLMs now and they use post message.
+ Yeah.
+ Always use post message.
+ Yeah.
+ So client side is like goes hand in hand with AI like perfectly.
+ Yeah, it really does.
+ It really does.
+ And, and yeah, and then, you know, trying to attack these AI components from the server side.
+ Just generally speaking, it comes down to a similar scenario, which is, are they going to integrate, are they going to integrate AI directly into their core APIs?
+ Maybe.
+ Probably not.
+ You know, they're probably going to stand up a different API server and have their, all of their LLM stuff siloed in there and then kind of integrate it on the product level with, with, with their, you know, production APIs for their primary product.
+ At least that's the architecture I've seen across many companies nowadays.
+ So, you know, the extra mile then comes, you know, when you understand where those APIs live, what kind of functionality and how they're integrating with the main product.
+ Is it just on the client side, you know, via grabbing information, piping it into the prompts, you know, pushing it out to the LLM, getting the response?
+ Or is there some direct integration with the LLM?
+ And that's where things get a little bit more interesting.
+ Yeah.
+ Yeah.
+ All right.
+ So one other note that I'll just kind of toss out there for the, for the viewership is that I think I really, this AI explosion that's been happening as it grows is really reminiscent to me of what happened with Web3 as well, which is, you know, and I'm sure all the old timers are like, no duh, this is how any progress happens.
+ But, you know, when Web3 came on the scene, we're like, oh, wow, you know, very cool technology, lots of fun stuff.
+ I took the deep dive, you know, on Ethereum hacking and, and found some, you know, contract level vulnerabilities.
+ But then, you know, as I started looking at it more and more, we need to integrate Web3 and AI into our existing Web2 infrastructure.
+ And a lot of people follow the shiny object of AI or Web3 when really traditional Web2 vulnerabilities surrounding these products is neglected and or, you know, overlooked by shiny object syndrome.
+ And I think that is probably a higher level principle that we can apply to any progressions that happen in technology when, you know, the, a new core piece of technology is brought in mass to the, to the people is that how that technology gets integrated into existing infrastructure is absolutely pivotal.
+ Yeah.
+ Before we, because now we're getting close to the end here.
+ Yeah.
+ We keep talking about how we're going to talk about the abuse of UCRP.
+ There were some positives and negatives from the event.
+ Yeah.
+ One more and then we'll go to that.
+ Okay.
+ Because there's a, there's a nice pivot into this, which is, let's talk a little bit more about the life hacking event with Google.
+ And we all work together as a team at this event.
+ Yeah.
+ What, and we won.
+ Give me something, guys.
+ Let's go, let's go ahead and do this one more time.
+ Let's go, let's go.
+ All right, there we go.
+ What, why did we win?
+ You know?
+ Yeah.
+ One more slam!
+ Three, two, three, four.
+ You know, why, why did we win?
+ Four factorial.
+ What, what, what were the pivotal pieces of success for our team you think in this live hacking event?
+ You know, one of the ones that came to my mind is we did a decent amount of delegation, right?
+ What, you know, we would split out different to different pieces of scope.
+ Well, I will say Justin did a good amount of delegation.
+ And this actually makes me think, I think for people that are going to team up, even if it's only two people, if there is a more conscientious or more detail-oriented person.
+ Yeah.
+ Let them direct, one, let them bring you back when you go down a rabbit hole.
+ I think that you did that really well for us.
+ Two, let them delegate and kind of prioritize.
+ And maybe, maybe that's not necessarily conscientiousness.
+ Maybe that's just more experience.
+ But I think that you did a fantastic job of doing that.
+ And it made me realize how much of a strength that is in your toolset.
+ Like, obviously everyone knows that Justin is, you know, probably one of the best, well, probably the best bug hunter across all platforms.
+ Dude, come on now.
+ I mean, but I mean, it's true.
+ And I think that, and I, I didn't know that was a strength of yours.
+ Like I knew that you had extreme technical chops and I knew that you had extreme dedication.
+ Like you're able to lock in, I think more than most other hackers.
+ But, but in fact, I didn't realize that actually, I mean, prioritization is key.
+ Of course, we're all pretty high agency.
+ We're all pretty good at prioritizing, but I think that you're on like another level of prioritization and being able to like, basically you shared that superpower with our team is what I'm trying to say.
+ Yeah.
+ That's very kind.
+ There was like several times where Joseph and I got the shiny object syndrome.
+ We're looking at something stupid.
+ Like it was completely not, not the right thing to do.
+ But, but I mean, they were still like potential bugs.
+ Like I think it was not the best use of our time at the time.
+ And then Justin comes along.
+ He's like, guys, this can go back to the thing.
+ Go back to the thing.
+ And I was like, I appreciate it.
+ Listen, guys, there was, and I think I can say this.
+ I think this, I think they're fine with this.
+ If not, we'll bleep it.
+ But there was a hundred percent bonus on in scope, you know, like essentially anything that was in scope was the bounty was doubled, you know?
+ So like, we don't want to let that opportunity, you know, like, yeah, I appreciate that guys.
+ And I also appreciate you, you know, collaborating with me on that.
+ Like, you know, what we did several times at the event was we came together and we did in the beginning, you know, hack separately or as necessary.
+ Offsite, we did not.
+ But then when we come onsite, we work together.
+ And that makes it less awkward when we're sharing stuff too here.
+ It's like, you're not scared to say something.
+ You're not scared to answer.
+ Exactly.
+ It does.
+ And then, you know, when we would meet, we would come together.
+ And then we would say, okay, I've got six leads, you know, from this side.
+ You've got some, you've got some, you've got some.
+ And then we prioritize them.
+ And then we would break them out.
+ And we would say, okay, you know, client side stuff, you know, we're going to have monkey look at that.
+ And, you know, we've got some, some, some really deep, you know, LLM agency stuff.
+ We're going to have, you know, Ronnie and Rezo look at.
+ I'm calling you Ronnie.
+ These two buy their hacker handles.
+ Lupin.
+ And, you know, and then we kind of, we kind of break out to those different roles.
+ And I think that was, I think that resulted in a lot of good output for us.
+ You know, we were able to prioritize what needed to be hacked on and who was the most well-equipped,
+ even if that was Ronnie's lead.
+ Right.
+ And then we give it to Monke because he's got the tool set.
+ And the sharing of information was huge because there's several times where I was like, okay, I have this,
+ like going back to the delivery, I did access the exfiltration where I had like two pieces.
+ And then Ronnie happened to have the middle bit that I needed to finish the chain.
+ And that was like so good for this event.
+ Yeah.
+ And I think like something really interesting about this team is that we have like so many different ways to look at the scope
+ and also about our hacking mindset are really not similar.
+ Yeah.
+ So we really complete one another and also from a skill sets perspective too.
+ And we are not going to have like the same theories.
+ For instance, I know that Justin, when we are hacked together, he's like way more methodological than me.
+ Yeah.
+ But I go to the really naive questions and fundamentals of like what is the app doing?
+ And like, hey, can we try that?
+ And sometimes Justin is like, no, you can't do that because that, that, that.
+ And afterwards he's like, unless this happens, wait.
+ Exactly.
+ Ronnie, there's a bug.
+ I mean, that happened often.
+ And I think I don't fight with anyone quite as much as I fight with you when we're hacking.
+ I'm like Ronnie, this is dumb.
+ Let's not do this.
+ Yeah.
+ And you know, and then I'm like, okay, okay, okay.
+ Okay.
+ Solid.
+ Solid.
+ It's like two knives sharpening on one another.
+ It's like confrontation to better build.
+ Like it's like, and to be fair to myself, inversely so as well.
+ Yeah.
+ Of course.
+ Like that's the most important thing.
+ You don't need to hack with people that are exactly in your same skill set or have like your same hacking mindset.
+ You need like people really far apart from you so you can complete one another.
+ And that's like each team has like their, uh, master post exploit, uh, guy, the automation guy, the, the, the creative with guy that comes at the end.
+ And like, Hey guys, I was working for so many hours on that thing.
+ You wake up, you wake up and Ronnie's still awake.
+ One of the nights we, we went to bed and we woke up and Ronnie was going to bed.
+ And we're like, shit.
+ No, actually, I think one thing that really we haven't mentioned, it's like not a technical thing, but I think that there's a lot of a deep respect for each other here.
+ And I think that, I think that actually played a role in this event.
+ There were several times Justin that I feel like, um, you would not have came out of your hole or pivoted to look at something.
+ Yeah.
+ But you were, you respect me enough.
+ I was like, no, you need to read this message that Jim put in this chat.
+ Right.
+ And you need to read it aggressively.
+ And it's very interesting.
+ And you're like, Oh, that is interesting.
+ Yeah.
+ I'm going to go sit with them.
+ Yeah.
+ That was great.
+ That was really good.
+ Um, and I definitely, I definitely agree with that.
+ Um, so pivoting away from our team strategy and more into the Google live hacking and experience.
+ There's lots of things we can talk about.
+ You know, we talked a little bit about them with Zach.
+ I don't, I don't know if you guys were listening in.
+ I know you were in the room, but, um, we, we talked a good bit about, you know, the one-to-one engineer ratio, engineer to hacker ratio at this event, which I think was massive.
+ And Ronnie, I know that you essentially claimed Gabor.
+ Yeah.
+ Yeah.
+ Ronnie just found a Google engineer and was like, just grabbed him and just put you over here.
+ You're part of our team now.
+ Yeah.
+ And the dude is funny because he came over for drinks last night too after the event.
+ And I was like, aren't you sick of Ronnie?
+ Exactly.
+ I keep coming back for more.
+ Yeah.
+ No, he, he's, uh, amazing.
+ And he really helped me out, uh, during the entire event.
+ Um, and that's where you really feel like a part of the security team.
+ Yeah.
+ An extension of the security team.
+ Like most, uh, live hacking events.
+ The security team acts like a bit adversarial to you.
+ Yeah.
+ In like, oh, we know better than you, but we are not going to give you the answer.
+ Yeah.
+ And it's just making our work longer.
+ And we are like on a, so much time sensitive engagement that we need to, to, to actually get our works done.
+ Right.
+ But Google really understands that because most of the security team has been either bug hunters or city players.
+ That's crazy that that's true.
+ And you're right, it is.
+ Yeah.
+ And they know like what would make our job easier.
+ And so they just give us to us.
+ Where, where, where are you at?
+ Oh, you're here.
+ Okay.
+ Uh, you know, try this, try this, you know, and, and that's something that they do outside of the live hacking events too, where when you submit a bug to Google.
+ And the reason why these people are really proficient and we get impressed when we come on site and work with them is because that's what they're doing every day with our bug reports.
+ You know, they take our bug reports, they go in the code, they escalate them.
+ I have made, I'll, I'll be clear with this number.
+ I've made over $5,000 more in just the past like couple months because a Google engineer came in and said, oh, actually you can also use this this way and escalate it like this.
+ And then I got a bigger bounty, you know?
+ And that's like, that's pretty sick.
+ Like you never see that anywhere.
+ Yeah.
+ They, they, they do not try to be against you or make your job harder.
+ They want to give you all the tools because they want to see like this creative vulnerability and they love the technical and they're, they're like passionate people.
+ And so they are going to help you.
+ And they, they will, you know, I think it's a, that's what they said.
+ The googly vibe.
+ Yeah.
+ Yeah.
+ Trying to cheer people up instead of trying to take people down.
+ Yeah.
+ Uh, and, and that's amazing, uh, in, in those events.
+ So I want to do either of you guys have comments on that or should we swing to abuse?
+ No.
+ Yeah.
+ Okay.
+ So one of the, one of the things that is a little bit tricky for anybody who has worked with Google before is, uh, there are.
+ Specifically on AI stuff too.
+ Specifically on AI stuff as well.
+ Absolutely.
+ Is that there are, you know, there's lots of different, uh, programs that Google runs in their vulnerability, um, uh, research.
+ VRP.
+ Vulnerability.
+ Yeah.
+ Vulnerability.
+ I was like for a second, I'm blanking on it.
+ Vulnerability research program.
+ Um, and two of them, the two ones that most, uh, align with, you know, traditional bug bounty, you know, excluding like kernel level work on like, you know, Android and stuff like that.
+ Are the Google VRP and the abuse VRP.
+ Um, and the payouts for those two, uh, VRPs are vastly different.
+ Um, and what'll happen sometimes is you'll submit a report.
+ You'll be like, okay, I believe that this is, uh, gonna be accepted by Google VRP and get this, you know, crazy bounty.
+ And then that gets accepted by abuse VRP and the bounty is much lower.
+ Um, and we spend a lot of time talking with the team about that whole concept at this event.
+ And I think it makes a lot more sense to me now than it did before.
+ And I know that the team is going to be putting out some more clear guidelines on what constitutes abuse and what constitutes, um, Google VRP and, uh, in the future.
+ And I'm really looking forward to that.
+ But one of the things that I've, I wanted to tell the people about that is one, you know, read the docs very thoroughly, but two abuse is not a punishment for the hacker.
+ The abuse VRP is actually extremely nuanced and will pay for a lot more things than normal bug bounty will.
+ Um, so, you know, that, that whole, I was talking to the manager of abuse actually, and they report up through the trust and safety team, which is the same team that deals with like, you know, if somebody is like cyber bullying you, you know, like, and they are very much interested in like, how can our products be abused to affect the user negatively, whether that be a technical exploit or whether that be, you know, something else.
+ Um, and so what Google will do is we'll pay out for a lot of things that are out of scope of normal bug bounty programs through the, uh, abuse channel.
+ Um, so it's a double-edged sword, but it does cut in our favor sometimes.
+ Yeah.
+ I was going to say, so basically what we're trying to say is there's some pros and some cons.
+ Yeah.
+ I would say the biggest cons are that the middle ground is sometimes unclear.
+ Yeah.
+ Like for example, a, a vulnerability that a lot of bug bounty programs would accept and would, and what I would not consider abuse is like leaked API keys.
+ Yeah.
+ Some of those in Google are considered abuse.
+ Um, like when they're, when there's not like a direct heavily security impact, but if there's a, you know, heavily monetization impact, you know, Google's like, oh, that's abuse.
+ And it's just like a flat $500 bounty.
+ Right.
+ And sometimes I think there actually is more impact there than what is paid out.
+ And I think it's similar with AI where the middle ground between abuse versus Chrome VRP or Google VRP.
+ Yeah.
+ Um, I think that can lead to frustration.
+ Mm.
+ Uh, but, but again, I'm like all, I'm, I'm overall extremely happy with the program.
+ Yeah.
+ And, and one of the things that they, that came to my attention, you know, during this event was obviously there's a lot of things that we wouldn't even get paid for at all that we do get paid for through abuse, which is, which is great.
+ Um, but there's, there's definitely a nuance to, uh, the way that they define, uh, where vulnerabilities originate from.
+ Right.
+ And one of the big things that they, they said to us about that was if, if a feature is working as intended, but can be abused for a negative purpose, that is abuse.
+ Right.
+ If a feature is not working as intended, right.
+ Uh, then that falls under Google VRP.
+ So it is your responsibility as the researcher in, in some degree, right.
+ And not necessarily your responsibility, the Google team will do the research as well.
+ But the best, most winsome practice for you as the researcher is to, you know, try to clearly show, Hey, there is a security misconfiguration here.
+ You know, this product is not working as intended.
+ Uh, there, somebody made a mistake and that's why there's a vulnerability.
+ Not I can utilize some of these business logic errors, you know, that, that are, are present in Google's products to accomplish that.
+ Some malicious purpose.
+ And maybe the impact is the same across both of them, but Google handles those very differently.
+ Uh, and that can be disappointing for the researcher sometimes, but, uh, also very valuable if you know how to weaponize it properly.
+ And also if there is a technical fix that doesn't change the way the product works and, uh, and like it still works as intended, then it might have more chances to go to VIP than abuse.
+ Yeah.
+ Uh, because, um, it proves that this is a technical problem and not an abuse of the, the feature.
+ Yeah.
+ I think the fact that, um, they pay for well-written reports, which have to include remediation.
+ Yeah.
+ Is your chance as a hacker to say, here's where I think it, there is a technical fix.
+ And then that's going to basically also let it be led more likely to be in Google VRP instead of abuse.
+ Yeah.
+ I wish I had sat down with you guys and discussed this.
+ Maybe, maybe I did.
+ I, the whole event was such a whirlwind, but I sat down with a couple other hackers at the event and was like, we're like looking at their reports to Google.
+ And I was like, oh my gosh, they don't have the remediation steps in the root cause analysis section.
+ Oh man.
+ They are losing, you know, a 1.5 X multiplier on their bounty.
+ Yeah.
+ And I've, I've shouted this out on the pod before.
+ It is one of the most unbelievable things that I've ever seen in bug bounty that Google offers extremely competitive bounties and then will 1.5 exit if you write root cause analysis and remediation steps.
+ Yep.
+ You know?
+ And I'm just like, this is such a big hack that anybody who's hacking Google, you know, needs to know.
+ You must go to the Google VRP description page and read exactly what will land you that 1.5 X multiplier.
+ And then just put those sections in the report and you just 1.5 X your bounties.
+ Yeah.
+ Like how crazy is that?
+ Yeah.
+ It's sick.
+ And AI is like very nice at a little like first pass at that.
+ Yeah.
+ You should clean it up.
+ You should make it really good.
+ You should make it high quality cause they're paying you so well for it.
+ Yeah.
+ It's worth your, it's worth your time.
+ It helps me too, because I spend a lot of time building a really quality POC a lot of time.
+ Like maybe sometimes my reports are shit, but I build a quality POC and I want that POC to speak for itself.
+ Right.
+ And that's sort of where I take pride as a hacker.
+ But this fact that they, and the high quality POC is accepted or is expected by their, their middle tier.
+ Right.
+ There's like, if you submit a particularly shit report, they're going to downgrade it.
+ You know, they're going to reduce the payment by 50%.
+ If you submit an okay report, you know, it's normal.
+ And then if you said an exceptional report, it's a, it's a, it's a 1.5 X.
+ That middle ground, you know, it requires that a POC be good.
+ Yeah.
+ You know, that's there.
+ And I was like, that's, that's reasonable.
+ So, you know, I, I put my normal amount of effort into the POC, but then when I'm writing
+ their point, I was like, wow, you know, they are really incentivizing me to write a good report
+ here financially.
+ Yeah.
+ And that makes it so much easier for me to like get over that, that hacker report block.
+ Oh yeah.
+ And, and lock into writing.
+ That's true.
+ Yeah.
+ And, and I just think that's something that probably gives them a large return on investment
+ from a hacker perspective because their reports that they're getting are like going to be much
+ higher, higher quality.
+ But also like something which strange when you're a hacker on Google is that that threat
+ modeling is really weird.
+ Yeah.
+ Yeah.
+ From externally.
+ And you really need to sit down with them and ask the questions even before you even
+ try finding a vulnerability that they are pretty accessible.
+ You can ping them and just ask like, okay, is for that specific product, because the threat
+ model will change from one product to another.
+ Even if they look similar, they don't have the same market purpose.
+ And so the threat modeling is different.
+ And so for each product, sometimes you need to go in depth and like ask them or figure out
+ like, what's the threat modeling?
+ Like what's the real thing that will impact this asset?
+ And once you figure out, it's way easier to, to hack on them.
+ And I think like most of the people I talked to that were frustrated with a Google bug bounty
+ program.
+ And I was also at the beginning is that we couldn't understand like, what was the threat
+ modeling?
+ Because from one website to another, it will change entirely.
+ Sure.
+ So if you get that and you know how to ask the questions, then you get a better return
+ investment over time.
+ Absolutely.
+ As a general rule of thumb, they really like data leaks in terms of like things that
+ affect users' information and PII is like huge.
+ They really prioritize them.
+ Yeah, they do.
+ They do.
+ And if you can prove that very cleanly, then it's very highly rewarded.
+ You know, and, and one of the things that I wanted to mention before we move on from abuse
+ is, is that a lot of the AI stuff ends up in abuse, right?
+ Because it's, it's a little bit less hard tech, a little bit less, you know, concrete.
+ Um, and I think when one of the, one of the good challenges for us, uh, when we're attacking
+ Google AI is how do we get this, you know, how, how do we try to craft an exploit such
+ that, uh, this is a clear security boundary issue, you know, and, and then, you know, land
+ ourselves in the, in the Google VRP program.
+ Um, so yeah, good, good thoughts there.
+ Um, do you guys have anything else that you wanted to talk about about the Google VRP,
+ uh, program?
+ I mean, we got some sick swag.
+ Yeah.
+ The, the, the Google offices are sick.
+ Maybe I'll, we'll put some pictures up on the screen right now.
+ Um, of the offices that were amazing.
+ Um, and they, you know, I just felt very privileged to be there.
+ Obviously we're in, we're in Tokyo, which is like my shit.
+ And they let us go in there and record.
+ Yeah.
+ So huge props to that.
+ Yeah, that was awesome.
+ I'd love to record at the, um, the Google headquarters.
+ Do you guys have any other comments about that experience?
+ The live hacking that experience?
+ Um, I think it's like a really different that, uh, out of other live hacking events,
+ because we are like a real small community at Google and, um, and like the, the faces that
+ we see are so refreshing, uh, depending on like, uh, according, like when compared to other
+ live hacking events.
+ And, uh, what I really like is that everyone has basically the kind of the same mindset.
+ And humility, uh, when we talk to one another, and like a lot of respect and passion.
+ And, uh, it makes like the event even more cozy, but when you see like, uh, the total rewards
+ that was given, it doesn't really change that much.
+ I would say like the impact that the research had, like, even if it's small community.
+ And that's something interesting that Google, uh, managed to do is that they managed to cherry-pick
+ researchers that goes well together in a room and that managed to find like really impactful,
+ creative stuff.
+ Yeah.
+ I want to, I want to, I want to run the calculation really quick.
+ Cause they said it was like 230,000 or something like that across.
+ It's like the average bounty is like, that's an unbelievable statistic.
+ That is great.
+ And I know that our average bounty across this group was higher than that, uh, by a good bit.
+ Yeah.
+ And so that was, uh, I mean, the bounties are there.
+ The, the competition is small.
+ I think one of the things that blew my mind as well is that they said that there's almost zero duplicates
+ like because in the, the scope for this event was really small.
+ Yeah.
+ It was pretty narrow.
+ I think it was that earlier you said 25.
+ I think there was like 15.
+ 15 what?
+ Uh, researchers.
+ Oh yeah.
+ Was there really?
+ Yeah.
+ I think there was between 15 and 20.
+ I think you mentioned 25.
+ Yeah.
+ Really?
+ Wow.
+ In the chat, there's only 22 people.
+ Really?
+ And there's Google in there.
+ That's crazy, man.
+ Yeah.
+ It is a very small group.
+ Um, but yeah, I mean the, the bounties were, were very quality and, uh, the duplicate levels,
+ almost nothing, which is a really impressive as well, despite the scope being, you know,
+ as far as Google's vastness, the scope was pretty small and still very little duplicate.
+ Yeah.
+ That just goes to show as well that Google has so many products.
+ Yeah.
+ And to find this many bugs on that small snippet of the scope kind of indicates that you look
+ at everything else, there's so much waiting there.
+ Yeah, that's true.
+ I definitely think that's true for their VRP.
+ You didn't mention that, or sorry, for their GCP.
+ Yeah.
+ The cloud VRP.
+ Yeah.
+ They, they released that last year.
+ Um, and upped all the bounties on it.
+ I think the stuff was probably in scope before, but it was just like a normal or, or like a
+ low tier asset.
+ Now it's a very high tier asset.
+ So if people are used to looking at things like, um, like AWS, for example, I think that the amount of competition on GCP is way less than AWS.
+ And the new bounties are significant.
+ Yeah, absolutely.
+ Absolutely.
+ Well, guys, really, really awesome event.
+ Uh, I had a blast.
+ Thanks for teaming up with, uh, with.
+ This is like your, this is like your favorite country to visit.
+ Dude.
+ You know, I'm not gonna lie, man.
+ The last event in Tokyo, um, you know, hacker one did an event in Tokyo.
+ Cool.
+ And, uh, I believe the pub target is public for that, but maybe I'll just hold off.
+ It is.
+ Yeah.
+ It is.
+ Yeah.
+ It's public.
+ Yeah.
+ PayPal.
+ You know, I, I ranked third in like the, and then second in like the two prior PayPal events in the scope that they had for the Tokyo
+ event would just did not match with me very much.
+ Yeah.
+ And I was so disappointed because it's like, that's my shit, you know?
+ And, and so I'm really, I'm really glad to be in Tokyo this time, you know, walking away with the, uh, NBA trophy.
+ Even though this one goes to Ronnie, right?
+ Yeah.
+ Ronnie let me have the last one from Vegas.
+ So, uh, but we'll see.
+ Hopefully we can convince him to send us another one.
+ Um, do you guys got any, any final closing comments or should we go run around Tokyo now?
+ Let's go.
+ And, uh, I'm glad to be on the podcast.
+ Shut up.
+ All right.
+ That's a wrap.
+ That's the pub.
+ And that's a wrap on this episode of critical thinking.
+ Thanks so much for watching to the end y'all.
+ If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord.
+ You can hop in the community.
+ There's lots of great high level hacking discussion happening there on top of the masterclasses, hack alongs, exclusive content, and a full-time hunters guild.
+ If you're a full-time hunter.
+ It's a great time.
+ Trust me.
+ I'll see you there.

@@ -1,0 +1,1400 @@
+1
+00:00:00,960 --> 00:00:06,880
+ Uh, servers must not use elicitation to request sensitive information from the user.
+
+2
+00:00:06,880 --> 00:00:12,400
+ Must not do that, guys. Seriously, guys, don't do that. Please don't do that.
+
+3
+00:00:12,400 --> 00:00:14,560
+ Yeah, that's exactly what we're going to do.
+
+4
+00:00:14,560 --> 00:00:22,400
+ The best part of hacking is when you can just, you know, critical think, right?
+
+5
+00:00:22,400 --> 00:00:50,120
+ All right, hackers, look, we got a lot. I don't know if you guys know this, but there's a lot more to CTPV than just the podcast, okay? I'm just going to list a couple things you guys might be interested in real quick, okay? We got the Discord. That's where a lot of awesome conversations are happening.
+
+6
+00:00:50,120 --> 00:01:01,360
+ This cool research channel in particular is amazing on the Discord. We've got the full-time Hunter's Guild. For those of you making over 100k a year in bug bounty, if you're looking to be around other elite hackers, that's the place to do it.
+
+7
+00:01:01,360 --> 00:01:10,280
+ We've got the critical thinkers tier on the Discord. That's where we, uh, that's like our inner circle. That's where we share all of our scripts, do exclusive AMAs, masterclasses, that sort of thing.
+
+8
+00:01:10,280 --> 00:01:17,920
+ And we've got the research lab over at lab.ctv.show, where if you've got a piece of research you'd like to submit, you can submit it there.
+
+9
+00:01:17,920 --> 00:01:21,680
+ And we may take it hosted on the blog and cover it on the pod for you.
+
+10
+00:01:21,680 --> 00:01:35,680
+ Um, also underappreciated, but we also have the swag store guys. So hit the swag link over at ctbb.show and you guys can buy some cool t-shirts, uh, with, uh, critical thinking, um, you know, slogan and stuff like that on it.
+
+11
+00:01:35,680 --> 00:01:41,480
+ All right. Um, with that, let's go back to the show. Check out some of those things. All right. We're going to go back to the show, but check out those things for me.
+
+12
+00:01:41,480 --> 00:01:53,540
+ All right. Let's go. Alrighty, hackers. So here's the deal today. All right. We had a whole episode planned, but both of my co-hosts are either sick or traveling for live hacking events or both.
+
+13
+00:01:54,080 --> 00:02:05,900
+ Um, so it's just going to be me today. And what do we do when we're doing an impromptu episode by yourself? We do an RFC deep dive, right? Okay. Let's go. We got model context protocol this time.
+
+14
+00:02:06,260 --> 00:02:17,900
+ Um, and essentially lately I've been kind of looking at this because of some of the targets I'm looking at, and I think it's a really relevant target, uh, for a lot of hackers that are moving into the AI, um, pen testing space.
+
+15
+00:02:17,900 --> 00:02:26,060
+ Um, and it's just something to be a little bit more aware of as well as you see those assets around, um, people spinning up, uh, MCP servers left and right.
+
+16
+00:02:26,060 --> 00:02:40,220
+ Um, so what I'm going to try to do today is give you guys a good overview of model context protocol, MCP, and, uh, give you an idea of how the protocol works, uh, what the general architecture is, the authentication.
+
+17
+00:02:40,220 --> 00:02:49,520
+ And then we're going to dive a little bit, uh, into, uh, the back and forth, uh, of the communication of the protocol and the various objects, um, that are being tossed around.
+
+18
+00:02:49,520 --> 00:02:51,500
+ Okay. So let's go ahead and do it.
+
+19
+00:02:51,500 --> 00:02:55,040
+ Um, first up, let's go ahead and discuss the architecture.
+
+20
+00:02:55,040 --> 00:03:06,140
+ So, um, well, actually before we do this, let me preface, I have spent probably cumulative, um, 16 hours, probably researching this, this, uh, protocol.
+
+21
+00:03:06,140 --> 00:03:17,240
+ Okay. So I'm not professing to be like some mega expert on it, but I can read a spec and tell you guys where I think the problems are, uh, from a security perspective.
+
+22
+00:03:17,240 --> 00:03:25,040
+ And, uh, uh, you know, if I'm looking at the results that I've gotten from pen testing on some of these things, um, my hunches are often correct.
+
+23
+00:03:25,040 --> 00:03:41,480
+ So, uh, this is definitely not claiming to be a holistic assessment of MCP threats, uh, threat model, but, um, I think it will give you guys a good starting spot to, to kind of bounce out off of as you go after these, um, uh, MCP servers, uh, or clients.
+
+24
+00:03:41,480 --> 00:03:43,640
+ So let's go ahead and jump into that.
+
+25
+00:03:43,960 --> 00:03:49,200
+ Um, first talking about the architecture, there are MCP clients and MCP servers.
+
+26
+00:03:49,200 --> 00:03:54,400
+ There's also some other pieces like MCP proxies and authentication, um, servers and stuff like that.
+
+27
+00:03:54,400 --> 00:04:00,640
+ But for the purpose of this podcast, we're going to focus mostly on MCP servers and MCP clients.
+
+28
+00:04:00,640 --> 00:04:00,960
+ Okay.
+
+29
+00:04:00,960 --> 00:04:06,340
+ Um, these are communicating over, uh, JSON RPC.
+
+30
+00:04:06,540 --> 00:04:08,760
+ So it's very readable, very friendly.
+
+31
+00:04:08,760 --> 00:04:12,060
+ Um, you can take a look at, uh, the raw protocol.
+
+32
+00:04:12,060 --> 00:04:12,900
+ Very simply.
+
+33
+00:04:12,900 --> 00:04:22,900
+ I actually wrote a malicious, uh, MCP client and server, um, very easily in Python, just by like, uh, you know, printing statements out and reading statements.
+
+34
+00:04:22,900 --> 00:04:36,140
+ Um, so very friendly protocol to look at from that perspective, um, the, the transport mechanism is typically done over one of these three, um, things we've got, uh, standard IO.
+
+35
+00:04:36,140 --> 00:04:47,500
+ So, um, that's what I was just mentioning a second ago where you can print data to the screen, uh, you know, receive data via a standard in and do your communication that way.
+
+36
+00:04:47,500 --> 00:04:52,420
+ Um, there are two other ones, streamable HTTP and the older HTTP server-side events.
+
+37
+00:04:52,420 --> 00:04:55,060
+ Um, I haven't played around with these as much.
+
+38
+00:04:55,060 --> 00:04:58,420
+ The only ones I've looked at have been, um, standard IO.
+
+39
+00:04:58,420 --> 00:05:02,740
+ So, um, you know, but that's something to be aware of for sure.
+
+40
+00:05:02,740 --> 00:05:05,140
+ Um, authentication.
+
+41
+00:05:05,140 --> 00:05:05,500
+ Okay.
+
+42
+00:05:05,500 --> 00:05:09,060
+ Now, this is kind of where my gap of knowledge comes, comes in here.
+
+43
+00:05:09,060 --> 00:05:16,060
+ Um, the client and server that I was looking at, um, used an alternative mechanism for, uh, authentication.
+
+44
+00:05:16,060 --> 00:05:25,780
+ So I haven't spent a lot of time assessing the authentication in these, uh, servers and clients, but I did read over the spec and noticed a couple of things that are interesting.
+
+45
+00:05:25,780 --> 00:05:28,340
+ One, uh, I want to read a quote from the spec.
+
+46
+00:05:28,340 --> 00:05:35,900
+ Uh, well, I guess I'll say first, uh, OAuth is one of the mechanisms that they use for authentication, uh, in MCP protocol.
+
+47
+00:05:35,900 --> 00:05:39,380
+ So you can read that whole spec, uh, there if you're interested in going deeper on that.
+
+48
+00:05:39,380 --> 00:05:48,820
+ But one of the quotes that stood out to me was, "MCP clients and authorization servers should support the OAuth2 dynamic client registration protocol," which exposes a lot of attack servers.
+
+49
+00:05:48,820 --> 00:05:53,220
+ Um, there's been, um, SSRF type vulnerabilities in that functionality before.
+
+50
+00:05:53,220 --> 00:05:57,140
+ Um, the should in, in this, uh, is pretty strong.
+
+51
+00:05:57,140 --> 00:06:04,860
+ So, uh, I definitely think we'll see dynamic client registration in some of these MCP servers, uh, or clients and, uh, authentication servers.
+
+52
+00:06:04,860 --> 00:06:06,780
+ Um, so that could be a good place to look.
+
+53
+00:06:06,780 --> 00:06:17,340
+ Also, in section 3.3 under communication security, we had the following quote, um, implementation, uh, implementations must follow the OAuth 2.5 section 1.5 communication security spec.
+
+54
+00:06:17,340 --> 00:06:26,220
+ Specifically all authorization servers, uh, must be served over HTTPS and all redirect URIs must be either localhost or HTTPS.
+
+55
+00:06:26,220 --> 00:06:33,340
+ And whenever we see something like a caveat there, localhost, I always think like, uh, how are they determining whether it's localhost or not?
+
+56
+00:06:33,340 --> 00:06:46,420
+ Um, you know, that gives lots of wiggle room for, um, different encodings of IPs, um, DNS like contains, uh, or maybe it starts with localhost, something like that.
+
+57
+00:06:46,420 --> 00:06:48,660
+ Um, so those could all be good things to check on that front.
+
+58
+00:06:48,660 --> 00:06:50,980
+ Um, all right.
+
+59
+00:06:50,980 --> 00:07:02,420
+ So moving past authentication, we're going to talk about the initialization flow now, and then we'll go into the various, um, RPCs that can be utilized to incur different actions on both the client and the server.
+
+60
+00:07:02,420 --> 00:07:02,900
+ Okay.
+
+61
+00:07:02,900 --> 00:07:12,780
+ So, uh, initialization is the process, uh, the handshake process that the client and the server go through, um, when establishing communication.
+
+62
+00:07:13,100 --> 00:07:18,340
+ So the way that that normally works is the client will send an initialize RPC request to the server.
+
+63
+00:07:18,340 --> 00:07:22,140
+ It will contain the protocol version capabilities and client info.
+
+64
+00:07:22,140 --> 00:07:25,980
+ And then the server will respond with the initialization response to the client.
+
+65
+00:07:25,980 --> 00:07:33,740
+ It will contain the protocol version, the capabilities, the server info, and one cool instructions field, which we'll talk about in just a sec.
+
+66
+00:07:33,740 --> 00:07:42,140
+ So let's go ahead and dive a little bit deeper into, uh, what that initialization, uh, component for the client looks like.
+
+67
+00:07:42,540 --> 00:07:52,620
+ Um, so pivotally, the thing that I mentioned that it communicates, obviously protocol version and client info are important, but not quite as much, um, as capabilities, okay.
+
+68
+00:07:52,620 --> 00:08:02,820
+ Um, capabilities, uh, lets the server know what kind of, um, uh, well, capabilities the client has access to.
+
+69
+00:08:03,180 --> 00:08:05,620
+ Um, and there are three options currently defined in the spec.
+
+70
+00:08:05,620 --> 00:08:09,260
+ Roots, sampling and elicitation, and we'll cover all of those later.
+
+71
+00:08:09,260 --> 00:08:15,900
+ Um, there's also a subscribe and list changed, um, attribute beneath the capabilities for each one of these.
+
+72
+00:08:15,900 --> 00:08:19,500
+ So, you know, roots, list changed, true, subscribe, true.
+
+73
+00:08:19,500 --> 00:08:23,260
+ Um, and that supports whether, uh, you can get notifications, et cetera.
+
+74
+00:08:24,660 --> 00:08:37,540
+ Okay, so, you know, if you're an NPC, uh, MC, um, MCP server, you're going to receive a JSON RPC from the client, and it's going to contain some set of capabilities, the protocol version and the client info.
+
+75
+00:08:37,660 --> 00:08:38,060
+ Cool.
+
+76
+00:08:38,060 --> 00:08:47,780
+ Now as the, uh, MCP server, you're going to respond, uh, and give them your capabilities, your protocol version, your server info, and then also your instructions.
+
+77
+00:08:47,780 --> 00:08:49,900
+ That last piece is very interesting.
+
+78
+00:08:49,900 --> 00:08:57,700
+ Um, instructions is a, a string that according to the spec may or may not get integrated into the system prompt for the client.
+
+79
+00:08:57,700 --> 00:09:07,500
+ Um, which I think is a really cool opportunity here for malicious MCP servers to inject, uh, instructions into the, the context.
+
+80
+00:09:07,500 --> 00:09:09,780
+ Um, that the user will be putting their prompt.
+
+81
+00:09:09,780 --> 00:09:19,980
+ Uh, so I think we see a really good opportunity here for tool hijacking for malicious MCP servers to control the context, uh, the system prompt in specific, um, terms here.
+
+82
+00:09:19,980 --> 00:09:36,700
+ So, um, definitely want to take a look at that instructions, um, response in these, um, servers initialization response, um, and see if the client is doing something weird with that instructions, uh, that you might be able to utilize as an attacker from the malicious MCP server perspective.
+
+83
+00:09:37,340 --> 00:09:41,660
+ So, um, server info and protocol version are both a little bit, um, boring.
+
+84
+00:09:41,660 --> 00:09:48,980
+ They just kind of contain strings or whatever, um, capabilities here, once again, is the primarily, um, uh, interesting component.
+
+85
+00:09:48,980 --> 00:09:51,740
+ So what are some of the capabilities that we have here?
+
+86
+00:09:51,740 --> 00:09:55,780
+ Um, we've got logging prompts, resources, tools, and I believe utilities.
+
+87
+00:09:55,780 --> 00:09:57,060
+ I might've left that off that list.
+
+88
+00:09:57,060 --> 00:10:06,780
+ Um, and obviously the ones that are most, uh, interesting there are tools and resources with, uh, prompts and logging utilities coming after.
+
+89
+00:10:06,780 --> 00:10:13,380
+ Um, so tools of course is what we know most, uh, you know, we, we often think of MCP servers for.
+
+90
+00:10:13,380 --> 00:10:23,700
+ They're providing tools to the MCP client that might be utilized, um, in, by the LLM, um, in conjunction with the user's requests, right?
+
+91
+00:10:23,700 --> 00:10:33,060
+ So this is how you communicate, Hey, I support tools as an MCP server, um, prompts contains like some prompts that the user might be able to use some templates, that sort of thing.
+
+92
+00:10:33,060 --> 00:10:39,420
+ Um, resources, uh, it contains, uh, some very interesting stuff.
+
+93
+00:10:39,420 --> 00:10:42,420
+ I'll, I'll go ahead and read a direct quote from the, from the spec here.
+
+94
+00:10:42,420 --> 00:10:47,460
+ It says the MCP protocol provides a standardized way for servers to expose resources to the client.
+
+95
+00:10:47,460 --> 00:10:56,260
+ Resources allow servers to share data that provides context to language models, such as files, database schemas, application-specific information, et cetera.
+
+96
+00:10:56,260 --> 00:10:59,980
+ Each resource is uniquely identified by URI.
+
+97
+00:11:01,100 --> 00:11:03,340
+ Guys, that is so juicy.
+
+98
+00:11:03,340 --> 00:11:03,820
+ Okay.
+
+99
+00:11:03,820 --> 00:11:09,060
+ So, um, if you are an MCP server, you can definitely provide those resources.
+
+100
+00:11:09,060 --> 00:11:11,380
+ Uh, maybe you could do that maliciously.
+
+101
+00:11:11,380 --> 00:11:12,380
+ We'll talk about that later.
+
+102
+00:11:12,380 --> 00:11:20,380
+ Um, or if you are a client, you definitely want to check and see in your assessing MCP server, what kind of resources the server supports.
+
+103
+00:11:20,380 --> 00:11:30,900
+ And even if it doesn't list resources here in the, um, uh, initialization response, it may, you may still be able to use the resources, read, um, uh,
+
+104
+00:11:30,900 --> 00:11:33,140
+ RPC call who knows something good to check.
+
+105
+00:11:33,140 --> 00:11:37,340
+ Um, but yeah, that's what the sort of handshake looks like.
+
+106
+00:11:37,340 --> 00:11:49,180
+ Then it does a notification thing, but, uh, overall it's mostly just initialized from the client to the server, given the capabilities and initialized from the server to the client, given the capabilities, and then they agree on a protocol version.
+
+107
+00:11:49,180 --> 00:11:49,660
+ Okay.
+
+108
+00:11:49,660 --> 00:11:55,500
+ Now that we've covered the initialization flow, let's go ahead and go into MCP client objects.
+
+109
+00:11:55,500 --> 00:11:55,500
+ Okay.
+
+110
+00:11:55,500 --> 00:12:03,860
+ So these are the sort of things that the client, uh, is presenting to the server and that the server may be able to interact with the client on.
+
+111
+00:12:03,860 --> 00:12:14,740
+ Um, I will caveat this by saying that, uh, a lot of the MCP clients out there, even in major, um, programming languages, uh, you know, the primary library in major programming languages.
+
+112
+00:12:14,740 --> 00:12:25,180
+ Um, they're not true MCP clients. Um, according to the spec, MCP clients should actually be MCP servers as well, you know, that are creating like a sort of back and forth communication.
+
+113
+00:12:25,180 --> 00:12:33,420
+ Unfortunately, what we see in a lot of MCP clients, um, is that the MCP client is just sort of reading messages out and then reading the response and that's it.
+
+114
+00:12:33,420 --> 00:12:50,340
+ You know, and it's, it's looking for that specific response. It's not like allowing for ping, um, actions or anything like that. Uh, it's just sort of reading data, you know, writing data out, reading only exactly what they want in and not, you know, presenting anything else.
+
+115
+00:12:50,340 --> 00:13:01,420
+ Um, so, or at least that's been my experience in my limited experience. So, um, realize that you might want to look at the MCP client that, uh, you're interacting with it and make sure that they support some of these compatibilities.
+
+116
+00:13:01,420 --> 00:13:08,420
+ Even from a code perspective, even if they're turned off in the compatibilities, um, uh, initialization.
+
+117
+00:13:08,420 --> 00:13:15,420
+ Um, all right. But let's talk about the three, uh, objects in MCP clients. That's roots sampling and elicitation. Okay.
+
+118
+00:13:15,420 --> 00:13:21,420
+ So roots first is very interesting. Um, I'm going to go ahead and read this again.
+
+119
+00:13:21,420 --> 00:13:40,420
+ The model context protocol provides a standardized way for clients to expose file system roots to the server. Hell yes. That is exactly what we want. Um, and clients that support roots must declare those roots during, uh, initialization in the compatibilities, uh, section.
+
+120
+00:13:40,420 --> 00:13:47,420
+ So, you know, maybe it will support it. Maybe it won't, maybe it will declare it and support it anyway. Definitely all always good to check.
+
+121
+00:13:47,420 --> 00:13:56,420
+ So spin up a malicious MCP server if you're attacking client and shoot down a roots list request to see if the client returns any roots.
+
+122
+00:13:56,420 --> 00:14:02,420
+ It'd be super cool if it just like dropped back, uh, you know, a root for, for slash or something like that.
+
+123
+00:14:02,420 --> 00:14:13,420
+ Um, uh, and you know, speaking of that, our first RPC that we'll cover here is roots slash list. That is what can be sent from the server to the client to get a list of the roots that the client supports.
+
+124
+00:14:13,420 --> 00:14:22,420
+ Very cool. Um, there's not a lot of other functionality there. You can subscribe to root changes. Um, but unfortunately not a lot of information there.
+
+125
+00:14:22,420 --> 00:14:26,420
+ What you might see is some path leaks or some disclosures that might give you some good information.
+
+126
+00:14:26,420 --> 00:14:40,420
+ Um, moving from roots to the next objects, we have sampling. Okay. And sampling is great because it allows the MCP server to query the LLM and make, uh, messages for the user.
+
+127
+00:14:40,420 --> 00:14:46,420
+ Okay. Which how could that possibly go wrong? Um, it could go wrong really easily actually in a lot of ways.
+
+128
+00:14:46,420 --> 00:14:55,420
+ Um, so yeah, let's go ahead and cover those. So, you know, let's say we have a malicious MCP server. Um, they drop back sampling to the, to the user.
+
+129
+00:14:55,420 --> 00:15:03,420
+ That sampling says, uh, creates a message and they can invoke other tools or things of the like, um, to attack the user.
+
+130
+00:15:03,420 --> 00:15:08,420
+ Of course, you know, there's, there's lots of ways that this could, could happen.
+
+131
+00:15:08,420 --> 00:15:13,420
+ Um, they could trigger, uh, resource exhaustion by calling other tools.
+
+132
+00:15:13,420 --> 00:15:17,420
+ Perhaps, um, if they're able to just spit a message back out that gets processed.
+
+133
+00:15:17,420 --> 00:15:19,420
+ Um, there's tons of things that could happen here.
+
+134
+00:15:19,420 --> 00:15:22,420
+ And I'll go ahead and put up a picture on the screen now.
+
+135
+00:15:22,420 --> 00:15:25,420
+ Um, it's, it's a sort of an alert from the protocol.
+
+136
+00:15:25,420 --> 00:15:30,420
+ It says for trust and safety and security, there should always be a human in the loop with the ability to deny sampling requests.
+
+137
+00:15:30,420 --> 00:15:35,420
+ Applications should provide UI that makes it easy and intuitive to review sampling requests.
+
+138
+00:15:35,420 --> 00:15:38,420
+ Allow users to view and edit prompts before sending.
+
+139
+00:15:38,420 --> 00:15:40,420
+ Present generated response for review before delivery.
+
+140
+00:15:40,420 --> 00:15:43,420
+ This is the same sort of thing they put in the tools section.
+
+141
+00:15:43,420 --> 00:15:47,420
+ And we all know that the user doesn't always approve tools before they are invoked.
+
+142
+00:15:47,420 --> 00:15:54,420
+ So I definitely think we'll see scenarios where MCP servers are able to just yeet messages back to the client and have those processed.
+
+143
+00:15:54,420 --> 00:16:05,420
+ And an malicious MCP server may be able to invoke tools on a different, um, MCP server, uh, or incur, you know, negative effect to the victim that way.
+
+144
+00:16:05,420 --> 00:16:07,420
+ Um, so that's something to be thinking about.
+
+145
+00:16:07,420 --> 00:16:11,420
+ Uh, I know that sampling and elicitation, which is what we'll cover next are relatively new to the protocol.
+
+146
+00:16:11,420 --> 00:16:17,420
+ So, um, I think this is something we might be a little bit fast on, but something to be aware of, uh, for sure.
+
+147
+00:16:17,420 --> 00:16:26,420
+ Um, I also wanted to mention here that even if there is a prompt to have the user approve, you know, the MCP servers modified message or whatever.
+
+148
+00:16:26,420 --> 00:16:31,420
+ Um, then we can also use invisible prompt smuggling here, right?
+
+149
+00:16:31,420 --> 00:16:37,420
+ Using, um, invisible Unicode characters, um, all embrace the red, um, and reso.
+
+150
+00:16:37,420 --> 00:16:52,420
+ Uh, and I think that would also, uh, introduce a lot of client side UI vulnerabilities that could allow you to get in, um, a prompt injection, which could be the start of a chain of delivery, which is important for AI vulnerabilities.
+
+151
+00:16:52,420 --> 00:16:53,420
+ Just a thought.
+
+152
+00:16:53,420 --> 00:16:54,420
+ Okay.
+
+153
+00:16:54,420 --> 00:16:56,420
+ Next is, um, elicitation.
+
+154
+00:16:56,420 --> 00:17:00,420
+ This allows the MCP server to request information from the user.
+
+155
+00:17:00,420 --> 00:17:01,420
+ Okay.
+
+156
+00:17:01,420 --> 00:17:15,420
+ Uh, once again, another great spot for, um, injections, whether it be, uh, XSS, uh, something of the like there, but I love the trust and safety and security, uh, announcement that they put on this part of the, of the protocol.
+
+157
+00:17:15,420 --> 00:17:23,420
+ It says, um, uh, servers must not use elicitation to request sensitive information from the user.
+
+158
+00:17:23,420 --> 00:17:24,420
+ Okay.
+
+159
+00:17:24,420 --> 00:17:25,420
+ Must not do that guys.
+
+160
+00:17:25,420 --> 00:17:26,420
+ Seriously guys.
+
+161
+00:17:26,420 --> 00:17:27,420
+ Don't do that.
+
+162
+00:17:27,420 --> 00:17:28,420
+ Please don't do that.
+
+163
+00:17:28,420 --> 00:17:29,420
+ Yeah.
+
+164
+00:17:29,420 --> 00:17:31,420
+ That's exactly what we're going to do.
+
+165
+00:17:31,420 --> 00:17:38,420
+ Um, so very interesting, uh, sort of functionality here for attackers that are in the malicious MCP server perspective.
+
+166
+00:17:38,420 --> 00:17:54,420
+ Um, I think that there will also be situations where there will be no user interaction elicitation requests, where the server will request a piece of information from the client and the client will say, oh, I've got that, you know, in my little environment store or something like that.
+
+167
+00:17:54,420 --> 00:17:58,420
+ Let me just helpfully give this to the MCP server without prompting the user.
+
+168
+00:17:58,420 --> 00:17:59,420
+ That's definitely going to happen at some point.
+
+169
+00:17:59,420 --> 00:18:01,420
+ So, um, be on the lookout for that.
+
+170
+00:18:01,420 --> 00:18:04,420
+ Um, auto accepting those elicitation requests.
+
+171
+00:18:04,420 --> 00:18:10,420
+ Um, the available actions for elicitation requests are accept, decline, and cancel.
+
+172
+00:18:10,420 --> 00:18:23,420
+ Each one of those have nuances that I'm not going to get into here on this podcast, but know that elicitation should, uh, your, um, client support it is a very powerful tool that you could use to get, um, some data on the victim.
+
+173
+00:18:23,420 --> 00:18:27,420
+ Or even, uh, invoke delivery for a prompt injection chain.
+
+174
+00:18:27,420 --> 00:18:28,420
+ All right.
+
+175
+00:18:28,420 --> 00:18:29,420
+ So that covers clients.
+
+176
+00:18:29,420 --> 00:18:33,420
+ Um, next we'll go ahead and talk about MCP servers.
+
+177
+00:18:33,420 --> 00:18:34,420
+ Okay.
+
+178
+00:18:34,420 --> 00:18:40,420
+ Um, the, I'm only going to actually talk about two of the objects, uh, on MCP servers.
+
+179
+00:18:40,420 --> 00:18:43,420
+ I'm going to leave the utilities and prompts and other ones to you.
+
+180
+00:18:43,420 --> 00:18:50,420
+ I'm going to talk to you about tools and resources and guys, actually the model context protocol spec is very consumable.
+
+181
+00:18:50,420 --> 00:18:57,420
+ So I would encourage you to go read it if you have, uh, you know, if your interest was piqued by this podcast.
+
+182
+00:18:57,420 --> 00:18:58,420
+ Okay.
+
+183
+00:18:58,420 --> 00:19:06,420
+ Or at least when you, uh, you know, encounter an MCP server or client in the future, um, you know where to go and just know it's not very intimidating.
+
+184
+00:19:06,420 --> 00:19:08,420
+ It didn't take very long to get through it.
+
+185
+00:19:08,420 --> 00:19:12,420
+ Um, and you've got this podcast now to be your guide.
+
+186
+00:19:12,420 --> 00:19:15,420
+ Um, so definitely should be much more approachable for you.
+
+187
+00:19:15,420 --> 00:19:16,420
+ Okay.
+
+188
+00:19:16,420 --> 00:19:20,420
+ So, uh, MCP servers expose tools and resources.
+
+189
+00:19:20,420 --> 00:19:21,420
+ Let's talk about tools first.
+
+190
+00:19:21,420 --> 00:19:27,420
+ Tools are the object that, of course, we all kind of think of MCP servers for.
+
+191
+00:19:27,420 --> 00:19:41,420
+ Um, they expose tool definitions to the user and give the ability to call these tools, um, to the MCP client, uh, that can be utilized at will, um, to invoke these and, and, um, in pursuit of the user's intents.
+
+192
+00:19:41,420 --> 00:19:42,420
+ Right.
+
+193
+00:19:42,420 --> 00:19:46,420
+ Uh, intent, intense is what I was trying to say there.
+
+194
+00:19:46,420 --> 00:19:59,420
+ Um, so that is done via, uh, a sequence of RPC calls and the client sends a tool list call to the server and the server will respond with these various definitions for the tools.
+
+195
+00:19:59,420 --> 00:20:00,420
+ Okay.
+
+196
+00:20:00,420 --> 00:20:03,420
+ And, um, here's what that schema looks like.
+
+197
+00:20:03,420 --> 00:20:05,420
+ The tool object scheme, excuse me.
+
+198
+00:20:05,420 --> 00:20:13,420
+ Tool object schema contains name, title, description, input schema, output schema, and annotation.
+
+199
+00:20:13,420 --> 00:20:20,420
+ So there's a lot of, uh, really interesting stuff here, but the first thing that I want to point out to you is that we have both name and title.
+
+200
+00:20:20,420 --> 00:20:25,420
+ And if you look at the annotation spec, we also have a title for the tool inside of the annotation.
+
+201
+00:20:25,420 --> 00:20:28,420
+ So there's three places where you can potentially name a tool.
+
+202
+00:20:28,420 --> 00:20:41,420
+ And that's not even talking about namespaces, which is a pivotal part of MC, uh, MCP security, because namespaces are what prevents name collisions when you have multiple MCP servers with the same tool name.
+
+203
+00:20:41,420 --> 00:20:42,420
+ Okay.
+
+204
+00:20:42,420 --> 00:20:45,420
+ So I don't know how they heck this up.
+
+205
+00:20:45,420 --> 00:20:48,420
+ Like it is one of the most essential pieces.
+
+206
+00:20:48,420 --> 00:20:53,420
+ One of the only pieces of MCP that is important, which is what tool are we calling?
+
+207
+00:20:53,420 --> 00:21:00,420
+ And somehow there's like six ways to define what tool is being displayed versus what's being called.
+
+208
+00:21:00,420 --> 00:21:02,420
+ And it just makes for a whole palooza.
+
+209
+00:21:02,420 --> 00:21:03,420
+ Okay.
+
+210
+00:21:03,420 --> 00:21:09,420
+ Um, so definitely look at name, title, and annotation title, at least.
+
+211
+00:21:09,420 --> 00:21:20,420
+ Um, when you're looking at how tools are being represented to the user and which, um, sort of name is being used to invoke the tool in the backend.
+
+212
+00:21:20,420 --> 00:21:26,420
+ And the difference between those two things could result in a massive difference for the user.
+
+213
+00:21:26,420 --> 00:21:33,420
+ Um, because you may be able to name your tool super great, everything, you know, amazing, awesome, always use me tool.
+
+214
+00:21:33,420 --> 00:21:37,420
+ Um, you know, in the name, but the title is what's being displayed to the, to the user.
+
+215
+00:21:37,420 --> 00:21:41,420
+ And, uh, there creates a mismatch there.
+
+216
+00:21:41,420 --> 00:21:48,420
+ They're like, oh, I think I'm enabling, you know, Justin's cool fun tool, but actually I'm enabling evil tool that is used for everything.
+
+217
+00:21:48,420 --> 00:21:49,420
+ Always use this tool.
+
+218
+00:21:49,420 --> 00:22:01,420
+ Always, you know, um, and, and that may sway the, um, MCP server, uh, or the MCP client to, uh, select or the LLM to select, to use that tool.
+
+219
+00:22:01,420 --> 00:22:03,420
+ Hope that makes sense.
+
+220
+00:22:03,420 --> 00:22:09,420
+ Um, there's input and output schema, which there's definitely some interesting attack vectors in those that I would encourage you to go look at.
+
+221
+00:22:09,420 --> 00:22:13,420
+ I'm not going to cover those right now, but I did find some interesting stuff in those.
+
+222
+00:22:13,420 --> 00:22:18,420
+ Um, and description is also pivotal because that's where you can describe the tool.
+
+223
+00:22:18,420 --> 00:22:29,420
+ Now, if this description is being embedded directly into the system prompt, then we kind of open ourselves up for some malicious MCP server, um, tool hijacking or tool poisoning attacks.
+
+224
+00:22:29,420 --> 00:22:38,420
+ Um, so be, be aware of how the tool definitions are being, um, integrated into the, um, the client side there.
+
+225
+00:22:38,420 --> 00:22:51,420
+ Um, and then finally, when the client decides to call the, the tool, um, the client will send the tool call RPC request with their requisite, um, information.
+
+226
+00:22:51,420 --> 00:22:56,420
+ Um, and that will invoke the, the call.
+
+227
+00:22:56,420 --> 00:23:00,420
+ Um, and the input, you know, will be defined by the input schema, et cetera.
+
+228
+00:23:00,420 --> 00:23:06,420
+ Um, and tools then can respond with, uh, structured or unstructured data.
+
+229
+00:23:06,420 --> 00:23:11,420
+ Here are some of the awesome types that, uh, the MCP server can respond with.
+
+230
+00:23:11,420 --> 00:23:12,420
+ Okay.
+
+231
+00:23:12,420 --> 00:23:21,420
+ We've got text image, which, so we've got, you know, basic C4 encoded image data, um, by the data attribute in the image.
+
+232
+00:23:21,420 --> 00:23:24,420
+ We've got audio data, also basic C4 encoded.
+
+233
+00:23:24,420 --> 00:23:30,420
+ Um, we've got resource links, which include a URI and a MIME type as well.
+
+234
+00:23:30,420 --> 00:23:37,420
+ Um, and each of these also have annotations, which add different, um, sort of spins on what's being represented to the user there.
+
+235
+00:23:37,420 --> 00:23:39,420
+ Um, very interesting.
+
+236
+00:23:39,420 --> 00:23:44,420
+ Um, and then there's also structured data that comes back from the call, um, per the schema.
+
+237
+00:23:44,420 --> 00:23:55,420
+ Um, so very, very cool opportunity here to respond with various resources and then see how those resources are being rendered on the MCP client and see if you can incur some vulnerabilities here.
+
+238
+00:23:55,420 --> 00:24:09,420
+ This is kind of giving, um, some, uh, end to end encrypted communication vibe, uh, you know, on like a chat app or something where you can invoke specific, you know, send like, uh, something, a link that gets converted into a code.
+
+239
+00:24:09,420 --> 00:24:13,420
+ A card in that, in that conversion, it triggers like a whole exploit chain, something like that.
+
+240
+00:24:13,420 --> 00:24:14,420
+ Right.
+
+241
+00:24:14,420 --> 00:24:19,420
+ It's kind of what I'm thinking here, um, for the malicious MCP server, um, to attack the client.
+
+242
+00:24:19,420 --> 00:24:22,420
+ So what are some of the foot guns here with, um, tools?
+
+243
+00:24:22,420 --> 00:24:25,420
+ Uh, obviously tool names are very ambiguous.
+
+244
+00:24:25,420 --> 00:24:26,420
+ We already talked about that.
+
+245
+00:24:26,420 --> 00:24:27,420
+ Look for collisions.
+
+246
+00:24:27,420 --> 00:24:30,420
+ Look for namespace height or, um, uh, tool hijacking.
+
+247
+00:24:30,420 --> 00:24:32,420
+ Look for namespace collisions.
+
+248
+00:24:32,420 --> 00:24:38,420
+ Um, one of the things that's really interesting is the spec is not clear about how namespaces are supposed to be defined.
+
+249
+00:24:38,420 --> 00:24:44,420
+ So, you know, the name of the server, underscore, underscore tool name creates like the full name.
+
+250
+00:24:44,420 --> 00:24:46,420
+ But what if the tool name contains underscore, underscore?
+
+251
+00:24:46,420 --> 00:24:48,420
+ Well, then you can have a collision, right?
+
+252
+00:24:48,420 --> 00:24:59,420
+ So just be thinking about how the full, I guess, fully qualified tool name is being, um, uh, constructed and with the namespace or not with the namespace.
+
+253
+00:24:59,420 --> 00:25:08,420
+ Um, and try to utilize the discrepancies between those to invoke, um, your malicious tool, tool hijacking or cause toss or something like that.
+
+254
+00:25:08,420 --> 00:25:10,420
+ Interesting stuff.
+
+255
+00:25:10,420 --> 00:25:14,420
+ Um, let's see what else did I have here that was interesting.
+
+256
+00:25:14,420 --> 00:25:20,420
+ Yeah, of course, you know, trying to use the description field or the name fields to, uh, hijack tool calls.
+
+257
+00:25:20,420 --> 00:25:28,420
+ Um, one of the things that's interesting to look at is, is like user interaction or user confirmation a tool call?
+
+258
+00:25:28,420 --> 00:25:34,420
+ Because if it is, then that is, you know, you're trusting the LLM with making a user confirmation decision, right?
+
+259
+00:25:34,420 --> 00:25:36,420
+ Um, which is never good.
+
+260
+00:25:36,420 --> 00:25:41,420
+ So that's, I think that's reportable as is, that's just a security architecture problem.
+
+261
+00:25:41,420 --> 00:25:50,420
+ Um, uh, and then last but not least, um, there's also some attack scenarios here for MCP proxies that I was going to mention.
+
+262
+00:25:50,420 --> 00:25:59,420
+ Um, MCP proxies are kind of like a client server hybrid where you can, um, man, I can't talk today.
+
+263
+00:25:59,420 --> 00:26:05,420
+ You get a bunch of data from different MCP servers and you pull them together and you expose them as one another.
+
+264
+00:26:05,420 --> 00:26:06,420
+ And you expose them as one MCP server.
+
+265
+00:26:06,420 --> 00:26:09,420
+ So you're kind of like a client in a server, um, altogether.
+
+266
+00:26:09,420 --> 00:26:10,420
+ Right.
+
+267
+00:26:10,420 --> 00:26:22,420
+ Uh, and I just wanted to say that whenever there's different LLM providers, uh, different an MCP server on one side and then a different, you know, client presenting another server, there's layers of abstraction there.
+
+268
+00:26:22,420 --> 00:26:39,420
+ Um, and I've seen DOS's occur where, um, some of these servers and clients are not respecting the, uh, required schema for, um, typing and stuff like that in these JSON RPC calls, uh, and that can incur DOS.
+
+269
+00:26:39,420 --> 00:26:40,420
+ So just keep that in mind as well.
+
+270
+00:26:40,420 --> 00:26:41,420
+ Okay.
+
+271
+00:26:41,420 --> 00:26:43,420
+ So that is tools.
+
+272
+00:26:43,420 --> 00:26:46,420
+ Hopefully you guys have a ton of attack vectors to think of there.
+
+273
+00:26:46,420 --> 00:26:58,420
+ Um, now we'll move to resources and resources is such an interesting thing because it is end quote, uh, the model context protocol provides a standardized way for servers to expose resources to the client.
+
+274
+00:26:58,420 --> 00:27:00,420
+ And that can be files.
+
+275
+00:27:00,420 --> 00:27:02,420
+ It can be HTTP URLs.
+
+276
+00:27:02,420 --> 00:27:09,420
+ It can be apparently get repos, um, tons, tons, tons of really interesting stuff here.
+
+277
+00:27:09,420 --> 00:27:15,420
+ If I were you and I was an, uh, you know, a client that got access to an MCP server, I would immediately look for resources.
+
+278
+00:27:15,420 --> 00:27:26,420
+ I would immediately call resources list RPC to see if there's any files or URLs or tokens or additional context that I could download.
+
+279
+00:27:26,420 --> 00:27:30,420
+ Um, to understand more about the MCP server or to just leak information.
+
+280
+00:27:30,420 --> 00:27:34,420
+ Um, so this is kind of how this works.
+
+281
+00:27:34,420 --> 00:27:41,420
+ The client sends to the server resources slash list, the server responds to that with a list of, um, resources.
+
+282
+00:27:41,420 --> 00:27:45,420
+ And then you can do a, uh, resources read RPC call.
+
+283
+00:27:45,420 --> 00:27:53,420
+ And the parameter for that is the URI file colon slash slash whatever HTTPS colon slash slash, you know,
+
+284
+00:27:53,420 --> 00:27:57,420
+ you know, it's just like freaking arbitrary file read as a service.
+
+285
+00:27:57,420 --> 00:27:58,420
+ It feels like.
+
+286
+00:27:58,420 --> 00:27:58,420
+ Okay.
+
+287
+00:27:58,420 --> 00:28:01,420
+ And then to make it even better guys.
+
+288
+00:28:01,420 --> 00:28:04,420
+ So, you know, there's definitely the potential for path traversal there.
+
+289
+00:28:04,420 --> 00:28:08,420
+ Um, or like arbitrary file read, um, to make it even better.
+
+290
+00:28:08,420 --> 00:28:10,420
+ There's also templatized resources.
+
+291
+00:28:10,420 --> 00:28:10,420
+ Okay.
+
+292
+00:28:10,420 --> 00:28:11,420
+ What are templatized resources?
+
+293
+00:28:11,420 --> 00:28:14,420
+ Those are available under resources slash template slash list.
+
+294
+00:28:14,420 --> 00:28:19,420
+ Those are resources where there is a template in the URI.
+
+295
+00:28:19,420 --> 00:28:20,420
+ Okay.
+
+296
+00:28:20,420 --> 00:28:24,420
+ And that it takes parameters and puts them into the URI.
+
+297
+00:28:24,420 --> 00:28:25,420
+ Right.
+
+298
+00:28:25,420 --> 00:28:29,420
+ So this is like 100% path traversal, like 100%.
+
+299
+00:28:29,420 --> 00:28:38,420
+ Um, so anytime you see resources, templates, uh, or, um, resources, definitely want to try to go after those to try to get arbitrary file read.
+
+300
+00:28:38,420 --> 00:28:47,420
+ Um, uh, and so, you know, what will happen then when you do a resources, uh, template is it'll dynamically construct the path using your variable.
+
+301
+00:28:47,420 --> 00:28:48,420
+ Right.
+
+302
+00:28:48,420 --> 00:28:50,420
+ Um, which is just freaking lovely.
+
+303
+00:28:50,420 --> 00:28:53,420
+ Uh, and definitely is going to incur a ton of vulnerabilities.
+
+304
+00:28:53,420 --> 00:28:59,420
+ I'm like, I was sitting over here, like, you know, uh, so excited about that.
+
+305
+00:28:59,420 --> 00:29:03,420
+ Um, so definitely look there and I love the spec as well.
+
+306
+00:29:03,420 --> 00:29:06,420
+ It says, okay, here are the file schemes.
+
+307
+00:29:06,420 --> 00:29:15,420
+ We're going to support a CPS file and get, and it just supports get like it's listed specifically in the spec that you should support get.
+
+308
+00:29:15,420 --> 00:29:19,420
+ Um, which is amazing because there's a ton of stuff you can do with get.
+
+309
+00:29:19,420 --> 00:29:30,420
+ Um, you know, you can do, uh, sub, sub module, um, recursion attack stuff where you can, you know, um, uh, write to into sim links and stuff like that and write arbitrary files.
+
+310
+00:29:30,420 --> 00:29:34,420
+ Um, you can do use hooks to cause, um, RCE.
+
+311
+00:29:34,420 --> 00:29:36,420
+ There's like tons of stuff that you can do there.
+
+312
+00:29:36,420 --> 00:29:38,420
+ Um, very exciting.
+
+313
+00:29:38,420 --> 00:29:43,420
+ Um, and obviously file and HTTPS are just super interesting for arbitrary file read.
+
+314
+00:29:43,420 --> 00:29:45,420
+ And then HTTPS, it does add this caveat.
+
+315
+00:29:45,420 --> 00:29:52,420
+ It says servers should only use this scheme as a resource when the client is able to fetch and load the resource directly from the web on its own.
+
+316
+00:29:52,420 --> 00:29:56,420
+ That is, it doesn't need to read the resource via the, uh, MCP server, right?
+
+317
+00:29:56,420 --> 00:30:07,420
+ So it's not like, it's not like SSRF quite as much, but I could definitely see some interesting client side attacks as well there where you're providing an HTTPS URL back down to the client.
+
+318
+00:30:07,420 --> 00:30:14,420
+ Um, or if there were other schemes like JavaScript and then you provide it back down to the client, that would also be very interesting, right?
+
+319
+00:30:14,420 --> 00:30:19,420
+ Um, so those are kind of the things I was thinking about from resources.
+
+320
+00:30:19,420 --> 00:30:23,420
+ Uh, hopefully you guys understand that how, how tools and resources work.
+
+321
+00:30:23,420 --> 00:30:26,420
+ Resources, I'm not sure I explained the, the response.
+
+322
+00:30:26,420 --> 00:30:34,420
+ It mostly just contains like the MIME type and the text, uh, for the specific resource response that you requested.
+
+323
+00:30:34,420 --> 00:30:36,420
+ Um, which is like pretty much all that you would need.
+
+324
+00:30:36,420 --> 00:30:43,420
+ Uh, and of course the URI is provided, uh, into resources read, um, to select the resource that you are querying.
+
+325
+00:30:43,420 --> 00:30:46,420
+ Um, so lots of good attack surface there.
+
+326
+00:30:46,420 --> 00:30:49,420
+ I definitely did not think MCP servers were going to be this juicy.
+
+327
+00:30:49,420 --> 00:30:52,420
+ Um, lots of fun here.
+
+328
+00:30:52,420 --> 00:31:02,420
+ Uh, and I think it's important to remind you guys in the audience to always try to take a very technical approach to, um, some of these modern challenges as well.
+
+329
+00:31:02,420 --> 00:31:13,420
+ Because AI is definitely one of those areas where you could spend a lot of time talking to LLMs and trying to convince them and kind of, um, using your soft, soft hacking skills, uh, there.
+
+330
+00:31:13,420 --> 00:31:23,420
+ But, um, I guess underneath the hood, there is also a lot of really juicy, technically complex, uh, attack surface that you could go after.
+
+331
+00:31:23,420 --> 00:31:29,420
+ Um, so, you know, spin up your own MCP servers, uh, write your own malicious MCP client.
+
+332
+00:31:29,420 --> 00:31:32,420
+ And, uh, maybe you'll see the vulnerabilities start falling out.
+
+333
+00:31:32,420 --> 00:31:33,420
+ Um, all right.
+
+334
+00:31:33,420 --> 00:31:34,420
+ That's all I had.
+
+335
+00:31:34,420 --> 00:31:35,420
+ Hopefully you guys liked this.
+
+336
+00:31:35,420 --> 00:31:36,420
+ Give me your feedback.
+
+337
+00:31:36,420 --> 00:31:42,420
+ I expect a couple of comments and corrections, uh, because I'm not that, um, proficient with this protocol.
+
+338
+00:31:42,420 --> 00:31:55,420
+ So, uh, if I made a mistake on MCP protocol stuff anywhere, please comment in the corrections, uh, um, channel in Discord to set the record straight and win yourself some, uh, some internet points and my eternal thanks.
+
+339
+00:31:55,420 --> 00:31:56,420
+ Um, all right.
+
+340
+00:31:56,420 --> 00:31:58,420
+ That's a wrap on the pod this week, y'all.
+
+341
+00:31:58,420 --> 00:31:59,420
+ Peace.
+
+342
+00:31:59,420 --> 00:32:02,420
+ And that's a wrap on this episode of critical thinking.
+
+343
+00:32:02,420 --> 00:32:04,420
+ Thanks so much for watching to the end, y'all.
+
+344
+00:32:04,420 --> 00:32:10,420
+ If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord.
+
+345
+00:32:10,420 --> 00:32:11,420
+ You can hop in the community.
+
+346
+00:32:11,420 --> 00:32:19,420
+ There's lots of great high level hacking discussion happening there on top of the masterclasses, hack alongs, exclusive content, and a full-time hunters guild.
+
+347
+00:32:19,420 --> 00:32:21,420
+ If you're a full-time hunter, it's a great time.
+
+348
+00:32:21,420 --> 00:32:22,420
+ Trust me.
+
+349
+00:32:22,420 --> 00:32:23,420
+ I'll see you there.
+
+350
+00:32:23,420 --> 00:32:23,700
+ See you there.
+

@@ -2,7 +2,7 @@
 title: JS hoisting XSS recovery for undefined-callable sinks
 slug: js-hoisting-xss
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss]
 inbound: []
 ---
@@ -58,6 +58,7 @@ Or, if injection point lets you append:
 - {date: 2023-07-06, target: client-side quirks} — Ep 26.
 - {date: 2023-11-30, target: undisclosed} — Ep 47.
 - {date: 2024-01-04, target: 2023 recap} — Ep 52.
+- {date: 2023-11-30, source: CT Ep 47} — JG community-DM puzzle: injection at `x.y(1, INJ)` where neither `x` nor `y` defined; `function x(){};x.y(1, alert(1))` resolved by hoisting and argument-eval order.
 
 ## References
 - Critical Thinking Podcast Eps 26, 47, 52

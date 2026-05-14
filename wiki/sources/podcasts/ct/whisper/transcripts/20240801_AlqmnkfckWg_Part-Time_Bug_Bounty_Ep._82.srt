@@ -1,0 +1,1400 @@
+1
+00:00:00,000 --> 00:00:27,760
+Hey guys real quick I just wanted to tell you about our sponsor Threat Locker now wait wait
+
+2
+00:00:27,760 --> 00:00:32,200
+before you hit the skip forward button let me just say this most of the stuff that holds my attention
+
+3
+00:00:32,200 --> 00:00:37,240
+nowadays is red team stuff as well but I sat down with the Threat Locker team this past week to do
+
+4
+00:00:37,240 --> 00:00:42,200
+a demo of their EDR software and it was super technically fascinating how this thing works so
+
+5
+00:00:42,200 --> 00:00:46,480
+check this out you drop this thing on a system right and for the first week or so it's creating
+
+6
+00:00:46,480 --> 00:00:52,060
+a policy and a profile for that system it's logging all the executables what child processes are being
+
+7
+00:00:52,060 --> 00:00:58,420
+spawned the files and their hashes that sort of thing and it's creating this policy okay then after
+
+8
+00:00:58,420 --> 00:01:03,160
+the learning mode is up we're in secured mode and that policy gets put into place and anything that's
+
+9
+00:01:03,160 --> 00:01:09,280
+not on that allow list is immediately auto denied that's the zero trust piece right so in addition
+
+10
+00:01:09,280 --> 00:01:14,380
+to that they've got a bunch of crazy features like ring fencing and dynamic access controls that would
+
+11
+00:01:14,380 --> 00:01:19,300
+stop a malicious hacker at pretty much every step along the way actually I was watching this demo
+
+12
+00:01:19,300 --> 00:01:23,560
+and I was kind of freaked out because I have no idea how I would cope with getting dropped into a
+
+13
+00:01:23,560 --> 00:01:27,820
+Threat Locker system as a red teamer anyway if you want to learn more about this head over to
+
+14
+00:01:27,820 --> 00:01:32,920
+ThreatLocker.com and request a demo and when you do ask for my boy Andrew his demo was super to the
+
+15
+00:01:32,920 --> 00:01:38,320
+point and he was able to answer all my technical questions all right cool back to the show yo yo yo
+
+16
+00:01:38,320 --> 00:01:45,760
+what's going on everybody this is techno geek uh Joel we're doing a solo episode today um so this one is
+
+17
+00:01:45,760 --> 00:01:52,780
+going to be all focused on part-time bug bounty um you know as Justin is a full-time bug bounty hunter
+
+18
+00:01:52,780 --> 00:01:59,380
+but I am a part-time bug bounty hunter and uh this was a requested episode from um some of the listeners
+
+19
+00:01:59,380 --> 00:02:05,180
+um within our discord server so I wanted to take some time to talk about some strategies and some
+
+20
+00:02:05,180 --> 00:02:11,940
+different aspects of the part-time uh bug bounty hacking life so to speak um I'm a lot more versed on
+
+21
+00:02:11,940 --> 00:02:17,360
+than I then Justin is I think so I it's definitely a unique perspective and I wanted to just share
+
+22
+00:02:17,360 --> 00:02:21,200
+some of my thoughts share some of my strategies share some of the tips and tricks and all that sort
+
+23
+00:02:21,200 --> 00:02:28,180
+of good stuff uh all around that but first I wanted to talk about some news uh so I I know the last few
+
+24
+00:02:28,180 --> 00:02:34,540
+episodes have been interviews so um I don't know if there's been too much news but there were two main
+
+25
+00:02:34,540 --> 00:02:39,940
+things that I want to talk about um that had come up in the last couple weeks um the first one was a
+
+26
+00:02:39,940 --> 00:02:49,120
+really cool post by uh retro reg with a zero uh on zero reg.dev that's that's their blog um patrick peng
+
+27
+00:02:49,120 --> 00:02:58,340
+um and this blog post was all about an evernote bug that they found that was it started as a font
+
+28
+00:02:58,340 --> 00:03:05,560
+injection basically javascript injection into pdf.js within the evernote um desktop application
+
+29
+00:03:05,560 --> 00:03:11,280
+and they were able to escalate that all the way up to remote code execution so it's a really really
+
+30
+00:03:11,280 --> 00:03:16,120
+awesome blog post um it's very in-depth it talks about sort of the whole strategy the whole mindset
+
+31
+00:03:16,120 --> 00:03:22,380
+the the whole you know behind the scenes of what went into finding the bug and how they were able
+
+32
+00:03:22,380 --> 00:03:30,140
+to locate this um basically what they were able to do is they they found that evernote uses pdf.js which
+
+33
+00:03:30,140 --> 00:03:39,180
+is very large very well-known uh javascript library for um rendering pdfs and within this there's this
+
+34
+00:03:39,180 --> 00:03:46,000
+font um this font you know construct or whatever I'm not sure what the right word is directive I guess
+
+35
+00:03:46,000 --> 00:03:52,420
+um and you can create these font objects and the way that it's parsed by pdf.js is faulty and you can
+
+36
+00:03:52,420 --> 00:03:59,120
+use this to basically sync all the way into a function creation call within the javascript that creates a
+
+37
+00:03:59,120 --> 00:04:04,000
+new javascript function to get arbitrary javascript execution so from there you have javascript
+
+38
+00:04:04,000 --> 00:04:09,580
+execution when a pdf gets loaded and rendered by pdf.js within the evernote app but due to the
+
+39
+00:04:09,580 --> 00:04:14,080
+restrictions that were in place for security purposes you couldn't steal their cookies you
+
+40
+00:04:14,080 --> 00:04:20,200
+couldn't you know take over the account very easily you couldn't do do much at that point but there is
+
+41
+00:04:20,200 --> 00:04:26,260
+this inter-process communication um you know functionality that's built into these electron apps
+
+42
+00:04:26,260 --> 00:04:32,380
+that allows um apps to talk with different parts different other parts of the app um you know
+
+43
+00:04:32,380 --> 00:04:37,780
+there's like bridges and there's you know sort of sectioned off parts of the application that are
+
+44
+00:04:37,780 --> 00:04:45,360
+communicated through this ipc process and through this there was a specific ipc handler called like
+
+45
+00:04:45,360 --> 00:04:49,560
+the broker bridge um where you could do all these different actions and one of those actions ended up
+
+46
+00:04:49,560 --> 00:04:56,420
+being that you could open file attachments um and so through this very elaborate payload which uh
+
+47
+00:04:56,420 --> 00:05:01,380
+is if you read through it you're like what the heck is this um but it he he does a great job of sort of
+
+48
+00:05:01,380 --> 00:05:07,120
+breaking down all the different parts and what each part means and how it works and and so on um and it
+
+49
+00:05:07,120 --> 00:05:13,220
+basically allows you to put through a file path like calc.exe that will you know fully execute and open
+
+50
+00:05:13,220 --> 00:05:19,640
+on the uh on the on the victim when the pdf gets rendered and opened by the evernote application so
+
+51
+00:05:19,640 --> 00:05:25,520
+it's a really really awesome blog post very very cool um great research uh really does a great job of
+
+52
+00:05:25,520 --> 00:05:29,640
+demonstrating how you can sort of take that to the next level because i think you probably could have
+
+53
+00:05:29,640 --> 00:05:34,400
+just submitted it as is and said hey you know i have this vulnerability i can execute javascript
+
+54
+00:05:34,400 --> 00:05:39,400
+within the pdf when it loads done you know maybe it's a medium maybe it's a high or something and
+
+55
+00:05:39,400 --> 00:05:45,240
+just call it a day but um he really pushed through went the extra mile and found that that impact
+
+56
+00:05:45,240 --> 00:05:52,580
+there and uh and got it all the way to uh remote code execution code execution file execution not
+
+57
+00:05:52,580 --> 00:06:03,060
+really sure which which one it would be i guess not really rc but file execution remote file execution rfe
+
+58
+00:06:03,060 --> 00:06:09,380
+anyways um yeah so very very cool check out that blog post read read through it um
+
+59
+00:06:09,380 --> 00:06:15,280
+i know a lot of electron apps are out there it's a very interesting attack surface if you ask me
+
+60
+00:06:15,280 --> 00:06:22,580
+because it's sort of that bridge between um where xss starts to affect client applications there's a ton
+
+61
+00:06:22,580 --> 00:06:29,540
+of electron apps out there i think a really famous example is um discord uh i don't know if it's still
+
+62
+00:06:29,540 --> 00:06:35,320
+fully electron but it's javascript based um and you know it basically is has a console and everything so
+
+63
+00:06:35,320 --> 00:06:39,900
+um yeah there's there's definitely a lot of applications out there that are using javascript
+
+64
+00:06:39,900 --> 00:06:45,280
+and are using electron and it's probably a probably a ripe attack surface for some vulnerabilities um
+
+65
+00:06:45,280 --> 00:06:53,020
+cool the next bug blog post i want to talk about was from acid note as always the folks over at acid
+
+66
+00:06:53,020 --> 00:06:59,980
+note are doing crazy crazy awesome research um and this one was a very elaborate bug chain in service now
+
+67
+00:06:59,980 --> 00:07:05,480
+um that let them escalate to um being able to access basically all of your service now data
+
+68
+00:07:05,480 --> 00:07:14,380
+um so it started out that they were they noticed that there was this strange decoding behavior where
+
+69
+00:07:14,380 --> 00:07:21,980
+uh there's sort of two levels of um protection on this rendering there's there's this template renderer
+
+70
+00:07:21,980 --> 00:07:31,100
+um and if you can manage to get some tags through this template rendering process then you would have
+
+71
+00:07:31,100 --> 00:07:38,340
+you know potentially very serious implications uh through full template injection and so they started
+
+72
+00:07:38,340 --> 00:07:44,220
+looking through the service now application and they found a specific spot where there uh there's no
+
+73
+00:07:44,220 --> 00:07:51,900
+escaping explicitly being done on user input um and they were able to find a way to get a user
+
+74
+00:07:51,900 --> 00:07:58,980
+control parameter that just dumps directly into the page and they started fiddling around with it so
+
+75
+00:07:58,980 --> 00:08:04,380
+um acid note does a really awesome job of sort of walking you through their thought process as well of
+
+76
+00:08:04,380 --> 00:08:09,840
+you know this is what we tried this didn't work then we looked here oh we noticed this interesting
+
+77
+00:08:09,840 --> 00:08:15,100
+thing then we tried that that didn't work oh we noticed another thing and so on so it's a very very
+
+78
+00:08:15,100 --> 00:08:20,700
+good read it's very easy very digestible but it's it's an awesome demonstration of how you can
+
+79
+00:08:20,700 --> 00:08:25,800
+escalate a bug so they went back and forth basically with the application they noticed okay there's a
+
+80
+00:08:25,800 --> 00:08:30,140
+sanitizer here oh we can only put certain tags through all right style tag is allowed we use a
+
+81
+00:08:30,140 --> 00:08:35,140
+style tag to escape the html now we can put arbitrary tags in okay now how do we actually get
+
+82
+00:08:35,140 --> 00:08:40,660
+this to do what we want we want to use this evaluate tag so that we can actually run our own code
+
+83
+00:08:40,660 --> 00:08:46,540
+uh in the template execute in the template uh rendering engine right but you can only use these
+
+84
+00:08:46,540 --> 00:08:52,020
+certain types of tags so they try you know defining their own tag they try changing the namespace there's
+
+85
+00:08:52,020 --> 00:08:58,300
+a specific check for that they can't define the namespace um then they try overriding the default
+
+86
+00:08:58,300 --> 00:09:04,280
+namespace uh and then there's another check on that they go and they look how does that check work oh the
+
+87
+00:09:04,280 --> 00:09:10,680
+check works with a regex is the regex satisfactory no you can bypass it with single quotes instead of
+
+88
+00:09:10,680 --> 00:09:17,040
+double double quotes and so and so on and so on so it's a really really awesome bug um it's it's super
+
+89
+00:09:17,040 --> 00:09:22,040
+super cool that shows again sort of this thought process of um you know sort of one step at a time
+
+90
+00:09:22,040 --> 00:09:27,640
+getting past these security controls testing iterating figuring out how to continue to escalate this
+
+91
+00:09:27,640 --> 00:09:33,680
+further and further and further until you get to sort of your maximum input impact uh point and um
+
+92
+00:09:33,680 --> 00:09:38,280
+yeah it's a really really awesome bug um at the end of the day they were able to get you know
+
+93
+00:09:38,280 --> 00:09:44,640
+arbitrary file read essentially on the server so they could read um you know user uh data they could
+
+94
+00:09:44,640 --> 00:09:51,360
+read um the config files for the server they could also on a lot of instances i guess there's this
+
+95
+00:09:51,360 --> 00:09:58,000
+uh cross uh server communication thing so similar kind of like an ipc but it's not inner process it's
+
+96
+00:09:58,000 --> 00:10:03,540
+it like inner node um and it basically is just rce as a service so you can just run commands you can
+
+97
+00:10:03,540 --> 00:10:10,440
+run curl and just have it you know run whatever you want um that worked uh evidently it seems so
+
+98
+00:10:10,440 --> 00:10:14,740
+there was a lot of really interesting stuff that they were able to do um and since they have sort
+
+99
+00:10:14,740 --> 00:10:20,300
+of this evaluate context where they're within um the template engine they have access to different
+
+100
+00:10:20,300 --> 00:10:27,600
+classes and and all sorts of very complex sort of attack vectors uh that are that are now available
+
+101
+00:10:27,600 --> 00:10:32,580
+to them because they're within like sort of java java execution context so it's a very very
+
+102
+00:10:32,580 --> 00:10:38,360
+interesting blog post definitely go check it out it's on the asset note uh website and yeah um last
+
+103
+00:10:38,360 --> 00:10:43,880
+thing i'd be nervous if i didn't mention this obviously crowd strike stuff uh i don't really
+
+104
+00:10:43,880 --> 00:10:47,580
+have much to say about this from a bug bounty perspective uh that it wasn't really bug bounty
+
+105
+00:10:47,580 --> 00:10:53,000
+related it's just some crazy uh crazy security stuff that came up uh in the last couple weeks
+
+106
+00:10:53,000 --> 00:11:00,160
+um for those of you who don't know there was a crowd strike um they pushed i guess a bug
+
+107
+00:11:00,160 --> 00:11:06,100
+or something in one of in the crowd strike agent on windows and it was causing blue screens it
+
+108
+00:11:06,100 --> 00:11:11,220
+created huge outages all around uh the world all around tons of industries i believe there were
+
+109
+00:11:11,220 --> 00:11:17,160
+many airlines who were down who were down for like many many days i think delta might still be dealing
+
+110
+00:11:17,160 --> 00:11:26,540
+with problems um but yeah obviously um just goes to sort of show how stuff can cascade right and
+
+111
+00:11:26,540 --> 00:11:32,080
+and what the impacts of very small bugs even not necessarily a security bug but just a bug in
+
+112
+00:11:32,080 --> 00:11:38,020
+general uh can have so just uh just some food for thought hey guys real quick i just wanted to give
+
+113
+00:11:38,020 --> 00:11:42,640
+a shout to the hacker content team they have been absolutely killing it the past couple months taking
+
+114
+00:11:42,640 --> 00:11:47,200
+the content from the podcast and condensing it down into consumable social media posts whether it be
+
+115
+00:11:47,200 --> 00:11:52,740
+shorts or text posts or whatever they've been rocking it so uh i just wanted to give them a shout out
+
+116
+00:11:52,740 --> 00:11:56,760
+and let you know that they do all sorts of cyber security content as well as social media management
+
+117
+00:11:56,760 --> 00:12:02,640
+they do technical blogs they do uh comprehensive social media management uh so if your organization
+
+118
+00:12:02,640 --> 00:12:07,360
+could benefit from any of those types of services make sure you head over to hackercontent.com drop
+
+119
+00:12:07,360 --> 00:12:12,020
+them a line and mention the podcast when you do to get your first month of cyber security content
+
+120
+00:12:12,020 --> 00:12:18,400
+marketing services for free all right that's it let's get back to the pod uh all right let's get into
+
+121
+00:12:18,400 --> 00:12:24,940
+the main content for today which is part-time bug bounty all right so as i mentioned i am a part-time
+
+122
+00:12:24,940 --> 00:12:32,780
+bug bounty hunter um that is you know my main focus um i uh i work full-time um and i have like a million
+
+123
+00:12:32,780 --> 00:12:40,420
+other side things that i do all the time including this podcast um and so i think for a lot of people
+
+124
+00:12:40,420 --> 00:12:45,540
+it can be very daunting to figure out sort of the time management aspects especially and so i just wanted
+
+125
+00:12:45,540 --> 00:12:51,540
+to cover like sort of a couple different topics around part-time bug bounty and and the first one
+
+126
+00:12:51,540 --> 00:13:01,440
+is how to balance your time um between like hacking and family and um work and life and not going insane
+
+127
+00:13:01,440 --> 00:13:05,480
+and all that kind of stuff right so i think the first thing that you really have to do is you have
+
+128
+00:13:05,480 --> 00:13:14,360
+to choose how serious you want to take this um you know bug bounty can be a very lucrative way to make
+
+129
+00:13:14,360 --> 00:13:20,600
+a lot of money it can also be just like a very normal side hustle maybe you make you know 100 bucks
+
+130
+00:13:20,600 --> 00:13:29,160
+a month 500 bucks a month um you know it really it is what you make of it and you can be very successful
+
+131
+00:13:29,160 --> 00:13:34,160
+or you can take it very casually um i think especially when you're doing it part-time it's
+
+132
+00:13:34,160 --> 00:13:39,900
+really important to remember you're doing a lot already okay so for whatever your reasons are whether
+
+133
+00:13:39,900 --> 00:13:46,020
+you're in school whether you're um you're employed full-time whether you have kids whether you're
+
+134
+00:13:46,020 --> 00:13:51,320
+working two jobs like whatever it is like you've probably already got a lot going on if bug bounty
+
+135
+00:13:51,320 --> 00:13:56,900
+is something that you're aiming to do part-time um and so it's important to just to recognize that
+
+136
+00:13:56,900 --> 00:14:02,620
+right um if you're gonna go really hard on this you're gonna go intense you're gonna go all in
+
+137
+00:14:02,620 --> 00:14:09,160
+then set some strict schedules you know give yourself um you know you say i'm gonna hack two
+
+138
+00:14:09,160 --> 00:14:13,960
+three hours a day five hours whatever you know from this time to this time and you put that on
+
+139
+00:14:13,960 --> 00:14:18,480
+your calendar and you block it out and you say sorry i'm busy i i have something going on i have an
+
+140
+00:14:18,480 --> 00:14:26,400
+appointment you know um you just need to be dedicated and be explicit and be um intentional
+
+141
+00:14:26,400 --> 00:14:32,320
+about your time when you're if you're gonna be serious about it um along with that like you need
+
+142
+00:14:32,320 --> 00:14:40,140
+to commit to what your schedule is right so if you're saying that you're gonna work for two hours
+
+143
+00:14:40,140 --> 00:14:49,820
+a day from you know 7 to 9 p.m then at 7 p.m you drop what you're doing and you go if somebody says hey
+
+144
+00:14:49,820 --> 00:14:56,140
+can you uh are you free at 7 30 nah sorry i've got something going on right you you have to
+
+145
+00:14:56,140 --> 00:15:00,940
+commit to that and you need to hold yourself accountable and you need to build accountability
+
+146
+00:15:00,940 --> 00:15:08,120
+into it right so whether that's tracking your time whether that's having a buddy to hack with
+
+147
+00:15:08,120 --> 00:15:13,760
+whether that's having someone who you say yeah i hacked today no i didn't hack today um you know
+
+148
+00:15:13,760 --> 00:15:20,780
+build accountability into your process so that you can hold yourself accountable and you can be honest
+
+149
+00:15:20,780 --> 00:15:26,120
+with yourself right um if you're gonna track your time there's a couple really easy
+
+150
+00:15:26,140 --> 00:15:31,740
+ways to do that um you can do it through there's a great application i like called clockify which
+
+151
+00:15:31,740 --> 00:15:36,860
+basically you can just set projects and it's just a desktop app and you click start stop you say
+
+152
+00:15:36,860 --> 00:15:44,380
+i'm working on this and it tracks your time um you can view all your stats it syncs online it's free
+
+153
+00:15:44,380 --> 00:15:49,820
+easy it's great um if you don't want to do that you can just use a timer on your phone um you can
+
+154
+00:15:49,820 --> 00:15:56,620
+uh track it in a google sheet um i've done that as well actually this year is a new thing for me i've
+
+155
+00:15:56,620 --> 00:16:01,020
+been tracking all of my time spent hacking i've been tracking how many bugs i submit um bounties
+
+156
+00:16:01,020 --> 00:16:06,700
+that i earn every single day of the year um just so that you know have those numbers and if you're not
+
+157
+00:16:06,700 --> 00:16:11,580
+hacking you put a zero in there all right that's how it works that's called being honest you got to be
+
+158
+00:16:11,580 --> 00:16:15,660
+honest with yourself with yourself if you're going to take this seriously uh which i think you should
+
+159
+00:16:15,660 --> 00:16:22,060
+um regardless of how intense you take it you need to be honest with yourself how much time are you
+
+160
+00:16:22,060 --> 00:16:27,340
+actually spending how much time how many bugs are you actually submitting how many bugs are actually
+
+161
+00:16:27,340 --> 00:16:31,340
+getting paid out and then at the end of the year if you don't like what those numbers look like
+
+162
+00:16:31,340 --> 00:16:38,300
+then you can try and make some changes and you can say okay i wanted to do this but i but i i didn't
+
+163
+00:16:38,300 --> 00:16:42,700
+and this is what the actual this is what reality looked like versus what i wanted it to look like
+
+164
+00:16:42,700 --> 00:16:48,940
+what went wrong did i not take it seriously enough like what what happened there um so you know build
+
+165
+00:16:48,940 --> 00:16:56,300
+build an accountability track your time track you know your your progress be honest about that tracking
+
+166
+00:16:56,300 --> 00:17:03,100
+with yourself um if you need to find somebody who you can hack with find someone to collab with we got
+
+167
+00:17:03,100 --> 00:17:10,300
+a ton of people in our discord ctbb.show discord go find some find find a hacking partner find a
+
+168
+00:17:10,300 --> 00:17:18,460
+hacking buddy it's split 50 50 and just you know go ham um another strategy that i love um that franz
+
+169
+00:17:18,460 --> 00:17:23,900
+uses and i also like to use sometimes is like using cliffhangers um or you can use any sort of dopamine
+
+170
+00:17:23,900 --> 00:17:28,220
+chasing strategy that works for you so whether that's um you know setting setting up you know
+
+171
+00:17:28,220 --> 00:17:32,060
+something that's really exciting and then stopping hacking right before that so that the next day you're
+
+172
+00:17:32,060 --> 00:17:36,940
+really excited to come and look at that thing that you were looking at the day before um you can do that
+
+173
+00:17:36,940 --> 00:17:42,140
+or you know if it's changing targets frequently whatever works for you um that like gives you
+
+174
+00:17:42,140 --> 00:17:49,340
+that rush use that to your advantage um you have to sort of be your own coach in this scenario where
+
+175
+00:17:49,340 --> 00:17:55,900
+you need to find the strategies that work for you that allow you to work optimally and capitalize on
+
+176
+00:17:55,900 --> 00:18:00,940
+those so that you are in the optimal space to hack when you want to hack and when you need to hack okay
+
+177
+00:18:00,940 --> 00:18:09,820
+next picking programs picking programs is a big topic for part-time hackers um because there's
+
+178
+00:18:09,820 --> 00:18:14,700
+all sorts of questions around you pick one target you pick a bunch of targets you change target targets
+
+179
+00:18:14,700 --> 00:18:21,660
+three times a day um do you do you hone in and go ham on a single target like what do you do so um
+
+180
+00:18:21,660 --> 00:18:29,740
+there's definitely a lot of different ways to do this i don't want to get too much into the weeds on like
+
+181
+00:18:29,740 --> 00:18:36,460
+you should focus specifically on this one program or not if that's your hacking style that's great um
+
+182
+00:18:36,460 --> 00:18:41,500
+if i always recommend going deep you know getting very intimate with the application finding all of
+
+183
+00:18:41,500 --> 00:18:46,300
+the routes all of the ins and outs all the little quirks and nuances and abbreviations and everything
+
+184
+00:18:46,300 --> 00:18:52,860
+about that program so that you are as knowledgeable as an engineer at that company when you're hacking on
+
+185
+00:18:52,860 --> 00:18:57,580
+that and that will allow you to make connections and tie things together and use those gadgets very very
+
+186
+00:18:57,580 --> 00:19:01,100
+effectively if you're that comfortable with the application it's going to be a lot harder to do
+
+187
+00:19:01,100 --> 00:19:06,540
+that if you're not that that's just that's what i found right um that's not to say that you can't
+
+188
+00:19:06,540 --> 00:19:11,660
+find bugs without doing that right there's tons of ways to do that and i'll talk a little bit about
+
+189
+00:19:11,660 --> 00:19:21,740
+that later um but you know that's definitely a a good way to keep yourself um you know focused is to
+
+190
+00:19:21,740 --> 00:19:28,060
+go deep on an application and and focus only on that one application become an expert there um so
+
+191
+00:19:28,860 --> 00:19:36,300
+one thing that i like to do when i'm looking for programs is optimize for payouts um and impact um
+
+192
+00:19:36,300 --> 00:19:43,500
+and so i think those two things go hand in hand if you want the highest payout you want the highest
+
+193
+00:19:43,500 --> 00:19:49,660
+impact right so there's a script that i wrote um it's going to be released to the critical thinkers
+
+194
+00:19:49,660 --> 00:19:55,660
+hopefully before this episode if not check the discord but um it uh it will be exclusive to the
+
+195
+00:19:55,660 --> 00:20:01,740
+critical thinkers and it basically does a bunch of program stats using your hacker one token your cookie
+
+196
+00:20:01,740 --> 00:20:06,060
+whatever off off cookie to look at all the programs that you're on and we'll look at their bounties and
+
+197
+00:20:06,060 --> 00:20:11,660
+look at their stats on their bounty tables and it will identify programs that are potentially really
+
+198
+00:20:11,660 --> 00:20:17,420
+good targets um and the way that it does this is that it looks at some of the payout statistics based
+
+199
+00:20:17,420 --> 00:20:22,860
+on what is the average bounty based on their bounty table what is the percentage of bounties that are
+
+200
+00:20:22,860 --> 00:20:28,860
+within high high and crit range how far off from the max high and crit are the average payouts for
+
+201
+00:20:28,860 --> 00:20:34,700
+highs and crits stuff like that so it's a very very useful tool it definitely identified a couple
+
+202
+00:20:34,700 --> 00:20:41,100
+different programs that me and justin were both very interested in so uh it works and it's it's a it's
+
+203
+00:20:41,100 --> 00:20:46,940
+a super useful tool i'm working out some minor quirks with the authentication problems for some
+
+204
+00:20:46,940 --> 00:20:51,500
+reason it works for me but it doesn't work for other people so um i'm i'm still working out some
+
+205
+00:20:51,500 --> 00:20:56,940
+of the kinks there but it's a very useful tool um so that'll be available to our critical thinker tier but
+
+206
+00:20:57,820 --> 00:21:05,260
+um you can do that manually as well so if you want just go to your program dashboard your you know
+
+207
+00:21:05,260 --> 00:21:09,260
+hacker dashboard or whatever start looking through programs and start looking at their tables and see
+
+208
+00:21:09,820 --> 00:21:16,780
+what percentage of reports or highs and crits how far are they deviating from their payout table in terms
+
+209
+00:21:16,780 --> 00:21:23,180
+of bounties how how hard are they adhering to their bounty table and cvss and that's going to tell
+
+210
+00:21:23,180 --> 00:21:27,980
+you how how easy it's going to be in terms of bounties right when you have a program who really
+
+211
+00:21:27,980 --> 00:21:32,780
+strongly adheres to cvss and their bounty table where it's a high it gets this much it's a crit it
+
+212
+00:21:32,780 --> 00:21:40,060
+gets this much um that type of program is as a part-time hunter where you want to be spending your
+
+213
+00:21:40,060 --> 00:21:43,340
+time because you want to be making the most amount of money without fighting back and forth about the
+
+214
+00:21:43,340 --> 00:21:49,580
+team you if you find a high you want that back right so um that's definitely something to keep in mind
+
+215
+00:21:51,100 --> 00:21:57,020
+another thing to keep in mind is from the impact scenario right so put yourself in the shoes of
+
+216
+00:21:57,020 --> 00:22:02,860
+the security team when you are submitting a bug you want to think about what it would be like to be
+
+217
+00:22:02,860 --> 00:22:08,060
+sitting at your desk as the security team and a researcher with your username
+
+218
+00:22:08,060 --> 00:22:17,100
+submit a report and it just came into your inbox number one how does it read right so remember that
+
+219
+00:22:17,100 --> 00:22:22,540
+you're communicating with a real human um and that some real person is going to be reading that report
+
+220
+00:22:22,540 --> 00:22:27,340
+so how how are you speaking how are you phrasing things is it easy to understand is it overly
+
+221
+00:22:27,340 --> 00:22:31,980
+complicated is there unnecessary details that don't need to be in there there's a lot of aspects to
+
+222
+00:22:31,980 --> 00:22:39,740
+writing a good report um that can be solved by just thinking about how it would be by reading it from
+
+223
+00:22:39,740 --> 00:22:46,780
+the perspective of the security team the other thing is the impact assessment from the security team so
+
+224
+00:22:46,780 --> 00:22:53,340
+if you're in the shoes of the security team what is your worst case scenario what uh is it user data
+
+225
+00:22:53,340 --> 00:23:00,620
+is it rce is it accessing some specific service is it being able to bypass this certain role um what is
+
+226
+00:23:00,620 --> 00:23:07,500
+you know what is the worst case scenario and what are those more or less impactful things that you can
+
+227
+00:23:07,500 --> 00:23:13,580
+do on that program um as you know if you're on the security team what would make a bug more impactful
+
+228
+00:23:13,580 --> 00:23:20,140
+what would make a bug less impactful what things would be mitigating factors that an attacker would
+
+229
+00:23:20,140 --> 00:23:27,660
+need to get around or find a way to bypass in order to raise the impact on their bug um you know when
+
+230
+00:23:27,660 --> 00:23:36,220
+time is limited when when it's scarce you have to hyper optimize the things that you're looking for
+
+231
+00:23:36,780 --> 00:23:45,180
+and you have to angle and orient your reports in a way such that they highlight the highest possible
+
+232
+00:23:45,180 --> 00:23:49,580
+impact scenario for that program so that you can maximize your severity you can maximize your impact
+
+233
+00:23:49,580 --> 00:23:58,300
+you can maximize your payout right so on the topic of optimizing and especially keeping your flow
+
+234
+00:23:58,860 --> 00:24:06,220
+as streamlined as possible let's talk about spending your time efficiently um i've mentioned a couple
+
+235
+00:24:06,220 --> 00:24:14,220
+times impact versus volume are you going for a lot of reports that may be mediums or are you going for
+
+236
+00:24:14,220 --> 00:24:23,740
+three crits a month one crit a month what is your goal here right um make sure that you're setting your
+
+237
+00:24:23,740 --> 00:24:29,420
+goals appropriately and that you're not switching back and forth if you are if you have a target and
+
+238
+00:24:29,420 --> 00:24:33,420
+you constantly change that target you're never going to be able to make progress towards that target
+
+239
+00:24:33,420 --> 00:24:39,340
+because the target's always shifting so set a target keep that target and continue to focus towards
+
+240
+00:24:39,340 --> 00:24:46,140
+it if that target is i want to find a crit go until you find a crit don't go for three hours and then
+
+241
+00:24:46,140 --> 00:24:53,420
+say okay never mind that's actually too hard i want to find a medium now like that's fine but you should
+
+242
+00:24:53,420 --> 00:24:58,540
+set goals and you should work towards those goals until you achieve it not just constantly shift it
+
+243
+00:24:58,540 --> 00:25:02,620
+because you're going to feel like you're constantly stalling and it's going to put you in a negative headspace
+
+244
+00:25:02,620 --> 00:25:13,820
+um another great strategy is to follow douglas day's uh nose talk about looking for the nose in an
+
+245
+00:25:13,820 --> 00:25:19,180
+application uh douglas day aka archangel a friend of the show friend of the he's been on the pod a couple
+
+246
+00:25:19,180 --> 00:25:24,940
+times uh he has a great talk about looking for nose in an application which are basically things that are
+
+247
+00:25:24,940 --> 00:25:30,460
+explicitly called out as you shouldn't be able to do this uh it shouldn't be possible to do this thing
+
+248
+00:25:30,460 --> 00:25:35,900
+um you know they're it users should only be able to do x y and z right look look at the documentation
+
+249
+00:25:35,900 --> 00:25:44,300
+read through um what the application says about itself look for permissions look for role-based
+
+250
+00:25:45,100 --> 00:25:50,700
+access controls um these are the types of things that you want to try and get around those can be
+
+251
+00:25:50,700 --> 00:25:56,300
+really easy wins and those can also have very strong impact scenarios where you can say here's your
+
+252
+00:25:56,300 --> 00:26:02,140
+documentation that says you shouldn't be able to do this here's me doing it very very straightforward
+
+253
+00:26:02,140 --> 00:26:09,580
+cut and dry usually works very very well um another thing for spending your time efficiently is to map
+
+254
+00:26:09,580 --> 00:26:15,420
+the product and identify your whole attack surface so the first thing that i always try and do when i'm
+
+255
+00:26:15,420 --> 00:26:21,100
+looking at an application is figure out what am i dealing with what stuff is available to me what looks
+
+256
+00:26:21,100 --> 00:26:28,060
+interesting where are my possible attack scenarios what possible routes and gadgets do i have available
+
+257
+00:26:28,620 --> 00:26:34,060
+what endpoint is returning what to me where do i have user info where do i have permissions where do i
+
+258
+00:26:34,060 --> 00:26:42,700
+have access control checks all sorts of things make these notes take notes write them down right um
+
+259
+00:26:43,740 --> 00:26:48,300
+super super important that you figure out just the fundamentals of the application that you explore
+
+260
+00:26:48,300 --> 00:26:54,060
+and you you get hands on time with the application if you're trying to hack it efficiently and you're
+
+261
+00:26:54,060 --> 00:27:00,060
+trying to be able to make those connections in your brain when you see something funny all right um
+
+262
+00:27:00,700 --> 00:27:06,140
+for the impact side when when i talked about volume versus impact if you're going to be going after impact
+
+263
+00:27:07,580 --> 00:27:15,180
+focus on high impact bugs okay you have to set those targets appropriately don't be like oh maybe i'll
+
+264
+00:27:15,180 --> 00:27:23,020
+find an idor that leaks user info maybe you will and that could be a very severe bug but that's going
+
+265
+00:27:23,020 --> 00:27:27,740
+to depend on the program and that's going to depend on their impact scenario that's going to depend on
+
+266
+00:27:27,740 --> 00:27:33,420
+their risk model right so again when you're putting yourself in the shoes of that security team think about
+
+267
+00:27:33,420 --> 00:27:40,780
+what their risk model looks like what is their threat and impact model is it leaking user data or is it
+
+268
+00:27:40,780 --> 00:27:48,620
+account takeover is it access to internal applications is there a walled garden going on right so
+
+269
+00:27:49,180 --> 00:27:59,420
+look for account takeovers look for ssrfs look for ways to bypass parsers pdf exports file exports template
+
+270
+00:27:59,420 --> 00:28:06,780
+injection rce right there's a lot of really juicy scenarios nowadays that aren't just all in the browser that are really high impact
+
+271
+00:28:06,780 --> 00:28:10,620
+um that are really high impact and if you focus just on those you're definitely going to find
+
+272
+00:28:11,340 --> 00:28:17,820
+at least a few of them um and as i mentioned going going deep um becoming super intimate with the
+
+273
+00:28:17,820 --> 00:28:26,700
+application again like the those couple of hours that you spend every single day over one week two weeks
+
+274
+00:28:26,700 --> 00:28:31,980
+a month that will add up to a lot of time and you will become very very well versed with that application
+
+275
+00:28:31,980 --> 00:28:34,940
+and as soon as you see a bug you're going to be able to connect the dots in your head and you're going
+
+276
+00:28:34,940 --> 00:28:39,180
+to be able to to write up a bug immediately you're going to you're going to know exactly what to do
+
+277
+00:28:39,180 --> 00:28:45,340
+you're going to see it you're going to go oh i have a thing for this yeah so last thing i wanted to talk
+
+278
+00:28:45,340 --> 00:28:52,380
+about streamlining streamlining your process make it efficient um how do how do we how do we add some
+
+279
+00:28:52,380 --> 00:29:03,100
+grease into the system how do we you know slow as smooth smooth smooth as fast whatever how do we make
+
+280
+00:29:03,100 --> 00:29:11,020
+this better how do we streamline our process okay step one just like grease reduce friction okay this is
+
+281
+00:29:11,020 --> 00:29:17,340
+going to depend person by person you need to find where the highest friction areas are in your process
+
+282
+00:29:17,340 --> 00:29:23,260
+so when you're hacking there's going to be things where you're going to be like this is so annoying
+
+283
+00:29:23,260 --> 00:29:28,620
+i hate this part uh this is always so annoying for me it's so frustrating that i have to do xyz
+
+284
+00:29:28,620 --> 00:29:36,460
+and i'm not going to start hacking because i have to do that or it off you know it's off putting right
+
+285
+00:29:36,460 --> 00:29:41,340
+whatever those friction points are whatever those those negative annoyances are you need to fix those
+
+286
+00:29:41,340 --> 00:29:46,300
+things okay so whether that's creating report templates because writing reports sucks whether
+
+287
+00:29:46,300 --> 00:29:53,420
+that's using bash aliases and creating shell scripts for yourself that you can execute to do a bunch of
+
+288
+00:29:53,420 --> 00:29:58,140
+different commands at the same time because remembering all that stuff is annoying whether that's creating
+
+289
+00:29:58,140 --> 00:30:05,500
+custom automations and tools and scanning suites find your own blockers and solve your own blockers
+
+290
+00:30:05,500 --> 00:30:09,820
+right this is a really important part of your process that you can't just let these problems
+
+291
+00:30:10,460 --> 00:30:15,740
+live and say well i have a limited amount of time so uh i i just need to hack i can't go and fix this
+
+292
+00:30:15,740 --> 00:30:22,540
+problem no spending time fixing a problem is not a waste of time okay when you have a problem you
+
+293
+00:30:22,540 --> 00:30:27,660
+spending time fixing that is really really important it's very important to actually spend time
+
+294
+00:30:27,660 --> 00:30:33,580
+fixing that problem that is part of optimizing and part of fixing that for every single time that you
+
+295
+00:30:33,580 --> 00:30:39,500
+hack after that if you have a problem you fix it once never again it's very you know so make sure to
+
+296
+00:30:40,140 --> 00:30:45,580
+spend the time to fix those things on on the other hand don't overdo it okay it's so easy to just
+
+297
+00:30:47,100 --> 00:30:53,420
+say oh i could optimize this oh let me automate that keep it simple right keep it simple but if it's
+
+298
+00:30:53,420 --> 00:30:59,580
+clunky if it's if it's a blocker if it's creating more problems than it's solving optimize it okay
+
+299
+00:31:00,140 --> 00:31:08,780
+don't over complicate it but but don't let it you know be a blocker right so find your own problems fix
+
+300
+00:31:08,780 --> 00:31:17,020
+fix those problems optimize your process next take notes i said this at least twice during this episode
+
+301
+00:31:17,020 --> 00:31:22,780
+take notes take notes take notes take notes and and the most important part of taking notes is
+
+302
+00:31:22,780 --> 00:31:28,300
+reviewing your notes my goodness i cannot tell you how many times i've taken notes and i i just don't
+
+303
+00:31:28,300 --> 00:31:34,380
+even i don't even look at them i just i'm just writing stuff down not even looking at what i'm
+
+304
+00:31:34,380 --> 00:31:42,380
+writing not weeks go by i'm like wow i've taken a lot of notes don't even read them read your notes you
+
+305
+00:31:42,380 --> 00:31:49,100
+took the notes for a reason okay in your notes you should have a lot of very useful tips for yourself
+
+306
+00:31:49,100 --> 00:31:53,980
+otherwise you're taking inefficient notes so your notes should be things that you in the future
+
+307
+00:31:53,980 --> 00:31:59,500
+want to look back at so look back at it okay it's very important that's a very important part of
+
+308
+00:31:59,500 --> 00:32:07,020
+taking notes is reading the notes okay record videos record audio for yourself doesn't have to be
+
+309
+00:32:07,020 --> 00:32:13,900
+video you don't you go oh my face is ugly i can't don't i don't want to be on video great record a
+
+310
+00:32:13,900 --> 00:32:20,380
+voice memo for yourself about what you were doing at the end of your hacking session brain dump into
+
+311
+00:32:20,940 --> 00:32:25,660
+either a video or an audio you can do this for gadgets you can do it for your whole hacking session
+
+312
+00:32:25,660 --> 00:32:30,620
+you can do it however you want loom is a great way to do this because it records your face and your
+
+313
+00:32:30,620 --> 00:32:36,780
+screen you can use obs if you don't want to use some other software you can use freaking
+
+314
+00:32:36,780 --> 00:32:44,940
+quick time on mac um you know there's tons of ways to record your screen um and your audio record
+
+315
+00:32:45,820 --> 00:32:51,420
+to yourself you're just talking to yourself and brain dump because the next time that you go to hack
+
+316
+00:32:51,420 --> 00:32:57,260
+you can open that video you got you know a three to five minute video that you could just listen get
+
+317
+00:32:57,260 --> 00:33:01,020
+right back into that headspace that you're at at the end of your last hacking session you can jump
+
+318
+00:33:01,020 --> 00:33:06,620
+right back into it without having to try and figure stuff out again um otherwise taking notes
+
+319
+00:33:06,780 --> 00:33:13,900
+notion i use notion for my notes it's great it's like kind of markdown niche on steroids it's really
+
+320
+00:33:13,900 --> 00:33:19,980
+really nice um it has a lot of awesome features like you know collapsible sections and tables and
+
+321
+00:33:20,700 --> 00:33:26,700
+whatever there there's a lot of stuff you can do with notion i think there's another tool called obsidian
+
+322
+00:33:26,700 --> 00:33:32,460
+i want to say and that's like more open source brain mapping type note taking stuff there's a ton of
+
+323
+00:33:32,460 --> 00:33:37,580
+options out there you can use evernote if you want uh as we talked about earlier i don't know that's
+
+324
+00:33:37,580 --> 00:33:43,900
+i'll leave that up to the bill lister um uh you can also use a whiteboard i just bought a whiteboard you
+
+325
+00:33:43,900 --> 00:33:48,700
+can't see it it's off screen right now but i bought a massive whiteboard for my wall um so you can just
+
+326
+00:33:48,700 --> 00:33:56,620
+you know write down some notes dump stuff on there you know map stuff out on there um sticky notes i love
+
+327
+00:33:56,620 --> 00:34:02,780
+sticky notes i have a pad of sticky notes right here i keep them on my desk i have pencil on my desk
+
+328
+00:34:02,780 --> 00:34:07,740
+and if uh sometimes even in the middle of the podcast justin will say something and i don't want
+
+329
+00:34:07,740 --> 00:34:13,020
+to never interrupt him or i have a thought uh that i want to you know make a note of or an idea that i
+
+330
+00:34:13,020 --> 00:34:18,860
+don't want to leak on the podcast and uh i'll take a sticky note and i'll write it down and i'll just put
+
+331
+00:34:18,860 --> 00:34:25,980
+it on my desk or i'll put it on my monitor take notes very good sticky notes notion notes
+
+332
+00:34:26,620 --> 00:34:35,660
+video notes whiteboard notes notes very good okay that is pretty much all i've got um
+
+333
+00:34:37,180 --> 00:34:43,020
+there's obviously a lot more that you can do but i think sort of the best advice that i have is iterate
+
+334
+00:34:43,820 --> 00:34:50,780
+take notes and identify the blockers in your process right streamline what you do when again when
+
+335
+00:34:50,780 --> 00:34:56,220
+time is limited you have to optimize okay if you want to be the most efficient hacker that you can in the
+
+336
+00:34:56,220 --> 00:35:00,860
+amount of time that you have as a part-time hacker you have to find the ways to make your process the
+
+337
+00:35:00,860 --> 00:35:05,180
+best as possible you need to figure out the way that you want to hack whether that's high impact
+
+338
+00:35:05,180 --> 00:35:09,500
+whether that's high volume whether that's focusing on one program whether that's changing all the time
+
+339
+00:35:09,500 --> 00:35:15,900
+and you need to find the ways that work for you that are successful and figure out the goals and the
+
+340
+00:35:15,900 --> 00:35:20,060
+things that you want to get out of this if you want to get a certain amount of money set that money as
+
+341
+00:35:20,060 --> 00:35:27,180
+a goal track it in a spreadsheet track it in clockify track it on your phone track it in a notes app track
+
+342
+00:35:27,180 --> 00:35:35,660
+it however you want to track it and hold yourself accountable right be honest with yourself and it's
+
+343
+00:35:35,660 --> 00:35:43,420
+okay to take breaks to fix problems to let yourself recharge and to recognize that you are doing a lot
+
+344
+00:35:43,420 --> 00:35:51,980
+and it's just a part-time thing so you you know you get out what you put in so you got this good luck
+
+345
+00:35:52,620 --> 00:35:59,740
+part-time hackers i believe in you i'm with there i'm with you on there you got this good luck see you
+
+346
+00:35:59,740 --> 00:36:07,260
+on the leaderboards peace and that's a wrap on this episode of critical thinking thanks so much for
+
+347
+00:36:07,260 --> 00:36:12,940
+listening and if you want more critical thinking content head over to ctvb.show discord join the
+
+348
+00:36:12,940 --> 00:36:17,340
+discord there's lots of great conversations and chats going on over there and if you want to support
+
+349
+00:36:17,340 --> 00:36:23,580
+the show there's the discord subscriber tiers which give you access to master classes amas hack alongs
+
+350
+00:36:23,580 --> 00:36:28,460
+exclusive scripts and an exclusive chat channel with us we'll see you there
+

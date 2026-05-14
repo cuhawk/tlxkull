@@ -1,0 +1,1508 @@
+I love this line at the end too.
+He says, as a bonus, you get to spend another week after all of this, figuring out how to
+do regression testing.
+So all future deployments don't have it again and no one accidentally re reintroduces the
+bug.
+If you're lucky, you'll have someone report that one edge case later that you forgot to
+consider and then bundle it with a free consultation about how an ASM product can solve this problem
+for you.
+Hey guys, real quick.
+I just wanted to tell you about our sponsor Threat Locker.
+Now wait, wait, before you hit the skip forward button, let me just say this.
+Most of the stuff that holds my attention nowadays is red team stuff as well.
+But I sat down with the Threat Locker team this past week to do a demo of their EDR software.
+And it was super technically fascinating how this thing works.
+So check this out.
+You drop this thing on a system, right?
+And for the first week or so, it's creating a policy and a profile for that system.
+It's logging all the executables, what child processes are being spawned, the files and
+their hashes, that sort of thing.
+And it's creating this policy.
+Okay.
+Then after the learning mode is up, we're in secured mode and that policy gets put into
+place.
+And anything that's not on that allow list is immediately auto denied.
+That's the zero trust piece, right?
+So in addition to that, they've got a bunch of crazy features like ring fencing and dynamic
+access controls that would stop a malicious hacker at pretty much every step along the way.
+Actually I was watching this demo and I was kind of freaked out because I have no idea how
+I would cope with getting dropped into a Threat Locker system as a red teamer.
+Anyway, if you want to learn more about this, head over to threatlocker.com and request a
+demo.
+So if you do ask for my boy, Andrew, his demo was super to the point and he was able to
+answer all my technical questions.
+All right, cool.
+Back to the show.
+Man, if only the audience knew the blooper that we just had.
+Oh man, that blooper.
+We're going to have to send that one to the critical thinkers, I think.
+So anyway, let me get back to the subject matter.
+I'm prepping for this Defcon talk right now.
+And essentially it is a summary of all of the crazy bugs I've found within the past couple
+of years.
+And dude, that memory of me and you popping that router.
+That was, that was the best fan.
+That was such a fun bug.
+I'm really excited to see what you're able to ask.
+Well, what, maybe not what you're able to, but what you're going to say about that.
+Yeah, dude, I have like this meme of you and you know, like I want to say it was probably
+when, man, I think it was when the hacker one did like a, like a photo shoot in like
+the streets of New York back in the day.
+And you've got your like hood up and your glasses on and you just look so bad.
+And there's a picture of Andre from that same photo shoot.
+We posed next to like the same sign.
+Yeah.
+Oh, really?
+Yeah.
+Yeah.
+Somewhere there's a, there's a Xerox ACP photo as well.
+I have to say that that photo shoot that hacker one did with y'all was like one
+of my like core motivation features.
+You know, like I saw that and I was like, I have to become a live hacking event hacker.
+Like it is my fate.
+And voila, here we are.
+Here you are manifest.
+Indeed.
+Indeed.
+All right, man.
+All right.
+So we've got a couple of things to hit today before we talk about our primary topic, which
+is less writing, more hacking, essentially how to write reports quickly and well for bug bounty
+programs.
+And I've got a tool I'm going to release with this.
+So it should be pretty awesome.
+Yeah.
+I normally drop these things first to the critical thinkers, but this one, I was like, you know
+what, I'm going to, I'm going to just drop this one for everyone this time.
+Yeah.
+I saw these links in the, in the doc and I was like, these, I, is this like new?
+Like, what is this?
+That is man.
+I just got it PR'd into the project, but we'll talk about that in a second.
+Awesome.
+News.
+Uh, really cool thing happened this, uh, this week.
+I saw a, a post, um, on Twitter from the RC man.
+And then I saw Gareth Hayes comment on it with one or with two chilling words.
+Nice research exclamation point.
+Underrated reply.
+Seriously.
+And when Gareth, you know, when that's coming from Gareth, it's like, okay, we done something
+right, you know?
+Yeah.
+Um, and this was, uh, the, the tweet regarding essentially XSS WAF bypasses by using multi-character
+HTML entities.
+And from what I can tell, there's just like a bunch of entities that I didn't know existed,
+like the ampersand.
+And then you do some, you know, ASCII string and then the, the semicolon.
+And if it, the, that is being interpreted by the server, um, and, and getting HTML decoded,
+uh, even if it's like checking for less than or something like that, there are some, some
+weird attributes like, um, ampersand NVGT or ampersand NVLT, which will convert into the
+less than and greater than signs plus some other, uh, Unicode character.
+Um, yeah.
+I thought this was right.
+I've never heard of these by the way.
+Um, and I don't know if you saw, there was actually a second reply that Garrett sent to
+this tweet as well, which was a link to Shazer, which is a tool that we talked about last week.
+Um, and well, actually the initial reply is broken, but he followed up with, with a new
+fuzz on it.
+But Gareth added, uh, a fuzz to Shazer that tests for this specifically and finds all of
+the, uh, ASCII or URL encoded values.
+Um, that'll work super fast in JavaScript URLs, which is great.
+So that now, you know, like what things you can put in there that will actually work and
+bypass there.
+Yeah.
+No, it seems really rad.
+And, and essentially it looks like he just kind of hit it with, I'm not actually sure where
+he's getting the, the source for all this, but, um, there's a bunch of different strings
+you can put in between those, the ampersand and the semicolon sign.
+Um, and it's interesting though, because that, if you use the one that he mentioned in the
+tweet, it becomes a less than and a string, uh, like a Unicode string.
+Right.
+So it's like, uh, I'm not sure if this is actually going to, because it's not a valid tag.
+Right.
+So yeah, the, the less than one is a little bit like, uh, I mean, maybe it would work in
+those scenarios where HTML, like you're able to trigger an XSS using any HTML attribute.
+Like there's some stuff in the PortsWigger XSS cheat sheets.
+That's like, uh, you know, this, this on click handler or whatever will work with any element
+and they always just use the XSS element or whatever.
+Um, so it might work in that scenario, but the one that I'm more excited about is the,
+um, ampersand NVGT semicolon, um, entity.
+And that one will, uh, do the greater than sign, which will allow you to close off tags,
+um, which could be really, really helpful.
+That's awesome.
+That's awesome.
+Yeah.
+So this is super, super cool.
+I love this kind of research.
+Um, I'm sure that there are probably some other instances of this as well.
+Um, and, uh, the, the Shazer thing from Gareth is actually specifically for URLs.
+So, um, one example that he showed is that if you do like a, an a tref with JavaScript
+colon one and hat, the semicolon alert one, then that will like work, I guess.
+Um, so that's just like a, a very interesting bypass.
+There's a lot of, um, these characters and HTML codings that seem to work.
+So I definitely recommend you look at.
+Yeah.
+That one was kind of interesting.
+I wasn't sure.
+I'm not sure about that one.
+I w I want to go and actually check and see if that works.
+Cause that doesn't make a lot of sense to me that it would work with that with you're
+talking about the one with the JavaScript URL.
+Yeah.
+Yeah.
+That one, I don't know about that one.
+I like, I see that he put that in there just to kind of smuggle in the J character or
+whatever.
+But, um, I think that might only be in some niche scenarios where it cuts off the first string,
+but if it actually does work, that would be nuts.
+Yeah.
+Yeah.
+I don't know.
+It's super weird.
+Yeah.
+So actually, you know what?
+Let's, let's just, let's just check it out right now.
+Hold on.
+Let's just, let's, let's just, uh, you know, do the nerd snipe.
+Hey guys, real quick.
+I just wanted to give a shout to the hacker content team.
+They have been absolutely killing it the past couple months, taking the content from the
+podcast and condensing it down into consumable social media posts, whether it be shorts or
+text posts or whatever they've been rocking it.
+So, uh, I just wanted to give them a shout out and let you know that they do all sorts
+of cybersecurity content as well as social media management.
+They do technical blogs.
+They do, uh, comprehensive social media management.
+Uh, so if your organization could benefit from any of those types of services, make sure
+you head over to hackercontent.com, drop them a line and mention the podcast when you do to
+get your first month of cybersecurity content marketing services for free.
+All right.
+That's it.
+Let's get back to the pod.
+No way.
+Okay.
+Okay.
+Okay.
+Okay.
+Okay.
+You can, you can, that, that was crazy.
+Okay.
+That does actually work.
+Hold up.
+This is way cooler than I thought it was.
+So this payload, this payload, like, so you're assigning this to location.href, um, via an
+on-click handler in an, in an a tag.
+Right.
+And it's the, it's ampersand F J L I G semi-colon of a script alert one.
+Right.
+And, but that, that character is supposed to convert to F J I thought when HTML decoded.
+And I was like, so what is that going to work?
+Like, why is there an F just in front of the JavaScript scheme?
+Yeah.
+
+
+
+
+Yeah.
+Like, it actually works.
+Where, where, if you look at the actual href backslash F J A V A S C R I P T, just normal
+JavaScript colon alert one.
+It pops dude.
+Mind absolutely blown.
+Super interesting.
+And yeah, because backslash F must get converted to a special character.
+I wonder if there was like a, yeah.
+If you had like a, like a T as well, like there's a variety of different characters that
+would fit that criteria that would probably get ignored or something.
+Yeah.
+Wow.
+Very interesting.
+I guess, yeah, I guess you're right.
+I guess it gets converted.
+Like backslash F gets converted to something that.
+Yeah.
+It gets converted.
+Like the backslash stays.
+So it becomes backslash F J and then the J becomes backslash F JavaScript.
+And then the backslash F is like, must be some special character or something that's getting
+ignored.
+It doesn't seem like it's anything special, but it must be ignored because it's escaped
+or something.
+I know that there are definitely cases like that, like in JSON decode and stuff where backslashes
+get ignored.
+So it could be something similar like that.
+But yeah, that's really interesting.
+So, and because it's a location, it's like an on click on the a ref.
+So it's not, it doesn't look like a link, but it's like clickable elements.
+That's crazy, dude.
+So I'm looking at this and I looked it up backslash F is a form feed character to indicate
+that a printer should start a new page.
+So it's like some legacy printer version of backslash N, which of course, if you have that
+before the JavaScript scheme, it does work.
+Very interesting.
+Well, that research is a lot more interesting than I realized when I put it in this, in the
+podcast notes.
+So if you haven't already, definitely go check out that post by the RCE man, Anton.
+We'll link it in the description below.
+Wow.
+Kind of mind blown at this point.
+Yeah.
+Super cool.
+Super, super cool.
+All right.
+Let's go ahead and move along.
+I'm still a little bit stunned, honestly.
+That's really, really interesting.
+Let's go ahead and move along to the next one now.
+Um, this was, uh, some research that came out this week next to JS cash poisoning and you
+can read through it and it's, I mean, there's definitely a good technical write up in here.
+Um, but here are some of the takeaways I had from this.
+Okay.
+Um, one, I think cash poisoning might be the new like subdomain takeover.
+Yeah.
+Yeah.
+I think like, you know, subdomain takeovers, super duper competitive nowadays.
+Um, and the recon boys, so to speak are having to pivot into, into different, um, different
+attacks, different attack factors to, you know, spray across a mass, um, scale.
+And I think that's the best way that this might be one of the best ways to make money through
+mass automation at this point is mass scanning for cash poisoning.
+And I'm looking at, cause I'm looking at this writeup.
+This guy did, and he made a chunk.
+I mean, there, there are probably 20 something reports here at least, um, that he associated
+with this one bug all, all paid out and accepted and triaged, um, just from this one,
+this one thing.
+So I think that's going to be the way to go.
+Yeah.
+I mean, so I think we're definitely seeing sort of the pivot.
+I mean, automation has always been like a very fluid sort of thing where, um, it depends
+on like what's exploitable in mass and what's, what there's a lot of and like where the competition
+is and like how to get that edge and stuff.
+And so you've definitely seen like subdomain takeovers sort of being starting to be solved
+as a systemic problem where all the providers who are vulnerable to subdomain takeover are
+implementing methods where like, they're no longer vulnerable to it.
+Cause I think their customers are complaining about it.
+Yeah.
+I would be too.
+Reports and stuff.
+So, right.
+Like, so, um, you know, cause when you get a subdomain takeover for a third party product,
+you're going to reach out to that third party and say, Hey, like we have this issue.
+Like how do we fix it?
+Right.
+Um, so, you know, it makes sense.
+Um, but yeah, you're definitely seeing this shift where now like subdomain takeovers are
+starting to get harder and harder and more competitive than it's like a super fast race
+to claim it first and all that kind of stuff.
+So, you know, when you pivot to a more complex vulnerability or something, that's a little
+more technical, you get that edge and you do much better payout.
+And I think the cash poisoning, the beauty of the cash poisoning thing is it's something
+you can validate pretty easily automatically.
+Right.
+Like if I add this header, does the response drastically change?
+You know?
+Um, I think that's pretty validatable.
+Um, and I know that there are a lot of people doing cash poisoning at scale already.
+I've had some good conversations with people, um, about that and building out automation
+and making quite a bit off of it.
+So, um, definitely, definitely something to look at, uh, there for anybody who's big into
+the recon space.
+Um, other takeaways I had from this was, uh, just get the code base for whatever, you know,
+technology you're trying to look at and just grep for headers, grep for, you know, X,
+X dash or whatever.
+Right.
+Um, and any mention of customized headers within these sort of frameworks and something like
+that, uh, there's, there's a lot of possibility.
+I think that's a really interesting attack surface.
+That's kind of, that's kind of underestimated because a lot of times we're looking for,
+you know, parameters and trying to trace the data as it flows through, um, create parameters
+or body parameters or whatever, JSON blobs.
+But we're not necessarily thinking about, okay, wait, I can also trace my input from custom
+HTTP headers.
+Um, yeah.
+So that, that's definitely another, another attack surface to keep your eye on.
+Um, and then the next one was, I just love this quote from this, uh, from this writeup.
+It says, quote, the application was cash poisoning itself.
+And so the devs added this cash buster.
+And I think that that's a really good, um, a really good takeaway from this, right?
+Is let's, if you see a cash buster anywhere, the application was likely, you know, cash poisoning
+itself.
+And the dev is like, oh, how do I fix this?
+Ah, cash buster.
+Right.
+You know?
+And, uh, and so I think that's always a good place to look for those vulnerabilities.
+Well, and it's also like, again, pull down the source code and look through some of that
+stuff, go back.
+One thing I love to do is if there's something like a cash buster, for example, and you notice
+there's a cash buster on GitHub, click blame.
+There's a little button for it.
+Okay.
+And, and it's, it's a get blame.
+It, you know, it's a, it's sounds a little more mean than it is, but really what it is,
+is it's a log of every line in the code who committed that line.
+And, and you can go and you can view the commit so you can see, okay, the line that added
+this cash buster was from this commit.
+You go to that commit, you see what PR came from.
+It was probably the commit that went and fixed that original cash poisoning.
+There you go.
+And you look and see, okay, where, where was this affecting?
+Where did they fix this?
+How do they fix this?
+Is there bypass?
+Yeah.
+Yeah.
+Or you, what I thought you were going to say was you run a get blame, you find the developer
+that, that did that shit and then you, you look at everything else that they've ever
+written in that code base and be like, all right, let's just pick on this guy.
+God damn, Justin.
+That's hilarious.
+Justin's a savage.
+Justin's like, I want, I want to take this person and make their life horrible.
+Can you imagine if it's like, if you just did that to one developer and like, you just
+submit like 15 bugs and they're all from this guy's code base.
+That's so mean.
+You're just like, I just noticed that John Smith committed this.
+Yeah.
+Your, your, your, our enemy is like, you know, a dev on an open source project or something
+like that.
+And he's like tagging him on every issue you file.
+Yeah.
+You're going down.
+Um, so speaking of things at scale, you saw this, uh, this tweet from Nagly, right?
+Yeah, dude.
+Okay.
+So that was kind of a weird situation.
+I want to get your take on this as an app set guy.
+Okay.
+So, um, Nagly, Nagly tweeted out this, um, uh, nuclei template about how exactly to scan
+for these, this sort of polyfill IO domain takeover that occurred.
+And it's crazy because I've seen polyfill IO everywhere, man.
+And, and essentially the situation with this was that domain got sold to bad people essentially.
+And now they have like a backdoor on every website that's ever used polyfill.io.
+Um, which I feel like there needs to be some sort of like regulation surrounding this at
+the domain level.
+You know, I, my American is screaming right now saying, freedom, blah, blah, blah.
+But like, man, if you have a domain that is so widely used in so many ways, there needs to
+be some sort of transfer, um, system or surrounding that applied at the, at the domain level.
+Um, because, uh, man, just transferring that away to rogue actors gave a backdoor into like a ton of
+websites.
+Yeah.
+Yeah.
+It's super, super wild.
+Um, it's really interesting.
+So one thing I was thinking about recently is that there's a, there's a new PCI requirement,
+um, for anybody who deals with PCI and stuff.
+But, um, one of the PCI requirements is that there, you have to have change and tamper detection
+on, um, payment and checkout pages.
+And not in the sense of like monitoring for code changes, but monitoring for dynamic changes,
+is like the scripts that are loaded that are not, um, expected or that they have changed signature
+and stuff.
+And I think that's a very interesting call out in retrospect on like this sort of vulnerability,
+because if any company that has that sort of monitoring would probably have noticed this.
+Um, so it's just something, you know, very interesting, um, that I was just thinking about
+the connections between the two of those and, and, you know, how it would have played out
+from sort of like an app sec perspective.
+Um, but yeah, as a whole, I mean, these types of things are like very difficult to find and
+detect, like even what I just like mentioned of like monitoring for dynamic script execution
+on a website.
+It's a very difficult thing to do.
+Like you basically have to, you know, use like some headless browser or something like
+that to, you know, load the page and then somehow you have to hash it.
+And like, yeah, you know, it's very, that's a pretty interesting sort of business idea,
+isn't it?
+Like monitor the upcoming changes to PCI compliance specs, like, like promise it exists.
+Don't worry.
+And like say, okay, oh, they're going to like make this requirement for us to have this
+headless browser that does change monitoring or whatever.
+Here's your, I promise.
+If you search PCI 11.6.1, you'll get, there's like at least five or six companies that are
+doing exactly that.
+Yeah.
+Oh my gosh.
+Yeah.
+Look at that.
+Wow.
+Crazy.
+Yeah.
+Well, I, but I mean, like in the future, it's kind of an interesting thing.
+Like, like I'm sure there will be changes to the PCI spec in the future.
+Um, and I think that they goes through like a review process first where in that those reviews
+are public.
+Like, so as soon as that gets released and there's a new, a new requirement in place that
+requires some sort of technical solution, getting a headstart on devving that, devving
+that, devving that, and reaching out to organizations that are going to need it.
+I think that's a really, uh, a really great business model.
+Yeah.
+Um, yeah, absolutely.
+Anyway, so it was interesting to see that Noggle released a, a nuclei template for that.
+That definitely helps.
+I don't know that, I mean, and he's kind of doing it related to shockwave.
+I don't know that that would result in bounties.
+What do you think about that, Joel?
+Yeah.
+So I don't like just simply pointing it out is one of those things that I guess it depends
+on the program.
+Like some programs will probably like maybe as a thank you if they didn't know or something.
+Um, I have a feeling it's probably also maybe one of those things that the platforms would
+like potentially argue that it's like a zero day or something like that.
+I don't know.
+Um, I think it's definitely like a, a nice thing to do, but you probably shouldn't expect
+a bounty.
+Like, you know, if you have the automation set up, like I can see for somebody like Nagly
+that it's a good business proposition to be like, Hey, I'm not expecting a bounty.
+Just want to let you know.
+I have this software called shockwave.
+It detected, you know, this vulnerable, uh, software on your website.
+You may want to fix that.
+Also, if you want to sign a contract, here's my email, like, you know, and like do something
+like that.
+But, um, that's kind of a unique angle.
+He's on top of all these things, dude.
+He, he pinged me, uh, a couple of days before the magento thing hit, hit the public and was
+like, Hey, this is going to be crazy.
+And he, he's got a good, a good feed on that.
+So he's got his finger on the pulse.
+Yeah.
+It's pretty good for shockwave.
+Um, what's this other thing you got on here, man?
+Okay.
+Yeah.
+So, okay.
+So Sean, yo, uh, you know, friend of the pod, um, he, uh, he tweeted out this amazing,
+um, blog that he wrote, I guess.
+Um, and it's, uh, it's titled, um, Hey, why can't I get what was the title again?
+Hey, why can't you fix this one bug?
+Yeah.
+Hey, why can't you fix this one bug?
+And it's, it basically chronicles a researcher, um, being like, you know, imagine you're a
+security researcher.
+You scan the internet, you find this endpoint on some company, you submit the bug and hoping
+for, you know, easy, easy, you know, easy money.
+And then you're like, why can't developer just remove the route?
+And it's a walkthrough of like the other side of the conversation.
+And it's such a great blog.
+Um, you know, we've definitely had this conversation, uh, a multiple different times, but I think
+this does a great way of illustrating it in more depth on sort of a generic level, um,
+of what it's like being a security engineer and like the process that you go through and
+the days turn to weeks turn to, you know, whatever, um, as you're just trying to like
+figure out how to fix this and who owns it and where it is and what the issue is.
+And meanwhile, all the researchers sees is like, Hey, where's my bounty, bro?
+Like, why can't you just remove the route?
+And the researcher, I think a lot of the time researchers, like they think that, um, every
+website is just like a, like a, you know, 30 lines of flask code and like a Python file.
+And they're just like, what do you mean?
+There's like, there's just a wrap handler.
+You just like highlight 15 lines of code, you press delete, and then you save and you
+rerun the Python file.
+Like what's the big, this shouldn't be this hard.
+I was reading through this and I was like, man, this is absolutely me.
+Like I am, I am, uh, I'm going through here and you know, every step along the way, he's
+like talking about all this, like L seven load balancing and like Lambda this and blah, blah,
+blah, blah that.
+And I'm like, I have no idea what you're talking about.
+Like I consider myself pretty like familiar with, uh, I guess application architecture and
+stuff, but like, nah, like, like I only.
+I know it from the outside, man.
+I only know it from the outside.
+And it seems like this is a really interesting read for me because there's, there's so much
+more to it than I, than I anticipated.
+Uh, and you know, the, the, at one point somewhere in here, he says like, you know,
+Oh, I figured out sort of roughly where it is, but wait, I can't touch that.
+I don't have privileges to touch that.
+And can I get a dev to touch it?
+Not a chance.
+It's Q2, you know, like nothing happens in Q2.
+And I'm like, what?
+How does this?
+Yeah.
+What?
+Yeah.
+It's so real.
+It's so real.
+Uh, yeah.
+So I would recommend it.
+Anybody.
+Who's just, I'm sure everybody's had this thought at one point.
+That's like, why can't they just remove this?
+Like what's like, what's taking so long, whatever.
+Read, read through this blog post.
+Um, it's a very, it's, it's a short read.
+It's very easy to read.
+Uh, it's a good read.
+It'll definitely put you in the mindset of like what it's like to be a security engineer.
+And then I, I would recommend that anytime you're like, what is taking this team so long?
+Just pull this up, read through it and be like, Oh yeah, that's why.
+I love this line at the end too.
+He says as a bonus, you get to spend another week after all of this, figuring out how to
+do regression testing.
+So all future deployments don't have it again.
+And no one accidentally re reintroduces the bug.
+If you're lucky, you'll have someone report that one edge case later that you forgot to
+consider and then bundle it with a free consultation about how an ASM product can solve this problem
+for you.
+I did not even play that.
+I didn't read that at that end part.
+That's so funny.
+Which is like, which is like has not, I love how we put that right.
+Right after our segment on Noggle too.
+Wow.
+That's amazing.
+That's great.
+Anyways, this is, this is a great blog from Sean.
+So go check it out on his blog.
+I think this is a new blog for him.
+Um, mewe.pw.mewy.
+Um, but yeah, we, we love Sean.
+Yeah.
+Sean is great, dude.
+Yeah.
+Wow.
+That's, that's hilarious, man.
+All right.
+So let's, um, let's get to the topic matter for this week.
+Um, and I guess I'm going to go ahead and start with, uh, what's down towards the bottom of
+the dock, Joel, which is sure.
+Lately I've been thinking, okay.
+Um, AI, right.
+How can it help?
+Lately I've been thinking, Justin's just kind of sitting there in the hot tub.
+Hmm.
+AI.
+I told Justin yesterday that if he had any ideas for how to do something related to the
+podcast, that he should write it down and he's out here thinking about AI instead.
+Yeah.
+No, no.
+I was sitting in the hot tub thinking about AI, not those things.
+Um, so as I was sitting in the hot tub thinking, hmm, AI, like as I do, you know, I'm thinking,
+what are the ways that this can apply to bug bounty hunting and hacking?
+And there's a lot of applications that kind of pop into the brain.
+Um, but what large language models are best at is dealing with, with text and human parsable
+text, really.
+Um, they, they do great work with, with code and stuff like that too, but mainly writing
+and generating text is, is what it's great at.
+When do we have to generate text in the bug bounty flow for the report?
+At the worst part.
+I'm not, dude, I'm not gonna lie.
+I literally like writing reports is, it pushes me over the edge.
+It's bad, man.
+Like I will literally, I'll find something and I'll be like, is it really worth my time
+to write this report?
+No.
+Is it worth writing the report?
+Well, see, and even if I find something critical, I'll be like, ah, now I have to write this up.
+Okay.
+So I do not have that.
+Trying to explain this.
+If it's a critical, I'm normally like super hyped to write the report.
+I'm like, let me show them how I like did this.
+And I like bypass that.
+And I went, we, we, we, like, you know, like, that's what's happening in my brain.
+That's like a little snapshot of side just for a second.
+Um, but, but yeah.
+And, uh, and so, but what I don't love writing is the stupid, like reflected XSS reports.
+I'm like, okay, here's a quick little reflected XSS.
+Like, obviously you can just grab the token and get, you know, account takeover or whatever.
+So it's like, it's not a big, there's not like this whole like technical thing.
+Normally if there's some cool flow where I like do this OAuth thing and like grab the code and
+get ATO, then it's, it feels a little bit more fulfilling.
+But when it's like super basic, it's just really annoying.
+So, so let's start with that.
+Right?
+Like the first, the first tip and the thing that I always like, and I know you have something
+for this is report templates, right?
+I know HackerOne has this natively.
+Yeah.
+I assume bug crowd and the other platforms probably do to some extent.
+If not, just keep a folder on your, on your computer and probably put it on GitHub, which
+you Justin.
+Yes.
+Oh, thank you.
+Talking about this repo.
+Yeah.
+Which, um, yeah.
+So, so listen, so listen, here's the thing about the report template thing.
+Okay.
+Um, I do have a repo, uh, github.com slash rhino writer slash reports.
+That is essentially a report template software that I used back in the day when I was doing
+a bunch of automation stuff and I was just submitting the same bones over and over and
+over again.
+Subdomain takeover, body, body, blah.
+Then, you know, take the domain, run a dig dot or jig plus trace on it, take the output,
+put it in the report, that sort of thing.
+Right.
+And it's written in Python 2.7.
+It's not very long.
+Um, I didn't even, cause I'm, well, I'm not, listen, I'm not going to roast you.
+It's okay.
+It's old.
+Dude.
+Here's the thing though.
+Like I started writing Python when I was 12, you know, and, and I, and around that same
+time was when they made the transition on three.
+Yeah.
+Right.
+And people don't realize that like how, well, both how old and how young Python is like.
+Yeah.
+Yeah.
+And, and I, at that point, you know, I was, I was a young, I was a young guy and I was
+like, I kind of got my, my head into the Python 2.7 ecosystem.
+I was more of a programmer at that point than I was a hacker.
+I was just loved programming with Python.
+And, um, and I was very against the Python.
+I mean, there was a whole sort of resistance movement against Python 3.
+Me too, man.
+Like, it was so bad.
+I was like, you mean I got to put parentheses around my print savings now?
+Exactly.
+I was so infuriating.
+Like, why would you make that, that change?
+Like, it's ridiculous.
+In hindsight though, I was like, yeah, that was such an outlier.
+Like why, why, why wasn't there parentheses around the print savings?
+We don't need that.
+All we need is our youthful rage, Joel, at the, at the system.
+Um, anyway, so I held off on switching to Python 3 for years and then I finally have.
+And, you know, now I'm thinking, okay, now I need to learn how to write Rust or Go or
+whatever.
+So that's going to be on my, what did you say the other day that I didn't know the H2 or,
+uh.
+H2.
+Yeah.
+Yesterday I was like, it's, it's the start of H2.
+And you were like, what's H2?
+And I was like, it's the second half of the year.
+It's like corporate speak, man.
+I don't know that.
+I mean, I barely know what quarter are we in right now?
+Like three, right?
+Exactly.
+We just started.
+Thank you.
+Um, so anyway, that's on my 2025 H H1.
+There we go.
+Uh, goals learning to write Rust or Go.
+One of the two, but, um, okay.
+Let me just finish this segment.
+Sorry.
+I, I'm derailing.
+You really are.
+No, you're good.
+Um, so essentially we have this, uh, github.com slash Ryan Raider slash reports, uh, repo.
+It's written in Python 2.7, literally just handed to chat GPT and converted to Python 3.
+I didn't get the chance to do it before this episode.
+It's very simple.
+All it does is just takes your mark markdown, parses out the templates, allows you to run,
+uh, to provide like variables into the templates and also run commands on the command line.
+So you can automatically insert stuff like, um, you know, dig commands and then the output
+from the dig commands into the report.
+Super helpful.
+Um, that really helps, but here's what I was going to say before, which was, I have a tool now
+to write the reports using AI.
+So essentially what it, what it does is, um, it uses this really cool framework called fabric
+from, um, Daniel Meisler.
+Okay.
+And, uh, I, I actually in the doc, I've got my own fork of it lifted, listed here, but it
+actually got merged into main, um, uh, yesterday.
+So, um, essentially what fabric is, is it's a way the way he describes it is, is the way
+to augment humans with AI.
+Essentially it's, it's a framework around collecting prompts or they call patterns in
+this specific environment.
+And, um, allowing you to very easily send data to that via standard in typically.
+Um, and, um, and get, uh, the results passed to AI.
+So you can, you can pass it to chat GPT.
+You can pass it to, uh, Claude.
+You can pass it to your own Olama server.
+There's lots of, uh, cool stuff that's built into there.
+You can have it have context, um, about you as a person.
+There was a CD in Olama, by the way.
+So don't expose your Olama to the network, but make sure it's up to date.
+But yeah, there was, there was just a CD in Olama recently.
+I think that's really, I think Olama would be a really interesting, um, thing to go after
+because they've got like role-based permissions and stuff like that too.
+You can have like users and admins and that sort of thing.
+Um, but I wrote this pattern called write, uh, underscore hacker one underscore report.
+And essentially what it does is you can provide it with an input that contains requests, responses,
+and then comments.
+Um, and it will take that and can take into consideration your comments, look at the requests
+and the response and write a report for you based off of that.
+Um, that fits the hacker one sort of model, right?
+You've got like the summary, the details, the steps to reproduce and the impact and like,
+you know, various supporting resources and that sort of thing.
+Um, and so in order to get everything in the right format for all that, I wrote this other
+tool called BB, uh, bug bounty report formatter that's on a github.com slash writer slash BB
+report formatter.
+Um, and essentially what that does is it allows you to just very easily send in requests, send
+in responses, send in comments, and it'll store them in your, on your local system.
+And then whenever you tell it to, you can just do use dash dash print dash report, and
+it will dump out the, um, report structure.
+And then you can just pipe that right into, um, fabric, uh, right hacker one report, and
+it will, uh, generate the AI, AI based report.
+Now here's the question.
+I know you're, you're, it's in your head, Joel.
+Okay.
+It might be in your head.
+It might not be in your head.
+Does it actually freaking work?
+And the answer to that.
+The only thing that's met in my head.
+Oh, okay.
+It doesn't work.
+Well, we'll finish.
+I'll let you finish.
+I'll let you finish.
+The answer to that is sort of.
+Oh no.
+So it works really well with, uh, chat GPT, uh, for, for, for, for makeup or whatever.
+Yeah.
+The new one.
+Yeah.
+The new one.
+It gets great results.
+It, I gave it a volume that I had from before that's already closed.
+And, uh, it wrote an awesome report for it.
+Easy peasy.
+I just gave it the request, the response and some description of the volume and it took
+it away.
+Okay.
+But the goal with this whole thing was to be able to do this with private AI, to be able
+to do it with old llama on my local system so that it doesn't leak the, yeah.
+So that it doesn't like leak the, the, um, report contents.
+Yeah.
+Yeah.
+To open AI.
+And that does not work quite as well.
+Uh, it works pretty poorly actually.
+Um, so I don't know.
+I think, I think it's an interesting edge case.
+I'm still going to release the tool because some people will use it with chat GPT and that's
+fine.
+Um, I, I'm definitely looking forward to, to seeing progress in private AI.
+Uh, because this really highlighted for me, the difference between a, a system that like,
+like chat GPT stuff and something like, oh, llama using like, uh, llama three or llama two
+model.
+Right.
+I mean, the results were just drastically different.
+Yeah.
+Yeah.
+Super interesting.
+Um, one thing I did want to mention, and this is completely, this is like the totally wrong
+takeaway.
+I'm so sorry.
+Okay.
+You said, come on, what is going on today, man?
+Okay.
+I'm just sorry.
+You said that, um, to convert Python two to Python three, you should just throw it in
+chat GPT.
+What are you talking about?
+Okay.
+There's a built-in tool.
+Okay.
+If you don't know this, there's a built-in tool in Python.
+It's called two to three, number two, two, number two, word two, number three, two to
+three.
+And it converts Python two scripts to Python three.
+No, it does not.
+It does.
+That's what it does.
+Search it up.
+Two to three.
+Anyways, just, I'm just leaving that there.
+It exists.
+Wow.
+Check that out.
+It's pretty cool.
+All right.
+I think it's getting removed in like version 3.13 or something.
+Oh, really?
+But like, if you haven't converted your Python stuff by now, you know.
+Very cool.
+But yes.
+I was going to be mad at you, but that's actually really cool.
+Yes.
+That is like the one case where I'll say, you don't need to use chat GPT for this.
+You can use something much less AI that will probably not get it, start hallucinating halfway
+through your script.
+Yeah.
+No, that makes sense.
+Very cool.
+Someone should do that.
+Maybe I'll do it afterwards.
+Maybe I'll do it before this podcast airs.
+Who knows?
+I got a lot of stuff on my plate this upcoming week, but it would be interesting.
+The takeaway there, though, is really worthwhile to have some sort of templating system in place.
+And I just kind of use the HackerOne templates and use some of the AI stuff that I've built
+in now.
+But I think, you know, before when I had this more advanced templating system, especially
+if you're reporting very similar bugs time and time and time again, it's very helpful.
+And I recently had a scenario where I had to report 25 very, very similar bugs.
+And I used report templating and it just saved so much freaking time.
+Yeah.
+I will say like if you're not doing full-time bug bounty, like, and you don't need to be
+like submitting like a lot of reports like in mass like that, like, or if it's not something
+that you've like farmed, like if you're reporting, submitting 25 of the same report template
+is a great solution for that.
+But if you're not a full-time bug bounty hunter, I don't think necessarily that like trying
+to shortcut the whole report writing process is a great idea per se.
+Like, I think it is kind of like, I mean, to some extent, right?
+So like, say you're not like a native English speaker and you're like, I want to make sure
+like this is readable.
+I think that's a good use case for like, I know, for example, HackerOne has like rewrite
+with HAI thing or whatever.
+You could maybe do that with chat GPT or maybe Olama just to rewrite it and to make it more
+readable.
+But like having it generate and like write the report itself, at the end of the day, you're
+going to have to reread through it to make sure that it's actually right and that it actually
+got everything correct.
+And if you're doing that, then you're like halfway there pretty much to just writing the
+thing yourself.
+Yeah, I don't know.
+And like, it is kind of part of the process.
+I don't know.
+I think it depends on what it is.
+Like there should be sort of a line, I think, where like it makes sense to have the AI be
+writing a report for you versus just writing it yourself.
+Because like, at what point do you like need the AI to write?
+Like how much time is it saving you to like collect all this stuff, put it into the AI,
+read through what it writes, format that like, you know, it's like, again, you're like probably
+50% of the way there.
+It helps, man.
+It helps.
+It does help.
+I think for me, like just seeing the way that it worked for my sample stuff that I wrote
+associated with this, I literally like took one request, one response, one two sentence,
+you know, thing about how to access this thing.
+And it extrapolated a bunch of the correct details.
+It's like...
+What type of bug was it?
+It was an IDOR.
+It was an IDOR.
+And there was another one for Reflected XSS.
+Worked great.
+Okay.
+That's pretty straightforward though, right?
+Yeah.
+Yeah.
+No, absolutely.
+Yeah.
+And that's the use case where right now, I just don't feel like writing up these super
+annoying bugs, you know?
+And I just like, okay, just send it off.
+All you have to do is just tell the triager, like log into the application, go get this ID
+from here and then do this, do that.
+And it actually did a really good job.
+This is the part that was surprising to me.
+Like, the application that I gave it the test data from, it knew about that application.
+It's a pretty popular application.
+And it was like, oh, you know, this is the functionality in this application.
+You can get, log in, go to this spot and then do this thing.
+And I was like, oh, wow.
+That's like, I didn't tell you about that.
+You just kind of knew that.
+It's kind of weird that I knew that.
+You know, like, yeah.
+So I'm sure there will be problems with it.
+But I think for me, having to actually get out of my hacker brain and into my writer brain
+and start doing that, I think that will be, I think this will be a big time saver for me.
+So I've only used it, you know, a couple times.
+But I think it'll be helpful.
+Yeah, right.
+It's like, yeah, for sure.
+I agree with you.
+I think like it depends on the use case.
+And like if you find that use case for yourself where like it makes sense and like it's something
+simple like that or it's just like a big time saver where, you know, you don't have a template
+that fits it nicely or whatever.
+You can't just like copy paste the company name.
+It's not something in mass and it needs to be a little more custom than like AI is great
+for that or like having something rewrite it for you with just like a little bit of info
+is great for that.
+Yeah, I agree.
+And I wanted to shout out while we're at this segment, I wanted to talk a little bit more
+about fabric as well because fabric is pretty rad.
+There's a couple other patterns that I use pretty regularly that come in here as well.
+The create command one in particular is great.
+So you can just say like Echo, write me a command to, you know, a said command to like remove
+this or that or the other thing and just pipe that into fabric create command and it will
+write that whole command for you.
+And I'm like...
+Like pipe it together and so...
+Yeah, yeah.
+And like get it all built out.
+That's pretty nice.
+And it knows...
+I mean, you can give it more context too.
+You can give it more like the man pages or whatever and that sort of thing and it will
+be able to tie stuff together.
+But for stuff where you're constantly trying to like, what was that syntax or whatever,
+I think this is really handy.
+And the other ones...
+So there's clean text, which I think is a really interesting one.
+You can kind of tell it, give it some text and it will try to pull out like all of these
+weird formatting things and try to get it in a very consistent format.
+And I think this is something that, you know, we've all become pretty adept with using like
+said, grep, awk, you know, all these things to try to get the text in the right format.
+But for the beginner that is just trying to get stuff to be in the right format for like
+an intruder list or something like that.
+Yeah.
+I think this could be really helpful.
+Dude, you know, I'm really conflicted about this whole thing because this reminds me of
+the conversation that we had with Keith about like the Google effect of this on memory and
+learning where it's like, I do think it's worthwhile to like know how to use said or
+know how to use awk or know how to like use these fundamental Linux commands to modify and
+chain data and not just be like, let me ask the AI how to do this and just have like blindly
+copy pasting it. It's like the equivalent of like, you know, Stack Overflow or whatever,
+like just like, you know, copy pasting code snippets and just not really knowing what you're
+doing. And I think like this is something like I absolutely I want like things to be
+easier for people, but I also don't want to encourage like the wrong type of learning
+and behavior around this where like this should be something that you should be learning or
+using like as a utility to make your life easier, not to like do something you don't
+know how to do.
+Yeah.
+And there's like a line, right? Where like, you know, something's not worth your time. And
+then, okay, you probably shouldn't be wasting your time like learning this, but like you're
+learning how to use said like, again, like I think like the fundamental Linux knowledge
+and stuff that you're going to gain off that is like so much more valuable and more applicable
+than like, for example, for example, using it to write a report, like you don't need to
+like go learn how to like write like a PhD student in order to write a report, right?
+You can just have like that AI do that for you.
+But you should learn what the Linux commands that you're using are doing.
+There's a limit to that, right?
+Like we all have limits to our knowledge.
+I know how to use said and awk and cut and all these things very, very fluently.
+But I don't know all of these super abstract edge cases for JQ or like, you know, some
+of these other applications, right?
+But imagine if you did.
+Yeah, but I don't, you know, and I've got other things to do besides like, especially
+when you're hacking, this is a really important takeaway, I think, especially when you're hacking,
+you want to try to remove as much friction as possible to you being able to get to your
+goal in the hacking scenario, right?
+So for things like this, yes, it's helpful to have that knowledge about said and awk.
+And if you want to take the time to learn that outside of being in the zone from a hacking
+perspective, then that's great.
+But at the end of the day, when you're hacking, you need to stay in your flow and you need
+to remove as much friction as possible.
+So that's where I think stuff like fabric and integrating these clean, clean text or create
+command patterns could be really helpful because it removes that, that, oh, now I got
+to go look at the docs, blah, blah, blah.
+And now I can just, okay, here's what I need to write.
+Copy paste it and go.
+Yeah.
+Your cat's tail is like right in front of this.
+I was going to say, yeah.
+I think, you know, there is, right, there's like a line.
+I forgot what I was going to say now.
+Oh, yeah.
+Yeah.
+I remember.
+Yeah.
+Yeah.
+So like, definitely, I would recommend setting aside some time to be able to learn these things,
+right?
+Like, don't always just say that like, oh, in the effort of like going fast and like not
+getting out of flow, I'm not going to bother learning this thing.
+And then you'll like never learn it.
+I do think it's important to like set aside some time for yourself to learn these types
+of things.
+So if it's something that you don't want to learn now, but you think that you should learn
+later, put it in like a note file or something and then like set aside like one day a week
+or something.
+If you're a full-time hacker or a couple hours per week or certain times a day where you can
+go and you can research those things and not feel the pressure to be hacking, but instead
+be learning to improve your hacking and hone it.
+Yeah.
+What I recommend to my mentees as well is doing that sort of supplemental learning during times
+when you can't deep focus on hacking.
+So let's say you've got an hour at this cafe while your kid's at their swim lesson or whatever,
+right?
+Take that hour and instead of trying to like get into a target and in an hour and like
+find a bug, which you could, you know, it's possible, especially if you structure your
+time properly.
+But instead of that, maybe take some time, go learn all these commands, go learn about,
+go set up some environment that's going to save you some time and reduce your friction
+when you do have focus time, like four hours or something like that, where you can really
+be in the zone.
+That's sort of my recommendation.
+Yeah.
+I also love doing that when I'm in constrained environments, like on a plane, on a train,
+traveling, in an Uber, like when you're in constrained environments and you're just like,
+what do I do?
+Instead of scrolling Twitter, go find an article and read through that article because you're
+much more likely to actually read through it and occupy yourself than you are to like
+do that when you're at your computer and you have a million other things that you can be
+doing.
+Yeah.
+And it doesn't make a difference just that one time, but if you get in the habit of
+doing it, like, and you keep on getting in this habit of like, oh, let me read this
+article instead of scrolling Twitter, or let me like figure out how to use this Linux command
+while I'm, you know, waiting in line at the grocery store or something like that, then that
+knowledge will compound, compound, compound, and you're just going to be mega elite at the end.
+You're going to be the next Tom nom nom.
+Absolutely.
+Absolutely.
+Yeah.
+So, all right.
+Well, I guess on the, on the note of like taking some time, biting the bullet and setting
+some stuff up, I do have a couple of recommendations in addition to what we've mentioned here already.
+I always record a POC video.
+That's, that's the first one.
+Like, unless it's literally click the link, see the popup.
+And even then, if it's going to be a bounty above like 500 bucks or something like that,
+I'm going to, if it's a bounty that I'm going to be upset to lose, if like the endpoint goes
+down or something like that, I'm always going to record a POC video because it's so, it takes
+so little time.
+It shows proof that the thing happened and it just makes it easier for these triagers that
+are skimming reports more and more nowadays.
+So one, that's one tip, always record a POC video.
+And two, remove friction to recording that POC video on yourself and make it a nice setup.
+You know, what I'm using nowadays is OBS and I've sort of, I really liked the way Loom has
+their setup in place.
+Right.
+And I wish I could use Loom, but it, it sends the video out to Loom automatically.
+Right.
+Which is kind of like, kind of meh.
+So I kind of set up my OBS to mimic Loom and I've got like a little circle of my face
+down at the bottom and I've got, you know, the screen recording on there.
+And for some reason, my default setting on OBS, I don't know if you have this as well,
+Joel, but it was, it didn't have a pause button by default.
+It was like something about the way that it's encoded.
+I've got to check my OBS now.
+Go check it because it didn't have a pause button.
+And I was like, why, why does this not have a pause button?
+Because it's super helpful when you're recording a video to be like, okay, now I'm going to
+brute force this for 20 seconds.
+Be right back.
+And you just, you know, press the pause button and then you come back when it's, you know,
+done a brute forcing and then you can show the result or whatever.
+Yeah.
+Do you have it?
+No, I don't.
+I don't.
+I don't think so.
+Unless I have to start recording, but yeah, that's, yeah.
+I think you might have to start recording with the, like you start recording button down
+at the, at the bottom before it pop up.
+But I don't know if, because your, your camera and microphone are in use right now.
+I don't know if it can do it.
+Oh yeah.
+I'm not going to, I'm not going to.
+Don't mess with it.
+Don't mess with it.
+But if you don't have a record button, here's the way to get a record button on, not a record
+button.
+What am I saying?
+A pause button on your recordings for OBS.
+Go to settings, go to output, go to recording, and then change your recording encoder to X264
+and change the output type to MP4 and then save it.
+And if you just Google it, there's an article on it.
+You know, of course, I just am telling you from the article.
+Uh, but essentially that will give you the pause button, just with something with the
+way it does encoding.
+You can't pause with the normal encoding.
+And then that pause button will pop up and you can easily pause, unpause, and you've got
+a nice little setup and the triager can see you and it makes a connection and it's very
+easy to follow.
+So that, that, that's my tip there is like, go ahead and set that up and then reduce as
+much, you know, set the auto output directory to be somewhere where you know exactly where
+it is and just reduce the friction as much as possible to doing these POC videos.
+And then just, uh, just do it every time and have a voiceover as well.
+Talk them through it, say, okay, now we're going over here.
+We're clicking this button.
+Then the attacker is like, you know, doing this thing and just talking them through the whole
+flow.
+It will really help to understand the full attack vector and it will get your reports to
+triage faster and it will, um, even in scenarios, I've actually had triagers be like, Hey, I
+can't reproduce this because of X, Y, Z, but I see you have a video and I followed the video.
+So I'm going to triage this.
+And, and this just saves you that extra time bump, you know?
+Yeah.
+One thing I will say about the videos.
+So if you can't embed your video in your report, like don't, I wouldn't be kidding.
+Like for real, because making whether it's the program, whether it's the triage or whoever
+have to download your MOV file and like run it on their, like that should give everyone
+an ick.
+Yeah.
+That's yeah.
+Please don't do it.
+Just embed it.
+Yeah.
+Embed it in your report.
+Don't just attach it as a thing on the end and be like attached is a video record.
+Like that literally just feels like a malware email that you've sent me.
+Like, please see the attached PDF file and run it on your computer.
+Dude.
+Like bro.
+The report is like, uh, the report is like, um, ability to social engineers, security analyst
+into, uh, right.
+Open up the video.
+Proof of concept.
+I'm like, hang on a second.
+You just opened this.
+Like, hang on a second.
+I think I've seen this one before.
+Yeah.
+Yeah.
+But, but, but I mean, I can't imagine anybody doesn't know this, but on, on, on hacker one
+and bug crowd.
+Oh yeah.
+You can embed the videos directly in the report so that you have to do.
+And, and not only that, at least on hacker one, there's a built-in screen recorder.
+So you don't use OBS.
+You don't have a screen recorder set up.
+There's a button you can click in the hacker one webpage, like record my screen or whatever.
+You can record your screen.
+It automatically embeds it right in the thing.
+I don't know how well it works.
+I've never used it before, but it's there.
+And, um, you know, just, you know, give it a shot.
+If you don't like it, then you can go through the effort of setting up OBS or some recording
+software.
+Loom is super easy.
+Like you said, like loom is great.
+Puts your face there, puts your mouse there.
+Uh, it's very user-friendly.
+So yeah, there's definitely a lot of options.
+Yeah.
+Loom.
+I've been using a lot recently, um, for sending messages to you, sending messages to the other
+members of our staff.
+And then Justin communicates to me with videos.
+He'll be like, Hey man, are you around?
+And I'm like, yeah.
+And then he'll just reply with like a video.
+I'm like, fuck.
+Very true.
+Very true.
+Uh, Joel's like, Hey man, what's your favorite color?
+And I just said to respond to the loom link.
+Like, Hey, so as you can see, I'm a pretty big fan of this shade of red right here.
+Uh, but also this one's pretty good as well.
+Oh my gosh.
+Yeah.
+Um, but so let's, dang it.
+We are silly today, Joel.
+Um, so regarding loom, I, I did, I did want to definitely add this though, that one is
+very helpful for sending like collaborating with other hackers.
+You can be like, Hey, check out this request.
+It literally, you just press the record button.
+You record it.
+It gets your, it gets your mic, gets your, you know, little face down in the, in the
+corner.
+It's recording your screen, follows your mouse, all those sorts of things.
+And then literally the instant you press stop recording, it generates a link.
+Then you can just drop that link in a discord chat or, or whatever.
+And it will, and your buddy can like follow along with you.
+Exactly.
+Um, so that's super helpful for, for, um, collaboration.
+And here's what I've been doing with it recently.
+That's been kind of a game changer is when I've got to step away from work, um, for the
+night or whatever.
+And I'm in my zone and I'm like, man, I wish I didn't have to leave.
+I'm like in my zone.
+Um, just recording a loom video to myself and saying, Hey, um, you think this request, I
+was, I always do it in the, in the second person.
+Like you think that currently you think that this is really yelling at yourself.
+Yeah, this is really weird.
+And we should come back to this request.
+And, um, so yeah, that's been really helpful.
+And then I'll just kind of bookmark it and like put it right in an annoying spot in my
+bookmark bar.
+So I, I see it as soon as I open up my browser and, uh, and I've watched that video and that
+helps me drop right back into the flow state that I was in the last time that I was hacking.
+Um, so that's, that's a big, that's a big one, man.
+That one really helps.
+Yeah.
+Yeah.
+And I love that.
+I mean that in combination with what Ron said he does, and I do this as well, where you
+try and leave yourself on like a cliffhanger the night before so that you're really energized
+to go hack that the next day.
+Um, you know, that's always good to sort of set yourself up for success the next day and
+have something to look at and have something to focus on instead of just sitting down and
+being like, Hmm, what do I, what should I write?
+That momentum is like super important.
+So keeping the momentum going like across throughout the evening by sending notes to yourself and
+keeping, keeping notes of what you were working on and where you were in that momentum headspace
+is really, really important.
+Yeah.
+Yeah.
+I agree, man.
+I agree.
+Yeah.
+That was such a great, a great tip from prawns.
+Like I had such an extreme response to that.
+I was like, no, that's the moment that you gotta like, that's when you, that's when you crush
+the app into the ground.
+That's what you have to know.
+And no, it's, it makes a lot of sense.
+You just leave it.
+You leave it is you let, let your brain sort of, uh, reflect on it for the rest of the
+night or whatever.
+And then the next morning when you need to get up at, you know, 5 AM to go hack before
+your kids wake up, you, you wake up and your eyes are like this, you know, your eyes are
+kind of squinty.
+And then, you know, you remember and you're like, let's go.
+Yeah.
+I'm going to go hack that thing.
+Exactly.
+Very real stuff there.
+Some people like their coffee in the morning.
+I like my, my last night realization.
+Joel, what the frick, dude?
+Okay.
+Okay.
+A couple more, a couple more reporting tips and then we're just going to wrap.
+Let's go to putting this stuff at the end.
+Otherwise, we might weird people out.
+Poor listeners this week, man.
+Yeah.
+So if this is your first episode of critical thinking that you're listening to, I'm so sorry.
+This is not how we normally are.
+Um, okay.
+So a couple more tips, dude.
+I only just found out I've been writing reports on hacker one for seven years at this point.
+I just found out recently that you can use syntax highlighting in your markdown blobs.
+Yeah.
+Recently, maybe like being like two years ago or something like that.
+This isn't just a hacker one thing, by the way.
+Yeah.
+This is a markdown thing.
+Yeah.
+Yeah.
+Yeah.
+Um, backtick, backtick, backtick, and then whatever language, right?
+So there's one for each J S Java.
+There's one for like everything.
+Yeah.
+Dude.
+That is amazing.
+It's amazing.
+And my, one of my favorite ones is HTTP.
+Yeah.
+Um, which is a much less well-known one, but it basically is great for highlighting HTTP requests,
+the headers and the body and that kind of stuff.
+Um, it works especially well on hacker one.
+And I think they have some extra stuff added to it that makes it work nicer than it does
+in other places.
+But you can use this on discord as well.
+If you're chatting with your friends on discord and you send them a blah, a code block instead
+of just some block of texts, put the language there.
+Add some color to it.
+It's nice.
+Stop it.
+Get some help.
+It's like, get some help.
+Please.
+It's like a paint by numbers.
+You know, you can do it.
+Oh my God.
+All you have to do is just add the language.
+Okay.
+All right.
+All right.
+Um, yeah.
+Okay.
+Let me ask you this.
+Do you always, so just read the whole markdown situation.
+Do you always forget how to do a Lincoln markdown or is that like not?
+It's now burned into my brain.
+I don't know.
+Is it?
+I just know.
+I just know that it's.
+I don't know what my problem is with that, but I like always get it mixed up.
+So, um, here's a, here's a good way to think about it.
+If you were to send someone, if you were to write someone like, Hey, here's this really
+interesting thing.
+What you would normally do is you would put in parentheses after that, the link.
+Right.
+Okay.
+Right.
+Be like, Hey, here's this thing.
+Parentheses link.
+So it's the same in markdown.
+You just surround it and you just telling it what the link should be.
+It's square brackets and then parentheses adding the context sort of like that sort of
+thing.
+Yeah.
+Yeah.
+The link is like, and the square brackets are like link this thing.
+Okay.
+Could you say that all again, but with a little ASMR, like, okay.
+So the first.
+Whisper the.
+Oh my gosh.
+Okay.
+All right.
+That's, that's burned into my brain.
+Now that is helpful though.
+I think having that parentheses around the, towards the end, I think that that is, that
+makes a lot of sense.
+Yeah.
+Okay, dude, we got to wrap this episode because we're getting too loopy.
+Um, the last one, the last, let me just, let me just finish this out.
+Okay.
+Um, how many times can I derail Justin this episode?
+No, dude, no, it's not just you, man.
+I got to get a counter going.
+I'm going to get a world record.
+Yeah.
+Um, so last one that I wanted to say was screenshots are also very important in writing your reports.
+Um, you should be including those on a really regular basis.
+And, um, a lot of, I know a lot of you are just using like the built-in, uh, you know,
+windows screenshot or whatever, and, or some like janky Linux one.
+Um, I would recommend not doing that, even though I did that for a very long time and
+still sometimes do it because of muscle memory and instead get something like green shot.
+Where it's very simple.
+Like you just, you activate it with a key binding, just like you do with, you know,
+the windows screenshotter, you can select very granularly.
+You know, it allows you to select down to the pixel.
+It's got a little magnifying thing that says, okay, from his pixel, you know, you drag your,
+your size for the screenshot and then you can pop it up into like a little screenshot editor
+where you can really easily like draw arrows and add text and stuff like that.
+And you're not like trying to draw and paint, like do this super jank looking circle and
+like this arrow that you drew with your mouse cursor.
+And if you're on windows, the best screenshot tool that I can ever recommend is called share
+X.
+What?
+Share X.
+Why don't you put these things in the doc?
+Dude.
+I got to keep these things.
+These are top.
+These are top secret.
+Oh, wow.
+This looks top secret tips.
+Share X.
+Yeah.
+I think it's windows only, unfortunately, because it uses a lot of C sharp dot net stuff.
+I've tried to cross-cropile it from that before because I liked it that much.
+Wow.
+But yeah, share X is really, really awesome.
+It, you know, it allows you to add blur arrows, rectangles, all sorts of really cool things.
+It has like bounding boxes and stuff.
+It just copies to your clipboard.
+You can do custom upload stuff.
+So like if you have an, if you wanted to just like send it to some API endpoint, if you have
+a custom image uploader.
+No way.
+You can do that.
+Yeah, you can do that.
+You know, you can just have it copied to your clipboard, which is what I usually do.
+Yeah.
+But yeah, share X is really awesome.
+That's what I use on windows for screenshots on Mac.
+I just use the built-in screenshot thing.
+Preview is kind of okay.
+But if you want to add blurs and arrows, what I use is called sketch.
+S K I T C H.
+Sketch.
+Interesting.
+Sketch.
+Let's add it, add that to the, I'll add it right now.
+It looks like this software may or may not exist anymore.
+Did they like discontinue or something like that?
+Sketch.
+Does it have like a little, I can find it.
+I can find it like a CNET download links.
+Hold on.
+I just put it in the, I just put it in the section in the doc.
+Did you?
+Is that the one?
+It's got like a little arrow.
+That is the one.
+Yeah.
+That's it.
+I don't know how you found that.
+You know, that's it.
+Hacker skills, man.
+Google dorker.
+Sketch.
+Yeah.
+This one's pretty good.
+Oh yeah.
+It's made by Evernote.
+Yeah.
+Oh, is it really?
+Oh.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+That's one of the reasons I like it.
+So it's made by like pretty reputable company.
+And so Evernote makes this, yeah, this image editor called sketch.
+And you can add blurs.
+You can add a little arrows to it.
+I think you could probably do it in preview, just the back preview app as well.
+But it's blurs.
+I don't know about that.
+But yeah.
+Share X on windows.
+Okay.
+So that's your recommendation.
+My recommendation is green shot.
+I'm going to, I'm going to go ahead because you didn't tell me about this before the episode,
+Joel, and I didn't get the chance to go and download it and install it and provide my
+official recommendation, but we can leave that up to the listener.
+Green shot versus what was the one for what windows that you recommended?
+Share X.
+Share X.
+Okay, cool.
+Yeah.
+We'll see which one of those gets the better, gets the better review from the community.
+Yeah.
+All right, dude.
+Is that a wrap?
+I think we're done, right?
+I think that, I think that's a wrap.
+All right, dude.
+Good luck writing your reports, everybody.
+You got this.
+Go, go get it guys.
+All right.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+Peace.
+
+
+
+
+
+
+
+
+
+
+
+Peace.
+
+Peace.
+Peace.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

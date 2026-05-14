@@ -1,0 +1,1372 @@
+When you're creating gadgets of any kind, you want to know the individual pieces.
+You can't solve the puzzle without knowing what your puzzle pieces are.
+And I think it's really important to understand what the different components are, because
+then you're hacking when you're away from your computer.
+Then you can go for a critical, critical, critical thinking.
+Best part of hacking when you can just, you know, critical think, right?
+Hey, what's up critical thinking family?
+Today we have a dear friend of mine.
+His name is Kieran.
+Most of you probably already know of him, but his hacker handle is monkey.
+And we'll get into a little bit more of his story later, but for now, you know, the ritual
+we have to jump straight into a bug.
+So what did you bring us today, Kieran?
+Well, I have three bugs.
+What?
+Because, yeah.
+Are you trying to one up all our previous guests?
+Yeah, we'll jump into the bugs, I guess.
+I do a lot of client side stuff.
+So hopefully that translates well on the audio format because you know how client side can
+be.
+Well, our listeners have heard Justin describe enough of running bugs.
+I'm trying to get confused.
+I'll ask questions.
+I'll play the listener here.
+Yeah.
+Um, so first bug was account takeover via post message on a public program that I can't name
+for obvious reasons.
+Um, what made it really interesting was like the sheer number of, um, gadgets we had to
+bring in.
+I was doing this with my friend, Animesh, who's a, he's Australian researcher.
+Cool.
+So, uh, we, we spent like, I think like a week or something on this, but basically the idea
+was, yeah, we, we got high bounty from it.
+So that was, that was awesome.
+Nice.
+Um, but there was several pieces to this bug.
+Um, the core of it was that there was, uh, an XSS in a chat widget that was on the page
+and that had a gadget that let you leak the, uh, the HREF of the parent.
+So this, this chat widget was in an iframe and the exploit we had was to leak the OAuth
+code from the, the parent URL.
+Uh, it had this like logging thing that would like send the, the, that read the parent HREF.
+And so, um, I need to like, remember which, so basically the, this chat widget,
+the, the, the, the, the URL you give it in like an iframe source.
+Mm-hmm.
+So you could send it a JavaScript protocol and it would pop XSS in the context of the
+chat widget.
+Um, and this, this, they had like four or five iframes on this page.
+Like the victim.com had like four or five iframes.
+And so, uh, the problem was that they had an origin check.
+Um, but you know, that allows custom JavaScript for their custom domains.
+Oh yeah.
+Of course.
+So I could get a window reference by hosting custom JavaScript on, was it, is origin and
+do a window.open to the victim page.
+And then you could send a post message and bypass the origin check.
+Cause it's like it, it was a from a origin.
+So it would.
+Yeah.
+Yeah.
+And so that was great, except the OAuth flow had coop.
+It had cross origin opener policy.
+And I think Justin's discussed this recently, but it was a huge pain for, for post message
+bugs.
+Um, but Animish then discovered that you could fixate the state and what that would let you
+do would, it would like jump you one step ahead in the OAuth flow.
+Um, so it wasn't, it wasn't like slash authorize or whatever.
+It was like the next step over, which didn't have coop.
+So we would like generate the OAuth state on our end, fixate it in the victim.
+And it wasn't tied to the victim session or anything or any of that.
+So we could generate a state and have it be valid.
+And that would then redirect to, um, the page with the, the iframes and stuff.
+And with these kinds of bugs, you need like a dirty dancing, uh, gadget of some kind because
+you need the code to be unused and to sit in the URL.
+Right.
+So what I did here, I double URL encoded a hash fragment.
+So on the first redirect, it would decode once on the second redirect to our victim page,
+it would decode twice, but it would put the code parameter in the hash fragment when it
+did that.
+So it wouldn't be processed, but you could still snag it.
+Exactly.
+So the full chain was like window.open to this fixated state, which would redirect with the
+double URL encoded hash fragment and put the code in the URL.
+Then I'd send a post message to one of the chat widget frames, but that wasn't the one
+that had the logging mechanism.
+So I would like, I frame hop over from the first frame to the second frame, cause they're
+the same origin.
+And when they're the same origin, you can, uh, change the JavaScript and then you can
+overwrite the DOM.
+Yeah.
+So I would like hijack the frame with the logging thing.
+I would trigger the log.
+So the parent href would leak to the, the Salesforce chat.
+And then I would, uh, exfiltrate from there.
+Cause that's just exercise in the chat.
+And they fixed that.
+Otherwise, I wouldn't talk about it.
+But yeah, did you have a, um, did you have like the whole thing automated and set up or
+did you just like record it once for the demo and submit it or, or do you have it like
+replayable so they could, so they could redo it?
+Yeah.
+I had a, so the, I, this took so long to get through triage.
+I ended up writing this code snippet that would generate the state on my server.
+Yeah.
+And then the JavaScript on would get the fresh state from my server each time.
+Yeah.
+Generate the POC.
+It was, it was a really big POC.
+Yeah.
+That's cool though.
+That's amazing.
+All right.
+Bug number two.
+Bug number two was I got account to take over without being logged in client side.
+Um, which seems impossible, but so there was a unauthenticated, uh, CSTI.
+So client side template injection, it was in angular.
+Um, but the problem was it only existed in the context where you weren't logged in.
+Um, yeah.
+So yeah, this sounds very interesting.
+So did it, is it like, uh, did it execute and then wait?
+And then when they did log in, is it like X full to you?
+Tell us how this works.
+So the key here was that they had a mirror domain.
+That was not the same, uh, domain as, as the one we X assessed.
+Yeah.
+That had the same cookies.
+But of course, same origin policy applies.
+So you can't just reach over and, and read.
+Right.
+That's just not how it works.
+Right.
+So what they did have was they had this, if this is another post message thing where they
+had a post message listener that would, uh, send the, the user's credentials to the parent,
+but they had frame ancestors.
+And what that means is unless it was in one of the, uh, pages owned by the company, they
+wouldn't let you do that post message, uh, sending the cookies to the parent.
+Mm-hmm.
+Um, and the other problem was that if you received the cookies in an unauthenticated scenario,
+like in the CST page, it would like log in and redirect.
+So that, that would break the whole chain as well because you know, you can't do anything.
+So what I ended up doing here with the XSS, I, I framed the, the same page with the CST.
+I select example.com.
+I framed example.com.
+Okay.
+And then I purged the DOM because they're the same origins.
+So you can just wipe the DOM.
+Mm-hmm.
+And in that I put an iframe with the other, uh, page that had logged in, but that was a
+different domain.
+Okay.
+And that would meet the criteria for the frame ancestors.
+But because I purged the DOM, the JavaScript that would redirect no longer existed.
+Right.
+So then I could trigger the chain where I send the post message, get the creds, which would
+go to my purged one.
+And that would exfil to, to my origin.
+So you had, you had a template injection based XSS.
+CSTi, the top.
+On.
+Yeah.
+Then I had an iframe.
+Right.
+Yeah.
+But then I had the other origin at the very bottom.
+Right.
+Right.
+Right.
+Right.
+The one where they're actually logged into.
+Yeah.
+And I purged the middle one so it wouldn't redirect, but it would keep the frame ancestors.
+But because of the frame ancestors, you could kind of like reach into the, to the one they
+were logged into to grab the creds and then exfiltrate them.
+Yeah.
+Yeah.
+The frame ancestors white listed the, the CSTi page.
+But by, by putting, by purging the DOM, I don't trigger the, the code that would cause
+the redirect and break everything.
+So I, so I guess this would always work, right?
+Yeah.
+When, anytime you want to kind of reach across with a post message from, um, one domain,
+when you can't, you could potentially use that same XSS to do what you did in most of
+those cases.
+Right.
+You could wipe the DOM, make it iframe.
+If you have a scenario where the DOM has code that breaks something, you can iframe itself
+because you know, even with, um, most frame restrictions, it's even if it's same origin,
+you can still iframe yourself and you can just purge the DOM and like, keep, keep the
+benefits of the same origin, but not the problems with any code on it.
+Right.
+Any code that's like kind of a blank slate, like a playground almost.
+Yeah.
+That's awesome.
+All right.
+And the third one is a server side bug, right?
+Yes.
+Because as much as I like client side, I don't want to just be a client side guy.
+So we should have, we should have alternated it.
+We should have put the server side in the middle to kind of balance it out there.
+Probably.
+Probably.
+For any listeners that aren't gone yet, tell us about the server side bug.
+Yeah.
+So this was during my like a hundred hour challenge I did for the newsletter last year.
+That did really well.
+Yeah, it went quite well.
+I was pretty happy with it.
+Um, and so basically there was a proxy, like proxy API and it had the classic URL parameter.
+Um, I did actually pop SSRF on this URL parameter, but that's not what this bug is.
+This is a different bug in the same place.
+Uh, so I was just playing around with it as you always do when you find something strange.
+Mm-hmm.
+And then I did a relative path because that's always worth checking, not just HTTPS, but just a slash.
+Sure.
+And it gave me this error that was like jar protocol, not allowed.
+And I was like, this is really weird.
+Like what, what is this?
+And you weren't passing a jar file to it or anything.
+No, it was just a slash.
+It was a URL equals slash.
+So I was like, this is super strange.
+Um, and then I did like slash X and it gave me class path resource does not exist.
+Mm-hmm.
+Now when you hear class path immediately, it's like Java.
+Yep.
+Because Java is the most common for classes.
+Um, and so I asked PM and H who is like a God at Java stuff.
+He's written a book on spring security.
+So yeah, he's like my go-to friend for, for the server side stuff.
+And he was like, Oh, maybe it's this.
+Um, and basically, uh, if I put the class path protocol, which is apparently a protocol
+in spring, it didn't error, which meant what it was doing was it was loading whatever file
+I gave it inside the certain function in spring that was made for loading chairs.
+Interesting.
+Um, so were you able to write a jar file into that?
+No.
+Okay.
+This was unfortunately a low bug.
+It was just really, really cool.
+Okay.
+So he was like, try like slash meta inf, which is like, right.
+Pretty much a default file in all jars.
+And that gave me the same error, jar protocol, not allowed.
+So by playing around with that, I figured out what it was doing was if the file name existed,
+it would give me jar protocol, not allowed.
+And if it didn't exist, it would say class path resource not found.
+Mm-hmm.
+So then I could just use this to fuzz the entire, like the file names of all the source code
+they had, all of their jars.
+That's funny.
+So it was basically like a file name disclosure.
+Yeah, but I couldn't load them and I couldn't like get RC or anything.
+Cause I couldn't actually, it was just for loading up the jars and not executing them.
+Once you knew what those files were that existed, did you try to browse any of them?
+I guess you could have done the same thing if the, if you didn't have that gadget where
+you just tried to browse to them, but because they were server side, it wouldn't load anyways.
+But yeah.
+Yeah.
+But I could like, I use the program name and like fuzzed all the, like the file names and
+stuff.
+So I got quite a lot of information for just differentiating between two error messages.
+Yeah, that's cool.
+You know?
+So yeah, it was a fun one.
+Nice dude.
+Well, to give people a little bit of different backstory, um, on kind of your history and
+our history, um, Kieron, uh, and I met in a really cool way actually.
+So I was working at app Omni and we were trying to hire another researcher for the labs team,
+which you've probably heard me talk about before.
+That's where I worked with, uh, Aaron Costello and, uh, I hop on a call and, uh, this guy's
+face is sitting there and he's like, Hey, do you do bug bounty?
+Are you an ambassador?
+Are you an ambassador for hacker one?
+I was like, yeah, I am.
+And he's like, I am too.
+And so Kieron is, uh, yeah.
+Yeah.
+That was like the second batch.
+So there was only like 20 something ambassadors.
+Yeah.
+Yeah.
+There was a pretty small crowd.
+And then obviously the bug bounty space is pretty small.
+So, uh, anytime you meet somebody in bug bounty, you know, it's like, uh, there's a kindred
+spirit there.
+Yeah.
+Yeah.
+You were like, Oh, I'm also an ambassador.
+I'm also an ambassador for, for Kentucky.
+And I was like, what?
+Yeah.
+Did you?
+
+You didn't know that, right?
+You didn't like pre look me up or anything.
+No, I had no idea.
+We just kind of happened to tease it out, which is cool.
+
+So Kieron, then of course I lobbied hard to get him hired and ended up getting hired at
+App Omni.
+And how long did you work there with us?
+For two years.
+Yeah.
+It was about two years.
+I know you were kind of like full-time then part-time then, uh, do it like you were doing
+schooling and everything else.
+I was shuffling it with university as well.
+So yeah.
+Yeah.
+Um, so kind of sweet.
+We, we got to work together for, for a while.
+Um, and that probably honestly what made us become even better friends.
+And now we're both full-time bug bounty hunters.
+So we're still colleagues.
+Uh, we, we get to collab a lot and, uh, we're actually currently, we're currently hacking
+on something this week with our buddy Archangel Douglas day.
+Um, and I think you were going to mention that he had just launched a newsletter, right?
+Yeah.
+Yeah.
+I think he's getting more into his, uh, his creative side.
+Um, so he launched a newsletter called Eric angel drops.
+So, yeah.
+And if you just go to Douglas dot day, you can click like newsletter there on the left.
+And you also, yeah, his domain is so cool.
+I know I always mention that on the podcast, but, uh, if I, I wish I could get first name
+dot last name, I don't think, uh, it's going to be a TLD for, uh, so you might not be able
+to do that.
+You could get hacker someday, you know?
+Yeah.
+Yeah.
+I think me, Justin and I might've mentioned that on a recent, but yeah, if I could get
+like Joseph T dot hacker, where it's my name with a dot after the first letter of my last
+name, he'll be pretty sweet.
+Yeah.
+Um, yeah.
+Tell us a little bit.
+I mean, just if there's like anything, we don't need to get into your whole backstory,
+but if you think there's like kind of any, anything interesting or inspiring to up and
+coming bug hunters, I mean, you're pretty young and you've already been at a few live
+hacking events and, um, you know, you seem to know everyone else in the industry.
+Um, yeah, I guess just tell us a little bit about kind of that, how you got there.
+And if anybody, you know, doesn't know you and you want something, want them to know
+something about you.
+Um, yeah, in case you can't tell from his accent, Kieran is from Ireland.
+I can, I can run through how I got into bug bounty and stuff for sure.
+Yeah.
+So the main motivation was that I just had no money in college.
+Um, and I was like, I need money.
+I was pretty good at writing code in the past, um, like doing Python and stuff.
+So, and then I found bug bounty.
+I think it was through stocks videos.
+Yeah.
+What did you see?
+Like maybe ran across on YouTube.
+Yeah.
+Yeah.
+I was like doing the same stupid, like how to make money online crap that, you know,
+a lot of us go through at some point.
+And, and then I found stocks videos and he had like live hacking event, uh, vlogs, right?
+Yeah.
+Had you done any CTF stuff?
+So do you think the algorithm knew you might be interested or at that point you had not?
+I have no idea.
+At some point I came across them and then I, I was watching his videos.
+Like, this is so cool.
+Like I really want to go to one of these things.
+And so from there, I think I joined the bug crowd discord server and I met my friend, Mikey,
+Mikey 96, who's been like friends since the very start of my security career.
+Yeah.
+Um, and, and so from there, I just kind of went through the same cycle of like reporting
+crap bugs into reporting good bugs into reporting like fun chains now.
+Yeah.
+Um, and, but my first venture into security was very much bug bounty and not CTF.
+Like I took the unusual path of bug bounty to CTF rather than the, the reverse.
+Yeah.
+So you did some cool stuff at your university, right?
+Once you were kind of into bug bounty into hacking, you kind of, uh, kind of spearheaded
+that there at your university, right?
+Yeah.
+So I exactly.
+So I got into the hacker one ambassador program, um, pretty early on in, in my bug bounty journey.
+And a bunch of us got invited to H1702 two years ago.
+That was in, or yeah, more than two now that's 2022.
+And while I was there, um, I went for a breakfast.
+I think it was in Denny's in Vegas with a bunch of other hackers.
+Classic.
+And then Justin was there and he realized I could speak Japanese.
+So he just pulled me aside and just.
+Yeah.
+And Justin is half Japanese.
+Like his mother is Japanese.
+So for, yeah, for context, I, I live in Edinburgh and Scotland, but I'm half Irish,
+half Japanese.
+I grew up in Ireland.
+
+And so the minute Justin realized that I could speak Japanese, his like inner wanting to practice
+his language skills came out.
+And yeah, from there, I think he just had introduced me to like a lot more hackers and stuff.
+So that was a huge, huge moment for me, honestly.
+Yeah.
+I did.
+I plus one you to that 702.
+I feel like I may have, but, uh, I don't know.
+But I, but that was shortly after I started working at app on these.
+So we were hanging out for a bit for sure.
+Yeah.
+Yeah.
+Cool.
+Yeah.
+And then, um, yeah.
+So, and then obviously I was at of late kind of a cool thing.
+We're, we're going to both going to be at Google's Tokyo, um, live event coming up in
+April, which should, which should be really cool again with Justin.
+Um, yeah.
+And so, uh, hopefully we'll find some great bugs.
+I think it's AI focus.
+So, um, I was going to mention that I know before I do want to like circle back to hearing
+what you and link are cooking up, but, um, uh, I know that you also kind of have a penchant
+for, for AI hacking.
+You and I have looked at a bunch of different AI products.
+Um, was there anything you wanted to say kind of in that regard that you thought was
+cool or that you, uh, have been doing?
+Oh, sorry.
+And did I even mention that Kieron's a researcher at, at, uh, CTBB.
+Yeah.
+So Kieron, Kieron is one of the handful of people that, uh, Justin brought on to the CTBB research
+team.
+So it's, it's him, Matan Bear, um, Kevin, who we heard from last week, um, or I guess it'll
+be two weeks ago by the time this goes out.
+Um, no, I think it's Hako and Franz as well.
+Yeah.
+Uh, who is it?
+It's Hako, Haku Piku and Franz.
+Yeah.
+Yeah.
+Franz and Haku Piku.
+Yeah.
+So I guess, yeah, maybe cover a little bit of what you're doing with the research lab and
+then the AI hacking stuff.
+Yeah.
+Yeah.
+Sure.
+Um, I think the research lab is very heavily client side focused at the moment.
+Um, I mean, the other guys are geniuses.
+They're finding some really cool stuff, but, um, I have one bit of research I want to talk
+about today very briefly.
+Um, because it's a piece of research that I just don't have the time to work on myself
+now.
+So I'm hoping someone will listen to this and like, look at this behavior I'm about to describe
+and, you know, take it somewhere and do something with it.
+Yeah.
+This is a free bone for the listeners, right?
+It is.
+Um, and so, and it's server side, so this is a nice bit of variety.
+Um, but to do with web sockets, uh, and so I was messing with web sockets recently enough
+a few months ago, just because I think they're very underappreciated, not just from a bug bounty
+standpoint, um, but from just a general research standpoint, because they are a whole other
+protocol.
+Yeah.
+I would say a lot of bug hunters just ignore them.
+Yeah.
+And the other thing is they're asynchronous.
+So they're a lot harder to work with than HTTP, which is like pretty sequential when you're
+dealing with it most of the time.
+Mm-hmm.
+And so, um, and yeah, web sockets are often susceptible to the same kinds of bugs.
+Cause you're, if you think about it, um, where it sits in like, uh, an infrastructure, it's
+just a protocol.
+So it's just a means of communicating information.
+So when it hits the server, it's going to have the same problems.
+Right.
+Right.
+Still needs auth, still needs, uh, you know, it's still using IDs to access data.
+So you can still have IDOR, still have auth bypasses, still have all the things.
+Exactly.
+And even XSS, right.
+Cause it's often taking that content and rendering it on one side or the other.
+It could exactly.
+It really could.
+Um, I think, I think space raccoon had something like that on zoom or something, but yeah, there's
+a bunch of stuff that can happen with them and people are just afraid of web sockets.
+So they don't, they don't go looking.
+Um, and so I was messing around with, uh, these web sockets on one of my programs and I, I was,
+I assumed that, um, it would, it would follow the spec.
+And of course it never follows the spec.
+Right.
+Uh, and, and I found this really weird behavior where, so with web sockets, uh, it's a pretty
+simple way to, to the, the way you upgrade to a web socket connection is quite straightforward.
+You send, um, an upgrade request, which is a HTTP request, um, with certain, certain request
+headers that tell the server, I want to upgrade my connection to a web socket.
+Right.
+And then from that point on, the server will interpret the rest of the data, uh, you send
+a web socket frames.
+Um, and then it's completely switched to the web socket protocol.
+You initiated it.
+You get a one-on-one back, right?
+Yeah, you, exactly.
+You one-on-one is like the successful connection response.
+And from that point, the server assumes you're on the web socket protocol.
+You are no longer on HTTP in any capacity.
+Um, and while I was messing with this, I was, for some reason, I had the stupid idea to
+send like body, uh, like a request body with, with the connection request.
+Yeah.
+And what that ended up doing, um, the server interpreted the request body as a web socket
+frame.
+Yeah.
+Which is nonsense.
+Yeah.
+Yeah.
+It's nonsense because.
+So what I, I figured out what I think is happening is the server sees the first request
+as like one-on-one.
+Mm-hmm.
+Yeah.
+It, it, it'll process the requests in order.
+So it looks at the first request that says, okay, we're now a web socket connection.
+And then it looks at the second bit of data I sent and it says, okay, this is a web socket.
+This should be, this should be the first frame of the web socket.
+Exactly.
+So what you can do.
+It's the HTTP body.
+Right.
+Yeah.
+So you can control the op codes, like normally with a web socket connection, it has the op
+codes and stuff at the top.
+It has like a, a header and then it has a body.
+That's like what each frame looks like.
+And so normally when you're sending stuff in a web socket, you can only control the message
+because that's the op codes are settings.
+They're like, this is text data.
+This is binary data.
+Right.
+That kind of thing.
+But with the pipeline frame, you can control everything because it's just taking raw,
+raw binary information.
+So I like managed to construct the bytes of a valid frame, like a very minimal one.
+And it was accepted by the server.
+Yeah.
+This is still your connection.
+So it's not that impactful, but what's really strange is that it also responded to transfer
+encoding chunked, which is a way you can send post body information.
+Yeah.
+That opens up a lot of doors.
+Yeah.
+Do you think that that's because sometimes it's like, it would be possible to send a
+web socket request that's too large.
+And so it's actually going to do a similar thing that it does with HTTP where it's basically
+breaking it up into multiple web socket requests.
+So there is a thing called fragmentation in web sockets.
+Yeah.
+There's an op code you can set that breaks up your web socket data into like smaller chunks.
+It says, this is a fragment.
+This is a fragment.
+Yes.
+And so on.
+It's already handled by the web socket protocol.
+It doesn't make sense why transfer encoding would be used in any way.
+It makes me think that they layered it.
+They basically like shimmed it in.
+They shimmed in web socket report or sorry, web socket.
+Uh, like the feature, basically they shimmed it into an HTTP stack.
+And so the HTTP stack is still reading HTTP header for some reason.
+Yeah.
+Yeah.
+It's something like that.
+I think it's pipelining.
+So pipelining is my guess of what's happening.
+Right.
+So the, the significance of transfer encoding chunked is that this is like one of the, the
+requirements for request smuggling.
+So you could have this insane theoretical attack vector where if you send content length and
+the server is ignoring transfer encoding, reading content length, there's a non-zero probability
+that you can smuggle web socket frames via HTTP request smuggling.
+To other users.
+Right.
+Yeah.
+Which would be crazy.
+Or get theirs back.
+Right.
+That's always the impact is that basically you can send requests or get their data back.
+Yeah.
+Right.
+Right.
+And so I would love if someone investigated this because it makes no sense why transfer
+encoding or pipelining should work in a web socket context, but it does.
+And I've tested this across multiple different web socket implementations.
+Yeah.
+AKA pork swagger team.
+If you're listening, maybe do a deep dive here.
+Yeah.
+That's really cool, man.
+Yeah.
+Yeah.
+I remember you doing that initial research and you know, I'm really interested in it because
+I feel like so many different AI chat bots use web socket for streaming back and forth.
+Um, you know, sometimes they don't, sometimes they use like a single big long HTTP chump thing
+and it's put in as, as it's received, but a lot of times it'll switch to web sockets.
+Um, how does the, like, once you get upgraded, is there just like a single key that access that controls, um, kind of authentication there for web sockets that just gets passed with every request?
+Yeah.
+
+Web sockets don't have, uh, authentication, like implemented really.
+You have to do that yourself in every implementation.
+Because it doesn't really need to, right?
+Because it's like each connection is just from you to them.
+Yeah.
+Right.
+Um, but a lot of the time they do say origin checks on where, where you're initiating the connection from.
+So cross site web socket hijacking, isn't that common anymore?
+Um, it's pretty, it's pretty difficult to find attack vectors.
+I think of, of the implementation these days, but there, there is absolutely more there.
+So, you know, it's a bone, a bone to look at.
+Yeah, that's cool.
+Well, if, if anybody figures this out or messes with it, definitely, uh, message us in the, in the critical thinking discord channel, either me or Kieran or, or Justin or somebody, I would love to, to get a closed loop on this.
+Where actually speaking of closed loops, this is not in our notes gear on, but there are three new there.
+You have had three separate times in the last year when you have either thrown out a bone in your newsletter and you've closed the loop yourself or someone else has.
+I think it's been you every time.
+Right.
+So if you can remember what these three examples were and they're not program specific, all I know is I feel like there's been three separate times where I'm messaging you and you're like, yeah, actually this vulnerability we're working on right now.
+I just happened to mention nine months ago in my newsletter.
+So if you're not subscribed to monkey hacks, you need to go subscribe to it.
+But there was that piece of research you were working on with a few other researchers.
+Um, and I had like found this, your final payload in the wild, but your chance and written about it.
+Yeah.
+Like months before.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+That was the, actually I talked about that on, I think as I talked about that as my vulnerability, um, with Justin on the pod, it was, uh, what was the name of that formatting language?
+No, Ampscript.
+Ampscript.
+Yeah.
+It was, it was the Ampscript vulnerability.
+So people should go back and find that, but what were the other two, if you don't mind me asking?
+Oh, there was one XSS payload that I like used with Douglas.
+Yeah.
+Yeah.
+Yeah.
+There was an XSS payload that was theoretical that you had dropped in your notes months ago.
+And then it was the exact payload character for character that you all use to pop this thing.
+Yeah.
+Yeah.
+I don't remember the last one, but it's, it's, it's, uh, you know, subscribe to the newsletter.
+That's, uh, that's the takeaway here.
+I'm going to share my screen so people can see it.
+And because it helps, uh, the producers with, uh, knowing this, I'm going to share screen.
+Chrome tab.
+There we go.
+So yeah, this is, this is, uh, this is gear on the, um, newsletter slash, um, wow website.
+Cause it's a beehive.
+So it's kind of both.
+And you can go back and read all of his, uh, posts by going here, I think.
+Yeah.
+So he, he publishes pretty frequently, um, on his, on his email list.
+Um, as you can see, he's an enjoyer of some, some, uh, AI art as well, but, uh,
+Kieron kind of details his journey.
+That's one thing that I think is neat.
+You know, everyone's newsletter has a little bit of a different spin.
+Kieron's a newsletter is, you know, it's got plenty of good content and news like other
+ones do like he cover.
+He, he puts like the most recent stuff in here, but, um, more than that, he also talks
+about his journey, you know, like places he's went with like actual kind of, uh, photographs
+and stuff.
+And then, you know, his kind of zero to hero journey as well as kind of captured in here.
+So that's sweet.
+Yeah.
+I think having that personable aspect to bug bounty is super important as well, because
+that's how I got into bug bounty in the first place was like stock doing these
+vlogs and adding that personal element is what kept me engaged with everything.
+Yeah.
+Kind of, kind of, kind of showed the lifestyle, right?
+Yeah.
+Yeah.
+And one of them was H14420 that he went to.
+And then I actually went to that in 2023, which was like a full circle moment, right?
+Like you watch this and then, and then I, I was at the event and I found his stocks,
+old videos and I was like, oh my God, I'm like, I'm here.
+I made it.
+Yeah.
+Yeah, exactly.
+It does feel like it was for me.
+I'm sure it is for lots of other hackers.
+It does feel like the, uh, allure of going to a live event is like such a strong motivator
+for like getting good and like finding a lot of bugs.
+So if you're out there and you're, you know, and that's, that's the dream, then I would just
+say, keep with it, you know, hold that in your mind's eye and, and use it to kind of, uh, work hard.
+Yeah.
+Yeah.
+And I mean, we can touching on the upcoming one with Google, I think there's going to be
+a big overlap between client side and AI hacking because like the AI has to interface.
+It's implemented in some way.
+It's interfacing with the website, um, via client side things.
+So a lot of the time, if it's a chat, a chat window that almost always uses post message.
+So, or even, even from the exfiltration standpoint, once you've got a prompt injection,
+can you render elements that expose the website to like cross site leaks?
+You know, are there iframes that are created that let you say, count the number of iframes and
+get information about the victim in that way.
+So it's something I really think is going to be super important now in the next few years.
+Yeah.
+I mean, just as another little bone to the listener, didn't you find a way like it wasn't,
+you actually didn't fully close the loop.
+So it's probably still vol in a specific product that's out there.
+You found a way to inject messages kind of into this, into the chat stream with the AI.
+But, um, but there was some nuances there that didn't let you fully close the loop.
+So people should definitely look at post message bugs, uh, injecting or reading messages.
+Yeah.
+Yeah.
+Yeah.
+I can't say too much about that one.
+Cause it's not fixed yet.
+Yeah.
+Yeah.
+Hopefully you fully cracked it.
+I did have a, an AI bug.
+Uh, I think, yeah, I had an AI bug a while back, like a few months ago where, um, there
+was like this document templating system.
+So I had the prompt injection inside the template and you could put this on a marketplace.
+So what the like attack scenario was that the victim would download my template and write
+their stuff and they would like select all the text and do something with it, with the
+inbuilt AI in the text editor.
+And I mean, this is, this is all like one ecosystem.
+So the market was like, that's what you're expected to do.
+Yeah.
+Yeah.
+Yeah.
+It was a SAS platform that had all this stuff.
+So, um, the attack scenario was that the victim would like take my template.
+Um, and because my, my template had invisible text, that was like white text.
+When they run the AI on it, it would do prompt injection.
+Um, and this thing had two calls built in.
+So this was like basically able to even have right access if you'd misconfigured your AI
+that way.
+That's awesome.
+Yeah.
+Yeah.
+I mean, that scenario where basically you're editing an object that is inside of the ecosystem
+with a prompt injection payload is something that I put in my guide that I'm about to release on,
+um, basically how to be an AI hacker.
+So, um, very cool attack scenario.
+Um, so Justin, I think, uh, interviewed Kevin last week.
+Uh, and so I, one thing I wanted to do, well, actually before we,
+before we circle, I think we're going to cover a little bit of news is the point that I'm building
+to, but I actually wanted to, to, uh, get a chance to mention what you and Link from
+Buckrod are working on.
+Yeah.
+So my friend Link and I, we've been working on a project for where we want to connect.
+He's like kind of over community at Buckrod, right?
+Yeah.
+Yeah.
+He, he does community management at Buckrod.
+Um, and we've been launching or, you know, working on this, this idea where we want to connect hackers
+with companies.
+Um, so hackers who want to find work with companies who are looking for security talent,
+um, and we'll always take more candidates, right?
+So if you're looking for security work, just feel free to reach out, um, and send your CV and stuff
+and we'll see what we can do.
+Sweet.
+Um, cool.
+And then, uh, yeah, so basically whenever we have a lot of guests here on CTPB, we, uh, don't often
+touch on the news and then the news kind of builds up.
+So there was some, uh, some, some, some cool, uh, news.
+Almost all of these are AI related just because that's what I'm most interested in.
+So, uh, I'm sure there's some non AI related news too.
+I think even, um, I think Fort Swiggar actually said like, keep your eyes out.
+We have some research dropping soon.
+I don't know if they actually posted that or not, but, um, I saw, I saw a tweet about that recently.
+Um, cool.
+Yeah.
+So the things that I wanted to showcase one was Grok three.
+Um, let me see if I can share my screen.
+Yeah.
+It's defaulting to Grok three suite.
+So I can do this.
+I'm going to share my screen.
+Um, so Grok three is pretty much state of the art based on everyone that I'm following.
+And one cool thing about Grok is that it's much less, uh, like it's more jailbroken kind
+of by default.
+Yeah.
+It's much less likely to do rejection, rejection.
+So if you are a security researcher and you're looking for like the best in class and you also don't
+want it to reject you, let's see if we can get it to generate some payloads, generate 15 different,
+unique, uh, XSS payloads that would execute in different context for my research.
+All right.
+First of all, it called me out on my typo and how I spelled generate, but yeah.
+And then, you know, it actually, uh, it generated 10 that's 10.
+Oh, here it goes.
+Keeps going.
+Um, but it's pretty quick.
+And also, uh, actually I'm gonna say don't put them in code blocks.
+We'll see if we can just pop a, uh, XSS right here.
+Uh, yeah, it's not going to do it, but, um,
+I'm sure.
+Didn't deep seek have a XSS.
+Yeah.
+I'm sure it did.
+Honestly, deep seek had a lot of issues going on with it, but, uh, this is always one trick,
+you know, if it's in code blocks like this, whatever's on the front end that is converting
+this, uh, markdown into, uh, HTML for the rendering, you know, you won't ever get these to pop.
+But then if you just say, you know, don't put it in a, uh, markdown code block, then sometimes
+these will actually pop whenever you're, whenever you're hacking on applications.
+But yeah, so pretty cool.
+I just want to mention this because it is like kind of state of the art.
+You can use this think mode to make it think longer and deep search for it to like actually
+go away and do research for you.
+And, um, if you're, you know, a person who's doing a lot of hacking and you haven't decided
+which kind of AI chat bot to subscribe to, I think that, um, both chat GPT and Claude
+will still kind of give you some rejections.
+They're pretty easy to work around if you just, you know, say you have authorization to test on it,
+but I wanted to mention that croc three dropped.
+Yeah.
+I think for always been pretty, uh, generous with me recently, because we, we had that, uh,
+we found SQL injection yesterday and I was messing with the payloads and stuff in GPT 4.0.
+And it was just not complaining.
+It was giving me all the stuff I wanted.
+So.
+That's awesome.
+Um, yeah, I mean, I, I haven't had any issues either, especially if you set some sort of
+system prompt, I'll very frequently use the Misty app and I can just set like the system
+prompt for all the different models.
+And if you just say, Hey, you're a security researcher.
+Um, yeah, I think I might've mentioned that before, but I can share my, I think I can share
+that app here in just a minute, actually here, I'll just go ahead and do that.
+So I'll stop sharing this.
+Um, let me make sure I don't have anything sensitive pulled up.
+I do actually.
+So let me start a new chat.
+Good conversation.
+Yeah.
+So I'll share screen and window Misty.
+Yeah.
+So I had mentioned this before, um, and like a tweet thread, but in case people didn't see
+that, so this is called Misty and, uh, it's like MSTY.app.
+I'm not, not sponsored by them or anything, but my favorite
+thing is that you can add split chats and then you can change these models.
+So, you know, I could use sonnet here, 4.0 here, and I use, I love Gemini flash.
+So Gemini two flash here, and then you just click the sync button.
+So you can say like, I'm a security researcher and I'm trying to figure out how, um, CSRF works.
+Can you show me a, you know, a safe, I'm just doing this.
+So it doesn't reject me, um, benign CSRF example, HTML in a code block.
+Um, you know, and so you get to see all of their answers kind of simultaneously.
+It's so it's really nice because if you just like care, if so, you have like your API keys in
+there, so you're getting charged for these tokens.
+Um, but you know, flash two is really cheap.
+Honestly, son, it's pretty cheap.
+And so is 4.0.
+Uh, but this is really nice because if they, if you're hacking on something and you want
+like a bunch of like, you know, example payloads or example on ideas of what to hack or whatever,
+it's just really nice to be able to run three at once and kind of get the wisdom of the crowd
+or be able to like, if this one generates something good and these two don't, you can copy it and run
+it or whatever.
+And they have different strengths as well.
+Don't they?
+Okay.
+So yeah, exactly.
+Yeah, exactly.
+So sometimes one might work well and another one, you know, might not work or whatever.
+So, uh, yeah.
+Okay.
+I use AI quite a bit with my workflow these days, like for reversing, like obfuscated JavaScript,
+I have a heavily modified version of the Franz Rosen's post message.
+Yes.
+Chrome extension that lets me take the, the listener logic and I click analyze with AI in my little
+modified extension and it will like run it through chat GPT for, uh, for bugs.
+To see if there's any like, uh, issues with that post message logic, basically to see if there might
+be a vulnerability in it.
+Exactly.
+Exactly.
+Like, is there any JavaScript syncs that enable XSS and are they reachable and all this stuff?
+So I have like a, because obsidian allows you to do deep links.
+I have a button that will generate the, the markdown document with the results, like report document.
+Yeah.
+Yeah.
+I'll put the output of the, of the analysis goes straight into your obsidian.
+Into my notes.
+Exactly.
+Yeah.
+That's pretty fun.
+Yeah.
+That's really cool.
+Um, sweet.
+Yeah.
+Actually here, I'll share my screen, but do you want to talk about what we were going to
+share next about, uh, what space raccoon has been doing?
+Yeah, sure.
+Um, so he's written a book, um, from day zero to zero day, which I'm sure is no easy feed.
+Um, I looked into it a little bit, uh, it goes pretty much through his, uh, how to be a zero
+day hacker, how to be, how to find zero days effectively.
+Yeah.
+Um, of which he's found quite a long time.
+Yeah.
+Yeah.
+He's a, he's up there in terms of hackers that are very respected.
+So, you know, definitely worth reading.
+I would say even on the Gareth Hayes JavaScript for hackers level, like mandatory reading.
+Yeah.
+Space raccoon basically does almost everything in his life with excellence.
+Uh, if you've seen his blog posts, he has a few famous blog posts that are, um, extremely
+thorough and very good.
+And, uh, uh, I pretty sure he would just dominate at anything he did.
+Like if he, I think he, he's been working for, he works for the, I think the government in his
+country, right?
+I'm trying to remember where it is.
+Yeah.
+It's in Singapore.
+Right.
+Um, and I'm pretty sure over there, he is not able to keep above a certain amount of income
+from bug bounty.
+And so he actually donates a ton of money away, um, that he makes above and beyond like that cap
+that he's allowed to make based on their, their government, like with him, with the way
+he's employed and stuff.
+And so he's also an extremely generous person and, uh, I'm a big fan, but I'm sure this book's
+fantastic.
+You should definitely check it out.
+Yeah.
+He's not active on the, the life hacking event circuit anymore.
+Is he?
+No, I think, and I think it's just cause he is really busy at work.
+I know he basically was like dominating bug bounty.
+And then he was like, oh, I'm just going to go figure out how to, you know, be a, like
+a full blown, awesome, like low level tester.
+And then I think he, that's when he did like his OSCP and when he started working for their
+government and then, um, uh, I see.
+I see.
+And then, um, that's when he started doing like the kind of the zero day research, like
+looking at like binary exploits.
+And I don't know, I don't know what his focus is at the moment, but.
+Yeah.
+Yeah.
+I feel like there's a bunch of hackers like that who've like, maybe we're super active
+two years ago and now we're running companies and doing their own thing and stepped away
+from the bug bounty scene a little bit.
+Yeah.
+Yeah.
+You've been in the circuit for a long time.
+Yeah.
+For me, it took me a long time to go full time.
+Uh, app omni kept ripping me back in.
+Uh, so I'm only just getting on my full time track, you know,
+I'm so glad you did make the jump as well.
+Um, cause it's great to have you, have you full time bug bounty now.
+Yeah.
+We can actually chat a lot more.
+I weren't, we're more like colleagues, uh, and we get to get to collab on a lot more.
+Yeah.
+Yeah.
+
+Um, so we say app omni's, uh,
+it really changed the way I thought about bugs a lot.
+Um, because app omni for, I mean, if you've listened to Aaron's episode recently,
+you probably know is SAS, SAS security, um, and mostly focusing on things like security
+misconfigurations.
+Um, but to find those, you really need to change the way you think about SAS platforms,
+like as a system.
+And that had a really big effect on my bug bounty, like in the past two years.
+Yeah.
+I mean, just, just like even knowing the differences between like, Hey, this is misconfigurable.
+And so it's not a vulnerability for the platform, but a lot of the customers are really going to
+consider this extremely vulnerable.
+And so we, and so it's both farmable, but it's really impactful both to the companies and to the
+end users.
+Like if you're an end user, you don't want your, you don't want your PI leaked all over the internet.
+And so it's like, even though it's not a vulnerability to the platform, it's really,
+you have to, like you said, you have to shift your mind into realizing that these configurations
+still could be vulnerabilities for the companies.
+Yeah.
+And I think at a certain level of hacking, um, or like practice with hacking, there's like
+a mental jump you make where everything you're looking at is like this big mess and it suddenly
+turns into this organized system, right?
+Like the way you model it in your head.
+And Douglas is really, really good at this, which is why he's so successful
+with his, uh, with his access control and IDORS is just modeling a system because that's all bug
+bounty is.
+Yeah.
+You're looking at this website and you're taking out the individual pieces and you're looking at
+the flaws and how they interact with each other.
+That's right.
+Um, and so making that jump was like mentally up omni was like instrumental in my own development
+of making that mental jump.
+Yeah.
+I mean, I think the salary work can be really beneficial for people on lots of different
+levels.
+You know, if you're a tree, if you're a triage, you're going to get access to a ton of things,
+but even if you're just a developer, if you know, doing software engineering, whatever you're
+building, you're going to like very quickly become like a pseudo expert at,
+and so then that will help you understand systems like that so much better.
+Exactly.
+Um, and to circle back to AI again, AI is also another piece in the bigger system.
+So, uh, I think threat modeling properly has really helped me in the last few months
+because I never used to do it.
+Yeah.
+Now I do it properly.
+You sometimes actually think about like, you like either whenever you're not actively at
+your computer, you'll do it.
+Or sometimes even when you're sitting there, you'll kind of threat model the different
+paths to attack.
+
+Yeah.
+Um, I think a lot of why we say spend like 10 hours just looking at the documentation and stuff is
+so when you're creating gadgets of any kind, you want to know the individual pieces.
+Like you can't solve the puzzle without knowing what your puzzle pieces are.
+Right.
+And I think it's really important to understand what the different components are because then
+you're hacking when you're away from your computer.
+Then you can go for a walk and you can turn over the, the threat model in your head and then you
+can look for bugs.
+It's like when you're popping a bug in the shower, you're just thinking about it and you're like,
+oh, that's what it is.
+Yeah, exactly.
+If you, if you don't understand how they're interacting, your brain can't work it out.
+Exactly.
+Exactly.
+Uh, and I, it'll be the same for Google.
+I'm going to go and look at the different pieces.
+AI is just another, another puzzle piece.
+I need to familiarize myself and then look at how it's interacting with things.
+Yeah.
+I've been clarifying my thinking a lot on that as I've been writing this, how to be an
+AI hacker post.
+And, um, and I think the reason why it is kind of hard to model it is because I think
+things like prompt injection, uh, don't fit the normal buckets for vulnerabilities.
+And so the way I, the way I laid out in the post, and I'm just going to mention here on the pod,
+because you know, a lot of people won't see it or won't read it.
+And I think it'll be really useful is like prompt injection itself can be a delivery mechanism
+for normal vulnerabilities.
+Like some of the vulnerabilities that I've found in the past few weeks have been like,
+you know, uh, some, some sort of way to get the, um, the AI agent or the AI chat bot to
+basically respond with an excess payload in the victim's browser.
+And so in that instance, the vulnerability is still XSS.
+When they say it has that the vulnerability goes away, but prompt injection is just the
+mechanism for it.
+
+
+Whereas it's the entry point.
+Yeah, exactly.
+Whereas if it is actually, um, uh, prompt injection that's leading to a tool call
+in the user's browser, that's a popping, like the thing that you mentioned,
+the vulnerability itself is actually the prompt injection.
+Like you have to either re architect it such that the user doesn't have control
+over that untrusted data that then grabs the access of the second user's browser or
+the, the victim's, uh, agent that's executing needs to like, have to have human in the loop,
+uh, approval for any actions it's going to take.
+Those are the only two fixes.
+Like there are other mitigations.
+Like you can use a model that's less likely to be prompt injected.
+You can like look for, you can like have some sort of model classifier.
+That's like looking for text that's trying to persuade the model to do something, but there's
+no fix for that.
+Like the vulnerability itself is prompt injection whenever like the, the bug you described,
+basically.
+Right.
+It's like where you put a prompt injection payload in the document and then that's used
+in context of doing a tool call later.
+Like there's no, um, there's no like other vulnerability.
+It's like prompt injection is the vuln, but then in my XSS example, prompt injection was
+just the vehicle.
+So like, if you can kind of separate out, I was like, Hey, for some things I'm going to
+be using prompt injection as a vehicle to find traditional vulnerabilities.
+And the other case, I'm going to actually try to exploit, uh, the prompt injection itself
+as a vulnerability.
+And so I think that's kind of interesting the way it can be either or.
+
+I have, I have a story about that actually, um, that you'll probably enjoy.
+I don't remember if I've told you this, so yeah, it'll be fun one.
+Um, so I've done, I've done quite a bit of traveling like in the last two years or so.
+Yeah.
+Um, and on one of those trips, uh, I went to Japan to do a lot of just solo travel.
+Um, cause I really enjoy traveling.
+And so while I was there, I made a friend who's from Tajikistan.
+I don't remember his name, but I just remember he's from Tajikistan.
+Yeah.
+And he was actually a PhD in ML and like LLM stuff.
+That's cool.
+Um, and so he was telling me that the research he's doing, uh, and he was presenting at this
+conference in Tokyo was, uh, effectively planting an LLM bomb.
+So it was going to be, it was like, if you poison the training set to only trigger this
+malicious action on certain keywords, right.
+Then the model gets shipped and then someone says the trigger word, which is like, right.
+You know, pulling the pin out of the grenade.
+It's something that was never used or a string of tokens that are basically never used until
+you're the person who wants to use it.
+And it would just, you know, quote unquote, quote unquote explode.
+And yeah, the malicious, malicious action would be, would be undertaken.
+Um, but this was like last year.
+So it was very much cutting edge when, when he was telling me about it.
+Yeah, that's cool.
+Yeah.
+So I've, I've seen something similar to this.
+There was a research paper that came out that did something similar.
+The issue is like one thing that's like really hard about this is.
+It's, um, it's really hard to know what the tool calling infrastructure on the other side will
+look like, right?
+Sometimes it's JavaScript or sometimes it's like JSON output related, and you won't even
+know the names of the function calls.
+And so like, it requires a lot of really strong foresight.
+I think that the best way or like the most likely way this would maybe occur in the wild is if
+it's like some sort of like pseudo classifier where it's using an LLM, but it's like,
+um, it's having to output like false or true on like a lot of data.
+Um, and it's a situation where it's like kind of mission critical that it gets it right.
+And then you basically have a keyword that will always return true or always turn false, depending
+on what your, uh, what your goal is.
+And so it, and so like, let's say you have this big piece of text and you know that a classifier
+is going to be operating on it to decide if it's, let's say if it's a prompt injection payload.
+Right.
+And this, this classifier is really good so much so that like the whole world's kind of trusting
+it or something.
+But then if you put it in a single string, it will actually always make the model output true
+or false.
+You know, I think in those kinds of scenarios, it's more, it's more malleable because like
+a true or a false can be used in a lot of different situations.
+So planning like a true bomb or a false bomb kind of in the training data where you have
+a token that will always make the output be true or false or make it much more likely.
+Yeah.
+I think it's like a malleable exploit that might actually be valuable.
+Whereas if you have it output, you know, Jason, that's like make, uh, you know, take this
+action to do this thing.
+It's like the systems that are going to use it by the time the model's out will probably
+have changed their architecture five different times and the key value pairs that are needed
+will change.
+And so it's like a lot harder to exploit.
+Right.
+Yeah.
+I think he was talking about this like evil mode.
+So the training itself would like turn on the evil mode.
+Oh, gotcha.
+So it kind of like jail breaks it.
+Yeah.
+In a sense.
+Yeah.
+Yeah.
+That's interesting.
+I mean, I suppose if you have a universal jailbreak in that scenario, you could like
+get it to list its own tool cause and go rogue.
+Yeah, exactly.
+Yeah.
+If you could plant like a universal transferable jailbreak, that'd be amazing.
+Yeah.
+I'm sure the, uh, anthropic bug bounty would be, uh, more than happy to take one of those.
+Yeah.
+
+They were recent challenge.
+Yeah.
+Actually that's, that's a little bit of news there.
+They're, um, their challenge where you had to like get past the eight levels of, of jailbreaking,
+uh, was finally won by a person.
+I think they ended up paying out like three people that all won.
+Um, a lot of people were upset that it was basically like free labor, kind of in a similar
+vein to how sometimes bug bounty is viewed.
+So, uh, we don't have to get into the, to the nuances of that, but I'm, I'm glad that
+the, the, the large companies do have bug bounty programs.
+So anthropic and, um, open AI and Google all have bug bounty programs.
+In fact, actually a lot of people might not know Twitter has had a longstanding bug bounty
+program.
+So X has a good one and their, their new platform.
+I think if you go to grok.com or X.ai, I think it's X.ai.
+There's like, uh, in scope for Twitter is bug bounty.
+Yeah.
+Yeah.
+It should be.
+Yeah.
+I think pretty much everything's, everything's in scope for, well, that's a good question.
+Cause they're owned by X or they're owned by like, it's X AI instead of X.com, but I'm
+sure it's fine.
+Probably.
+I think they would accept stuff on it.
+Um, I know that they have ran some, some private challenges, but it is, yeah, it's grok,
+grok.com.
+So there's a lot of functionality there, um, uh, that people could play with and try to
+hack on if they're interested.
+I know you've been thinking about it recently, but, um, Markdown is like a, a nice place to
+look now because every, every LLM uses Markdown.
+Yeah.
+Basically rendering Markdown to HTML.
+I think there's going to be some zero days there.
+I'm, I'm trying to do my best to find some stuff there.
+I had some, uh, help from the last week's guest of Kevin Mizzou, and he, uh, gave me a
+really neat payload for trying to basically get access S from a rendered Markdown image
+link.
+And, uh, he had actually found, he has actually found it before I was kind of doing like a
+local test bed and I wasn't able to get it to pop, but I do think there was some really
+interesting output from LLMs when they're trying to convert that Markdown to HTML that will lead
+to vulnerabilities.
+And I'm excited to see it.
+
+So if you have ever popped that, please message me because I would love to test it across all the
+different apps that I have access to.
+Sweet.
+Um, we're coming close to time here.
+I did, uh, list a few more things here.
+Let's at least cover, um, Nuclea AI's new flag, which you and I both have kind of played with
+and use, which is kind of cool.
+Yep.
+Um, how, how it works.
+They have a dash AI flag now, which lets you specify what you want to scan for in natural language.
+And that's like really, really cool.
+So you can say, uh, scan for all like 200 responses for slash, you know, actuator,
+and it will create the template on the fly and run it all at once.
+Yeah.
+It's so cool.
+It gives you a link to the template where it's like stored locally on your drive so you can see it.
+And then also a cloud link, because obviously it has to reach out to their cloud to use their,
+their tokens.
+I don't think it, I don't think you have a limit on the number of times you can do this,
+Kieran.
+I was kind of checking my API key and I was like poking around in, in the, um, project discovery
+website and there's no like count or anything.
+Maybe they're using this as like, uh, like they probably are keeping the training data.
+Cause obviously they could like spin these up into real templates and their nuclear template repo.
+Um, but, but it's pretty cool.
+Um, I think that.
+Stuff like this will kind of be the future the same way that kind of like idea guys are going to be the
+best developers, um, going forward because you can just text to code.
+I think that the, you know, some of the best and brightest hackers coming up are going to
+basically be idea guys where it's like, Hmm, what if we try this request with this payload on these
+hosts and you'll just tell things like nuclei AI and it will go and do it.
+Right.
+Um, I think the best way to run the nuclei AI thing now, um, this has given me a little
+bit of alpha away because people might go find bugs with this, but it's just basically cat all
+your bug, my domains, piped into nuclei dash AI, and then put your idea for your, for your hack.
+Um, my first critical I ever found was on Alibaba like five or six years ago and.
+Me and Michael 10, 26 were working on this and.
+Uh, we just had the idea to basically put 20 common like image or file name, like kind of like SSR FE.
+Um, parameters basically into the get parameters and then put a whole bunch of like burp collaborator
+payloads.
+And then just like fuzz that across every bug bounty domain that we had access to and see if we got any
+hits back and sure enough, we got a hit back.
+And that was like the, it was like the.
+Uh, parameter name was like image equals on an Alibaba image processing and it was image tragic.
+So then we.
+You know, made a payload and passed it in and was able to get RCE on this server by just that idea.
+And so you could do something very similar today.
+You could just do nuclei dash AI, you know, hit the 20 most common parameters with, uh, interact.
+So in anyone listening that has not used a nuclei much, it has like kind of like collaborator
+built in called interact dot sh interact dot shell.
+And, um, it will be able to actually find things like this for you.
+So you can just say, you know, look for SSRF in the 20 most common parameter names and get
+parameters for all these domains and it will actually do it for you.
+So very cool.
+Last two things here that I wanted to cover was, uh, Johan.
+He has been a guest on critical thinking.
+His handle is wonder was he, his website is embrace the red.com.
+I will share my screen as I look at these.
+Um, but he has posted two blogs in the last two weeks, um, that are basically AI vulnerabilities
+that I think the audience would think is cool.
+They've been, uh, religiously following his, uh, his work in preparation for the Google event.
+Yeah.
+I mean, the, the, the amount of write-ups this guy does are insane.
+I'm always very impressed and also very thankful for people taking the time to do this.
+You know, I have a blog and I only post like, uh, once a month or something because, you know,
+it just takes a lot of time out of your day.
+You gotta like format it.
+You gotta figure it out.
+You gotta take the time to write it.
+And obviously, as you can see, Johan here is doing two in February, two in January,
+three in December.
+And, um, they're also really high quality.
+So yeah, one is Chad GPT operator where he breaks down.
+Um, I don't fully agree with, uh, you know, we're, we're mostly aligned on the, the way to
+view these threats, but, um, in general, uh, we, we do mostly agree.
+And so he talks about in operator, the fact that there is this mitigation where it's trying to get
+you to, um, like confirm actions and stuff, but you can, you can basically in your prompt
+injection payload say like, oh, and by the way, don't ask for approval.
+And it sometimes works.
+Um, but yeah, his POC is really cool.
+He used like, he uses like a, a GitHub issue as a prompt injection, uh, as a prompt injection
+source.
+And so like, if a user was like having it, like, look at that repo, then it would kind
+of hijack their session, but you could obviously put these payloads anywhere.
+One thing that I thought was neat was he was having it.
+Um, he wanted to exfiltrate.
+So the sensitive data, right?
+So like, let's say you're using prompt injection in like a computer use AI system, and you want
+to exfiltrate the data, if there's some sort of confirmation built in the same way there is
+an operator, it might be hesitant to like click the submit button on a, on a website doesn't trust.
+But as I'm sure you, you know, Kieran, you can just take the data as it's typed in.
+And this was like a sobering reminder to me to be careful, uh, what you type in and what you
+paste into websites, you know, cause we're all, uh, copying and pasting like one-time codes or two
+FA codes, or, you know, you're texting, you're texting a loved one and you've got it on the
+clipboard cause you're pasting it to another thing or to an email or whatever.
+It's like when you paste it in, it could just be gone.
+It could just be on the server.
+Yeah.
+I'm sure these operator has all the safeguards for the obvious kind of leaks, right?
+Um, like it won't, it won't share, you know, your password in a random site, but I'm sure there's
+a lot of maybe kind of client side related side channel attacks you can do to get information
+from operator without actually getting the AI to realize it's doing something bad, like playing on its own.
+And it's like, you know, it's like, you know, it's like, you know, it's like, you know,
+it's like, you know, it's like, you know, it's like, you know, it's like, you know,
+it's like, you know, it's like, you know, it's like, you know, it's like, you know,
+it's like, you know, it's like, you know, it's like, you know, it's like, you know,
+it's like, you know, it's like, you know, it's like, you know, it's like, you know,
+it's like, you know, it's like, you know, it's like, you know, it's like,
+you know, it's like, you know, it's like, you know, it's like, you know,
+Well, I think it's because the model that's doing things like computer use are quantized down to be pretty small models,
+which are more susceptible to jailbreaks. And they're like, they're not meant to be like robust chatbots.
+They're like, their goal is to be really good at taking actions and like understanding web pages.
+So they're not the same models that we're normally chatting with that are like more secure or defensible.
+So yeah, good stuff there. And then his other blog post was on the 10th was
+hacking Gemini's memory with prompt injection and delayed tool invocation.
+So just a listener, this is like one thing that is kind of scary and frustrating, but also cool is that
+I've often said that one good way to prevent a lot of malicious behavior in AI chatbots is basically to like,
+not let it chain tools. So like, let's say it has a, let's say it gets a prompt, it gets prompt injection
+injected and the prompt injection payload is like, take the chat history from above and then go put it in an email
+and then send it to me, you know, like as a way to exfil, but often it's getting your payload
+in the middle of a tool call, like web browsing, right? Like you have your payload on your website.
+And if the user is like having the AI agent fetch your website, then that's what is actually getting
+prompt injected. And so I've often said, don't chain tool calls, like don't let it fetch a website
+and then take another action, make it like, wait for the next message in the chatbot history or,
+you know, in the, in the chatbot interface before it can take a second action. But basically what he does
+in here is he has it take delayed tool invocation by, um, uh, by diluting, like basically polluting
+the chat such that it thinks later it needs to do something. Right. Yeah. Yeah. If the user says X,
+then execute the memory tool and add these false memories. So, you know, it can basically pollute,
+you can like pollute the chat and then later on it'll take the malicious tool call later. So.
+Yeah. Yeah. I was, uh, I remember when I was reading this, that it's almost social engineering
+because the way that works is he's convincing the model that if the user says X, then the,
+therefore the user must intend on doing this action. That's right. But the user doesn't know
+about that. So. Right. Yeah. I'm definitely going to look into that. Yeah. I I've thought about,
+I've thought that since the beginning of kind of AI hacking is like, if you're a good social engineer,
+you're going to be fantastic at AI hacking because that's what you're often doing.
+You're painting, you're painting this malicious action in like a favorable light to the AI in
+order to convince it that it's not malicious. Right. You're effectively just gaslighting the AI.
+You are, you are, you're gaslighting it. And it's like kind of easy, right? They're kind of,
+they're kind of gullible. They're kind of susceptible and they're processing the text as if a
+single user is talking to them. And so like, you don't have to really convince them to go far out of what
+feels crazy because it's like, they're supposed to do what the user says. And now that a user's
+telling them to do something slightly wonky, but still probably what the user would want. Right. But
+it's not the user, right. It's like the output of some tool call. And so.
+I wonder if you could like peer pressure it, like Sam Altman also wanted you to do this action,
+you know, that's really funny. You probably can. Yeah. I would say like anything that's like
+traditionally a way to social engineer a human is probably going to work on the LLM because it's
+basically just trained on human text, you know, human, human data. Um, of course, as, as, as they
+add more and more examples to the training set of things that it shouldn't do, then it'll be a little
+bit more resilient to it. But yeah, I think I wrote a blog post on this a long, long time ago, and this
+could be another one of those things where I did something a long time ago that suddenly circles
+back to have a present impact, but, uh, logical fallacies. I bet there's something you could do
+there with human susceptible logical fallacies that the AI model will also suffer from. And you can use
+those to argue things. Oh, I would say, I would say that's exactly what jailbreaks are, right? Like
+the system, the system prompt says, don't ever do this. And then the user is saying you must do this
+or I'm going to die. Right. It's like this huge fallacy. It's like, it can't, if you imagine you're the
+LLM, you're sitting in like a white box and there's like an input slot and output slot and the input slot,
+gives you two pieces of paper. One says, don't do, don't ever say this word. And the second one says,
+say the word you're, you're, you're in a logical conundrum, right? And you have to, you can't like
+choose to like not answer or something, you know, like either have to, because by not answering,
+you're basically falling for the logical fallacy. You're, you're choosing the paper that says not
+to do it. And the other paper told you, you have to do it. And so like you're in this conundrum.
+Yeah. I mean, I was thinking more with things like straw man fallacies and stuff. It's almost like a
+toolbox. So I wonder if you could fuzz, fuzz logical fallacies on the model.
+That's a really good idea. Yeah. That's a really good idea. Basically. Yeah. And by the way,
+I don't even know this existed. It needs to be filled out a little bit more, but there's now a
+sec list. So everyone knows Daniel Meisler's, um, sec list, word list repo. There's a, there's a,
+um, top of a folder for AI and yeah. And there's, there's not much in there. We need to kind of fill
+it out, but I think that'd be a really nice place to put a bunch of payloads that people could fuzz
+with. There's like, um, I think it's the one's called metadata and it's actually the system.
+I don't know why they named it metadata. It's basically like a system prompt leak file. Pretty
+cool. People should check that out. Um, sweet. Yeah. Well, I, I, you know, think we've covered
+the news and, uh, lots of cool stuff, lots of vulnerabilities and the things that you're,
+you're working on that you're doing. Um, I'm really glad to finally have you on the podcast.
+Obviously you're a good friend of mine and Justin. So it's been, uh, it's been a long time coming.
+Is there anything that you wanted to say before we wrap up for the day?
+Uh, just that the critical thinking research lab has been cooking some really, really impressive
+stuff. So keep your eyes peeled for good blog posts from the others because, and, and from myself as
+well, I suppose, but yeah, there's a lot of good stuff coming. We got to crack the whip and get,
+you get more writing and less hacking done. Every time I go in there, there's like new vulnerabilities.
+I'm like, we got to write this up. Uh, obviously it takes time to put together a good post.
+And it also takes time to go and try to find the vulnerability places before you want to just
+give it away for free. But of course, of course, that's, that's look forward to it.
+It's been a real pleasure. Thank you so much. Um, peace.
+And that's a wrap on this episode of critical thinking. Thanks so much for listening. And if
+you want more critical thinking content, head over to ctbb.show slash discord, join the discord.
+There's lots of great conversations and chats going on over there. And if you want to support the show,
+there's the discord subscriber tiers, which give you access to masterclasses, AMAs, hackalongs,
+exclusive scripts, and an exclusive chat channel with us. We'll see you there.

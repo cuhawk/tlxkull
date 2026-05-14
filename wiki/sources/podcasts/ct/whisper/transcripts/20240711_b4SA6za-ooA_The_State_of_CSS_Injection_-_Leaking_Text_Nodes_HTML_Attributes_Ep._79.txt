@@ -1,0 +1,672 @@
+I'll let you dude I won't take I won't say your moment I won't say this is like
+the most of course this is Joel moment that I can possibly think of it's like there's some super
+awesome you know niche piece of technology that I'm ready to blow your mind about and you're like
+oh yeah I use that for my terminal they're most like a random thing exactly
+hey guys real quick I just wanted to tell you about our sponsor Threat Locker now wait wait
+before you hit the skip forward button let me just say this most of the stuff that holds my attention
+nowadays is Red Team stuff as well but I sat down with the Threat Locker team this past week to do
+a demo of their EDR software and it was super technically fascinating how this thing works
+so check this out you drop this thing on a system right and for the first week or so it's creating
+a policy and a profile for that system it's logging all the executables what child processes are being
+spawned the files and their hashes that sort of thing and it's creating this policy okay then after
+the learning mode is up we're in secured mode and that policy gets put into place and anything that's
+not on that allow list is immediately auto denied that's the zero trust piece right so in addition
+to that they've got a bunch of crazy features like ring fencing and dynamic access controls that would
+stop a malicious hacker at pretty much every step along the way actually I was watching this demo and I was
+kind of freaked out because I have no idea how I would cope with getting dropped into a Threat Locker
+system as a Red Teamer anyway if you want to learn more about this head over to threatlocker.com
+and request a demo and when you do ask for my boy Andrew his demo was super to the point
+and he was able to answer all my technical questions all right cool back to the show
+all right dude we're rolling so I have literally been that what is that Charlie conspiracy theory dude
+this week you just like pointing you got the string on the on the bolted board that is that has been me
+this week with CSS injection man there has been some really cool stuff popping up in CSS injection
+and actually there's been some cool stuff that is like seven years old at this point that I'm just now
+finding out about that is absolutely amazing so I'm excited to cover that today but first let's get to the
+news the Joel with the news report so space raccoon do you want to start with that one or should we start with
+yeah yeah so space raccoon has a really cool um blog post that he came out with um talking about um
+well universal code execution I don't should we talk about the wording of that so so I think it's
+interesting I think it's interesting because when I went into this I was like um okay you know that
+sounds real real intense yeah and and as you start reading through it um first of all let me just say
+it's extraordinarily well done research um as always as always classic space raccoon stuff um however
+there are a lot of conditions for this for this actual exploit to be met and essentially what this
+this article outlines is like some of the functionalities surrounding chrome extensions and
+how um the developer documentation and some of the ways that you have to communicate with these
+extensions can be um manipulated to result in code execution on the client um on the actual client
+running the chrome extension in their browser um and and I think I learned a lot about chrome extension
+architecture from this one and I think the way that he deals with essentially the massive amount of
+conditions required for this attack is pretty awesome uh essentially using uh large data sets to query
+um chrome extensions that uh fit a certain profile but man there are a lot of conditions
+yeah for sure and I think it's like it's a great example of one of those sort of niche areas of research
+where once you start to dig into how these things work you find a lot of really interesting
+topic specific information about you know pitfalls or weird configurations or just like strange behavior
+and stuff like that um and I think this is really really useful as a whole I haven't seen a whole lot
+of research done about chrome extensions and I know that there's a lot of programs that own or have a
+chrome extension that's in scope usually um and I think a lot of people don't really test it because
+it's it's not very easy to test it's kind of falls into that weird gray area of both like web hacking
+but also code analysis type stuff um so there's definitely it's very interesting and it's definitely
+fringe fringe web hacking you know it's like there's javascript you know obviously heavily involved in
+there but it's using a bunch of like chrome apis that's hooking it's like a combination of desktop
+hacking and and uh and web hacking which I think is a really cool area and I don't know if you've seen
+the content calendar yet Joel but I added some stuff on there and we do have an episode coming up soon
+on chrome extension hacking which is going to be super awesome so I think this is a nice little
+little intro into this do you want to do the um the the tldr for this one or or should I yeah you you go
+ahead because um yeah I I did look into it pretty pretty well and essentially what he does here is he
+explains uh chrome extension architecture uh and essentially there's this whole concept of a a content
+script which is essentially a script that gets added to each individual page that is within the scope for
+that uh chrome extension um so that you can run javascript uh and that that js code has access to the
+dom but doesn't have access to like javascript variables and stuff like that on the page um and so it's sort
+of living in its own little isolated world I think that's actually the technical term uh uh which is
+cool um and and because of that you know there are some some limitations on on what it can do and
+essentially one of the most common ways for uh people to structure these these uh content uh what do
+they call to get content scripts there we go I was like wait a second what is going on here um
+the these content strips is to be able to communicate with the front end via post message okay so you're
+sending a post message to from this content script up to uh the browser extension uh sort of back end
+the the uh post message a listener that's kind of sitting on the back end and then you're passing
+through that data to other uh sort of chrome extension uh apis like for example the um the I can't get the
+name of it right here it's the native um send send message the one that allows you to actually send
+a message to a native application on the front end there's so many like terms and stuff that we're
+just not like used to again this is like one of those weird you know it's such a niche area that has
+so many um quirks just to that are specific to it yeah yeah and and so there's this I finally found
+this section of the of the app here it's it's send native message and essentially what that allows
+you to do from the the chrome extension back end is interface directly with a native application on the
+local device so this is for stuff like um using password managers and and that sort of thing um and
+essentially it just does this via standard in and out and the whole premise of his research is like
+okay um if there's a way for us to interact with these content scripts and then that content script
+passes the message straight through through to the back end and then passes the message straight
+through to the the native message api right now we're passing uh this this data directly through
+to a native application on the back end and then that native application handles um the user input
+in in a bad way then uh then vulnerabilities can happen so it's like there's like a a set of like
+one two three four conditions uh that must happen for this like attack chain to work and then he's like so it gets pretty
+complex but here is this massive data set called the chrome extension manifest data set that you can use to
+query and then here's the sem grep role and it just shows how he takes you know these set of conditions
+program you know writes a program to detect these and then sprays it across the whole data set and
+actually ends up finding um a vulnerability in a plugin with like what was it like two million i think
+there's two million installs on it yeah uh he i don't think he mentioned what the actual one was
+but he said it had two million users yeah yeah one such extension is the extension extension b quote
+unquote with two million installs um which is awesome so it's really cool to see him sort of have an
+idea on how this research should work and then programize it and then find things that are actually
+vulnerable to it across the whole uh extension data set um and then pop some cool bugs with it very
+very well yeah yeah absolutely i mean it's really like that start to finish of finding a bug figuring
+out how to do it and mass and then like doing it like at scale and then reporting all that stuff and
+you know it's it's really awesome to you know see a great example of that especially in a niche
+research like this yeah okay so to try to be a little bit more concise and clear with my explanation
+here okay the content script has a has a post message listener it takes data from that post
+message listener sends it to the chrome back end via send message and then there's an insecure handling
+of send message it passes it through to send native message which is now hitting a native app on the
+uh on the actual device and then the native app incorrectly handles that data and introduces a
+vulnerability in the system the example that he has is like a path traversal um to to
+lotus a dll and essentially he forced the download of a dll because he's got control of js right in
+the browser you can force the download and then uh loads that that url or that dll um from the path
+traversal on the back end and gets rc so um pretty crazy chain definitely worth a read because it helps
+me understand a little bit better how chrome extensions work and what kind of functionality they
+have surrounding them and i think let me just add this one more thing i think the fact that he talks
+about common patterns in chrome extensions is like that sort of stuff is really helpful to know because
+in order to get that intuition of like what's a common pattern what's not a common pattern you have to
+read through a lot of chrome extension code bases which is going to take a lot of time and
+you gene saved us that time with this write-up yeah it's that sort of like meta knowledge stuff like
+what's all the ways to open or to reference a window yeah exactly like that kind of research is
+um it's really valuable even when it's i mean as a whole that's not really what the purpose of this
+blog is but it's kind of just nested in there as a little treat which is awesome yeah a little bonus a
+little bonus um all right so actually kind of a thin week as far as news goes um the only one that i
+had otherwise here besides obviously all of the css injection stuff that i'm gonna freak out about uh
+later later on in this episode i literally i'm sleep deprived right now because i've just been so
+i was laying in bed last night and i was trying to fall asleep and i was just like my brain just kept
+on churning css injection stuff what is wrong with you dude i don't know it's not even that crazy of a
+vuln either it's like it's like very fringe this is like literally like leg awake at night like
+restless thinking about css like i've got problems man i've got problems okay so before but before we
+get to that let's cover this next one okay so um this one was just kind of uh this is a tweet from um
+adithia sorry i don't know how to pronounce it and i'm i automatically put like a japanese spin on it
+for some reason if it fits to japanese characters um but essentially what this person tweeted out was
+uh a way to escalate client-side path reversals essentially in script tags using the uh built-in
+json p callback that's a part of a wordpress websites which we've talked about probably two or
+three times at this point um on the podcast so nothing super new there but it did get my brain
+turning a little bit and i wanted to shoot out a prediction really quickly and and ask for the
+community to do some research or at least keep their eyes peeled uh for a variant of this which is
+essentially if we can find something in like wordpress or drupal or like some of these big frame or like
+um for example cloudflare cdn cgi right if we could find some extras right you know on these very widely
+used frameworks uh that allows us to arbitrarily control the response the json formatted response
+that would be extremely helpful for exploiting client-side path reversals okay so essentially here
+you know they have a json p callback you're able to specify you know what javascript function is used to
+trigger the callback that's great we've talked about a million times what i want is an endpoint where
+i can specify arbitrary json in the query parameter and it returns that that json in the response should
+just just reflects it right down into the response and the reason why that's extremely helpful is that
+if you have a client-side path driver so obviously um you're controlling where that api request is being
+sent to um and you but it is expecting the same some data format back because it thinks it's communicating
+with the same api endpoint that it's always you know always communicated with so what you what essentially
+needs to happen is we need to find a way for it to give it the data format that it expects in json as
+as a response and then we can use that to trigger xss you know business logic bugs open redirects like
+these are all cases that i've seen um when you're able to actually control that arbitrary json response
+and normally my my go-to way to do this joel is i i redirect off the domain to my domain right and then
+i control the json response but that requires an open redirect and if we can find a gadget in like
+wordpress or something like that that allows us to do this then uh we wouldn't have to redirect off
+domain we would we would just be able to do it with like a semi-open redirect um or even a closed
+redirect the domain or even some sort of browser specific feature like i know there's some really
+interesting research recently that i've seen about blobs like uh like those like ephemeral sort of uh file
+blob things that are in the browser um and you can like reference them and technically the origin is
+actually wherever they came from so like if you have a blob that was created on example.com and you're
+referencing like you have an xss in that blob for example the origin or like you know domain
+um like window.domain um or document.domain is going to be the host that the blob was created on oh really so
+i i don't know if it has access to cookies and all that kind of stuff i think there's some like
+weird limitations around that but yeah potentially also something like that where you have some sort
+of browser specific feature that would allow you to control the file contents yeah that would be
+an interesting attack vector that would be really cool blobs i think have a a custom scheme that's
+associated with yes it's like blob colon http yeah so so i i'm wondering whether in these scenarios in
+these client-side path reversal like scenarios whether we could hit those maybe if there's like a redirect
+that was doing some domain level validation but wasn't checking the scheme or something like that
+then you could definitely have something like that happen but i like i like the way you're thinking joel
+thinking outside the box some critical thinking thinking like a hacker aren't you think i'm thinking
+like a hacker hey where did i get this shirt critical critical critical i love how i'm like uh obsessing over
+over client-side path to read uh css injection and client-side patch for so lately and this is
+you know these almost are never critical critical criticals you know yeah almost ever we gotta we
+gotta start talking about critical critical criticals um uh well actually i guess on that note on that note
+i will take a tangent on something that is not here in the doc joel which is that um i'm giving a talk at
+defcon this year that i was also frantically preparing last night for the deadline that was
+last night um uh surrounding like some of the coolest critical reports that i've found over the
+past couple years of bug bounty so there's 11 bugs in there all of them are criticals um critical critical
+criticals and uh and so if you're interested in hearing a bunch of bug stories uh about about those
+definitely check out uh bug bounty village talk that i'll be doing at defcon i think it's in title
+i don't even know the title off the top of my head i think it's like top war stories from a try
+hard bug bounty hunter or something like that so beyond the law for that self-assisted self-promotion
+shameless self-promotion did you have to complete your slides like fully yeah dude yeah i did whoa which
+is like a pain because it's like a month in advance and it makes sense because they've got a lot of
+stuff to recover or to uh to cover and and you know assess but um man it it was a lot yeah it's
+like 150 slides i mean especially this far in advance that's a that's a ton yeah i think we can
+make small modifications to it between now and then but essentially they said it needs to be like
+as finalized as possible wow okay well that's pretty no no procrastinating allowed yeah apparently not
+yeah cool all right let's uh you want to talk about your your special critical thinkers release
+and then we'll yeah okay cool so yesterday very exciting yesterday i dropped passion project of
+mine that uh i've been working on for the past couple weeks that i just kind of bulldozed my whole
+schedule and worked on this because i had the motivation and that is essentially a full-time bug
+bounty blueprint how to go full-time on bug bounty it's like a 15 page document describing essentially
+if i were having a personal conversation with you and you were saying i want to go full-time bug bounty
+what should i do this is what i would say to you at length um so it's very conversationally written
+it covers a lot of topics sort of ranging from um what kind of difficulties you're going to face as a
+full-time bug bounty hunter what kind of um like personality traits uh or um i guess like motivation
+uh deficits you might uh come up against that that are going to cause problems um we cover taxes we
+cover um like all the good stuff yeah like how how to how to collaborate with other hackers how to quit
+your job and in transition into full-time bug bounty how to make sure you your finances are squared in
+advance um and then essentially how to build a pipeline surrounding you know your bug bounty skills
+and keep on driving that stuff in to create a good consistent income stream for you that you can live
+off of so um it's it's not to toot my own horn here it's pretty good i think it's really good and and the
+feedback has been positive so um definitely check that out if you're interested critical thinkers um if
+you're not a critical thinker head over to discord check out the server subscriptions that we've got
+there um this book is only available to the critical thinkers um so even if you want you know go ahead
+drop a sub it's 25 bucks for one month grab the book and bounce that's fine too but uh in that one
+month i think you'll find critical thinkers tier is something special man there's a lot of great
+conversations happening in that in that uh in that sort of exclusive discord channel and a lot of cool
+um a lot of cool scripts a lot of cool techniques good conversations happening in there so check it out if
+you haven't already yeah absolutely exclusive master glasses and stuff too all yeah all we do
+master glasses at least once a month um or hack alongs too um and we record all of them we put them all in
+in there so you know store you you know you have months of back content that you get access to and so
+lots of really cool features if you want to go check it out yeah absolutely um oh yeah one other cool
+feature that is actually um in the the critical thinkers exclusive content channel that i wanted to just kind of
+shout out um is the client-side path traversal browser extension that uh me and in bus factor
+wrote um bus factor is a a very valued member of the critical thinking uh community and we were just
+kind of discussing what it would look like to build a browser extension for client-side path traversal
+and i like threw some kind of junk code at him i was like this is kind of roughly how it would work
+and i come back the next day and he's like converted it all to typescript and like has a build flow
+and like all these nice little buttons and stuff like that and i'm like oh man this this rocks so i
+kind of took it from there as well and did some additional modifications for it but at this point
+it's pretty good it detects pretty consistently um when you have data reflected from uh you know the
+query parameters the hash a couple other areas into the path of a sub resource you know request whether
+it be like an iframe or a fetch or something like that um those are things that we all want to know about
+so we have that extension available um to the critical thinkers as well and i think probably
+at some point we'll we'll release it probably within the next year or so but i definitely want to refine
+it a little bit and uh get it to a spot where you know some of the the difficulties are ironed out some
+of the false positives are ironed out um before we release it full-time yeah i definitely have a couple
+really good plugin ideas in the in the pipeline i think i know we've talked about a variety of different
+things um some of them we may have even cut out of yeah the recording so um yeah we'll we'll definitely
+be creating those and releasing those eventually uh to the community as we go just for our own
+purposes and also just to share the share the knowledge with the critical thinkers but yeah yeah
+no absolutely hey guys real quick i just wanted to give a shout to the hacker content team they have
+been absolutely killing it the past couple months taking the content from the podcast and condensing it
+down into consumable social media posts whether it be shorts or text posts or whatever they've been
+rocking it so i just wanted to give them a shout out and let you know that they do all sorts of
+cyber security content as well as social media management they do technical blogs they do uh
+comprehensive social media management uh so if your organization could benefit from any of those
+types of services make sure you head over to hackercontent.com drop them a line and mention the
+podcast when you do to get your first month of cyber security content marketing services for free
+all right that's it let's get back to the pod all right man the moment has come css injection time
+your your moment my mom unfold the the conspiracy theory all right man here's here's what i got okay
+so i didn't know until last week that css injection has been pretty much completely solved prior to this i
+thought that essentially we had a really reliable way to leak the contents of like attributes and
+that sort of thing but um actually it is possible to leak the content of a text node as well right
+just the inner html or whatever of a specific element if that's text um does it require user interaction
+so i mean of course the user has to navigate to the thing but once they navigate as long as you can do an
+import um from a remote uh css page i guess then you're good to go um and you can block that with
+csp right yes you can so if we're talking about remediation methods csp is pretty much the the best
+way to do this uh obviously besides like not introducing the vulnerability in the first place
+which i think is not too hard to do with css injection like you need a pretty niche scenario
+um for css injection to happen in the first place but i guess should follow most of the same like
+instances of any other type of xss or html injection right where you're just some sort of content is
+making its way unsanitized into the the response body so in the same way that you would sanitize any
+of the rest of those you'd probably fix that as well right yeah exactly but we don't need to dwell on
+how to fix it joel we need to dwell on how to exploit it okay just some of us do take your
+program managers away from me okay like we don't need that right now this is this is my moment um
+okay so there there are two things that i kind of want to talk about today and give the listeners a tldr
+on essentially what csp injection has to offer and like how to actually exploit it okay so first one is
+of course the one that i think most people are familiar with this is the one that i was using um to
+exploit csp injection uh up until this point which is essentially the research done by uh
+uh donut doing using sequential um import chaining and it's just back from like singapore right so
+it was that the was it that event i don't know when he originally came out or something i remember
+it was a long it was a while ago yeah free code no yeah it absolutely was and and uh it's been i mean
+it's been out for a long time at this point but essentially this is the whole concept of like
+you have a css import statement right you've got that like at import feature with with css and you
+import a remote style sheet and that style sheet includes another remote style sheet and does some css
+rule that will trigger a callback right and what what will happen is you don't on the server side you
+don't respond to that second style sheet import until you've gotten the call back from the first
+uh set of rules that you put in there to leak the first character or whatever right once you've done
+that once you've got that first character leaked then you respond and you do the same thing recursively
+until you have leaked the whole content of like a uh an hdm attribute and the whole point the whole
+reason why this is possible is because you can use the the starts with um selector for for css stuff
+so essentially you're doing a carrot equal sign and then you know whatever value and and you're able to
+specify okay uh if the attribute starts with this then you know trigger this http request file like
+background image or whatever um and it since you're able to do that you can just by character by character
+by character by character just brute force out um the value of these attributes which is which is super
+cool um and has been absolutely uh very very relevant and very much used in in the in the uh community for
+css injection and it was what i was using up until this point to prove most of my impact um so this this
+was and just to be clear this was um released by donut and uh another guy pepe villa at the exact same same
+time around 2019 range um and so that is a well-established technique you knew all that right joel oh yeah
+yeah of course all that yeah because i know how much you love css injection and all these little
+fringe web web yeah but in on the dark and they call me the css injection master
+you thanks for that thanks for that man okay so um cool so i went in the rabbit hole this week
+because of some other things that i'll mention later but while i was in that rabbit hole um i i found a
+little bit more research on this specific technique that i didn't know about before so i wanted to share
+it with the community which is um this technique it's pretty fast uh i think it only takes like a couple
+seconds to to maybe 10 seconds or so to leak a decent sized token but um you can double the speed
+of it by also simultaneously selecting from the back side of of the the um attribute the html
+attribute that you're trying to suddenly became a computer science leak code problem right so so it's
+like you know you're forcing the characters you're coming in you're coming in and eventually you're
+converging somewhere right um and i thought that was really interesting it doubles the speed and it
+makes a little sense why that would why that would work um so cool little little addition there um
+that's awesome the the other thing that i wanted to kind of shout out in the same like leaking
+attributes section is this uh repo by um port swigger research called css exfiltration which i think
+was a repo that was related to like some write-up they did back in 2020 i believe um and this was
+like recent gareth hayes research right so this was not the blog or the exfiltration thing was i mean
+so recently um gareth hayes came out with a a blog post on blind uh css exfiltration and this was one
+of the things that like kind of triggered me uh a while back back into css injection um very cool project
+i think we've talked about it once or twice before in the pod if not just google blind css exfiltration
+it's literally the only article on it out there because what talk about a fringe uh piece of
+security research like that is the epitome of fringe um but this is actually something different joel
+this is some research that he had done years before and it's really it's really interesting
+because this repo contains like one two three four five six like over 10 different techniques for leaking
+um characters from different contexts uh via css injection so he's got like steel and characters
+in firefox steel reverse firefoxed steel script contents like all of these very like a mon shazer
+seriously man it's like he's got a bunch of really cool ways of doing this and one of the ones that kind
+of stood out to me and i was like oh man i didn't know that was possible was that um you can steal the
+contents of an attribute by using the attr function in css okay check this out joel i'm gonna i'm gonna
+link it to you in because i don't think i put it like super clearly in the doc i'm gonna know you are in
+css yeah so click that link that i just sent you in discord okay so online online five we'll drop this
+in the description um uh on line five there is a essentially a um a content css attribute that is defined
+uh defining a property in css and the value of that content so the content is of course used to add
+like a prefix or post fix to a specific div or whatever the content of that is attr function call
+and then the name of the attribute and essentially what that will do is set the in this scenario the
+after content so the content that comes after this div uh to be this value of a specific attribute right
+and then you can you can style that after attribute with a specific font that will exfiltrate all the
+data from that so this whole like attr um function in css i think is really fascinating that you can
+access html attributes and stick their content into the the content property in css pretty yeah i'm
+curious i'm curious how far that extends because i know that there are certain like weird things like
+doesn't dot value like implicitly um contain like whatever you've put into like a for like a form
+input for example right it's like would the value attribute from css on a form input contain that
+value or would it be would have to be explicitly said i don't know you know it's funny you mentioned
+dot value because that dot value is a little weird right i feel like there are some frameworks that will
+like automatically update the dot value or like essentially the value html attribute and i know that if you
+use like in javascript if you use dot value that it it just dumps the content of a like an input field
+or something like that but i think sometimes it doesn't update it um for things like html and css it
+just does it in the javascript context so that's an interesting question i'm not i'm not sure the answer
+to that one yeah yeah but i'd be curious to see if there's other you know weird cases like that or any
+implicit attributes or anything like that like that exists but isn't you know visible all the time stuff
+like that you're starting to feel it right jol like this is interesting right it's super weird i'm
+i mean it makes you wonder like why does something like that exist i don't i don't know i'm sure
+there's some use case and there's probably some other weird edge case stuff that exists just like it
+well css injection or css in general is just getting stronger and stronger and stronger right as they
+introduce new new features so that's one of the things that i like really keep an eye out for in in the
+browser um change logs is like what features are they adding to css and how does that affect our current
+understanding of css and i was a lot more motivated to do this when i thought that text node content so
+essentially if you have something in like let's say inside an h1 tag you want to leak like you know hi
+joel or something like that you want to leak the person's name um i thought that was not solved but
+that actually is solved which is crazy to me um so now i'm a little bit less motivated to be honest
+this has been a little bit demotivating this whole research uh thing that i've been on it's like oh
+well they figured it all out um but now you know yes yes now i know um and and so uh okay before
+before we get too far down that down that path i'm gonna go ahead and paste this uh this link a link
+that i was talking about in the doc see you know many other podcasts other youtubers even they forget
+to put the links in the description you have always a critical thinking not us we don't forget we don't
+forget unless it's a master class that i wrote or i ran and then it takes me a week of forgetting
+what are you doing i did it though oh man all right so css selectors to leak the contents of html
+attributes boom done of course that's that's done that's been done for a while but the problem is
+nowadays we have uh single page applications that are pretty much everywhere right um and they don't
+often have input fields with pre-populated values like c surf token or like api token or something
+like that oftentimes that gets stuck inside of a script text node right uh and just populated directly
+into javascript as a part of like those i don't know what do they call it's like like seed data almost
+for the page it's like a json blob like the state or whatever yeah like state but yeah exactly the the
+state like json blob right that's where all the juicy stuff is nowadays um and that's why
+this research is so crazy which by the way is so awesome when you find like a single xss because then
+you just have one giant json that's included on every page exactly just like your token and all the
+config parameters it's so nice yeah exactly exactly love that and we can now we can do that also with um
+with css injection okay and the way we do this is via this crazy absolutely nuts technique that i'm just
+i love i always know what justin puts a tweet in the doc that is just written entirely in japanese and
+is like three days old that's gonna be some crazy crazy research that he's about to try so masato kinagawa
+does some amazing amazing research man uh and so lately what he's been up to which triggered this whole
+thing was he tweeted out in japanese about um some of the uh research he's been doing on font ligatures
+and how he's been applying that to lava moat which is a an absolutely or lava dome in particular lava
+mode i think is the company above it so so check out this this product joel it's like a little bit
+further down in the doc but like essentially this product lava dome is a a dom element isolator so
+essentially you can have a a piece of the dom that you just cannot get the value from from javascript
+you can have xss and you just won't be able to like get the value out of this uh this piece of the
+dom um why not well they isolate it out they do a bunch of um just crazy stuff to to block in native
+javascript yeah yeah so like you literally can't get it and there's a bunch of conditions to it right so
+if you if you go to the lava dome javascript uh we believe this is a solvable problem is that yeah
+pretty crazy right that they could they think they can actually isolate a node from the rest of the dom
+and you just can't touch it and they call it like you know shadow dom use case is a feature for metamask
+show private key toggle which exposes the private key in plain text currently the sensitive content is
+attached to the dom once it's exported making it fully accessible to all nc's running right so they're
+saying we believe this is the whole problem the whole concept of this project is is um quote we
+live in a world where we can no longer trust the code in our own apps and same origin execution does
+not guarantee safety and i'm like okay all right let's go and and um it's amazing because they're
+essentially trying to protect the value of some you know html inner text from themselves which is like
+a very difficult problem to solve and i can just like the moment that masato kinugawa started looking
+at this project like it's over man because there's a bunch of like issues in this project that he has
+submitted like leaking the values of of uh you know lava dome via character height and font ligatures and
+mouse over and text fragments and like there's just a bunch of crazy ways that he's done it um but
+overall i mean very interesting project and i think most of the time the approach like they mentioned
+in their in their readme is to actually put that sensitive content in an isolated iframe um but
+apparently they say you know you could put in an isolated iframe but that doesn't feel as cool or
+something like that and why don't you put it in lava dome instead which is like okay
+uh yeah yeah okay and then and then masato kinugawa is like no no no i will not allow for this um
+so essentially he's tweeting out about all of these different ways to steal it and and one of the ones
+that he he tweeted out was very much related to css injection which is essentially like you can use
+um font ligatures uh to to leak the content of this of this uh you know sort of encapsulated dom okay
+yeah do you know what a font ligature is joel i do know what a font ligature is why do you know what a
+font ligature is because i use font ligatures what yeah so okay so of course you do of course you know
+about this tldr here is that my my the the terminal setup that i use it uses a font that uses ligatures
+specifically in both vs code and iterm to convert like double equals into a fancy thing or triple
+equals into a fancy character or equals right arrow to a fancy arrow and that kind of stuff so
+do you know here what i'll let you dude i won't take you i won't say your moment i won't say this
+this is like the most of course this is joel moment that i can possibly think of it's like
+there's some super awesome you know niche piece of technology that i'm ready to blow your mind
+about and you're like oh yeah i use that for my terminal or like the most like random thing exactly
+like just like absolute tech enthusiast shit you could possibly think of um that's hilarious dude
+okay so font ligatures essentially what this what this allows you to do is when you have a custom font
+you can specify a sequence of characters that has a a custom glyph so glyph being the the sort of actual
+um visual representation of the character yeah so essentially what you can do um is you can define
+any length of of uh font ligature so you can have a font ligature that's like 35 characters long or more
+right where if it sees this 35 character sequence it displays it with a separate gif gif it does not
+display a gift glyph glyph thank you all of a sudden you start typing and then all like the the conspiracy
+charlie pops up or whatever oh man it's so good um so anyway you can define these these uh special um
+ligatures and this allows you to actually leak the content of a text node so very similar to what
+we're you're doing with the css selectors essentially you can have it you can load up a custom font on
+into this specific text node and then um that font has these ligatures and if um everything else every
+other character a through z you know zero through nine that sort of thing is set to a zero width character
+you can control the width of of the the characters in the font um the custom font creation process
+but the ligature that you're trying to leak is massive you know it's like 10 000 pixels or something
+like that wide okay and then you style the container that this text is in such that if um if it's above a
+certain length there is a uh or above a certain width there is a scroll bar that appears right so that
+can give you a binary yes or no on whether this uh ligature is actually created or not right um
+because when the scroll bar appears you can style the scroll bar to have a background image that will
+reach back out to your server right okay i like how that works you see what i'm doing here with the
+the shadow dom yeah shadow down by the way that's a whole rabbit hole too i'd never heard of that and
+it's just like yeah is that what you've been doing for the past couple minutes while i've been explaining
+this joel i was i was in the beginning but i am paying attention i'm paying attention all right i
+i could see the the classic moment when joel says shadow dom that sounds either it sounds interesting
+in so many ways um so anyway font ligatures super cool essentially um what you have to do to to make
+this whole this whole process work is you've got to set up a uh recursive um css import like we were
+talking about in the beginning um a la donut and pepe villa um and what it just sounds like a meme i
+don't like pepe villa like i mean am i saying the name you sound like twitchy boats it does sort of like
+oh because it's like i am saying the the name right right oh geez that's gonna be sorry mr villa if i am not
+saying it it right no i mean yeah i mean that's the name so wow you just made fun of this guy's name
+and his and his amazing research on on css it's a cool name i just it is it was the cadence i don't
+know maybe maybe it was the cadence okay so anyway you use the recursive import i'm just going to call
+it donuts research via donuts research there right and just like i'm not going to risk trigger him again
+his name his name has been erased because of your your tendencies joel um uh and so you're
+essentially recursively importing these these style sheets you're waiting for the callback before you
+respond to the next one and essentially each time you're forcing the style sheet to load up a new font
+which you are dynamically generating to have ligatures which are expanding with each character that has been
+leaked um and the way that the character is leaked is by a uh essentially a boolean of um
+has the scroll bar appeared or or not um and so here's where which is detected by the background
+url on that scroll bar exactly exactly but it here's the here's the thing that i'm thinking
+can be optimized a little bit okay we can use animations to change values of css over time so
+we can say like all right now it's this font now it's this font now it's this font without having to
+do a network request except for the font of course um so i i think that would be that would be really
+interesting and i think since it's a a you know sort of a boolean yes or no you kind of have to load
+each character until you get a hit right so is it an a no okay next one is it a b yes no you know is it
+is it a c you know that sort of thing right and i'm wondering if essentially we could reduce the
+complexity of doing this this search by creating fonts that have ligatures that essentially do a binary
+search on the possible character set so it's gonna have it's gonna have a wide length if any of the
+following characters uh appear in the sequence and it's gonna have and it's gonna not if the other
+half and then you're halving it each time right so if you're dealing with like a 256 you know standard
+ascii character set or whatever which i think there's less displayable characters but whatever then
+you know you need a maximum of like seven or eight requests um to brute force a character which is
+like not that bad um okay hear me out on this hear me out okay i've been i've been brainstorming okay
+i've been thinking i've been thinking oh joel's using his brain careful uh okay i kind of need you to
+help me with this dude because i was trying to apply it apply it yesterday and it's just kind of
+blowing my mind so maybe so i was just thinking like i was thinking about fonts as a whole because i know
+there's been like very niche research about like using fonts in this way as like basically kind of
+like um like a blind injection where like it's uh it's it's you have some sort of other signal um
+that you're reading um as like a canary to figure out whether or not this is working or it's not working
+sure and are you talking about the unicode code point stuff well if you define a custom font i mean
+you can make those characters larger or smaller like you can you can change how they render and
+and like what they display as so if you can get a custom font in the page at all um and you just
+change the font of everything i'm wondering if there's some way where you could basically have
+each character be a different size so that you could just take the width of an entire element and
+then you start to subtract and you go okay um can i subtract 26 from this all right well there's a z in
+it uh can i subtract 25 from this there's a you know a y in it or whatever like something like
+that where you could basically uh do some binary math or some sort of um derivation off of the total
+width based on the unique widths of each character within the character set yeah and then figure out
+what's in it without having to also yeah see dude see this is great i need to nerd snipe you on this
+because i know that there's something like that is possible and that's what i've been that's what i was
+thinking about last night when i was sitting in bed it looked staring at the ceiling like
+how and essentially the problem then becomes how do you determine remotely what the width and height
+of a character of like a specific div is um while still doing some semblance of word wrapping so that
+you can control the number of characters that you're applying this to which gets really tricky in the css world
+is like okay wrapping is highly correlated to the width of the element and so like it the css properties
+just don't like to work together in such a way that you can isolate the characters so that you can
+detect how wide the actual um thing is and and or the actual container is and expand it in such a way
+that you're like okay there's three there's three characters in here now there's four all right now i can
+look at the you know the width and the difference in width or the difference in height uh like like
+masato kinogawa does um in other spots in this research um and it's it becomes a tricky problem and
+and and the cool thing about the lava dome thing is essentially what he's able to do is check that height
+and width via javascript because you have javascript execution right so essentially he's using the style
+width and style height um properties this is in a different um bypass to lava dome than the one
+we're talking about or lava moat lava dome all right i've got you one i've got you i've got you a
+potential thing here oh my gosh you're not listening to anything i'm saying you're researching stuff
+there's a css selector called first line are you aware of this one yes i'm aware of it i've been using
+it all the time that's exactly what i'm talking about the problem is is it's difficult to to get the
+right amount of characters on the first line right and that first line selector is like absolutely
+revolutionary you have to use that um in a bunch of css selection techniques but getting the correct
+characters to like bump onto that first line and then be able to tell the width is is tricky man it's
+tricky well we'll we'll do some research together after this episode and then maybe we can come back
+in and present it but i'm i'm running into some difficulties getting all this stuff to work
+yeah i think i think i'll have to check
+there because there are a lot of different um css like measurement selectors you know what i mean like p
+px yeah um there's one c there's one called ch yeah that's the character how many characters are on
+the line yes yes you're getting it joel you're seeing you're seeing the the craziness that is the css
+injection world right so you can you can set a specific amount of characters to be on a line
+and then on that then measure the length of that line right and you should be able to determine and
+the change to the width of that line should be able to tell you the value that was added right but
+it's not that you can do math and css too like you can multiply and stuff did you know maybe maybe it
+is that simple i don't know there's a calc function i've i've got like 17 asked if one asked if two
+asked if three dot html files with lots of different css in them that i'd like to show you break word too
+yes okay see joel this is why you need to go and read the exploits that i put into the dock before
+the episode because all of these things that you're discovering are in the dock um yeah no triggered man
+um okay so let me get back and actually add some value to listener really quick okay instead of you
+and me just doing our exploitation flow like we always do um the thing that you need to know
+in order to do html attribute exfiltration you use the sequential import training from donut and you use
+um the css selectors from the front and from the back to make it super fast right or you can just use
+donuts tool does that very well established battle tested boom easy peasy to leak text nodes is a little
+bit more difficult i don't know if i'm going to get it done in time by the uh the time that this episode
+airs but i'm trying to get a pretty cool tool in place that will essentially be the equivalent of
+donuts um sequential import training tool um but for leaking the value of text nodes via dynamic uh
+ligature generation um and that sort of thing and there are some poc codes out there uh by uh michael
+bentowski who's the guy that came up with this original research back in 2017 um and very like
+very sketchy poc code you know it's like just very you know he just finished it and put it up and it's
+great and it gets the the the details across but i'm trying to get something that is you know battle
+tested that it's pretty applicable you just essentially import a css um style sheet and
+you specify the query selector for the text node that you want and it just dumps out the content
+of that text node so i'm gonna work on it i'm not sure if i'm gonna get there but in the meantime if
+you need to actually um leak the contents of a text node uh the research by uh michael bentowski um
+uh linked in the description i got you uh will be very helpful for that and does show a basic poc of
+how you can dynamically generate these ligatures over time to leak the full value of uh of a text
+note you know i'm thinking we might just have to start uh publishing some research blog posts on uh
+you know on our website but see here's the thing man we just get on the on the pod and then we yap
+about it right and and that saves us the time of having to write it all up because i'll tell you
+man i've been writing these presentations for the past like week i don't know and and the you know
+i wrote the 15 page don't you love writing you know isn't it great i there there are little pieces of
+time in which i enjoy writing right like like writing the the um the blueprint on how to go full-time
+book bounty super enjoyed that busted it out pretty quickly you know really loved it but actually taking
+the super brainy stuff that is css injection and trying to break it down and like put it into an
+article that has that's easy for people to follow is tricky and it's i mean it's tricky to even talk
+about it on the podcast so but it's really difficult yeah i i do agree though i think there is definitely
+some merit to producing some sort of you know research papers or or essentially uh write-ups and
+having it in the text medium obviously brandon is doing a good job of converting everything that we
+say in the podcast into the the hacker notes and that sort of thing but i think we're trying to
+get a little bit more in depth on these sort of things i mean just unique research more yeah yeah
+absolutely yeah yeah um so anyway that that font ligature piece the scroll bar generation that stuff
+is really cool um definitely check that out but here here is the the thing that really sparked this
+whole thing again right which is um masato kinugawa essentially submitted a um issue to lava dome
+using a new um css property that i hadn't seen before called descent override uh which allows you to
+change the height of each individual character um in in a font face definition right so you're defining a
+custom font you define a custom code point right you can do the unicode code point for that specific
+font um and say all right this font only applies to like the a character or whatever and then make
+the a character super big right super massive and whenever that character gets typed into the
+or typed or appears in the um the dom then it you know the size inflates drastically um and so
+essentially he's able to do all of this this definition without actually using a custom font he
+uses i think just comic sans um and then this override for the height to leak the content of um the
+the lava dome value by changing or by detecting changes to the height like we were talking about
+he has access to javascript so he can do that if if you don't have access to javascript it's really
+tricky to do that but the the revolutionary piece about this is that it doesn't require a font a
+custom font to be imported so you can do this in a scenario where font source is set to something
+strict in the csp um really cool technique i love the fact that this descent override property exists
+and allows us to control the there's another one for width as well allows us to granularly control
+the width and the height for a specific character in a font face definition very interesting and if
+you look through actually um the font face docs um for like the font face rule or whatever like
+how it gets defined as a custom font face um there's a ton of different descriptors that exist and
+there's a lot more that i think also would be great candidates for this sort of again this canary
+behavior um there's font display which determines how a font face is displayed and whether or not
+it gets downloaded and shown and it can behave as a fallback for example so what i'm thinking here
+is like you have a default font face and then you have your custom font face that has characters that
+are either invisible or by default um not visible or different widths and then it would fall back if
+there's no character shown or something like that um or or have something that renders slowly um
+there's something like that i don't know i think there's definitely a lot of really interesting
+candidates in here there's um size adjust that might be the width one you were talking about
+um there's font stretch um there's descent and ascent yeah as well that's the ones those are the ones that
+that he uses to control the the height and width of the yeah yeah very size adjust so yeah there's a
+lot of different things and you know we've talked about this so many times we've gone through the dot
+the like the web or whatever html docs so many times that we found like weird consistencies or even
+inconsistencies things that are in the doc that do not behave that way at all in the browser right
+being of the base tag um so just because it says that this is how something works doesn't necessarily
+mean that this sounds this is how this works but if it says that this is how it works that's also a
+great starting point this is weird yeah this is weird dude you you just you just uh nerds
+sniped me with this now i'm looking through all these different properties there there's gotta be
+stuff here man this is this is exactly maybe there's some way we can use shazer here too by the way
+like um to to fuzz this stuff in mass or like try all the possible options and and figure out what
+the different permutations and and possible um selectors and descriptors and stuff that you can use
+here yeah absolutely okay so let me let me add one more thing to this okay so um of course for
+the content of the text node it has to be displaying that text right for the font to be loaded and and
+for it to trigger and for us to be able to do the whole ligature dance or whatever right here's something
+crazy that i didn't know joel okay you can apply display block to a script tag and then all of a
+sudden the script tag the content like the actual content of the script tag the javascript will just
+be displayed on the screen like it was like a like a like a p tag isn't that crazy it makes you wonder
+what other i didn't know like what happens if you put it on a video tag or an audio tag or a iframe or
+or or um well i think oh geez what was i just thinking of uh a lot of those would just you know
+display the actual you know feature but the the crazy thing to me about this is like i don't know i just
+didn't think of the style tag yeah right i just didn't think that the contents of a script tag
+i didn't think of it as like a text node but but it is text you know it's inside of a of a script tag so
+if you just apply it you wonder a little bit about the order of operations as well around like
+it probably gets evaluated and then like css gets applied later just sees it as like an element or
+something but then does that apply to like can you do that to the head tag or like what you know like
+what where does that end right yeah yeah and and i'm sure there's lots of other you know weird niche
+cases with this but the reason why the script tag is so big is is just like we were talking about
+before is like there's these there are these uh you know blobs of json the the window.state or whatever
+and they're normally you know prefixed by the same thing right window.state equals and then big massive
+blob right that is a dream come true for this sort of text-based um uh data exfiltration piece right
+because essentially when you define a prefix you eliminate a bunch of like uh variants like if if a
+b appears in like six different spots in the whole you know uh script blob then you could have some
+problems but um you know if you have a prefix that only appears once then that really helps so
+uh setting you know display block to a specific script tag and then using these font ligatures to
+extract things like uh pii api tokens uh c surf tokens all those sort of things um really awesome way to
+to exploit css injection and i'm kind of salty because i've had css injections and i put so much
+research into css injections and i totally did not know about this technique and you're gonna hate me
+because i just found more stuff but i'm not gonna i'm not gonna derail you i'm gonna send it i'll
+send it just send it to me man we'll we'll review it and then maybe i can find no don't send it to me
+right now joel what are you i'm trying to to podcast here man um okay very interesting so um display block
+can actually display a script tag and then you use the text node based um font ligature based uh recursive
+import based leak method to actually leak your contents of your of your text node which will
+result in hopefully account takeover or at least c surf uh or i guess at at minimal pii leakage in
+most applications so um very cool stuff there um i know i had one other thing that i wanted to talk
+about with this uh before we we call it your cat is very distracting right now she's she wants attention
+she does she does um oh i did want to shout out two blogs okay that were kind of um helpful with this
+and i will shout those out right after i mentioned one other piece okay so the tweet that i saw that you
+mentioned that was just all in japanese and was from masatsu kinugawa was essentially his research on
+font ligatures and how they are affected by um the before a pseudo attribute was it pseudo pseudo class
+essentially the thing that allows you to add text before a certain text blob right or a certain text
+node and essentially what he did is um there's there's this japanese word kabushiki guys shop and that
+that's like uh like for if we were going to put it in english it's like um limited liability company
+or something right that like that right and and it's got you know it has to be at the end of like
+all of these like names and stuff like that um and it's got a specific ligature for it right where
+they kind of put it in a square rather than to have it all typed out and so what he shows in this tweet
+is that um you can actually use the before attribute the before and in content css features to trigger
+these font ligatures sequences so let's say like you've got a font ligature that requires four
+characters um and you have three of the characters but then you put the the first character in the css
+before um uh before content uh you add it to the text node with before content um that will actually
+trigger the the font ligature to occur and it will be converted into a uh you know that single um glyph
+even though it's broken up by elements even though it's broken up even even though the actual text
+node content only contains three of the four characters needed you can add that character with
+um the before content uh feature in css um very interesting and so i thought that was really
+interesting research and it only affects some browsers um so i'm going to link this tweet uh in the in
+the description as well um very very interesting piece and i think this could also be used in a scenario
+where you want to add sort of like you want to start um you want to start brute forcing from the very
+beginning of a text node and there could be overlap with other things at other places in the in the
+actual um text node itself so you kind of got to figure out how to get it just at the beginning
+and essentially you could use this before attribute to prepend something that's not actually in the
+character set right like a squiggly line or something like that and say okay the the font
+ligature is squiggly line a squiggly line b and since squiggly line isn't going to be anywhere else in
+that text node then you know you're reinforcing right from the beginning and it can increase some
+uh reliability and consistency to the to the uh font ligature based css exfiltration techniques yeah
+yeah absolutely absolutely are you just are you laughing at my cat no no no your cat is adorable i'm
+laughing at myself uh saying like font ligature based css injection explicit like it's just so
+so mega niche man it's just like man this is the epitome of of uh of nerdiness
+all right man i think that i mean there's just so many other interesting pieces to talk about here but
+i think that was mostly uh everything that you need to know about essentially how to exploit modern day css
+injections right you use the research from donut on um uh sequential import chaining plus the the css
+selectors on attributes to leak attribute values and then use this font ligature based stuff to actually
+leak the value of text nodes um which is really good and if all of this doesn't make sense uh via the audio
+medium uh which i would be very surprised if it did because this is very complex stuff um i would
+encourage you to do additional research on how exactly all of this works uh by checking out these
+two blogs okay so uh let me just let me just format my notes a little bit here so that uh we can know
+exactly what two blogs i'm i'm talking about um the first one is uh man why do these have to be so named so
+weird one of them is x-c3ll.github.io and essentially this is a a post on css injection primitives that
+goes back to 2019 and it essentially talks about all of the different techniques you can use um in a css
+injection talking about recursive imports talking about um uh text node exfiltration via ligatures
+talking about html attribute exfiltration this blog post kind of is similar to what i just described
+uh in this in this episode regarding all of these primitives that you can use to do css exfiltration
+um so that's the first one definitely check that one out and then the other one is this blog that i
+haven't heard of before um that i've never seen before and it's by this guy who is a a develop who
+who calls himself a developer with security interests right and essentially if you go and look at the
+blog he was a part of some writing competition in taiwan or something where he had to write like a blog
+post every day for 30 days and so what he chooses is just like get to the most like technical css injection
+xss breakdowns css injection breakdowns and it's really freaking quality stuff um so random so this
+this blog post really made it a lot easier for me to understand the whole um font height difference
+plus first line plus scroll bar technique which masato used in one of those things in conjunction with the
+descent override to actually leak um the the characters um character by character um and he's got a really
+great um description of that whole technique so if the whole height height width difference thing
+doesn't make sense to you then i'd recommend this blog uh beyond xss exploring the front web front end
+security universe um at a s z x 87410.github.io ah you're welcome for reading that out so memorable yes just super
+memorable um so yeah that's where to get the additional research on um on css injection and
+joel hopefully you and i can sit down after this episode and kind of hash out some of these things
+because i would really like to put a server out there ideally a server that we could actually just
+do it for everybody but at minimal uh a github repo that essentially allows you to just do essentially
+what port swigger research did with uh blind css exfiltration where you essentially just have
+one url that you import and it just dumps everything um for a given query selector or something like that
+i think that'd be really helpful so yeah for sure yeah so keep an eye out in the critical thinking
+discord for me trying to drop that and uh and i'm not sure i'll get to it this week because i got a
+bunch of stuff i gotta prep for defcon and stuff like that but i will get to it eventually or else i
+won't sleep so eventually all right man anything else you want to add here at the end i think that's it
+dude this is uh this has been a really interesting one i got a lot of i got a lot of follow-up a lot
+of nerds ideas yeah i got oh god i just deleted some things from the doc and on that note before
+i delete the entire content of this episode yeah on the episode where we're like it will actually be in
+the description too just delete all the notes all right man that's the pod right that's the pod all right
+peace guys and that's a wrap on this episode of critical thinking thanks so much for listening and
+if you want more critical thinking content head over to ctvb.show slash discord join the discord
+there's lots of great conversations and chats going on over there and if you want to support the show
+there's the discord subscriber tiers which give you access to master classes amas hack alongs
+exclusive scripts and an exclusive chat channel with us we'll see you there

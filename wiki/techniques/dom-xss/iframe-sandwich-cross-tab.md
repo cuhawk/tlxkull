@@ -2,7 +2,7 @@
 title: Iframe sandwich cross-tab — out-of-scope XSS to in-scope impact
 slug: iframe-sandwich-cross-tab
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss, technique/iframe-hopping]
 inbound: []
 ---
@@ -56,6 +56,7 @@ victimIframe.contentDocument.body.innerHTML = '<phishing form>';
 ## Seen in the wild
 - {date: 2023-11-30, target: undisclosed} — Ep 47 CSP research.
 - {date: 2024-01-04, target: best of 2023 recap} — Ep 52.
+- {date: 2023-11-30, source: CT Ep 47} — JG's marketing-subdomain iframe ATO chain: pop XSS on the iframed subdomain, then sandwich-rewrite its DOM in the victim tab to leak OAuth tokens.
 
 ## References
 - Critical Thinking Podcast Eps 47, 52

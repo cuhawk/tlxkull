@@ -2,7 +2,7 @@
 title: No-parens JSONP callback dot-chain
 slug: jsonp-callback-no-parens
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss, technique/csp-bypass]
 inbound: []
 ---
@@ -57,6 +57,7 @@ reverse-proxy.
 ## Seen in the wild
 - Wide WordPress prevalence.
 - Critical Thinking Podcast Ep 70.
+- {date: 2023-11-30, source: CT Ep 47} — JG covers octagon.net SOME (Same-Origin Method Execution) writeup as the canonical introduction; same primitive.
 
 ## References
 - octagon.net — "Bypassing CSP using WordPress by abusing same origin

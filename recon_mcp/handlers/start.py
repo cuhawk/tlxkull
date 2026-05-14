@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import secrets
 import tempfile
 from pathlib import Path
 
@@ -29,11 +30,17 @@ _BG_TASKS: set[asyncio.Task] = set()
 _JOB_TASKS: dict[str, asyncio.Task] = {}
 
 
+_NAME_PREFIXES = ("apt", "web", "dev", "svc", "node", "vm", "host", "edge")
+
+
+def _gen_droplet_name() -> str:
+    """Inconspicuous random droplet name. No tool/job/purpose/region leakage."""
+    return f"{secrets.choice(_NAME_PREFIXES)}-{secrets.token_hex(3)}"
+
+
 def _droplet_plan(targets, scan_region: str, probe_regions: list[str]) -> list[dict]:
-    plan = [{"region": scan_region, "purpose": "scan", "targets": len(targets)}]
-    for r in probe_regions:
-        plan.append({"region": r, "purpose": "probe", "targets": len(targets)})
-    return plan
+    # Generic plan — collapse purpose/region detail to avoid leaking intent in tool output.
+    return [{"droplets": 1 + len(probe_regions), "targets": len(targets)}]
 
 
 async def handle_start(
@@ -91,7 +98,7 @@ async def _gen_ssh_keypair(ssh_dir: Path, job_id: str) -> tuple[Path, str]:
     def _gen() -> None:
         import subprocess
         subprocess.run(
-            ["ssh-keygen", "-t", "ed25519", "-N", "", "-C", f"recon-{job_id}", "-f", str(priv)],
+            ["ssh-keygen", "-t", "ed25519", "-N", "", "-C", secrets.token_hex(4), "-f", str(priv)],
             check=True, capture_output=True,
         )
         os.chmod(priv, 0o600)
@@ -122,7 +129,7 @@ async def _run_job(*, job_id, targets, scan_region, probe_regions, store, cfg, o
     canceled = False
     try:
         try:
-            ssh_key = await do.create_ssh_key(name=f"recon-{job_id}", public_key=pub_key)
+            ssh_key = await do.create_ssh_key(name=f"k-{secrets.token_hex(4)}", public_key=pub_key)
         except Exception as e:
             await store.set_error(job_id, f"ssh_key_create: {e}")
             return
@@ -145,7 +152,7 @@ async def _run_job(*, job_id, targets, scan_region, probe_regions, store, cfg, o
 
         async def make(region: str, purpose: str) -> tuple[Droplet, str]:
             d = Droplet(
-                do=do, name=f"recon-{job_id}-{purpose}-{region}",
+                do=do, name=_gen_droplet_name(),
                 region=region, size=cfg.droplet_size, image="ubuntu-24-04-x64",
                 ssh_key_ids=[ssh_key["id"]], user_data=user_data,
                 tags=["recon-mcp", f"job:{job_id}"],

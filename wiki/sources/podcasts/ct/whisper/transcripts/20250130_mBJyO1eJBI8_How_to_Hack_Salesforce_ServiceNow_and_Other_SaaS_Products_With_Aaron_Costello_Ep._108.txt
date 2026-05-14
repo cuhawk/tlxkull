@@ -1,0 +1,866 @@
+i just need to make the actual content to everyone else inaccessible so how do i kind of do that
+well cookie bombing okay yeah my man uses cookie bombing that's what i'm talking about
+best part of hacking when you can just you know critical thing right
+hey what's up y'all before we dive into the episode i wanted to tell you a little bit about
+the sponsor which is appropriately app omni i worked at app omni for four and a half years
+before leaving to do full-time bug bounty in this podcast and our guest of this episode aaron costello
+is currently working there app omni is the best sas security for the enterprise product
+on the market they do everything from taking audit logs and using those events in order to
+normalize them and enrich them and then send alerts basically downstream to the companies to the to
+the security operations team they also have specific insights which are basically like a security expert
+in your pocket like a sas expert in your pocket there is policies which you can use to monitor the
+systems configurations and settings across all of your sas in a single place there's another feature
+called ask omni which is the ai feature that i built over the course of last year which allows
+you to chat in natural language with all of your sas security data points whether it is your policies
+or your alerts or what have you and it comes up with like really nice graphs and heat maps and stuff
+like that as well if you're interested if you're a stakeholder if you're you know a cso at a big at a
+big org and you're interested in um upping your sas security game you can reach out to app omni
+at app omni.com a p p o m n i dot com thanks back to the show me and aaron were at a um at an event for
+app omni and it was it was me and him and then our manager at the time for labs his name is alec
+and alec is like ex-military obsessed with fitness like he literally like runs cold plunges does bjj like
+every day oh my gosh and we were just looking around all the vendors like yeah i think we could take any of
+them yeah me and alec we could take anybody any any booth in the in the building that's pretty funny
+that's great man yeah dude it i don't know there's something about i feel like there's a higher
+percentage of people in security that are actually just totally ripped too like is that is that my if
+is that just my impression because there's like you know there's that stigma going around of like
+the 400 pound hacker in their mom's basement or whatever but i'm like most of the hackers i know are
+like actually pretty ripped yeah i will say it's probably because at least in the bug bounty space
+everyone's really high agency right i mean everybody's working really hard they learn a ton
+they go dominate their field so they're probably also dominating their health in a lot of ways
+yeah yeah yeah for sure man all right cool so let's get let's let's get back on track aaron um thanks so
+much for joining us on the pod man um the way we do it here on the critical thinking podcast is we bring
+on a guest we say their name aaron costello uh and we say hey man show us a bug so what what what bug
+did you bring for us today yeah so today i'll be talking about a bug that i found god very late 2020
+early 2021 most likely the latter and it's combining your sas based misconfig because we'll be talking a
+lot about sas security today and also more traditional kind of web hacking uh some kind of janky browser
+behaviors um so right off the bat um for a private program on on hacker one um the travel company
+that had a uh one of the subdomains was running on salesforce so it was built entirely on salesforce
+and integrated with salesforce um platform in that way so navigating to the site it was mostly
+unauthenticated access and they had this functionality that would allow for one of their customers to upload
+uh documents and detail a support request right so talking about issues with passport flights or anything
+like that sure um and then based off the kinds of uh things that they were saying on that form i thought
+okay some of these attachments could be sensitive like oh make sure your id is clear that kind of thing
+um so i uploaded a basic blank image random text i was trafficking uh all of it through through burp
+and what i noticed was the actual image was being uploaded to an external um booker provider which is very
+very very unusual because salesforce has its own storage for for images and documents right okay yeah
+and how i was actually doing this was using apex and we'll get to that later on that's from salesforce
+nomenclature but apex is like server-side code on the platform so it's kind of java syntax it's an object
+oriented or intended programming language and so in the actual request itself when i sent those details
+uh if one of the parameters being provided was a path and the response was a url of the image and
+also along with that a a key to access the image on this book it so you navigate to the url you get access
+by removing the key from the url in the external storage bucket you no longer have access okay okay so
+it's like signed access sort of thing exactly exactly so i was kind of playing around with it and tested out
+some couple things so i i managed to validate okay yeah i could replace another user's like file if i
+wanted to right but then again the actual file names were randomized so unlikely um i was also able to
+traverse the path so in the request i was able to modify the path that was being uploaded to the bucket
+um once again potentially writing as a directory of writing sensitive files that kind of thing
+but we need to know names of these files right now one key thing that i noticed was there wasn't really
+any file uh file type validation being performed and i couldn't execute any like server side right
+because it's a bucket yeah right um but i could upload things like html svg xml uh that kind of stuff
+um just nothing server side so using a technique that i actually read from i think it was file descriptor
+um which is about app cache manifests okay so i'm gonna have to lock in for this one man
+and i feel like a lot of the newer book companies won't know what this is because it
+app cache manifests were pretty much replaced by service workers but the the what i was able to do
+was i could upload an app cache manifest and additional html files and so how the the app cache manifests
+work is it's a special file type and it's used for um providing the ability that for users to access
+content offline on a website so it stores the content of a page in your browser so the manifest defines um
+what what content is effectively cached in your browser so there's an interesting attribute
+within this app cache manifest called a fallback
+so any file in that same directory um or sorry every user's files uploaded in the same directory
+and so the app cache manifest would apply to every file in the directory and so the fallback what it
+specifies is a path to a file in that directory that is requested if
+the other files become inaccessible so right so using the technique from file descriptor what i was able
+to do was i uploaded one file that was specified as the fallback and this is a html file that would
+exfiltrate um the the url so when the fallback redirects this file it would exfiltrate where it was
+being redirected from to my own web server ah and that was the path of the in the key exactly right
+i'd grab that key i just needed to make the actual content to everyone else inaccessible so how do i
+kind of do that well cookie bombing okay yeah my man uses cookie bombing that's what i'm talking about
+very very underrated so i was able to upload a html file that's specified at the beginning
+use this manifest and then proceed to just fill the browser with like junk cookies and so when that
+happens when the cookies become too large the content becomes inaccessible in the browser
+so the actual attack vector here or theoretically what it would be is you would upload these files set the
+stage and when a support engineer goes to view that file it would load the manifest it would basically
+dosh their browser and they'd think okay so like what's what's going on here i don't know what's
+happening maybe the file's corrupted or something so they'd go to view another case and look at their
+files when that file is viewed it would kick in the fallback which points to basically my html that
+performs ajax to my my own um externally hosted web server and it would capture that other customer's
+signing key dude and so i was i'd be able to access potentially sensitive documents through that um so
+that's kind of combining the sas misconfiguration there with your typical exploit and that's why i
+found it interesting there is a little bit of user input required there but uh i think it's a nice
+little chain it kind of shows what you can do when you're a bit of a jack of all trades in a lot of
+yeah yeah no i i love that dude and i love anything that utilizes one i just i freaking love
+anything that utilizes cookie bombing man cookie bombing is just such a fun technique and i just am so
+like in awe of the fact that that still exists you know like why why do we allow the browser to just
+set so many cookies that it freaks out the web server right and and and causes these uh these
+mistakes to happen um so i i love it when it's mixed with service worker with app cache and uh the ability
+to exfiltrate those those paths in those those keys um is just perfect and combining that you know i was
+thinking okay so you know we use this attack on the victim and then when they go and submit a service
+request then i'll get access to their files but really the you're right the more impactful thing
+is hit the engineer you know that that goes through and is actually triaging each one of these tickets
+and then you get access to all of the paths and all of the tickets that they click on that's right
+that's exactly it and you know part of that attack and why it wasn't very applicable to other customers
+was that once the form was submitted it was like fire and forget so you couldn't actually view
+what you just submitted you'd probably get an email in a couple days from a support engineer saying
+oh i just received your ticket right so yeah it was is a very very interesting bug um i think it was
+classified as as a high um probably being a bit generous there but i think the novelty gave me a
+few extra bonus points dude do you think that actually uh this kind of question for both of you
+all do you think that if it was loading any kind of like summary images or thumbnails or anything like
+that that it could have potentially triggered a bunch on a single page yeah yeah yeah yeah depending
+on how the back end was written that's it exactly yeah so they could have been like a restricted area
+that's salesforce platform that had like preview thumbnails of all these of all these support
+requests and it was just firing off all of them you know so yeah that's sweet dude well uh aaron
+now i'll officially do your intro now that we've got a bug under our belt and people know that uh you're
+well worth your salt although i can also vouch for you i worked at um at app omni where aaron
+currently works with him for three or maybe four years um it's been it's been a long time since we
+both worked there together obviously i recently left so i uh left aaron standing uh as the only member
+left of the app omni labs team but um i can personally vouch for how uh bright aaron is and i think
+that his depth of knowledge and expertise in the sas security space specifically is completely
+unparalleled as most bug hunters will know if you've seen his blog so his blog is enumerated.ie
+and um specifically there are salesforce and service now misconfigurations that have made
+him and others lots of money from bug bounty but more importantly has secured the the data of
+probably hundreds of millions of users i know at app omni it's like we check for these things of course
+but then lots of bug hunters have reported them on companies that don't use app omni or or other
+providers and i'm sure that the other competitors in the sas security space are checking for these
+same things so um so yeah so it's a pleasure aaron to interview you and i know that jess and i are both
+really excited to to hear your opinions uh specifically let's dive straight into just
+misconfigurations in general um you know you and i have talked a lot about this but our listeners maybe
+have not thought deeply about it uh what makes misconfiguration such a really um both lucrative and just
+like neat thing for bug hunters to look for yeah absolutely so if you think of a traditional
+web app vulnerability and like a custom in a custom site it's a once-off right so you find like a sql
+injection you use parameterized queries or something to to fix it and that's it done now you're off hunting
+for maybe other injection points you're hunting for other kind of classifications of vulnerabilities
+you use but with this kind of stuff it's it's sas right so every customer for example using salesforce
+to deploy to deploy a publicly accessible site the core of it is the same across all these different
+organizations so the core apis are the same how the access controls are configured are the same so if you
+find a way to exploit misconfigured access controls by let's say you're unauthenticated and you can pull
+data if they've accidentally made some data public you you can just use the exact same payload on another
+customer so it's basically like an end it's like an end day in that regard right it's not not exactly
+a zero day because these are things the customer could go in and fix uh presumably yeah and that's and
+that's the kind of important distinction here is like i classify these as misconfigurations because
+the customers themselves typically 99 of the time have accidentally made some data some sensitive
+data public the vendor so salesforce or service now have just provided them with the tools and said
+like hey we're a powerful platform you can do a lot with us use this how you want to and generally they
+will say things like yeah just don't you know don't touch this or like look out for this and people
+will ignore it because they want the easy button right and by pressing the easy button it's like
+okay you've just leaked five million people's vaccination records you know that's that's exactly
+what happens that exact scenario has happened multiple times yeah yeah yeah that's crazy dude and
+and i think that's one of the beautiful things about it all as well as like you know the customer it's a
+third-party software right which is so that we we know that there are patterns to it we know that there are
+tricks to it um that because we can go and work with the software ourselves get our hands on it sort
+of mold around with it um and then the problem that you normally have with third-party software is that
+you know the company is going to kick it back and be like no that's third-party vuln you know not our
+problem we're not going to pay you for that but with this one because they induced the vulnerability
+themselves you know in the system then i don't know i my i would suspect that you almost always get paid
+for these have you have you run into situations where they're like uh yeah but it's salesforce and
+you know given some excuses like that or do they get paid like 80 90 of the time i mean so typically
+when i was reporting all this stuff it's before anything is necessarily like public right so there's
+a ton of pushback of like what is this what is like how did you find this like what's going on here
+and there's a bit of panic and then they'll go to the vendor and the vendor will be like yeah you you
+messed up your access controls here like you did this right and then they're like oh okay and they'll
+pay you so since the inception of most of my research and the application of it by a lot of boat benny
+hunters um globally it's become a lot more understood so i haven't heard of pushback in a long time um
+um and so it's it's it's a safe safe book to hunt for right you're not going to get an na at all unless
+it's at a scope of course right yeah i guess i guess uh justin it would kind of only be potentially you
+know shut shut down or closed as informative if it was not like an open scope program for most bug bounty
+companies where it's open scope then you know if you if they own it or it's their customers they're
+probably going to pay for it yeah um the one thing that i was going to mention uh about this was
+that i think uh aaron specifically and i have have farmed this uh just like one or two times on some
+stuff the the biggest issues that we ran into and i know that aaron has to fight with sometimes that
+app omni is that some of these vulnerabilities are in a gray area if they are defaultly configured that
+way justin so you know like sass security is near impossible to configure properly for a lot of
+companies because they're basically full-blown operating systems and these companies spend an
+entire year instead of setting up their service now or their or their workday or their or their
+salesforce but when the configuration is kind of by default exposing something then it gets kind
+of tricky about whether or not it's it's on the provider's fault or if it's like on the implementer's
+fault yeah yeah i could definitely see that it's up a couple times um and typically how we
+would handle those responsibly is if you do find an endpoint that can be used to exfiltrate data
+or leak data out of and you notice that there is a default access control that's coming with the
+system out of the box you would well i would recommend to submit the access control issue to the vendor
+and then for the rest of the bugs that you find that are misconfigured by the customer
+those would be would be on their side of the shared responsibility model yeah and i imagine it would
+be a little bit difficult too like you're gonna almost run into i don't want to break anything sort
+of responses from the sas vendors where they're like oh yeah that shouldn't be the default but i don't
+have any data on whether if i just globally flip this switch for everyone whether it's gonna break
+anything so it's kind of hard for me to like globally be like oh maybe i should just turn this off
+um so yeah i don't know i i guess that's sort of the best you know situation where it's it's default
+but it's something that they can change um is that like so let's talk a little bit about your methodology
+because you know looking at your blog and looking at your research you know you you've hit a bunch of
+different uh sases and and identified you know misconfigurations across a lot of different sases
+when you are are going into this scenario is this like your your holy grail is like this insecure
+default or do you really like to try to find something that is not default um but is like the
+most common configuration that the customer has to do to get the product to work yeah that's a great
+question and i'll also set the the lay of the land here when we kind of use a certain nomenclature
+really um so for these kinds of bugs you need two things in order to kind of retrieve this information
+you need an api endpoint if you want to call it that uh to pull the data from and you need data that
+is exposed okay so these api is these endpoints these the existence of these is not a vulnerability
+these are used to serve a purpose and often some core functionality okay um on the flip side the access
+controls those being misconfigured is on the customer and the out of the box misconfiguration is in the
+vendor so i actually want to avoid situations in which the vendor has misconfigured something because
+once i report a misconfigured access control they they just fix it right what i'm hoping for is
+when applying these techniques to a ton of customers in an authorized fashion obviously um
+they've all misconfigured access controls so it's fully on them you know that's the the dream really and
+it is kind of my bread and butter it's this kind of data exposure um because there's a lot of noise
+about like third-party risk and supply chain risk and a lot of the high profile
+sas attacks by kind of these threat actors are through like supply chains like a compromised
+service account for an integration and stuff like that we have to remember like you need a foothold there
+you needed to have access to that in somewhere gained access this stuff i find so much more interesting
+because you're unauthenticated like you don't need anything right so there's no prior access no prior
+knowledge needed and that way it's far more dangerous and i can honestly say handle my heart
+from doing this for four years now or five years actually that um i've probably compromised in an
+authorized fashion through bookbending platforms and things like that like a hundred x what these threat
+actors are compromising through supply chain oh yeah this is honestly the real risk with sas it's like
+this unknown like what are these api endpoints like what are they used for that kind of thing um and to
+speak to my methodology a little bit yeah please i never i never approach these platforms i try not to
+it's hard but i i never really approach these platforms with the intent of like hacking generally
+speaking i i sign up these platforms if they have some kind of free developer account or something
+like that and i just try and become an expert on the platform on its functionality the use cases all of
+that um so when when i was hunting or i was becoming an expert on service now that's actually how i found my
+service now disclosure right where there was massively widespread misconfigurations in customer access
+controls and there's api endpoints that you could pull data from so these api endpoints were not
+documented anywhere they were legacy and legacy is where the gold is i know with you know all the ai
+stuff um is very very hip and trendy and it introduces a lot of new attack service and i get it
+but like let's not forget the stuff that's been sitting there 10 15 years yeah and it isn't even
+necessarily in the forefront of the documentation or something like that deprecated but not even
+disabled exactly and i'm i'm thinking probably you know you say you come in here and you kind of just
+try to become an expert on it and that's what we say on the pod all the time is you know whenever
+you're hacking something you just need to become the world expert on that application no matter what it is
+right that's exactly um and and i think that can be accomplished a lot of times by reading the docs but
+i think there's also a little bit of a hacker mentality that needs to go into it as well where
+you're looking at the you know you've read the docs or whatever but then you're actually looking at the
+code you're looking at the javascript files you're looking at the front end you know you're you're seeing
+the way that all of these uh calls interact together and sort of reverse engineering and be like hey
+what's that weird sketchy little api over there right um i think that's where we we see a lot of those bugs pop
+up to yeah and aaron um maybe didn't say that specifically but that's uh often what he is
+having to do at app omni he'll be he'll be given a a like a new sas vendor and be and been and be
+told to like hey figure this out so we can implement it for the engineers and he basically does like that
+initial recon of like okay yeah we'll use these api points to pull the users and we'll use these api
+points to pull the groups and so he kind of has to become an expert in it in order to like hand that off
+to our developers or to hand off to the developers at app omni so they can go through and get it all
+so he's kind of like by necessity learning it as an expert which is really cool that's awesome it's
+it's honestly even even further than that with with service now like i built the integration like
+so i'm i'm actually a cert well i didn't renew it um last year but i'm like a certified platform
+administrator and a certified developer first now how the certifications for i went to the
+awesome so i actually built the the whole uh the whole integration the app um but so so what happened
+there with the service now findings was like i thought to myself okay this is like a salesforce
+equivalent in respect that it's very very powerful and very customizable so i thought to myself there
+must be some way that they let organizations like put record data on a page okay so think about an
+implementation like customer support requests surely there's a lot of use cases where someone wants to
+deploy a site on service now um and allow for customers to authenticate or sign up and authenticate
+and submit requests and then view their ticket information and that ticket information is being
+pulled from the database right so i thought there must this functionality must exist somewhere and i
+could not find it anywhere so i this and this is just a testament to how hard work outweighs
+intelligence because i'm living proof okay service now um actually let you see every table in the schema okay
+so just hundreds and hundreds of tables i went through every single table and was like what is this what is
+this what is this for like hundreds and that's how i came across widgets um so i was looking through the
+widgets and i i was using a bit of filtering because i knew the the syntax for the um the on platform
+server-side programming language so i was looking for for widgets that were querying um like user input
+like tables yeah that's how i came across uh simple list uh an order list which are the both of the
+widgets that they're public by default um and for people watching like a widget is effectively just an api
+endpoint and it would take user input uh specifically like a table name and a column name and it would let
+a user read data from that table and that column if the access controls are misconfigured
+so that's how i came across it so it was just through sheer countless hours and nights going
+through the schema uh hunting for this stuff yeah so when you and i were hunting this and reporting it
+i noticed that there were like for most implementations there was a few that were like almost always shared
+which like weren't that sensitive like it was like maybe like i don't know usernames but then for
+some customers we found that like the entire internal knowledge base was exposed do you like is
+this d was there like what was the functionality that made them or like you know did you ever figure out
+why the um certain fields or certain tables were by default enabled was it for that customer support
+portal or was it for something else well all right so i think to answer your question because i remember
+i think i remember the company you're talking about um and that was a knowledge-based disclosure right
+and i've so i have two blogs i have one specifically for like table data and then one specifically for
+um knowledge-based exposures and that's just because the access controls are implemented differently got it
+um but the knowledge base um so they just misconfigured their access controls effectively what would happen
+at that point was they just didn't put any access controls on because no one knew that these endpoints
+existed these widgets they were like oh it's not public right um and i also remember for for that
+affected organization this was actually insane their knowledge base had like access tokens in it and like
+for like for like for external systems it was like yeah it was a disaster the kind of stuff that they're
+storing in in knowledge base articles is is wild right like it's it was crazy um and that was actually
+an interesting one because when i released the article on knowledge base disclosures which used a different
+widget um service now actually stepped in and basically saved all their customers and said yeah
+we're just going to lock down all of your access controls um and now they were communicating this
+very very well with their customers to say like hey just letting you know this is going to happen
+things might break like we'll give you some time to like you know work around it but that was
+did they do this manually like do you think that they they staff members had to go in and be like
+all right you know this is what the current situation is this is how the access controls should be
+they just deployed it they just deployed to production everyone's stuff but they naturally
+that wasn't like granular it was like blast here's access controls go yeah so they they test all this
+stuff beforehand naturally um and and because they were trying to gauge the best way of solving this
+problem other than because they were sending communications out to customers and saying like
+hey your access controls suck like everything's exposed but the issue with that is not everyone
+reads their emails so some stuff was still exposed stuff was just exposed everywhere um so they kind of
+took that brave leap and i have to give them kudos for that because they put their customers in a much
+better position it's a difficult position they've now got to uh some organizations may need to figure
+out a way around it to implement whatever functionality they they have there but um they're better off for
+it and look i'm sure some of them have just undone it they just yeah just flip it back because if they
+were using it for like an external dev documentation or developer portal or something then where there was
+nothing sensitive in it it was totally fine to be that way they could have just rolled that back the other
+thing i was going to ask you about the one of the i think it's the simple list widget is the um i
+noticed that when you and i reported it there was some specific um there was like one specific endpoint
+we were using but then i was like talking like your blog got posted and i remember seeing a bunch of
+people like tweeting or talking about it afterwards where they were using a completely different type of
+payload it was like we were using like a post request or something and they were using like a get
+request at a different endpoint do you remember the nuances around that or like um you know does that ring any
+bells there were there were like a there were like five or six maybe a lot more um different widgets
+that you could use um so i mean that's that's really where it comes from um there was some
+limitations with some uh some widgets would allow you to kind of filter through the data which could
+be helpful when looking for particularly sensitive things like phone numbers or whatever it is um but
+all of those got hit with the the patch so they did roll out a kind of a defense in depth mechanism
+like a security guard rail for those those widgets uh in which they effectively made it so organizations
+would need to like set all these system properties in order to allow for data to be exposed to them
+um i know because i i i finally talking about this i know you guys were curious like is there any more
+widgets like can we get more widgets um not that i know of unfortunately uh the knowledge base one
+i believe still works so there's like a ton of knowledge based ones they all still work um there's
+no i don't believe there's any like prerequisites such as a system property or anything that needs to be
+set by the customer um so those are still applicable sweet yeah i've got two more quick things about
+service now before we pivot to something else the first thing is one thing that i saw that i'm sure
+you've seen a few times justin which is really cool i know we have a lot of program managers listening
+is um for sas uh specific things if you're worried about them being misconfigured and you want to give
+researchers a specific target to hunt for you can actually put a flag like you can create a user where
+their details are a flag and then if someone's able to get access to that they can submit it for a
+vulnerability or in service now it can be a ticket or it can be a a user the user details like user pii
+or something and like a sign or put a flag there i know that t-mobile has done that and it's a pretty
+cool way to like have someone validate that they got access to something they shouldn't have inside one
+of these sas platforms but what i was going to ask you aaron specifically was one if you have any
+comments on that of course you can mention it but do you think they're like what would be if there's
+any hackers out there that have been looking at service now because i'm pretty sure they have a
+private program floating around or at least a public vdp what what are some areas for future research
+on service now that uh maybe has been interesting to you if there's a specific api path or piece of
+functionality or feature that recently came out that you would recommend if the hacker is looking for
+something to dig into what should they dig into that's a great question that's a fantastic question
+um what did you not have time to get back to i guess is the real question i know you've got notes over
+there probably not well um i have looked at a ton of stuff um i would say things like like ux data
+brokers um so that's another kind of like api endpoint uh data brokers i'd recommend playing around
+with the ui builder and so you're designing like a front end and you've got a couple of different um
+means to which you can implement the back end functionality so looking through those available
+api endpoints that can also return data uh playing around with those and see if there's kind of another
+maybe not like a simple list but if there's any kind of um maybe lack of validation on a param or
+see if you can get around it yeah that's that's definitely what i recommend but still kind of legacy
+stuff um i know they are doing a lot with with ai as well so naturally i mean that's kind of your your
+wheelhouse um but yeah i think i when it comes to data exposure i've rinsed service now fairly hard
+look elsewhere leave it alone yeah yeah that's funny man it's that you know one on one note actually
+when you talk about what i recommend for for hackers and sass apps and things like that um
+i would definitely recommend that this will require some money some some prior input if you've got a group
+of skilled people because a lot of these these sass apps cost a lot of money like a lot we're talking
+i think i've seen like 20 km a month in like at a peak oh my god band together with a group of guys
+group of bug bounty hunters get yourself like a production license for some big sass organization um
+um i'm not going to say which ones but ones that are old uh and ensure that you know that the you're
+getting the right license you know something that allows you to implement that kind of external
+functionality and i've no doubt as well like five or six people or up to eight people just hacking on
+the one platform like you'll make your money back definitely but it is that is kind of the the barrier
+uh or the entry barrier for people getting into this it's like the instances cost a lot of money
+i do have to go through a bit of a process sometimes to buy them it's it's a little bit it's crazy too
+because you say wow you know 20 grand uh yeah up to 20 grand a month and i'm like oh my gosh that's
+crazy and then you think about like wow we pop one critical you know on like one of these major
+organizations and that could be 20 grand easy you know um it's i think that the investment is definitely
+there yeah yeah it's funny we've had that in in app omni where i i've made the argument i was like
+look we need this license like i'm telling you there's stuff here we need this i'm gonna tell
+like okay for one month you've got one month so for one month i just sweat it out i'm like come on
+return on investment please um yeah so before before justin takes us to the uh to talking about
+salesforce or one of these other topics we've got listed here i did want to reframe one thing you
+said you know i think you said you have basically rent service now for all they're worth but just
+like as a reframe to you personally and to the audience i think it's like a really healthy reminder
+to be like no what you actually did is help secure hundreds or thousands of companies and and and
+hundreds of millions of users data and so uh i'm thankful to to your work in that regard and i think
+that list listeners and customers should be too so yeah absolutely yeah big shout out to service now as
+well because they handled it very very well given the circumstances um so kudos because to them too
+okay so i'm dealing with two you know app omni guys here so i i gotta just take a step back in and sort
+of um recap for the for the sas for the newbie sas hacker like myself you know what what exactly the
+approach is here so for service now what you guys are saying is we need to utilize these specific
+sections uh relating to widgets which i imagine is you know loading widgets onto a page you know on the
+front end or whatever the api is associated with that um to leak data about the given objects inside
+inside service now is that that's sort of like the tldr of this approach tldr widgets api endpoints
+provide a table name provide column names or whatever kind of input to leak the data and if
+there's misconfigured access controls then the data will be shown yeah and if listeners are confused like
+aaron's two blogs on service now are extremely clear it's like it walks you through exactly what they
+all mean and exactly the request to use so yeah yeah and so the the widget piece there the reason
+why using a widget here is important is because that's that piece that you mentioned before where
+it's like that's the api endpoints that we use to pull to pull that data out and there could be other
+api endpoints as well they can give us access to that that misconfigured data so so the the overall
+problem here is that there's bad access controls you know on the data itself but then we are using
+the widget related api endpoints to extract and and to get at that data that is actually has bad
+access controls is that right completely correct yeah okay and so then what you were saying before
+i was like okay now we got to find another avenue maybe it's not simple widget like it was before a
+simple list widget um but maybe you know it's in the the ux uh what was that piece could you say it
+one more time the ux designer or something because yeah the data brokers yeah yeah yeah there's a ton
+of legacy widget like um apis out there so look for those hidden gems and maybe you'll find something
+that you could use to hack thousands data brokers okay and that's a part of the like ux builder stuff
+that's related to service now and then what we'd be looking for is another one of those sort of um api
+endpoints where we could query the data that is already misconfigured because of access control
+stuff right and and and i think i think the interesting thing here is that the fix you know
+you said was and and correct me if i'm wrong here not necessarily to fix it at the widget level which is
+that api endpoint um but but to fix the overall access control problem that that happens with with
+service now so service now pushed a bunch of access control updates to their users so so now even if
+we find another api endpoint where we can query misconfigured data i mean are do you expect to see as
+grossly misconfigured access controls as we did see the first time or do you think that those access
+controls have been shered up in large part oh yeah you'll still see so many so many 100 there's going
+to be a ton of regressions absolutely um and i want to touch on that point of yes service now pushed out
+some by default access control changes and yes at the widget in the widget code they implemented some
+guardrails where it's like the organization has to flip a flag for the widget to be accessible
+but too many organizations are gonna fix it on that latter part they'll be like well i can just undo these
+access control changes now because the widget isn't accessible um that's what's gonna happen right okay
+gotcha so there's two fixes share up the access controls and then fix your widget and a lot of
+people will be like ah okay widgets not accessible no worries and then leave access controls wide open
+and that's why we go search for another api endpoint another path through data brokers or whatever where we
+can get at this misconfigured data yeah and i also think like they're going to be adding uh new features as
+well justin and a lot of sas providers have this is like a thing aaron always looks for because he
+kind of coached me and helped me on this as well when doing sas security research is like basically
+guest user access and so that's kind of like the you know keyword that kind of makes a lot of this
+possible is there's just um and guest user is almost like one step away from unauth in fact you know
+most people could still probably just consider it unauth but if you think about it in the context of the
+application it still is giving you some sort of token it's giving you some sort of cookie or it's giving you
+some sort of api token that is expected to have like little to no sensitive data access but often
+it does get misconfigured to have it and i would say one step further than that justin like let's say
+service now fixed all unauth and all guest user stuff like there's going to be some organizations
+where like you can get like as a customer you can get like a support access and now support access might
+be able to have access to like all all cross customers right they're like so each of these api
+endpoints each of these widgets each of these pieces of functionality could be vulnerable at any
+step they might be on aught they might be accessed with like a no privilege token and then they might
+be they might be misconfigured with a privilege token so those are kind of the ways that i think about it
+gotcha aaron any comments on that and how like the different roles are utilized by the different
+organizations i'll touch on that more when we talk about the salesforce things um i'll have
+a few time for for power platform too i'll be talking about that a lot okay sweet yeah let's hop right
+into it then salesforce um and and i sort of read over the whole salesforce thing and man it's it's
+it makes me want to go hack on this stuff man it's it's crazy the way that they've got this whole thing
+configured um and i guess the first question that i wanted to say here was this article was written
+this legendary article this is like like whenever anybody talks about salesforce they're like oh they're
+using salesforce i'm like uh uh this blog go you know like i always just like copy paste this blog and
+be like hack it with this um and so very legendary blog on the space um and and it was but it was
+written in 2020 so five years ago um and i'm wondering if uh all of this stuff i kind of know
+the answer to this already but i'm wondering you know uh how much of this is still applicable and uh
+it you know has much changed since the 2020 write-up of of this very applicable very very applicable
+exact same payload i found this i found this on a program like two weeks ago so oh my gosh
+there yeah there has been some minor minor changes um with respect to some of the payloads
+where they've actually baked in some restrictions uh and people won't really know this stuff unless
+they're very salesforce savvy um so what those restrictions are or one example restriction was
+so using one of those um payloads from the article at that time you were able to access
+both record data so data being certain tables and also data being stored in what are called custom
+settings now typically custom settings are very sensitive so what salesforce did there they made it
+so that that paid those payloads couldn't be used to access custom settings um so there's like
+minor kind of baked in restrictions like that but um yeah i mean joseph and someone two weeks ago so
+it's still very very applicable and at up omni we have so many sales for salesforce customers and
+prospective customers that we still see this stuff right like it's it's wild yeah absolutely and so
+there's lots of different pieces to salesforce security there's like the um apex classes there's the
+salesforce object query language um and all that stuff what would you say is like the 80 20 the the
+things that we are going to get the most you know bang for our buck for with like knowing about those
+salesforce misconfigurations and security controls all right i'll talk about three things there well it's
+really two things and then one is just like a tip so the first is the access control misconfigurations in
+the same manner that we spoke about with respect to service now so using the payloads um that are
+outlined in in my blog looking for objects that are publicly accessible that you can read sensitive
+data from okay um so there's payloads in there that you enumerate all the object names and then you can
+just iterate the extraction payload effectively over those object names that's that's one two is the apex
+so the custom apex uh code uh so briefly what that is i spoke about it in the initial um kind of book
+book talk apex is like server-side code it's sales forces kind of proprietary language right and some
+uh object-oriented language apex provides the business logic so if someone clicks a button on a
+form it could fire off some apex that would maybe retrieve some data or insert some data um so it's
+that kind of server-side logic so is that written by the customer so yes it is written by the customer okay
+no there is some other box click a button and and then it does like an rpc call is like a remote
+procedure call type thing on and on the server or right so okay we're getting into it okay so effectively
+um these so in salesforce you can have what are known as digital um experiences previously they're
+called lightning communities so it's just like a website deployed in salesforce okay and how it was built
+uh a while ago was through what i call aura components and these are just front-end components
+like forms and buttons and you would pair an aura component like a form or login form or something
+with an apex class that was or what we call aura enabled so when apex is aura enabled it means it is
+accessible via the aura api okay and that's what we can get access to it through so if you look at the
+payloads in my in my article you'll notice that those payloads are being sent to the aura api
+because that's the api endpoint that exists within these public sites to put on salesforce so yeah it's
+the aura kind of ui framework being paired with the kind of back-end apex um business logic and where
+these kind of issues arise and why this is kind of like the 80 20 is you've got a lot of customers
+implementing their own functionality so when i spoke about that bug for some reason they were
+integrating with an external storage bucket through apex so really what was probably probably happening
+there was using um the aura api that kind of apex was being called and then in the in the core code uh
+the core apex code in the salesforce platform on the server side that apex was probably pulling some
+credentials from uh credential store like name credentials or something in salesforce and then
+pushing that to the um the storage bucket so i have a specific paper on apex i don't know how applicable it
+is today with because i talk about how you can like find what parameters are required you can find apex
+methods that aren't even like in use yeah so definitely give that a look to understand the
+fundamentals but it's like think of it as just like aura enabled apex are just custom api endpoints
+that's right that's all it is and and you say there's there's a way to enumerate those from the
+external attack surface without like having to read like the javascript files or whatever client side
+code we have in place you you you would need to to kind of pull apart the the client side a little bit
+okay so there is some i think that i mean i'd hope this quite by now there's some automated tool to do
+this for you but uh you might have to do it manually um so you're effectively pulling apart um yeah as you
+said like the javascript and looking for the methods um that are exposed to the or api and you know what
+what inputs are they expecting okay this parameter and it's a string and you play around with those and
+so the reason i i mentioned that this is so important is take a scenario in which you're applying method
+one of querying for exposed objects right and let's say all the access controls are locked down okay so
+you're out of luck nothing you can do well you can develop apex in an insecure way so you can develop
+apex in a way that it just doesn't respect access controls i've seen that running as like a system
+user or something on the back end so yeah it's called um like without sharing is when it's running
+in system context when it's running in that context it effectively means that whatever it's accessing
+it's it's not respecting whose data you can read so you could i've seen apex that just pulls all users
+so straight away okay you've got phone numbers everything addresses or whatever it is there's a
+lot of different things that you can do there is what you alluded to earlier the socle um query language
+which is like sql um very very similar it just doesn't allow for any dml so like no insert update
+delete just just read only so you can have instances where user input is being put into a
+um socle query but it's not being sanitized so it opens up these kind of very sql injection like attacks
+um so i speak about that i believe in the in the apex white paper as well uh and and that's why it's
+important because what might be restricted by access controls may not be restricted by this this kind of
+custom apex that's being developed and exposed as an api aaron you should tell justin the way that
+i don't remember if it was you or if so we actually figured it out and then he told us and you used
+it or something later but um i assume that it was probably your finding how did you uh what was the
+workaround you found for leaking named i think it's fixed at this point but there was a way to get
+around leaking name credentials yeah yeah justin i love this dude this sounds great yeah so um yeah it's
+okay this is an interesting one so the name credentials in salesforce i very briefly mentioned it um it's
+a method in which salesforce can integrate with an external platform so you as a salesforce
+administrator you log into salesforce and go to the name credential page and you can basically specify uh
+again typically an api endpoint and you can specify how it uh authenticates so you can provide like an
+access token you can provide like so this is just straight up credentials like these are like secrets
+basically right you can provide credentials to it and um once you save that you can call it from apex
+so it's just a way that allows developers to call an external system in an authenticated manner
+without needing to embed the credentials in the code in the apex code yeah exactly right so it's just safer
+um now there's two ways you can set them credentials up so one is or was in the past called named
+principle named principle means that anyone who's accessing um or performing this call out to an
+external system through apex everyone's using the same type of credentials it's the credentials that
+were provided when it was created and then there's also per user which means that each individual
+user has their own okay um now we all know that no one's using the ladder okay everyone's using the
+shared credential that's why this happened um and so the issue with time like hacking this stuff is
+you can't just run apex right unauthenticated like you can't just run server side code like that would be
+insane right um but if you were to go to a site to put in salesforce that allowed you to sign up
+you're then what's called generally a community site user and you've got extra privileges just by signing up
+you're going to sign up and you're going to sign up and you're going to sign up and you're going to
+sign up and you're going to sign up and you're going to sign up and you're going to sign up and
+you're going to sign up and you're going to sign up and you're going to sign up and you're going to
+sign up and you're going to sign up and you're going to sign up and you're going to sign up and
+sign up and you're going to sign up and you're going to sign up and you're going to sign up and
+sign up and you're going to sign up and you're going to sign up and you're going to sign up and
+do the normal like sign up to create a support user or whatever it's like and like submit my ticket
+or whatever and now that i've got this community user i can just run apex code within the within
+the the privileges of my specific user as an anonymous user oh wow okay well you're not
+anonymous you're like authenticated you're just like a low priv user you're an external user um but the issue
+was like okay yes this execute anonymous apex it does run with like it doesn't run in system context so
+it's only in your privileges with name credentials if it was set up as a named principle aka the
+credentials are the you the credentials used are shared by everyone you could just brute force the
+the name credential so now and all you need to do that is basically um you would so when you perform
+a call out through apex to the name with the name credential it's just a label so you could say like
+amazon okay and in the apex you'd say call it um call on amazon so you would just brute force all the
+commonly used names so you could go to github scrape a ton of name credential names
+turn them into a word list and through that mechanism you could see the responses from these
+apis and you're authenticated because you're using the credentials that were set up by the admin and
+they're all shared under the name principle um and the best part as well is you can modify the path so
+you can actually like access resources that like outside of what was intended so yeah it was a really
+interesting one um that was once again another one of those things where because i had that on
+platform knowledge i knew there was an execute anonymous api i knew that you needed to be somewhat
+authenticated to use it dude that's that's gonna be a new term some somewhat authenticated like i i so
+many bugs happen in the somewhat authenticated uh you know environment that's that's really key and and so
+that's the third thing i was going to talk about when i just asked my question so the first was
+kind of that misconfigured access skills for objects the second was um custom apex a custom apex
+exposes as an or api and the third is just privilege escalation yourself by signing up okay you would
+have you have no idea how many lightning communities i've tested that were so locked down when you're
+authenticated you sign up two seconds later you click an email confirmation link in your inbox
+you're now authenticated as a community site user and all of a sudden everything's accessible everything's
+just everything's accessible you'll also then have access to not only more objects chances are you'll be
+able to see um some some leaked data that you couldn't see before we'll also have more custom apex so
+you're just expanding on it uh is it so cool or apex it sometimes will return like uh an obfuscated
+response for secrets and then there you there you thought there was a way around it by like renaming
+it as a part of the query or renaming the the key as a part of the there's a lot of stuff i can't talk
+about it um okay we're gonna have to sleep that who knows um yeah there's there's a lot of of
+interesting attack vectors so yeah i would advise everyone to uh just read the original paper read
+the or the original enumerated blog read the apex white paper on abomni um and look into kind of uh
+socle as well see how that underlying those online database calls are working with apex and yeah it's
+very very fruitful maybe wow maybe one of clarification here aaron because i know that people have
+messaged me about this in the past socle injection is not always sensitive correct so if just because
+you found a socko injection it doesn't mean necessarily that there's going to be sensitive
+data accessible to the authentication context that you're in right gotta validate these things 100
+right it's you can't just throw well this wouldn't work for soccer anyway but you know with like
+sql injection people just like throw in a dash or like a percent of 27 um it's like oh it threw an
+error so like it's probably tons of sensitive stuff and you find out like the db is just empty it's
+like unused so same thing here make sure you validate what is accessible and what is not
+accessible like it's it's crucial because the last thing you want to do is go through all the effort
+of writing a report to be hit with an na and like i think like a 10 is it still in the minus 10
+reputation fine yeah yeah so it's brutal so don't be lucky so what is your go-to payload to like let's
+say you had socko injection what is your go-to at least like thing to try to achieve with socko injection
+uh sense of information disclosure right because we're we are limited with respect to the operations
+we can perform it's only read and you are also limited to the context of the query so what object
+is being accessed what's being pulled and how is it being pulled so the same way if you look at sql injection
+your injection point can be in different clauses so it could be like the where clause right
+same with socko injection depending on for example if you have a apex is promoting a socko query
+and your user input is being part of like uh it's being used in the like operator okay you you you might
+be able to get some good sensitive information um through like using like wild cards right to just pull
+everything or yeah is wild card in socko the percent symbol i believe so i believe so um could be okay
+okay solid so so there's three let me i'm just going to repeat it back there's three primary things
+there we're hitting these objects which is kind of like tables right if i understand correctly yeah so
+you know trying to see if there are any tables that we have access to that we shouldn't be able to have
+access to right through through the uh through the aura api um same thing we're hitting apex classes
+where it's like okay let's see if we can enumerate all the apex classes either via you know looking at
+the client side or like that's exactly the client side we just look through the client side identify
+what apex classes we have access to what kind of server-side functionality we can trigger and what
+kind of permissions that might access and then third is like sign up for a community user and become a
+community user and then you'll get access to that that sort of um ability to execute some apex code
+yourself um and then you can also get access to maybe different objects and stuff like that because
+you're a different role is that is that when when you sign up as uh i'm becoming a community user so
+um i wouldn't focus too much on like being able to execute apex yourself i would look towards okay what
+objects do you have access to and what additional custom apex do i have access to um it's interesting
+because i i would think that if you if it exposed like a you know interface for you to run some some
+code then i feel like you should be able to utilize that to check the objects that you have access to
+is that is that not accurate so you can it's just slower oh really okay yeah because if you use my payload
+um for everyone that uses burp suite um shout out for that um you put in your payload into like intruder
+and then you put your characters just around the the object name and you just throw in the word list
+and let it run and you just put the apex you kind of have to write like the sockle query and then you've
+got to like basically dump it into the response and it's like an ugly response because you're technically
+like putting into like a debug statement okay yeah it's not it's not you could it's just not as efficient
+okay okay solid so then you we just brute force for the for the specific object names and you've got
+the payloads in here um in the in the article that will allow us to just hit those specific objects
+um and then we kind of iterate through and check the permissions that we have as a community user and
+maybe compare those to the ones that we had as an anonymous user and say okay you know here's the
+difference maybe i should sort of zoom in on that one a little bit yeah absolutely and you can you can
+even possibly chain the two you could get a list of objects as a community user that you couldn't see
+before and maybe as a guest user an authenticated user there was apex that lets you put in an object name
+so then you can pass it back and now you've just elevated the criticality and you found another bug
+so try and play around with it and kind of be smart about it too that's a great idea so use try to
+utilize the information that you get as a community user saying oh i've got access to this object i've
+got access to this object uh and then take that back to unauthenticated apex i like that that's that's
+really good all right so just looking through here um here i'm gonna go ahead and share my screen
+for those of you that are on on youtube um i'm i'm just scrolling through aaron's article here on
+salesforce and we're looking at the payload glossary section um can you just sort of talk me through
+these payloads that you have um on here and give some some context surrounding this yeah and funnily
+enough the first two it's all you want it's all you need um this is the object related stuff yeah the
+rest is just like you look better than i am at this stuff so the first two um okay so the first one
+is the payload that we use to actually extract the data from objects so you'll see it's kind of a
+messy payload but this is just the format of the aura api um like post data um you'll see in the
+entity name or id you'll see marker right and that's where you put the object name okay it'll
+automatically pull those those records for you okay well how do we get the object name that's payload
+number two so payload number two can be run as is um it's been a long time since i've run it so i'm
+not going to i'm not too sure what the output's still going to be but that would return you a list
+of uh of objects so you would run the second pillow at first you would copy all the lists of objects in
+the response so you've got your out of the box objects that salesforce provides you like the user
+object and you may also see some custom objects that the customers created themselves and you'll
+take that you'll copy it into intruder and you'll use the first payload to uh iterate over them to
+see if there's any data exposed through an access control misconfiguration okay and then usually from
+there justin i'll sort by a largest response size and that's what you know those are the tables that
+typically exist yeah right that makes sense and and and then you know we're just kind of looking
+through to see what kind of data is returned back see if we're dumping data about other users or not
+okay cool that makes sense so get get the use the second payload to get all of the currently available
+objects and then use the first payload to get um the data out of those specific objects and and kind
+of see how many how many different items we have or what kind of information we have access to now these
+this payload that you're here you know you put in here it like you said it is a little bit messy
+and there's like this descriptor component and then there's like um the params the aspect uh which i i
+assume is specific to the actual function we're calling um can you talk a little bit about that
+structure uh for the for the listeners yeah yeah and you got to remember that like this is so this
+specific payload well all of the ones you're seeing in this article are salesforce created so their vendor
+created apex okay so these are apex this is going to be similar for all the apex classes somewhat yeah
+to a degree um so certain things will be different so at the moment on on the screen like all of that
+stuff um so the id will always be a present parameter right and that does not matter the value of
+that it doesn't matter at all okay if you look at the descriptor okay so that is the actual apex being
+called so it's like the path to the apex code exactly exactly so get items there at the very end
+so it's the suffix so that's your apex method okay and selectable list data provided controller is your
+class that's right okay class then method right exactly um so if you've got custom apex naturally
+that'll be a different string than than what's apparent there um calling descriptor does not matter
+and then you've got the prom so the prams um the promise parameter will always be present okay um
+um and naturally the parameters within that and the values will depend on how that apex works so
+these parameters you're seeing such as layout type and entity name or id will not apply necessarily to
+other ones if you look at the second payload it's got different parameters um so when we speak about
+like or when you talk about custom apex um the importance of kind of manually pulling apart the
+javascript to to look for those parameter signatures is because of this like we want to
+craft a payload that's valid so that javascript will contain what needs to go in that params list
+and what kind of value is expecting like a boolean or or a string okay so so it's all about
+so in salesforce it's all about identifying these apex classes and or using these apex classes right
+the default ones from salesforce to query specific objects and to try to attack uh custom apex classes
+that the the customer has has written and in order to do that we need to know the descriptor right and
+the descriptor contains the uh sort of a path to the class that is uh the apex class and then a specific
+method descriptor as well um and then once we've got that we need to identify the specific parameters
+that we pass into that and then boom we're off to the races we're calling that apex function just like
+sort of like we would be in a normal rest api like you need to identify the path to the rest api and then
+the parameters that it takes for it to actually function um and and that's this is just the salesforce
+version of that yeah exactly and so that that's why this article pairs really really nicely with the um
+the app on the white paper on apex because they complement you to each other so the white paper
+will explain a lot of the format and the reasons as to why the payloads are as they are gotcha i'm
+gonna i'm gonna grab that uh paper and put it in the notes hold on i put it in the notes already justin
+um oh perfect yeah um i will say to the listener so if you're interested in like digging into this or
+looking for it specifically one kind of key thing to note is uh what to search for so if you have like
+some massive burp or kaido projects and you're wanting to search through them you want to search
+for slash aura a u r a it's a word that uh aaron says kind of funnily since he's from ireland
+um i'm just kidding it's actually a hard one to say even closer i live closer to where the language
+was invented that's fair that's fair that's fair no and or you can search for uh slash s slash or slash sf
+sites for salesforce sites um those are kind of things you can search for and um and then with those
+requests you can kind of read his blog and kind of start to build out the actual request sweet sweet
+solid okay all right so that that covers service now in salesforce any any last little shout outs or
+tidbits of wisdom you can give us aaron on the on the salesforce front i think that's everything on
+the salesforce front to be honest with you um it doesn't need to be too complex like these are tried
+and tested methods that i've been using for four years right now i've really changed too much so um yeah
+you learn learn those um those aspects of of testing salesforce um communities you've you've
+put yourself in a good spot awesome okay cool um and then the next one we had on the list here was one
+that came out a little bit more recently through app omni which is the microsoft power pages stuff
+um can you kind of hit us with that research and and tell us a bit about it yeah absolutely and
+and this one's kind of interesting in contrast to how i found the service on the salesforce stuff
+because microsoft are very very open about like every api path so i didn't need to spend a ton of
+time on the platform to discover um the api through which data is exposed um so getting into that the power
+platform is a microsoft um of sas offering and it's like low code web development you know so
+very very similar to like your ui builder for uh in service now and things like that
+what it allows you to do is drag and drop create a website um that also can store data and fetch data
+from microsoft dataverse which is like the database and so it's really um attractive because you don't
+really need any prior like programming knowledge there's no like apex equivalent there or like um
+proprietary language associated with it uh i had noticed when going through the microsoft
+documentation for power platform and it's more specifically power pages is what it's called yeah
+um with power pages they mentioned odata feeds and there had been some research done on our data feeds
+in the past as a means to kind of exfiltrate data that's been exposed through misconfigured access
+controls again but i noticed this banner and i said like oh we've just deprecated this you should use
+this other api instead so i just i started reading that and it was just as simple as like slash underscore
+api slash table name yeah dude i had that in the notes i was like is is i love how like we just spent
+so long on like service now and salesforce like and then you got to hit the aura and the aura lets you
+access the apex and the classes and then when we get to power pages you're like yeah so there's this
+underscore api path and then you hit that with the name of the column and it just dumps like what is
+going on here man it's funny because like slash api with no underscore is the authenticated one
+underscore as a prefix is that's the secret path oh my god so yeah same kind of stuff again tons of
+power pages customers were just exposing their data through uh misconfigured access controls so what
+they would do is they would give the anonymous user access to way too much information um which is
+funny because on power platform it's kind of tricky to expose so much data like it's it's i i'm actually
+surprised you have to jump through like a couple hoops you've got to make the table accessible to
+that api then you've got to pick which columns you want to make accessible um for that table then you've
+got to pick which role and then you've got to pick so like the anonymous role then you've got to pick like
+okay what who whose records should they be able to see so there's like four steps there so i really don't
+know what's been going on with people but wow yeah a ton tons of customers were misconfiguring it and
+it was an easy button scenario again so you could let's say a customer wanted to expose like the
+first names of some users for some public blog where people can comment or something sure what they would
+do is that if they expose the um the account object or something they would intend to let's say expose like
+five fields like the first name maybe the last name a couple things time zone um but they didn't
+want to type in all the five fields so instead they were like oh i'll just use the wild card i'll expose
+like every field and that's how it happens and then they assign it to the anonymous role and uh all of
+a sudden every column like their address or or their phone number um would be would be exposed
+and uh yeah that's pretty much that but the same tip applies for this as i gave for salesforce which is
+you'll see in my blog i talk about the different error messages you will receive from the api endpoint
+when you're attempting to access objects so you'll receive uh certain error messages that are obvious
+indications that it's not accessible so you try and access an object it'll say like insufficient
+permissions or like uh even better it'll say the object's not exposed so if it says the object's not
+exposed to the api you're done okay you're cooked if it says something like oh the wild card is not
+supported it means that you actually have to add a fields parameter and manually brute force or
+programmatically even script which fields are exposed so that's a good error to get because you know you
+might be able to get something and then another one is oh you don't have sufficient permissions
+which is also sometimes a nice one to get because you just self-escalate by registering once again
+that netted me most of my findings so i spoke about in the nhs so um from in the uk it's like um
+the government healthcare body and they exposed like um over a million um records uh individuals records
+um and that was through power pages through power pages okay because i remember you reported something
+similar through salesforce like a few years ago around covet time right that was actually
+organization government's health care oh that was ireland's high health care yeah i did finish with
+ireland i was done there i went to the uk closest island and i was like right you're next
+uh yeah that was one of the situations where i was able to just watch out scotland yeah right seriously
+yeah yeah i'm i'm not gonna say too much about that but um yeah it's it's very interesting and i also
+one of the weird things about power pages is the amount of public sector government bodies using it
+i imagine so just tons which was really strange because i thought it more of like a hobbyist
+developer kind of like you want to host a blog but uh no there's tons of government applications
+across like healthcare or like your local council you're signing up for like a permit or something
+yeah it's something about that pseudo tech man like sharepoint and like these sort of things
+business people love it man they're all naturally gonna be microsoft customers for a long time and
+they probably just want to stick to the uh what they know and it does integrate with other kind
+of microsoft products within the power platform suite so it does make sense um it was just something
+interesting that i noted how widely have you hunted this um not that widely i'll be honest with you i was
+gonna say i'm on a program where i'm looking at a power page right now so i may have you try to stay
+on after the pod to take a quick look one thing that i did notice was their table or i guess yeah
+their object names are all custom so their prefix would like the name of the app underscore then
+the thing so like it's not like accounts or contacts it's like something something something
+underscore account something something something underscore contacts yeah the annoying thing about
+power pages um for recall correctly was like you can't there's no payload like in salesforce that
+just give you all the custom because all the objects that we found yes unless those objects
+yes exactly unless those objects are actually being used or embedded in the client side um maybe something
+deprecated api call it isn't actually being made it's hard to discover them but uh yeah i didn't hunt
+that wildly for it honestly i didn't hunt that wildly for anything other than salesforce i think
+salesforce that broke my spirit a little bit because no honestly it did that's hilarious i
+found it i was reporting it and i spent like two days of my life with barely any sleep just reporting
+it and i got so sick of writing reports um so i actually started paying my non-technical friends
+to like write reports i was like my dude please just write this um yeah yeah and then shortly after that
+i just made it public i was like i can't do this anymore like wow it was just writing reports
+it's getting so tedious because there wasn't the guy we want man he's like i can't write all these
+reports might as well just give it to the community yeah there was no no chat gbt i mean if back if
+there was i mean yeah i would have rinsed it completely but um no i wasn't i wasn't doing that
+i went for uh cheap labor for my friends and then publicly disclosing it um so so looking through all
+of this i mean the the big takeaways from from this one for me are look for powerappsportals.com
+right anywhere where that might be being used and that's the sort of suffix for anything running on on
+power uh power apps here and and then once we're there we hit that underscore api endpoint and we try
+to identify what objects we can hit and and kick back and then based off of the given um error messages
+that will come back from that api like uh resource not found or attribute attribute star in table
+contact is not enabled for the web api or something like that um you know going through each one of
+these errors that's listed here in the um write-up we determine okay this we have access to this object
+but we don't have access to like this field at the field level security and then we identify
+what kind of things we can access and then we dump it all yeah yeah and the important thing to note
+there is like you so what you can't enumerate all of the custom table names right um and you can't
+even really technically enumerate the out of the box tables what i did personally like anyone can do this
+is if you sign up for free you just get a trial of um power pages uh sign up you can get access to
+the entire schema the entire like out of the box schema you can export it and just get yourself a nice
+word list of all of the default object names uh you could then also go to github or ask chat gpt what
+the most common custom object names are throw those into um because yeah you can't you can't just send
+a payload like salesforce to enumerate them and the other thing i want to mention that you touched on was
+you know how do we identify these power pages sites so we talk about like the powerappsportals.com
+domain i think there is also off the top of my head i think it's microsoft crmportals.com
+okay that's another one like um like a legacy um legacy domain i think it's used any longer but
+for for new tenants but a lot of customers are still on it and you will also see and this is all in
+the microsoft documentation online for power pages there are custom domains for us government too
+okay they will have their own um probably because of like a fed ramp stock or something
+right they need to comply with for regulations very cool okay so we've got we've got microsoft crm
+portals and power apps portals and then potentially some other custom stuff there is on my head but
+all on the um microsoft documentation online okay we'll see if we can identify it drop it in the notes
+afterwards um wow dude okay and then let me ask you this so sign up for this how do i get into the
+somewhat authenticated state is there ever like um and i guess this could apply to the other um sas
+providers as well is there ever a scenario where there is you know not a clear signup flow for the
+somewhat authenticated state but you know the api endpoint so you can hit it and be like and register
+yourself an account i have that i have that exact problem right now there's no way to sign up in
+the app but i want to be able to sign up is that possible are you just hacking right now maybe
+yeah so just apply all the methodology um so yeah what what can happen is i have seen this happen
+is instead of actually disabling registrations organizations will just deactivate the signup page or
+this is actually even worse this is i've seen this even more prevalently is they'll just not list
+the signup page in the menu on the site right you can just like force browsing you can just navigate
+to the signup page um if it's just not listed but not deactivated as well do you know do you know what
+the path is or no for for what joseph what are you hacking right now for the for the login page on
+powerapps um i i i can uh i'll sync up with you offline i'll read that one i can take a look but
+um yeah you can you can use like force browsing to kind of go to these um signup pages if they
+haven't been fully deactivated uh that's definitely one way to do it and um if people want to identify
+what those endpoints are once again for like um salesforce uh like power pages get a trial
+just keep going down yeah deploy a under free trials as well deploy a website on power page or
+salesforce and look at the um url when you navigate to like the templated signup page so they'll have
+like a skeleton template that you can just deploy for like a blog or something and yeah just copy the
+url that sends to and see if that's uh you know exposed and not deactivated for these for these
+other sites yeah so i will say there are other paths that are pre-pended with underscore since
+i've been looking at one i'll mention it for the listener there's like an underscore services slash
+and then like custom like uh services that can be ran on the on the back end and i think that's more
+than just data it's actually running some sort of code on the back end they can set up like a custom
+service inside of power apps and then there's slash underscore layout i think where you can put like
+a custom html that you can load in the page so uh so there's slash underscore api slash underscore
+services and slash underscore layout um that are all used on power apps pages very cool all right man now
+now i kind of got the the blood flow and now i want to go hack this thing with uh with joseph um i did
+have one more question aaron um what are some other big sas companies you kind of got your eyes on
+for some more uh security research that that who who should we go pop and find those configurations on
+i mean yeah i mean i've got ones that like i i haven't disclosed and publish everything
+yeah um there's stuff in the pipeline there's stuff in the pipeline um i'll give you some some names
+because i simply don't want to do it myself god like all like i don't like the uis and just
+i'm just not bothered anymore i'm running out of steam here guys so yeah um i would look at
+organizations like sap okay geez i wonder why that's the one you chose i mean yes i'm not gonna
+say the exact reasons but i think we're all thinking it yeah yeah because with you have to remember like
+with sap or like um these kind of erp vendors not just sap other erp vendors i'm alluding to um they've
+typically got like a suite of products so salesforce has like a suite of products you've got the core
+salesforce platform which we talked about but they also have like marketing cloud which is like a
+separate product um so sap they've got a ton um adobe have got a ton i think we all know adobe am
+probably most of your every buck hundred knows that yeah yeah yeah right so that's what we're
+hoping for we're hoping for like a second one of those right um yeah look at look at getting um
+getting access to those tenants unfortunately it'll be a slow process because acquiring access is one
+that set you back a little bit of money so group together okay everyone put it in a little bit makes
+it much much more affordable uh two yeah the process is kind of lengthy like uh you will have
+it's not just oh enter your credit card and you know pay now you probably have to email someone and
+then it'll get back to you with a quote and then but i promise you i promise you it'll be worth it in
+the end because if you manage to get like an sap tenant you're probably the only group of hackers with an
+sap tenant ever right so you're gonna find not just misconfig you'll probably find zero days you'll
+find a ton of stuff and if you work at it i promise you you'll make your money back like just no question
+yeah yeah 100 i personally would love to see because i never figured it out i had i obviously worked at
+app omni and one of the things that i looked deeply into was workday um they may or may not have a private
+program floating around there out there but um one thing that i think would be some amazing research
+let me it's like the biggest hr platform by far and they do have a way for you to be
+kind of authenticated or sort of authenticated whatever we called it um basically uh there are
+portals where like you can sign up and apply for jobs there's like workday like job portals and so
+you can like sign up on there and you're given at least some sort some form of auth token and so i
+think with that it'd be really interesting if you could then pivot into or see any data that was
+actually or get access to any data that's like behind that in the real workday tenant and i would love
+to see a bug hunter find that and share it it would really um it would bring me joy so yeah that would
+be huge work that would be huge yeah lots of lots of cool targets out there man lots of cool targets
+in the sas space so aaron thank you for giving us your methodology and some of your your thoughts on
+these uh sasses that you've pwned um yeah really appreciate it man great episode any uh any closing
+thoughts uh joseph or is that about it no just thank you so much aaron it's a pleasure working with you and
+uh hopefully we can collab on stuff going forward so yeah anything you want to shout out aaron uh
+well joseph i miss you at up on me so that's the first thing like come back please um yeah i'd
+actually love to give a shout out to my company at up omni i'm not being hate to say that uh just
+because i have learned so much about sas security from working there um really really knowledgeable
+group of people uh experts in their field coming from actually coming from salesforce and actually
+coming from these organizations so um yeah i i wouldn't be the the kind of sas hacker that i am
+today with that uh the folks over there so big shout out to those guys go follow aaron's blog and his uh
+his twitter slash x account as well yeah yeah it's uh conspiracy proof on x and enumerated.ie for the
+blog all right i think that's a wrap thanks gentlemen peace peace and that's a wrap on this episode of
+critical thinking thanks so much for listening and if you want more critical thinking content
+head over to ctbb.show discord join the discord there's lots of great conversations and chats going
+on over there and if you want to support the show there's the discord subscriber tiers which give you
+access to master classes amas hack alongs exclusive scripts and an exclusive chat channel with us we'll see you there

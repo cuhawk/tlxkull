@@ -2,7 +2,7 @@
 title: Iframe without CSP as proxy
 slug: iframe-without-csp-proxy
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss, technique/csp-bypass]
 inbound: []
 ---
@@ -55,6 +55,7 @@ to exfil page state.
 ## Seen in the wild
 - {date: 2023, target: undisclosed via Justin Gardner} — $70K XSS chain.
 - {date: 2018, target: general} — Wallarm CSP-bypass research.
+- {date: 2023-11-30, source: CT Ep 47} — JG cites the same $70K XSS bug; emphasises CSP-less same-origin assets are usually also XFO-less (single reverse-proxy header rule).
 
 ## References
 - Wallarm 2018 — "CSP bypass via same-origin iframe missing CSP header"

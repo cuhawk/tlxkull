@@ -1,0 +1,834 @@
+Use a partial cookie injection and turn it into a full cookie injection where we control the key to.
+Just with like a partial cookie injection.
+So you'll need to have inject three cookies, right?
+Matan, what are you doing, man?
+What's up, guys? This is a continuation episode of last week.
+The topic is not related at all, but it was something that we planned to put into one episode, but we just didn't quite fit it in time-wise.
+So this week we're going to be talking with Matan again about some cookie-related quirks, potentially how to convert a partial cookie injection into a full cookie injection,
+and some other quirks around browser parsing of cookies, and the amazing caching-related write-ups from Kevin Mizu with the Hero CTF.
+So I hope you guys enjoy this episode.
+All right, man, here we go. We're back.
+Yeah, a new episode.
+Our poor editor. I can't put too much strain on him because that was a long episode, as we always do.
+But yeah, I definitely still wanted to get to some of these awesome things you had in the doc here.
+So let's hit the two cookie pieces, and then we'll go and talk about the caching stuff.
+That first cookie trick, I love.
+That's really mind-blowing and super useful.
+So in certain environments, specifically, I've looked at Java environments just because that's what my targets used at the time.
+But they have pretty weird cookie parsing logic, especially when it comes to quotes.
+So what they have is basically a way to have a quoted value of a cookie.
+So if there's some character that would normally be problematic in the value of a cookie, like semicolon,
+what they do is they put quotes around the value of the cookie.
+So you have like key equals value in the cookie.
+You can have what they do is they have key equals and then quotes around the value.
+And then even if the value is like weird characters, it will pass it correctly.
+Yeah, correctly. As in not compliant at all with the RFC.
+Yeah, like that. I mean, I haven't read the RFC, so maybe it's compatible.
+It's a legacy thing from an older version of the RFC.
+Yeah. Interesting.
+So it was correct at some point.
+It was.
+Anyways, it might be correct. It's exploitable.
+Okay.
+The scenarios where it's exploitable is one, in those environments.
+Okay.
+You might have a scenario where you want to comment cookies.
+Okay.
+And what I mean by that is, say you want to exploit the sort of self-excess,
+like we mentioned in the previous previous episode that you had with me.
+Yep.
+So if you want to exploit that in a Java environment, a lot of the time it's problematic
+because the value that these environments prefer is sort of the latter value.
+If you have two cookies with the same key, they'll prefer the latter one and not the first one.
+Right.
+Yeah.
+Like it's like usually happens.
+And it's very hard to get your malicious cookie to come after the legitimate cookie.
+Mm-hmm.
+So what you can do, if you wanted to prefer your value, sort of do what's called cookie tossing.
+If you have a way to set cookies in the target, you can set all of your cookies that you want and then set like an as the last cookie, A equals quote.
+Mm-hmm.
+And now it will read everything after the A cookie, unless those cookies have like quotes in them, which is gonna mess up the stuff because then it will close your quote, stuff like that.
+Mm-hmm.
+Very annoying.
+I had to deal with that a lot the last time I tried to exploit it.
+Yeah.
+Man, it was crazy.
+I like started shifting the order of the cookies, stuff like that.
+Well, it's tricky, right?
+Yeah.
+Because you, and I'll just, I'll just talk about this for a second.
+The order of the cookies is determined by the path length first, right?
+And the chronological order.
+The chronological order.
+Of setting it.
+So if you're setting it super recently, like if you're getting it set, then it's gonna be-
+It's not even the original time it was set.
+It was the last time it was set.
+So if they change the value, it's sort of a reset.
+Yeah.
+Yeah.
+So that, I mean, that's, that's helpful to exploit.
+Um, but what I didn't realize before I was prepping for this episode was that this is, for some reason I had it in my head that the order was not just based on the path link.
+It was order, like ordered based off of like some other thing, like, um, you know, alphabetical or something like that.
+Yeah.
+I looked for that desperately.
+I couldn't find any other.
+And it's not, it's literally just the path link.
+So if you want your cookie to become, to come first, very, very first, all you have to do is just set a, a, a very, very, very specific path link.
+Yeah.
+And dude, I spent, I, I always tell myself, all right, I'm just only gonna spend like, you know, a couple hours prepping for the episode.
+And then I'm gonna like get along with my life.
+No, because what happens is you get in these scenarios and you start researching this stuff and then you're like, ah, wait a second.
+I need to go see if I can figure out a way to artificially inflate the path size so that it on, on a cookie so that you can force it to the front.
+Even if you have another, um, I mean cookie that has a very explicit path set.
+Um, you can always be more specific.
+You can, uh, pick like all of the end points that you're trying to exploit and set like a different cookie for each of those.
+Yeah.
+Unless the actual endpoint, the actual business logic also sets that, that, that's gonna be very, uh, like setting for a specific endpoint.
+I have seen it though. I have seen it before. And, and, um, and so I was looking into this, I was looking into this and I couldn't figure it out except for one little nice little nuance, which is, um, oftentimes, uh, web servers will decode the percent 2f in the URL.
+Right.
+Oh, so it resets it.
+Yeah.
+Oh, yeah, yeah.
+It doesn't resets it.
+If you do, if you encode the slash as percent 2f and you set your cookie.
+It makes it longer.
+To have a present 2f then instead of slash, then that will inflate the size of your cookie.
+Can you do slash slash?
+I tried that. You can't do it. It won't, it won't send it. Um, which is annoying, but, uh, cause there's like, it's almost like you're dealing with front end, back end within the browser itself, because it does normalization of those paths of the browser URL before it actually compares it to the path.
+So I tried to do like path traversals and like dot traversals and stuff like that, but the browser's like, no, no, no, it's not going to happen.
+Yeah.
+So you have to, you have to, um, as far as my research went, you have to, um, take advantage of a discrepancy between the, the way that the server is parsing the path and the way that the browser is parsing the path and then set your cookie in conjunction with that, with that path.
+Does that make sense?
+Yeah.
+Yeah.
+So, so you can actually get your, very, very, very niche, but that's, that's what we talk about here on the pod.
+Um, all you can, all you can just have it be sort of the same specific specificity, like the same level of specific and somehow make it re refresh the cookie.
+Refresh.
+
+Yeah.
+Yeah.
+That's true.
+And the sort of trick with refreshing cookies to get them to the end is the same thing I did back when I tried to comment cookies with the, um, extra quote, the hanging quote, and add a bunch of cookies.
+That were, that had quotes in them that were interfering with that.
+So what I did, first of all, I tried to predict the value of some of these cookies and set it without quotes.
+Okay.
+Myself before the attack.
+So now the server is going to see when it tries to set the cookie is gone.
+It's going to see that the cookie is already set with the correct value and it's not going to set the cookie with quotes.
+Okay.
+So that like eliminates those that I can predict.
+And I had one cookie that I couldn't predict the value of, but I found some end point that would reset the value of that cookie, like update it.
+So when I make the victim or when the victim naturally interact with that end point, that cookie is going to get like popped to the, um, like to the end of the string, to the, yeah, to the end of the string.
+Because it's the newest set.
+Yeah.
+And then I'm going to have like my, um, hanging quote, and then it will quote all of the important cookies up to that cookie.
+That's in at the end.
+Right.
+Yeah.
+This may, yeah, it, it, it sort of reminds me of those scenarios, those double injection reflected XSS scenarios where you have a limited character set and you need to have two injection points.
+Um, and, and you know, you're, you're, or, or maybe even if you're doing something, this is more applicable.
+If you're doing like a dangling markup attack, right.
+Where, where you're leaving it open and the rest of that stuff is getting put into an HTML attribute.
+We're using sort of similar logic here to comment out cookies that are, are proceeding, um, or, or after our, our malicious input inputted cookie.
+Right.
+What's more fun is the scenarios where you have the same injection in two places and then you have like a dangling markup.
+And then that same character closes that markup in the other payload.
+Oh my gosh, dude.
+Yeah.
+That's, that gets very intense and you can do like comments and stuff like that too.
+Um, and, and when we were, when we were prepping for this, I, I was thinking about this whole scenario and I think I figured out a really, really helpful way to get, to use these sort of gadgets.
+Right.
+That was a great way.
+It's pretty good.
+I really liked that one.
+I'm excited to tell people about this.
+Okay.
+So here's the idea and I'm going to, I'll go ahead and, um, and share my screen here.
+Uh, so I, so I can, people can see the, um, the actual, um, representation of it, uh, right here.
+Um, and so essentially what the way that we, we utilize this is we have the ability to set an arbitrary cookie, right?
+And that cookie, wherever it is, has a, allows us to set whatever value we want.
+So we have complete control of the value of the cookie.
+Um, uh, and so what we can do is make the first value, uh, the first character of that cookie equal to the double quote, right?
+Which will trigger this weird double quote, um, cookie functionality that's present in a lot of Java libraries and some Python libraries as well.
+And so that will, um, now make the characters like semi-colon non-terminating for these cookies.
+And then, um, what we can do is leave that, that whole, that, that string open and set another cookie with a, uh, a path that aligns it right after this, this cookie.
+And that also has the double quote on it, right?
+So now we've quoted the beginning of that cookie into, uh, of the second side cookie into the, that first cookie.
+Um, and then from there, what happens that's really cool is the value of that cookie that we, that we sent before becomes the key for another cookie.
+So we can convert a, a, um, scenario in which we have control of the cookies, uh, value, but not the cookies key into a scenario where we can smuggle an arbitrary cookie into the browser context, which is a much more impactful gadget.
+Yeah.
+And there might be other ways to do that.
+Um, there has been some research in that area.
+Um, I remember.
+Um, there being those one that you linked here, but I think there was another one.
+Maybe it was the, um, the one that was one of the, um, top 10, top 10.
+Yeah.
+Yeah.
+I think they had something like that.
+I'm not 100% sure, but that's something that I will look at after this episode.
+Yeah.
+But yeah.
+And one, one very like practical attack scenario for the trick you just mentioned.
+Mm-hmm.
+Is if you have, um, what's called like a partial cookie injection.
+Mm-hmm.
+So you have, let's say in JavaScript, an injection into a cookie where you can only control the value.
+Mm-hmm.
+But you can inject like, uh, semicolons after it and control like a few attributes.
+Yeah.
+Um, which we're, we're also gonna talk about that scenario in a second.
+Yeah.
+In another context, but yeah, if you have that, um, then you can, um, set like the cookie that you want first to come first with the, like, um, dangling markup.
+You can set it and then specify a specific path that will make it come first.
+Mm-hmm.
+And then you can set your cookie.
+Right.
+Um, and it will be set like after the session cookie was set when the user logged in.
+Mm-hmm.
+Right.
+So you will set it, um, with like, um, a double, a double quote, you will set it without a specific path or with a less specific path or something like that.
+Right.
+Depending on where you want it to end up.
+And then you have like, um, you have two things.
+One, you have an injection of a cookie with whatever name you want.
+Right.
+Mm-hmm.
+And, um, I think that's possible, uh, because one thing that might trip you up is, um, do you have to, in that case, um, inject a semicolon somewhere?
+Mm-hmm.
+For, for segmenting off the cookie or are you talking about?
+Because you have like the opening, the opening markup.
+Yeah.
+And then in the second cookie that comes after you have the closing markup, but I'm not sure if you can put like another cookie straight after it.
+Or if you have to have like a semicolon.
+Are you talking about in the set cookie header or are you talking about the way that this is being represented from the server?
+Yeah, the way the server is parsing it.
+Yeah.
+You do need the semicolon.
+There, there are some, there, there's some research and it's actually in that same blog by, um,
+Yeah.
+By, um, then I'm not sure.
+I'm not sure that is possible, but what will be possible is to set like a dangling markup at the start.
+Mm-hmm.
+And, um, with a very not specific path, uh, dangling markup at the end.
+And then you'll have like a cookie with a name that you control.
+Um, having like the victim session token and all of that.
+Yeah.
+Oh, yeah.
+Even if they're a smuggling into a different, a different cookie.
+It's mentioned in the blog that you linked.
+Yeah.
+By Ankur Sundara.
+And we'll link that link that as well.
+Yeah.
+There's a lot of very interesting takeaways here, but.
+It's a great area of research because the parsing is just so different between the client and the server in this case.
+It really is.
+And, and it's a pretty niche scenario where you have this sort of double quote thing, but Java is used a lot and there's a good amount of Python libraries too.
+I want to say, um, the research by, uh, Sundara mentioned that yeah, cherry py web dot py, uh, AIo, HTTP server, which is used oftentimes.
+Um, and a bunch of other ones will parse these double quotes.
+The quotes.
+Yeah.
+Interesting.
+And, and so we're, we're talking about Python and Java environments here in a lot, in a lot of ways.
+Um, so this could be one of the things that.
+This could be one of the things we could maybe build an extension for it and, and see like, okay, we've got our session token or whatever, right?
+If we double quote it.
+Oh, wait, wait.
+Does it, does it still have a valid session or does it not?
+And that could determine whether or not we have that double quote.
+I think, I think I figured out how we can smuggle a, and just like a, a cookie.
+With use a partial cookie injection and turn it into a full cookie injection where we control the key to.
+Um, just with like a partial cookie injection.
+So you'll need to have inject three cookies.
+Right.
+What are you doing, man?
+Okay.
+First cookie is, we'll call it first equals.
+Okay.
+And then just like an opening quote.
+Okay.
+And you put that at the start.
+Right after that cookie with a bit less of a specific path, or maybe they can all be the same specificity.
+You just need to set them one after the other chronologically.
+So right after that cookie, you'll set second equals, and then, um, just a closing quotes, right?
+Hmm.
+Oh wait.
+No, that might not work because then.
+It should work.
+It should work.
+The double quote will be a part of the value because it isn't at the beginning.
+Yeah.
+But I thought about using like the semi-colon that sort of ends that cookie.
+But then we're back when we started because, um, the third cookie that we inject after that, uh, closing quote, we will not, we will not have control over its name.
+I think it should, I think it should work with just two cookies, right?
+Because we here, I'll, I'll, I'll type it in.
+But then you'll have to, but you have to.
+I'll type it in the doc.
+Hold on, Matan.
+Hold on.
+Let me, let me, let me type it in the doc really quickly.
+And then, and then I think this should work.
+So let's say we have a cookie X equals, uh, X equals double quote.
+Right.
+And then we set another cookie, which is Y equals, um, uh, double quote or, or like a double quote, right?
+Or, or whatever.
+Yeah.
+Right.
+So now this middle area right here, this is the value for X.
+Yeah.
+But I think, or this is actually going to be X too.
+Everything that comes after that might still be part of X.
+No, it, it, it, because we can put the semi-colon here.
+I don't think you can inject a semi-colon in the value of a cookie because then you will just be able to do like X equals X.
+It was a semi-colon and then whatever you want.
+Right.
+You won't even need to have the quote stuff.
+Oh, you think the browser isn't going to.
+Yeah.
+Yeah.
+Otherwise you won't need to have the quote stuff anyways.
+So, so then we have to do rely on what, what, um, Sundara was talking about with the space or something like that.
+With spaces or with some other delimiter, which is only happening in a very limited subset.
+We're figuring this out while we're recording the episode.
+I love it.
+We are.
+We are.
+We are.
+We're getting a very raw, like sample of the process.
+Yeah.
+That's great.
+Okay.
+We thought we got it like three different times.
+Yeah.
+Now we're pretty sure.
+So then the browser is going to, is going to, dang it, dude, this is, this is so close, but, but I feel like there's just in some scenarios, there will be, um, a, a way that you can actually result in.
+I think some of the parcels will like see the, just like, um, my intuition is some parcels will see like the closing, uh, quote and we'll, and we'll think like, oh, that's the end of that value.
+Now here begins another cookie.
+Right.
+In those cases, you will just be able to inject more cookies.
+Um, yeah, I think there were two, two scenarios where that was the case.
+In Java it doesn't work.
+At least on the targets that I've looked at.
+Okay.
+Solid.
+So, so there's, there's a very niche scenario then coming off of all this, where you have to combine the double quote parsing with some, some sort of loose representation of what a terminator of the cookie value is in, in order to convert a partial cookie injection into a full cookie injection.
+Yeah.
+Nice.
+Very gadgety stuff.
+Very, very gadget heavy stuff as, as we always do here on critical thinking.
+Um, yeah, I love it.
+Um, okay.
+Solid.
+Well, that it's an interesting approach nonetheless.
+And, and the gadget I think is, is really useful, um, because you control the order of cookies too, with the, with the path attribute.
+If you can just comment out the rest of the, the, the, the cookies with the double quote, right?
+Because you can do the same sort of thing with what you were talking about, where you can, um, in two episodes ago, right.
+At this point where you can just make your, make a different person authenticated for a specific endpoint.
+And, and, um, comment out all the other cookies that might cause a problem.
+Yeah.
+I think, I think that's a really good way to approach this as far as exploitation goes.
+So talking about commenting stuff.
+Mm-hmm.
+Okay.
+Yeah.
+Great segue into the next section.
+Uh huh.
+Yeah.
+Let's do it.
+Very weird behavior.
+Maybe it got changed since the last time I tested it.
+I don't think it, it, it did.
+And this is a behavior in Safari, which by the way, I've recently, um, got, um, a nice way to debug Safari stuff.
+And because I don't have a Mac and I tried to buy like a very old Mac to test Safari on specifically because I knew Safari just had too many quirks.
+Mm-hmm.
+Um, but that was very, very slow.
+Um, so what I did and I very recommend it.
+I highly recommend it.
+I enjoyed it.
+Um, you, if you have an iPhone, um, you can connect that phone and you have to install iTunes on your computer.
+Um, but you can connect that phone to your computer, enable debugging on your phone, and then use some Google tool.
+I think it's called, um, debug web kit proxy or something like that.
+Ah.
+Debug web kit proxy.
+And yeah, iOS web kit debug proxy.
+Right.
+I'll, I'll drop the link in the, um, in the episode, in the notes.
+Um, but you can use that tool and it will connect to the, um, it will connect to the phone.
+And now you can use, yeah.
+And now you can use, um, uh, DevTools front end.
+Um, and you need that to use the Safari DevTools front end.
+Mm.
+And there are some people that have like extracted that front end from the web kit source code.
+Mm.
+And so you can have like a windows version of it.
+And now you can basically have remote debugging on your phone without a Mac.
+Okay.
+So this, this is, this is a way for you to test Safari related bugs on just an iPhone.
+Yeah.
+And it's kind of like remote debugging for Chrome DevTools, but it's, it's specifically for, for Safari.
+Mm-hmm.
+Nice.
+And, um, so it's very useful to test this sort of stuff and you can like interact with it physically.
+And you, you use like the same computer and you don't have to move to a different setup.
+Mm.
+Um, anyways, uh, the one very weird and quirky behavior I found in Safari is that, um, we had, actually it was a collab with you.
+Mm-hmm.
+We had a specific, um, ended very tragically, but anyways.
+Yeah.
+We had, uh, an injection into, uh, the value of a cookie and we could insert, uh, like, com, commas or what's it called?
+Um, the semicolon.
+Semicolon.
+Yeah.
+Yeah.
+Yeah.
+For all those code.
+Um, we can, we could insert semicolons and insert attributes.
+So we have like cookie attribute injection.
+Yeah.
+The problem was that we had other attributes like the path attributes and all the fun attributes that we wanted to specify.
+They were specified in the sort of original statement that we were injection, that we were injecting into.
+In the middle of, yeah.
+And the way it works, yeah, attributes, the browser specifies the list occurrence.
+Mm-hmm.
+So we needed some way of commenting out all of the attributes that came after our injection point.
+And I found that in Safari, if you inject a weird special character after the, um, after your injection point.
+So you just go comma part equals something, comma, and then your.
+Semicolon.
+Yeah.
+Semicolon.
+Semicolon.
+Semicolon.
+Yeah.
+Path equals something and then semicolon.
+And then the, uh, character, I found that the closing curly bracket works.
+I think other characters would also work.
+Closing curly bracket, dude.
+But yeah.
+Absolutely insane.
+Super weird.
+And then it will just ignore all of the rest of the attributes, which is, it's nuts.
+I mean, I would think that if such an error occurred during parsing, it would just ignore the whole cookie setting statement, right?
+Mm-hmm.
+Throw some error or something.
+But.
+Yeah.
+They sort of sweep it under the rug and you have like this sort of half error that causes very weird behavior.
+That just comments out the rest of it.
+It's almost like a, like a, a JavaScript.
+Yeah.
+You know, block comment or whatever that just comments out the rest of the.
+Very weird.
+That's crazy.
+But I mean, even a block comment, you can't just like put it in there.
+Like a block comment, you need to close it out somewhere, right?
+Yeah.
+It's nuts, dude.
+Yeah.
+That, that, and it's crazy that the, it's such an unexpected character, um, as well.
+I mean, I just, I tried to fuzz it.
+Yeah.
+A little bit.
+And this is just the first one I found.
+The first one that hit was the, the closing curly bracket.
+Yeah.
+It's, it's very niche, but it's really helpful.
+And what was weird to me about this situation is as we were collabing on it, we were like, ah, we need a way to like get rid of these attributes that are on the end so that we can do the cookie tossing properly.
+Blah, blah, blah, blah.
+And, um, and, and you, I remember the moment.
+Oh, we combined the two, we combined the two things here, right?
+We did.
+We did combine these two.
+And the, yeah, nice.
+And, um, and you turn to me and you're like, I bet Safari has some weird shit with this.
+And I'm like, and I'm like, you know why I did that?
+How do you know that, Vatan?
+Like what?
+Like a few, a few days before that I was collabing with Johan on some, um, on some stuff in one of the targets that we had together.
+And, um, it was like on, um, a specific like context in JavaScript and he just noticed because I think because he, um, has a mark, he just noticed that Safari has a certain global variable accessible that other browsers don't in that case.
+And I was like, it was very weird and unexpected.
+And it sort of made me think about all the other bugs that I missed that were exploitable because of a weird Safari issue.
+Yeah, man.
+Safari is whack.
+That's why I decided to test it.
+Yeah.
+I bought a Mac right after Johan discovered that little trick and haven't used it, but yeah.
+Pays for itself immediately when you find all these weird little things that allow you to exploit these edge cases.
+Um, yeah, man, that, that is one of the things I'm glad you mentioned to the piece about being able to use that debugging, um, on the iPhone, because that is one of the things that I'm sad about.
+Yeah.
+About not having a Mac is like, you just, you can't test weird stuff with Safari.
+And I've tried using, I think it's called browser stack.
+They will like give you a, no, that's very annoying though.
+They're super expensive and there was always a delay.
+Yeah.
+And, and, and I, dude, I set it up.
+It was crazy.
+Cause I set it up and I was like, wow, this is amazing.
+This is so easy.
+And they give you like one minute of free time.
+So I'm like, I'm like rushing to try to like, fuzz something really quickly.
+I did the same.
+And then, you know, the fuzz is running and then it's shut down.
+And I'm like, no.
+By the way, we're such weird consumers.
+I assume we're one of the only people that have like, we're unable to debug Safari as.
+Yeah.
+Why would, we, we said we don't have a Mac.
+Absolutely, man.
+Yeah.
+I think, um, I think it might be worthwhile to just, I mean, it's definitely worthwhile to just have an iPad or an iPhone or something like that that you can connect to and then use this, um, debugging tool.
+But it may just be worthwhile to, to get my hands on an old Mac, just to play around with Safari stuff for sure.
+Yeah.
+Um, okay.
+Was there anything else on that?
+So we've got a way, we've got, we've sort of got a way, a very niche way to convert a partial cookie injection into a full cookie injection.
+Um, and just using this concept of the double quotes.
+And we have a way to comment out stuff in, in all, in, um, in a specific set of web servers.
+That was the first thing we talked about.
+And then we've got a specific niche in Safari, which is when the, the cookie is coming back from the server side, um, in the set cookie header, where you can, um, comment out some of the attributes.
+Is that, is that an accurate summary?
+Yeah.
+Okay.
+And I mean, there isn't anything else in the doc, but if you want, we can do, um, a redacted report section.
+Yeah.
+Well, we, we can do that.
+Uh, but let's actually, let's go talk about some of this stuff that popped up with, um, with Mizu and, uh, the CTF that this here is.
+CTF six, because, um, yeah, this was crazy.
+I'm not a huge CTF guy, but there's so many nice gadgets that come out of CTFs.
+Yeah.
+And I mean, uh, I'd love to do that, but I don't know how I can find like the actual useful CTFs because that aren't just, you know, and not the reflected exercise challenge.
+Yeah.
+Yeah.
+Yeah.
+Mizzu, you gotta just hit up, hit up.
+Yeah.
+Whenever you, you create a CTF.
+Whenever you find a cool challenge or create a cool challenge, just send a link to me.
+I'd appreciate it.
+Yeah, for sure.
+And, and the community can do that too.
+Uh, just send Matan if you see a cool CTF.
+I don't want to just say the community, tell the community DM me.
+Yeah, dude, you're about to get, you're about to get.
+My notifications.
+But yeah, that's what you signed up for, man.
+It's already out there.
+Can't take it back.
+So, so I'll, um, let me talk about the one, the, the, the interesting caching.
+We're going to talk about two caching related functionalities, um, from this, uh, write up, uh, that are gadgets that can be used.
+And then, um, and then we'll call it a wrap.
+Cause there's a bunch of stuff in here.
+Uh, and we're, we're running long today.
+Um, but let me go ahead and share this write up so we can get it on the screen for those of you watching on YouTube.
+I mean, this episode is only 30 minutes.
+Yeah, that's okay.
+It should be fine.
+I, I, I, I've got to bounce in, in a little bit, but, um, we'll.
+We'll, we'll go through this.
+Um, the, the first one that I kind of wanted to talk through was this, uh, write up called medium cache, cache.
+Uh, and essentially this reminds me of a, a vulnerability that, um, was that have had, this had several iterations that that's mentioned here by, by bit K where you're essentially utilizing the force cache attribute of fetch to pull data out of the cache that you wouldn't normally be able to access by doing a normal fetch request.
+And the situation in which, um, this is exploded is really niche.
+Um, and it's made more difficult now by the, uh, double key caching or cache partitioning that was implemented in Chrome, uh, a while back, I think in like 2019 or 2020.
+Um, but essentially nowadays these, these, these caches are, cache keys are generated via three, three parts.
+It's the top level window.
+Um, the current window, ETL D plus one, and then the full URL of the loaded resources, what, what's lands into this cache.
+Um, and the, the way that this is abused in this specific scenario is related to how fetch is not allowed to send, uh, credentialed requests to an endpoint that has access control, allow origin star.
+You'll, you'll get an error if that's the case.
+So what is abused here is, um, the, the, the solver of the CTF sends, puts an image tag in with a source, uh, pointing to the specific resource that they want to, to leak, which cannot start with a, a curly bracket is noted, um, because of Corb.
+Um, but, um, that will actually load that specific resource into the cache.
+And, uh, and that request will be sent with setting with the same site, none cookies sent along with it.
+Um, and then you can load that request from the cache using the cache, force cache, um, setting in fetch, and then read the response, which you normally wouldn't be able to do because fetch can't send credentialed requests to an access control.
+Allow origin star endpoint.
+So essentially you're priming the response, um, with, with the image tag, um, that has the access control, and that ignores the access control.
+Allow origin star thing that you don't get any errors there.
+And then you bypass that by using the fetch request to load the response directly from the cache and since it's access control.
+Allow origin star, you'll be able to read it.
+Um, and that response, which was created and cached with the same site, none cookies from the image.
+Um, Matan, I don't know.
+Can you, can you check me there?
+Did that, was that, uh, explanation too?
+Yeah, that was, um, yeah, that was accurate.
+He says that was really, uh, that was really, uh, that was really something, Justin.
+We were just recording for so long.
+I forgot how to say accurate.
+Yeah.
+I'm sorry, dude.
+I'm sorry.
+Well, are you, are you up to doing the, like, what do you think about this one?
+I can still record.
+I just, um, if we'll keep going, I'll need the short break.
+You're good, man.
+Yeah.
+Do you, do you want to, um, the, it's very interesting what happens here because you have like the, um, image, which sort of sends a request with credentials, but that you cannot read.
+Right.
+Similar to a fetch with a mode, no course.
+Right.
+Um, which it would be interesting if you can actually use that instead of the image, maybe no course for sketch.
+Maybe, I don't know.
+Um, but you have like a request that you can send with credentials, but cannot read the response and the request that you can send without credentials, but read the response.
+And you somehow, and you sort of combine these two so that the second request will actually get the response of the first one.
+Mm.
+Um, from the cache.
+Very interesting.
+I've never thought about it.
+Yeah.
+And I think they, they exploit it in this specific CTF environment, uh, under a more nuanced environment, because some of the cookies are set to strict and require, you know, it requires a gadget and XSS gadget on the website.
+So you're now you're sending this from a same site environment, but I think this is also exploitable in bug bounty in the wild, um, in environments where there's same site, none, but you're running into that access control star.
+Yeah.
+All in environments where there's same site locks or something.
+Mm.
+And you have like subdomain XSS.
+Yeah.
+Well, that's actually an interesting, and it's an interesting point too, because I think at the bottom of this writeup, there was an unintended solution that somebody found that uses window.open.
+And, and it does window.open to that, which is actually a top level navigation.
+So I wonder.
+Oh, and that's those it in the cosh.
+Huh?
+Yeah.
+Makes sense.
+So you, I didn't test that.
+Would the browser, um, oh, but then when you do window.open, you mentioned the three cache keys, right?
+Mm.
+Yeah.
+And then the cache key of like the top level URL or top level site, right?
+Yeah.
+That would be different between the, uh, request that you want the cache for and the request that retrieves the cache.
+Yeah.
+Because one of them is gonna happen from the attacker site and the other is gonna happen when you load the window.
+So in, and in this case, because it's a navigation, it's gonna be, um, the, you see what I mean?
+I do.
+And it's ETL D plus one though.
+So it will, it will probably cache it, but you won't be able to retrieve that cache cross site.
+Right.
+You'll only be able to retrieve it same site.
+Okay.
+How, how was it different in this case?
+I mean, I think, I think I'm correct, but, um, maybe not.
+No, you, you are correct.
+It's because it's same site and, and the cache key works.
+So what was the unintended solution in this case?
+Why did it work?
+It, it, it worked because it's, it's via NXSS.
+So they still use that, uh, gadget.
+They did.
+So it's the same prerequisites and the same impact.
+So yeah, exactly.
+So it doesn't, that doesn't actually, that would have been crazy though.
+If you could do like a top level navigation and then bypass, uh, the same site.
+It's such a weird little attack surface here.
+And I mean, I have thought in the past about actually quite recently about, um, what happens when you're going to do that.
+Um, what happens when you have, uh, an injection into like a fetch call.
+Mm-hmm.
+So basically you can specify like a URL, maybe with some restriction or something and a bunch of options, but you can't read the response.
+Mm-hmm.
+Can you somehow use the cache in that case?
+Yeah.
+And, um, uh, that's a tricky one, man.
+I, aside, aside from cache poisoning, um, maybe you have like, uh, some header that isn't in the cache key of like the browser.
+Yeah.
+Um, so that's sort of client side cache poisoning.
+If it makes sense.
+Yeah, that does make sense.
+That's super neat.
+To be clear what I'm talking about here is, um, I don't know, some post messages.
+You send them on example.com just injects into fetch, right?
+Uh, accepts two parameters, injects both of them into fetch.
+Mm-hmm.
+Then from, um, attacker.com, you send the post message that goes to slash example.com slash reflect header.php.
+Mm-hmm.
+And they have like, x dash xss colon and some, um, HTML injection payload.
+Right?
+Yeah.
+And so the post message will be like, um, the first argument would be that URL and then you will have like in the options, headers, and then specified headers and cache mode or cache colon, false cache, not cache mode.
+Yeah.
+And I think what that would do, I think would, um, the cache key of that, um, like malicious response or response that contains HTML would be the, um, example.com as the top level window.
+Um, example.com as the current window and, um, example.com slash reflect, um, as, yeah.
+So, so then, yeah.
+So, slash reflect header.
+So then when you initiate the top level navigation to example.com slash reflect header.php, it would be the exact same cache key, right?
+Because it's still under example.com, still under example.com in the current window and still the same URL.
+Dang, dude.
+That's interesting.
+Yeah.
+Huh.
+Wow.
+And I had that theoretical, but I didn't know, like it was maybe two days ago.
+So weird occurrence that I've actually.
+All of our, all of our episodes, like the longer they go, they degrade into like, this is just us doing right now.
+This is just us doing research live on the podcast.
+No, but I mean, it's an idea that I had like maybe two days ago, which is crazy that all of this research comes out like.
+Right after that.
+A few days after that.
+But, um, yeah, I've thought about it and I didn't actually have, um, uh, such a gadget with, uh, handling, uh, the reflection.
+Um, when I sort of, uh, when you went after that, yeah.
+When I went after that, but so I didn't actually test it.
+But now that, um, I actually understand how the cash keys work, I don't see a reason why not.
+Yeah.
+Yeah.
+That makes sense, dude.
+Wow.
+Uh, that's well, you've got a week and some change before this episode airs.
+So you gotta go, gotta go knock that out.
+No, I mean, um, first of all, nobody's gonna know which target that's in.
+Right.
+Second of all, I'm pretty lazy.
+So maybe not.
+I'll do it next week.
+Somehow I don't, I don't buy that much on considering.
+No, I mean, I get a lot of the bugs, but that's, um, that's a different scenario, I guess.
+Okay.
+So let's, let's talk about this cash put thing and then we'll call it a day.
+So as, as I understand it, this, this, um, the, the situation with this was that there,
+there's this caches, um, uh, object that is being, um, exposed on the, to, to the actual page
+with it's normally used by service workers.
+Um, and this is for those of you following along, this is in the service worker, um, pipe hijacking
+through cache API section of the Mizzou.re writeup.
+Um, and I'll go ahead and share my screen for that as well.
+Um, and essentially as I want the domain name.
+Yeah, I know.
+Right.
+Um, uh, essentially on this one, as I understand it, this allows you to take a, an XSS that you
+have on a specific page and use that to hijack any sort of caching done via service workers,
+um, on the domain where this XSS triggers.
+So you can get XSS across a lot of different, um, uh, endpoints and stuff like that using,
+using this technique.
+Is that, I mean, is, is that an accurate representation there or am I, am I misunderstanding?
+Sorry, I didn't follow.
+No, you're good.
+So, so if we do, if we do caches dot, dot keys, we're going to get the,
+if we do caches dot, dot keys right on, on the specific scenario, uh,
+Oh, you mean the, um, the service workers scenario?
+Yeah.
+Yeah.
+Yeah.
+That one was also very cool because the caches API, the sort of main use case for it is when
+you have a service worker that tries to implement the cache, right?
+And it sort of gives you more control over it because you can manage the cache keys and
+the response and the, uh, responses associated associated with them very directly in the
+service worker.
+Mm-hmm .
+So the, the normal usage for this is you have, um, a cache.
+So the way you get the reference to a cache is you go caches dot open and then pass some
+string to it, which is the identifier of the cache.
+Okay.
+And then you get the reference to it and you can add requests to it and, um, responses.
+An interesting thing is you can use this API as a sort of alternative to fetch.
+So, um, it has, uh, uh, function.
+If you go to the, um, if you have a reference to a cache, you can go cache dot, like the, that
+cache variable dot add and then pass a request object to it.
+Mm-hmm .
+And then what, what it will do it is it will automatically issue that request and, um, store
+the response in the cache.
+Mm-hmm .
+And then you can just retrieve the response.
+So I had the scenario somewhere where I didn't have access to fetch and I use that, um, to
+sort of get around it.
+As sort of like a fetch alternative.
+Yeah.
+Ah, interesting.
+It will not, it will not send post requests.
+Ah.
+Yeah.
+So just, just forget.
+So that could be a way if you don't have access to fetch or, um, the, uh, XHR requests
+or whatever.
+In some like very weird scenario.
+Sandbox, sandbox environments or something like that.
+Yeah.
+That's too specific.
+I didn't want to say that.
+Yeah.
+That's, that's, uh, that, that is very interesting.
+Um, so I, I think, I think that this, the way that they used it in this scenario though,
+was to hijack the service worker.
+Right?
+Yeah.
+Yeah.
+So if I, if I, if I want to get back to the, um, to the explanation of the actual bug here,
+um, the, the scenario is if the, um, service worker uses the cache API as like intended,
+um, just to store like responses.
+Um, and then like when it matches the response in some cache, it will, um, return it.
+Um, what's interesting is the cache that I mentioned you open, like with a specific identifier.
+And I didn't know that until now.
+Um, it's sort of shared in the whole origin.
+Yeah.
+Sort of like local storage.
+Crazy.
+Yeah.
+So if you from like even a normal page in that origin, which is sort of less privileged than the service worker.
+Um, if you, um, use caches.open with the same identifier, you can, um, get a reference to the same cache and start manipulating it.
+And then you can add like a, a request response pair where the response says like a malicious HTML payload.
+And now if the service worker matches that in some request, hopefully top level navigation or something like that.
+So the response renders, um, then, um, you will get XSS there.
+Right.
+I guess you can also, I guess you can also, uh, like intercept JS resources, stuff like that.
+Yeah.
+That's, that's kind of the one that I was thinking of is like, okay, you know, this service worker is there to do caching on like, you know, JS resources.
+Or, or, or other resources that, that might need to be reloaded a bunch of times.
+Um, and so, and so then by poisoning that response, you pivot your, your, uh, XSS to a much larger variety of pages.
+Yeah.
+The sort of.
+And make it persistent.
+Yeah.
+That's the thing.
+A larger variety of pages is like, you could always just window.open and, um, and do stuff with that.
+Yeah.
+And because the same origin, this is like a very weird attacks scenario.
+Because it's, you have XSS, which is usually like game over, but you're trying to escalate it further to make it persistent.
+Yeah.
+Which in some cases you will have to do.
+It's very helpful.
+I think.
+Yeah.
+Say it's like they have, um, some flow where they, when they, um, authenticate the user, they only authenticate them in that specific tab.
+Right.
+Say with session storage.
+Yeah.
+Or there's session storage, right.
+Session storage is the one that came to mind for me.
+Cause it's isolated to the tab.
+Then.
+You want to make yourself, your, your XSS persistent.
+Right.
+So that whenever they open any tab, they will get XSS.
+So the next time they log in, they will get XSS.
+Um, so this is sort of a way to do that.
+Yeah.
+Another way to do that would be maybe reflection of a cookie.
+Yeah.
+Or local storage, stuff like that.
+That's what we typically use in those scenarios.
+Yeah.
+That's very interesting though.
+Yeah.
+Because this is like very, very globally applicable.
+It's just, I have no idea how you're supposed to mitigate that.
+And even not even like from the Chrome perspective, because are they just going to change the behavior?
+They can't cause I'm sure there's legacy stuff with it.
+I think, I think we've got this one on lock.
+I think we're going to have this escalation technique for a while.
+Yeah.
+Yeah.
+All right, man.
+Very interesting.
+We made it through some, some very long episodes.
+Uh, and I appreciate, uh, that you allowed me to, to milk your brain for every last little
+bit of knowledge that I can get.
+Um, I'm still keeping some, some stuff, but I disclosed more than I initially intended to.
+There we go.
+Yeah.
+Um, all right, man.
+Well, thanks for coming on and I appreciate you as always.
+Thanks for having me again.
+Peace dude.
+Peace.
+And that's a wrap on this episode of critical thinking.
+Thanks so much for listening.
+And if you want more critical thinking content, head over to ctbb.show slash discord, join the
+discord.
+There's lots of great conversations and chats going on over there.
+And if you want to support the show, there's the discord subscriber tiers, which give you
+access to masterclasses, AMAs, hack alongs, exclusive scripts, and an exclusive chat channel
+with us.
+We'll see you there.

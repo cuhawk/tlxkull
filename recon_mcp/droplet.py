@@ -52,7 +52,7 @@ class Droplet:
             await asyncio.sleep(poll_interval)
         raise ProvisionError(f"droplet {self.droplet_id} provisioning timeout")
 
-    async def _wait_bootstrap(self, poll_interval: float = 10.0, max_sec: float = 600.0) -> None:
+    async def _wait_bootstrap(self, poll_interval: float = 10.0, max_sec: float = 1200.0) -> None:
         start = time.monotonic()
         while time.monotonic() - start < max_sec:
             try:

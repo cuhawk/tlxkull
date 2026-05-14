@@ -20,6 +20,29 @@ Parse the scope section. Build a `targets` list:
 - Wildcard apex domains become `*.<apex>`.
 - Bare domains MUST be promoted to `*.<domain>` (the parser will refuse otherwise).
 
+### Picking `scan_region`
+
+Match `scan_region` to the geography implied by the scope. Geo-fenced or
+country-coded apex TLDs (`.au`, `.uk`, `.de`, `.in`, `.sg`, `.ca`, `.nl`)
+must scan from the matching DO region, or banners and CDN edges will be
+wrong. Default `nyc1` only when scope is US-centric or generic gTLD.
+
+| TLD / hint                  | scan_region |
+| --------------------------- | ----------- |
+| `.au`, `.com.au`            | `syd1`      |
+| `.uk`, `.co.uk`             | `lon1`      |
+| `.de`, `.eu`, EU hosts      | `fra1`      |
+| `.nl`                       | `ams3`      |
+| `.sg`, `.asia`              | `sgp1`      |
+| `.in`                       | `blr1`      |
+| `.ca`                       | `tor1`      |
+| US / generic gTLD (default) | `nyc1`      |
+
+Mixed scopes (e.g. `.com` + `.com.au`): pick the region matching the
+country-coded TLD and add the US region to `probe_regions` so both
+edges are sampled. Confirm region choice with the user before launch
+when the scope spans multiple country TLDs.
+
 ## How to call
 
 ```

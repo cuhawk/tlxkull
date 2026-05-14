@@ -2,7 +2,7 @@
 title: MCP Client Identity Metadata Document (CIMD) SSRF
 slug: mcp-cimd-ssrf
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/oauth, technique/ssrf, technique/mcp]
 inbound: []
 ---
@@ -92,6 +92,8 @@ Additional attack vectors once SSRF is achieved:
 | date | target | notes |
 |---|---|---|
 | 2026 | (undisclosed LHE target) | Brandon (CT Ep. 169) found SSRF-adjacent behaviors in MCP CIMD flow during a live hacking event; exact target undisclosed. Auth0 token vault already uses this architecture for AI agent integrations. |
+
+- {date: 2026-04-09, source: CT Ep 169} — Brandon's threat-model walkthrough of CIMD; identifies top-level manifest URI fetch AND nested logo_uri/jwks_uri fetches as SSRF primitives; Auth0 token vault cited as production CIMD consumer.
 
 ## References
 

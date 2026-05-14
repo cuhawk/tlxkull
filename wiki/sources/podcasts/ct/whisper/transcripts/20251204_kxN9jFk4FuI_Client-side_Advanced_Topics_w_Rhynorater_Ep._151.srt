@@ -1,0 +1,2720 @@
+1
+00:00:00,800 --> 00:00:03,840
+ there could be an iframe on their page there could be an iframe on your page you could be
+
+2
+00:00:03,840 --> 00:00:09,600
+ iframeing your own page iframeing your own page to create a null origin which is a separate origin
+
+3
+00:00:09,600 --> 00:00:13,040
+ from your attacker page and then use that null origin to open up another page
+
+4
+00:00:17,280 --> 00:00:37,360
+ best part of hacking when you can just you know critical thing all right hackers i was just
+
+5
+00:00:37,360 --> 00:00:41,520
+ looking into this and i think i figured out how threat locker elevation control works okay so when
+
+6
+00:00:41,520 --> 00:00:46,880
+ a user launches an elevated processor they try to threat locker agent will hook that into its own
+
+7
+00:00:46,880 --> 00:00:51,360
+ elevation flow so we don't see any uac prompt or anything the threat locker admin will be able
+
+8
+00:00:51,360 --> 00:00:56,400
+ to grant that process elevated permissions for a certain amount of time or whatever very granular
+
+9
+00:00:56,400 --> 00:01:02,160
+ control there and then the threat locker agent on the user's device injects a modified process
+
+10
+00:01:02,160 --> 00:01:07,200
+ security token which will elevate that process directly this is awesome because it avoids things
+
+11
+00:01:07,200 --> 00:01:15,440
+ like uac which um leaves ntlm hashes and stuff like that in memory right in lsas.axe it creates a time
+
+12
+00:01:15,440 --> 00:01:21,120
+ bounded elevation right and it does the elevation to the process rather than to the user really great
+
+13
+00:01:21,120 --> 00:01:25,120
+ stuff but of course there's always like maintenance mode and that sort of thing if you have to get in
+
+14
+00:01:25,120 --> 00:01:29,120
+ there and do a bunch of administrative activities great stuff by threat locker once again all right
+
+15
+00:01:29,120 --> 00:01:37,120
+ let's go back to the show all right my guy this is the episode of client-side advanced topics i freaking
+
+16
+00:01:37,120 --> 00:01:44,400
+ love this man i freaking this is your uh this is your dream yes um all right so we got a lot of stuff on
+
+17
+00:01:44,400 --> 00:01:51,280
+ the docket today about client-side advanced topics essentially the the vision for this episode was just me
+
+18
+00:01:51,280 --> 00:01:56,800
+ kind of brain dumping all of the things that i think are a little bit above um you know intermediate
+
+19
+00:01:56,800 --> 00:02:02,320
+ tier uh as far as client-side hacking goes so i'm going to kind of lay out all those things that i think are really cool
+
+20
+00:02:02,320 --> 00:02:10,960
+ and you are going to play the listener and try to repeat these back to me and try to ingest this information
+
+21
+00:02:10,960 --> 00:02:17,040
+ and make sure i'm not like going too fast or too over the top with the explanation yeah yeah it's really
+
+22
+00:02:17,040 --> 00:02:21,440
+ easy to make mental leaps whenever you're the you know quote-unquote expert on it right so exactly
+
+23
+00:02:21,440 --> 00:02:26,880
+ perfect quote-unquote expert on it what is that supposed to mean okay this is actually this is actually a
+
+24
+00:02:26,880 --> 00:02:32,320
+ really good point i never know how much flattery someone can take right i think you're a super expert
+
+25
+00:02:32,320 --> 00:02:35,760
+ whenever i talk to anybody and someone asks me like you know who do i think the most talented hacker
+
+26
+00:02:35,760 --> 00:02:40,000
+ is like you're almost always the first name out of my mouth and so but then i never know people
+
+27
+00:02:40,000 --> 00:02:43,600
+ want to hear that to their face like i feel like usually you'd be like nah or whatever right so
+
+28
+00:02:43,600 --> 00:02:50,560
+ anyways it makes me feel awkward i do that you know if you if you're if you're playing it up then i play it down
+
+29
+00:02:50,560 --> 00:02:53,920
+ and if you're playing it down that's right what are you talking about you know so there's always
+
+30
+00:02:53,920 --> 00:03:01,840
+ some back and forth i guess i like it um appreciate you though joseph um before we hop into that
+
+31
+00:03:01,840 --> 00:03:09,280
+ we actually have a couple news pieces that i did want to show that are relevant to uh this topic
+
+32
+00:03:09,280 --> 00:03:13,920
+ the first one is there's this guy on twitter that's been tweeting out some interesting stuff
+
+33
+00:03:13,920 --> 00:03:18,240
+ lately and it's like um yeah i think there are some people commenting on it be like yeah this is like
+
+34
+00:03:18,240 --> 00:03:24,480
+ well known you know but you know it is what it is uh i i thought that this was very interesting
+
+35
+00:03:24,480 --> 00:03:31,040
+ material so i'll go ahead and share it with you guys um the guy is noaskijr um on twitter and he
+
+36
+00:03:31,040 --> 00:03:37,920
+ shared that uh if you create a uh xss payload that looks like this which i'm putting on the screen but
+
+37
+00:03:37,920 --> 00:03:43,680
+ for audio listeners it is a less than bracket with a question mark and then less than bracket a
+
+38
+00:03:43,680 --> 00:03:51,360
+ and then an href that contains an svg onload in it then that will actually fire and the reason for that
+
+39
+00:03:51,360 --> 00:04:02,320
+ is because um these you know if you do not have an actual um spec compliant uh tag so you know a less
+
+40
+00:04:02,320 --> 00:04:09,280
+ than sign plus an a through z uh character then it's going to encode those and not treat anything
+
+41
+00:04:09,280 --> 00:04:16,000
+ else as a uh actual uh attribute which means they won't be url encoded which means the things inside
+
+42
+00:04:16,000 --> 00:04:22,560
+ of the href there will become the actual html and everything else surrounding it is just text
+
+43
+00:04:22,560 --> 00:04:29,280
+ uh that gets encoded so um this these are kind of interesting uh payloads yeah uh there's another one as
+
+44
+00:04:29,280 --> 00:04:35,840
+ well which is less than zero that's the one that's not a valid tag yeah um they need to start with an ascii
+
+45
+00:04:35,840 --> 00:04:41,680
+ letter um and and if they don't they're not going to be treated like a tag and the encoding is not
+
+46
+00:04:41,680 --> 00:04:46,960
+ going to be applied to the attributes or anything like that um a couple of the comments in here were
+
+47
+00:04:46,960 --> 00:04:54,640
+ saying hey this is pretty much only going to trick like syntax checkers and like you know uh syntax
+
+48
+00:04:54,640 --> 00:04:59,600
+ highlighters and stuff like that but i think it might also be relevant in some waft bypasses as
+
+49
+00:04:59,600 --> 00:05:07,040
+ well they try to do contextually aware um encoding or blocking it makes me think about like what i'm
+
+50
+00:05:07,040 --> 00:05:13,040
+ sure someone's on this before but basically all of the possible um what's the opposite of compliant
+
+51
+00:05:13,600 --> 00:05:19,520
+ spec non-compliant yeah yeah spec non-compliant characters like um that could occur in the first
+
+52
+00:05:19,520 --> 00:05:23,040
+ character and the tags like that and i'm sure that someone has fuss for that or whatever but oh yeah
+
+53
+00:05:23,040 --> 00:05:27,760
+ shazer i'm sure has has a list for that or something like that yeah um so anyway i just thought this
+
+54
+00:05:27,760 --> 00:05:34,560
+ was a really interesting piece here uh i think this is the kind of stuff that makes waft bypasses
+
+55
+00:05:35,120 --> 00:05:39,280
+ um pretty pretty doable and we talked about this a lot in the ryan barnett episode but like
+
+56
+00:05:39,280 --> 00:05:43,680
+ why laughs are fighting a losing battle because they just don't know what's going to be happening
+
+57
+00:05:43,680 --> 00:05:48,240
+ if they're trying to do any contextual aware um stuff so i do think it's kind of an interesting
+
+58
+00:05:48,240 --> 00:05:53,680
+ discussion on like the novelty required for stuff to be shared on social media because i think that like
+
+59
+00:05:53,680 --> 00:05:58,080
+ there's a lot of people who kind of hate on anyone that shares like more beginner information like this
+
+60
+00:05:58,080 --> 00:06:03,680
+ is known but that's clearly a spectrum right and so it's like where on that spectrum should you like not
+
+61
+00:06:03,680 --> 00:06:07,280
+ post stuff or where on the spectrum is like because it's still useful for beginners still like this is
+
+62
+00:06:07,280 --> 00:06:10,720
+ still like news to me maybe a lot of people know it but it was news to me when i saw this tweet i
+
+63
+00:06:10,720 --> 00:06:16,000
+ thought it was neat right but um yeah just kind of interesting kind of meta topic on you know what
+
+64
+00:06:16,000 --> 00:06:21,680
+ you should be sharing because there definitely are some um x accounts and some other social media
+
+65
+00:06:21,680 --> 00:06:26,240
+ accounts that share like such basic information that half of it's wrong and they've kind of just feels
+
+66
+00:06:26,240 --> 00:06:29,680
+ like more like snake oil or engagement farming whereas i don't think this is that at all
+
+67
+00:06:30,720 --> 00:06:36,640
+ no this is this is this guy sharing cool cool stuff that he you know either stumbled upon or learned and
+
+68
+00:06:36,640 --> 00:06:40,960
+ just wanted to disseminate the information i think you were the one that told me this a while back but
+
+69
+00:06:40,960 --> 00:06:47,200
+ like it's something like only 20 or 30 percent of your followers will see on average will see like
+
+70
+00:06:47,200 --> 00:06:51,440
+ your actual post just despite how many views it gets you know there's going to be a larger percentage
+
+71
+00:06:51,440 --> 00:06:55,520
+ that are not going to be you know followers or whatever um so if you really want to disseminate
+
+72
+00:06:55,520 --> 00:06:59,680
+ information to your followers you kind of need to post it like two or three times yeah uh which is
+
+73
+00:06:59,680 --> 00:07:04,160
+ also interesting because it's like okay well even if it even if somebody else posted it you know they've
+
+74
+00:07:04,160 --> 00:07:09,600
+ got a different audience base you know and it does make sense to repost these things and reshare these
+
+75
+00:07:09,600 --> 00:07:13,600
+ cool tips and i mean to be honest that's what we're going to be doing all day on this episode is like
+
+76
+00:07:13,600 --> 00:07:18,800
+ all the stuff that i'm going to talk about here very little of it is actually like just in research
+
+77
+00:07:18,800 --> 00:07:23,280
+ there's like right maybe one or two areas but it's super useful to have it rehashed and it's super
+
+78
+00:07:23,280 --> 00:07:28,480
+ useful to have it explained and it's super useful to have it in one place formalized and and organized
+
+79
+00:07:28,480 --> 00:07:34,960
+ yeah i agree so good stuff here by nawaski thanks for sharing that um the other one is this is an
+
+80
+00:07:34,960 --> 00:07:41,440
+ interesting one i don't know if you saw this dude but there's this guy um boar abdelhadi who is
+
+81
+00:07:41,440 --> 00:07:48,160
+ creating uh something called rep plus which is a lightweight http repeater inside of chrome dev tools
+
+82
+00:07:48,160 --> 00:07:53,760
+ and i just think this is a really interesting place for this to live uh because uh you know a lot of
+
+83
+00:07:53,760 --> 00:07:58,560
+ us are in dev tools anyway have our dev tools open while we're hacking and yeah makes sense that you
+
+84
+00:07:58,560 --> 00:08:03,520
+ might want to replay requests in there especially if you are like you know trying to do some lightweight
+
+85
+00:08:03,520 --> 00:08:09,120
+ hacking or something like that so um really cool project i think it is a little bit handicapped
+
+86
+00:08:09,120 --> 00:08:17,520
+ because i think it is not uh http one compliant i think it uses fetch and it forces everything to be sent over
+
+87
+00:08:17,520 --> 00:08:23,680
+ like http two um but very cool project nonetheless yeah i think in an ideal world if you had to modify
+
+88
+00:08:23,680 --> 00:08:28,240
+ requests you would want to modify it without going through a proxy a proxy is almost like an extra step
+
+89
+00:08:28,240 --> 00:08:33,280
+ right and so i don't think we'll ever get away from using proxy proxies for a long time but i think in
+
+90
+00:08:33,280 --> 00:08:37,840
+ like an ideal world you could just like hack the request in the browser itself that you're using
+
+91
+00:08:37,840 --> 00:08:42,640
+ yeah yeah totally that that is interesting well this is one of the things that is also nice about
+
+92
+00:08:42,640 --> 00:08:50,960
+ kratos like uh client server architecture is like we could probably iframe kaido into dev tools actually
+
+93
+00:08:50,960 --> 00:08:55,360
+ i think i saw somebody do that all right that's funny and cool um so if you really wanted to keep
+
+94
+00:08:55,360 --> 00:09:00,400
+ everything in one spot you could actually put kaido in dev tools um interesting interesting thought
+
+95
+00:09:00,400 --> 00:09:05,440
+ yeah um all right so that's all i had on the news you didn't have any any news items this week that
+
+96
+00:09:05,440 --> 00:09:13,280
+ cropped up did you no i did not have you played with opus 4.5 dude it's really good like not only
+
+97
+00:09:13,280 --> 00:09:19,120
+ do i think it's good but i've seen multiple people okay so let's actually clarify this because gemini
+
+98
+00:09:19,120 --> 00:09:24,880
+ 3 is also incredible um i guess one big takeaway is they're both better than 5.1 in my opinion but like
+
+99
+00:09:24,880 --> 00:09:31,840
+ a pretty large margin but um i think opus 4.5 has like a very particular strength when it comes to
+
+100
+00:09:31,840 --> 00:09:37,120
+ debugging and coding i mean gemini 3 is obviously incredible at those as well but i think that opus
+
+101
+00:09:37,120 --> 00:09:42,800
+ 4.5 is kind of like a really new state-of-the-art when it comes to front-end frameworks when it comes
+
+102
+00:09:42,800 --> 00:09:48,640
+ to debugging any kind of issue um like it you know i feel like models sometimes would break down when they
+
+103
+00:09:48,640 --> 00:09:52,800
+ were like trying to debug an issue or they would like get a recurring loop like i've seen a lot of people
+
+104
+00:09:52,800 --> 00:09:57,680
+ comment on 4.5 breaking out of that finally where it like doesn't get in these like intense failure
+
+105
+00:09:57,680 --> 00:10:01,760
+ loops and it can often like solve its own problems so yeah that's pretty sick man that that is a big
+
+106
+00:10:01,760 --> 00:10:08,080
+ jump forward and i know that the clod models in particular are pretty sick with uh um like tool
+
+107
+00:10:08,080 --> 00:10:13,440
+ calls and stuff like that which is super important as well so yeah i'm excited to see if you use it
+
+108
+00:10:13,440 --> 00:10:21,120
+ much or if it comes in handy with your project for your nahamsec talk so yeah the naham whoa the nahamcon
+
+109
+00:10:21,120 --> 00:10:28,080
+ uh talk that i'm doing that i'll i'll also drop on the pod um later this month uh we'll be doing some
+
+110
+00:10:28,080 --> 00:10:34,560
+ you know a b testing with different models and stuff like that but so far man it's claude nice it is you
+
+111
+00:10:34,560 --> 00:10:41,040
+ you know the the gemini models as much as i love them and i use them primarily you know outside of this
+
+112
+00:10:41,040 --> 00:10:50,320
+ specific project um which is essentially agentification of our hacking workflows um it's it's not it's not
+
+113
+00:10:50,320 --> 00:10:54,560
+ doing as well with tool calls yeah the tool calls just they'll seem like a larger percentage of the time
+
+114
+00:10:54,560 --> 00:11:01,040
+ right yeah it's a little odd kind of a bummer i i i'm i i am rooting for gemini though i think i think
+
+115
+00:11:01,040 --> 00:11:06,800
+ gemini if they can fix that i think that they're going to be the the best but yeah i'm very bullish on
+
+116
+00:11:06,800 --> 00:11:12,080
+ google in general yeah i think they have the customers the distribution and their models are incredible
+
+117
+00:11:12,080 --> 00:11:18,720
+ um i mean actually we should talk about this for just a split second nano banana banana pro is the
+
+118
+00:11:18,720 --> 00:11:27,040
+ wildest image editing piece of software it's basically um photoshop in a single tool call like it's crazy
+
+119
+00:11:27,040 --> 00:11:33,120
+ ridiculously good i mean it can create advanced slides with lots of text and advanced diagrams like
+
+120
+00:11:33,120 --> 00:11:38,080
+ it would not surprise me if it can yeah i mean i've seen some that are like that are extremely good
+
+121
+00:11:38,080 --> 00:11:43,760
+ but like um it would not surprise me if it could one shot some like flow diagrams for like hacking like
+
+122
+00:11:43,760 --> 00:11:48,000
+ oh off flow diagrams so you should you should test it for that it's really good yeah but when you use
+
+123
+00:11:48,000 --> 00:11:55,360
+ it on 4k res it's also 25 cents per image so be careful that gets expensive fast i mean yeah you
+
+124
+00:11:55,360 --> 00:12:01,040
+ could just use the 1k resolution and then it's like yeah four cents or whatever but wow not four cents yeah
+
+125
+00:12:01,040 --> 00:12:06,400
+ that's that's pretty doable um all right dude let's get into let's get into the meat of it i've got a
+
+126
+00:12:06,400 --> 00:12:12,080
+ lot of fun topics i want to go through today and i'm actually they're kind of not that related so i'll
+
+127
+00:12:12,080 --> 00:12:22,000
+ kind of let you take your pick okay we've got post messages uh third-party cookies cspt's iframe tricks
+
+128
+00:12:22,000 --> 00:12:29,040
+ url parsing and client-side routes any of those stand out to you as like the one we want to hear about
+
+129
+00:12:29,040 --> 00:12:34,160
+ first yeah let's hear about third-party cookies all right third-party cookies is actually uh this is
+
+130
+00:12:34,160 --> 00:12:39,040
+ actually probably the shortest section so um this should be pretty quick in the beginning um i wanted
+
+131
+00:12:39,040 --> 00:12:46,400
+ to talk a little bit on this episode about chips um which is uh essentially how cookies are partitioned
+
+132
+00:12:46,400 --> 00:12:54,720
+ uh when the partitioned value is uh or attribute is attached to a cookie in chrome um because this is a
+
+133
+00:12:54,720 --> 00:12:59,920
+ something that i think we're going to see gain more adoption than it currently has even and um
+
+134
+00:12:59,920 --> 00:13:05,600
+ uh it is helpful for sort of uh threading the needle in some of these cookie situations that you're
+
+135
+00:13:05,600 --> 00:13:12,560
+ dealing with um the the main thing that you need to understand about this is that with chips um cookies
+
+136
+00:13:12,560 --> 00:13:18,320
+ are no longer scoped just to the to the um domain that they're on but they've also got a key for them
+
+137
+00:13:18,320 --> 00:13:29,760
+ uh that is tied to the top level page if that scheme plus eltd plus one so whatever the tld is and then
+
+138
+00:13:29,760 --> 00:13:36,560
+ the the domain um and then inside of that right if there's an iframe or something like that it's tied to the
+
+139
+00:13:36,560 --> 00:13:45,600
+ host so let's say you've got um reinerader.example.com iframe framing in you know um example.rezo.com right
+
+140
+00:13:45,600 --> 00:13:52,800
+ uh so so you used a different cld there i did i did but that's that they need to be different they
+
+141
+00:13:52,800 --> 00:13:57,040
+ need to be different so let's so let's do okay let's let's keep it simple let's do reinerader.example.com
+
+142
+00:13:57,040 --> 00:14:08,320
+ and as iframing rezo.example2.com okay the the the key for that is is going to be um so first the etld
+
+143
+00:14:08,320 --> 00:14:13,440
+ plus one which is example.com right cut off the reinerader piece so there's that and then there's
+
+144
+00:14:13,440 --> 00:14:19,600
+ going to be the whole uh second host which is rezo.example2.com right that smush together is going
+
+145
+00:14:19,600 --> 00:14:26,880
+ to be your your your context for that specific cookie so uh if you have a different you know key
+
+146
+00:14:26,880 --> 00:14:31,280
+ there then it's not going to be able to access that that cookie in a different environment
+
+147
+00:14:31,280 --> 00:14:39,680
+ um however you know if there's you know grep me or whatever.example.com and it iframes in rezo.example2.com
+
+148
+00:14:39,680 --> 00:14:46,080
+ because the tld is the same example.com yes and you know rezo.example2.com that key is going to
+
+149
+00:14:46,080 --> 00:14:50,240
+ collide right and they will be able to share cookies but otherwise you're not going to be able to have
+
+150
+00:14:50,240 --> 00:14:56,560
+ access to cookies inside of an iframe um if the partitioned this is if the partitioned value is set on that
+
+151
+00:14:56,560 --> 00:15:02,640
+ specific cookie um so so the way so right now most sites don't have that you're saying yeah that's
+
+152
+00:15:02,640 --> 00:15:09,200
+ right um but just just you know that's a new cookie value or attribute that has been attached
+
+153
+00:15:09,200 --> 00:15:13,920
+ so something that i wanted to make people aware of to be on the lookout for that and is the primary
+
+154
+00:15:13,920 --> 00:15:19,120
+ mechanism for implementing that the fact that they want iframes to be more secure yeah yeah and it's
+
+155
+00:15:19,120 --> 00:15:24,400
+ also related to some privacy pieces as well okay um so anyway that was all i had on that that one
+
+156
+00:15:24,400 --> 00:15:28,800
+ doesn't have a ton of like exploitation pieces it's just something important to understand is that
+
+157
+00:15:28,800 --> 00:15:35,840
+ that how that key is generated etld plus one our scheme plus etld plus one and then the actual iframe
+
+158
+00:15:35,840 --> 00:15:40,480
+ toast and will the parent one always be kind of wild card like that or can the parent can the parent
+
+159
+00:15:40,480 --> 00:15:45,440
+ one have a subdomain as well no it's going to be it's going to be etld plus one every time okay plus
+
+160
+00:15:45,440 --> 00:15:53,040
+ scheme um all right i'll pick the next one we'll go into post messages next okay post messages are my
+
+161
+00:15:53,040 --> 00:15:57,040
+ shit do you know what all right tell me what you know about post messages joseph do you understand
+
+162
+00:15:57,040 --> 00:16:00,400
+ anything about post messages or should i start from the beginning very little you should start from
+
+163
+00:16:00,400 --> 00:16:04,560
+ the beginning yep okay i'll start i'll start from the beginning so post messages i want you to i want
+
+164
+00:16:04,560 --> 00:16:10,320
+ you to in your explanation explain it in such a way that there's an analogy such that like i can create
+
+165
+00:16:10,320 --> 00:16:14,560
+ a mental picture of it because i think the biggest issue for most people's comprehension of a new
+
+166
+00:16:14,560 --> 00:16:20,000
+ concept is that they don't have a mental picture for it so i think s3 bucket is the best example of this
+
+167
+00:16:20,000 --> 00:16:25,840
+ ever made like the name of the thing is the analogy of the thing right that's cool and and and so like
+
+168
+00:16:25,840 --> 00:16:29,840
+ because of that everyone knows what a bucket is it's like this place you put data right and so i think
+
+169
+00:16:29,840 --> 00:16:34,640
+ like with post messages it's it's never like clicked strongly for me even though i understand that it's
+
+170
+00:16:34,640 --> 00:16:40,720
+ like this site is sending a message to this site but it but it's not um the different ways in which
+
+171
+00:16:40,720 --> 00:16:44,000
+ you can do that are not overly clear because i don't have a good mental picture so if you have a good
+
+172
+00:16:44,000 --> 00:16:49,040
+ good analogy do it and there's also some like overlap too like i remember trying to teach my mentees
+
+173
+00:16:49,040 --> 00:16:54,960
+ about post messages and also post requests you know and those are not the same thing even remotely
+
+174
+00:16:54,960 --> 00:17:00,160
+ right yeah and so um yeah there is some difficulty there post messages i mean do kind of have that
+
+175
+00:17:00,160 --> 00:17:05,840
+ same imagery though if you think about it as like a little like a little post like a little um postcard
+
+176
+00:17:05,840 --> 00:17:10,560
+ that letter like yeah like a little letter i was like the only thing i could come up with japanese
+
+177
+00:17:10,560 --> 00:17:14,960
+ but yeah the little letter um and you're kind of sending it from one tab to the other is it always
+
+178
+00:17:14,960 --> 00:17:19,440
+ via javascript yeah it's always via javascript okay that helps me understand a lot okay yeah it's
+
+179
+00:17:19,440 --> 00:17:24,480
+ always via javascript it's it's a feature of javascript um and the browser you know uh kind of
+
+180
+00:17:24,480 --> 00:17:28,640
+ collaborating together and the concept is you have multiple windows right those windows can be in an
+
+181
+00:17:28,640 --> 00:17:32,800
+ iframe or they can be a tab to be honest it's probably most most easy to think about it being a tab
+
+182
+00:17:32,800 --> 00:17:37,200
+ okay maybe this is one big problem when you say windows everybody knows what you mean from a
+
+183
+00:17:37,200 --> 00:17:41,200
+ front-end perspective yeah if i'm not a front-end guy when you like what do you know windows is it
+
+184
+00:17:41,200 --> 00:17:46,800
+ literally tabs that are open okay so good good differentiation so a window can be a bunch of
+
+185
+00:17:46,800 --> 00:17:52,560
+ different things okay um you you've got a window when you've got a tab open right in your browser it can
+
+186
+00:17:52,560 --> 00:17:59,280
+ be a new window in your browser right so you've got a new actual window right um it can be inside of
+
+187
+00:17:59,280 --> 00:18:07,040
+ an iframe um and those are those are the main ones really uh there are other niche scenarios like okay
+
+188
+00:18:07,040 --> 00:18:10,800
+ technically it's not an iframe it's like a picture in picture you know there's various sdks or whatever
+
+189
+00:18:10,800 --> 00:18:16,640
+ that you can use to do yeah different stuff but um those are the main ones uh and what post message
+
+190
+00:18:16,640 --> 00:18:24,000
+ allows you to do is just do communication between these windows directly rather than via some api cool
+
+191
+00:18:24,000 --> 00:18:30,800
+ yeah that's how i always understood it okay yeah so um you know you use the sdk and it sort of comes
+
+192
+00:18:30,800 --> 00:18:35,840
+ with the browser right so it's you know window.post message you get a window reference you know some
+
+193
+00:18:35,840 --> 00:18:41,040
+ way and then you do window.post message and it just allows you to send a json blob essentially or so the
+
+194
+00:18:41,040 --> 00:18:46,400
+ other window always has a listener um no so the other window has to register a listener so that's one of
+
+195
+00:18:46,400 --> 00:18:50,560
+ the things that's interesting right is is like the other window is going to get it but the code isn't
+
+196
+00:18:50,560 --> 00:18:57,120
+ going to react in any way if you don't register a listener right right yeah um and so yeah that's
+
+197
+00:18:57,120 --> 00:19:03,520
+ that's like a key part of that and then you know the the listeners are kind of what we look at often
+
+198
+00:19:03,520 --> 00:19:07,520
+ and also messages being sent right because sometimes what will happen is you iframe a page
+
+199
+00:19:07,520 --> 00:19:11,920
+ and then it just yeets sensitive data up to the parent right no matter who it is right yeah yeah
+
+200
+00:19:11,920 --> 00:19:15,040
+ because there's some code that just says like parent.post manage or something along the lines
+
+201
+00:19:15,040 --> 00:19:20,960
+ exactly yeah and it just yeets information up so that's sometimes how that works um but other times
+
+202
+00:19:20,960 --> 00:19:26,240
+ uh you know you also got to look closely at the the listeners on the page send it a specific kind
+
+203
+00:19:26,240 --> 00:19:31,600
+ of message then it'll send other data out or do something yeah makes something like that so um anyway
+
+204
+00:19:31,600 --> 00:19:35,840
+ post message not necessarily like an advanced client-side topic i would consider this like a
+
+205
+00:19:35,840 --> 00:19:40,800
+ intermediate or or or lower client-side topic here are some of the things that are more advanced
+
+206
+00:19:40,800 --> 00:19:46,560
+ about post messages that not a lot of people know okay so um one when you register a post message
+
+207
+00:19:46,560 --> 00:19:53,520
+ listener there is an event object that's being passed into the uh the um listener so that event is
+
+208
+00:19:53,520 --> 00:19:59,440
+ what contains the data okay so if you do event.data that's the data that got sent in the post message right
+
+209
+00:19:59,440 --> 00:20:08,000
+ if you do event.source uh it will it will uh give you a reference to the window that sent that that post
+
+210
+00:20:08,000 --> 00:20:16,960
+ message if you do event.origin it will give you the origin of the event that sent the uh origin of the
+
+211
+00:20:16,960 --> 00:20:25,040
+ the window that sent the post message okay okay yep um and what is interesting here is there are such
+
+212
+00:20:25,040 --> 00:20:31,200
+ things as null origins uh in iframe so we're gonna we're gonna sort of pop a little bit over to our our
+
+213
+00:20:31,200 --> 00:20:37,200
+ iframe trick section as well yeah but um essentially uh a lot of times what you'll see in a post message
+
+214
+00:20:37,200 --> 00:20:44,800
+ listeners you'll see okay event.origin needs to uh you know match window.origin which means like this
+
+215
+00:20:44,800 --> 00:20:51,200
+ the same uh origin as sending the event or sending the message is the same one as me right so i'm like
+
+216
+00:20:51,200 --> 00:20:56,560
+ i'm talking with myself pretty much on a different page right um what's really cool though is if you
+
+217
+00:20:56,560 --> 00:21:06,640
+ iframe a uh if you're doing a sandboxed iframe the origin for that uh iframe becomes null and then
+
+218
+00:21:06,640 --> 00:21:15,360
+ here's the really really interesting piece here okay um if you do a uh if you allow that sandbar or
+
+219
+00:21:15,360 --> 00:21:22,560
+ sandboxed iframe to uh control pop-ups to pop open a new window yep you can have it pop open a new
+
+220
+00:21:22,560 --> 00:21:30,000
+ window to any site right you know any arbitrary site and it will inherit the null origin of the page
+
+221
+00:21:30,000 --> 00:21:36,080
+ that opened it weird okay so so now you've opened google.com or whatever right it was an origin
+
+222
+00:21:36,080 --> 00:21:44,800
+ yeah but if a post message pulls the event.origin of that page it will be null still
+
+223
+00:21:44,800 --> 00:21:50,080
+ exactly so and and it's going to compare it to its own window.origin right which will also be null because
+
+224
+00:21:50,080 --> 00:21:56,800
+ it inherited the null origin so now you've just completely bypassed event.origin equals window.origin
+
+225
+00:21:56,800 --> 00:22:02,560
+ that's really cool so if you ever see that there is a way to bypass it basically there is yeah um and it has
+
+226
+00:22:02,560 --> 00:22:09,280
+ some constraints because now you're in a win uh a um null origin iframe you know on this page and a bunch
+
+227
+00:22:09,280 --> 00:22:14,560
+ of stuff might break sometimes the javascript doesn't run quite right and stuff like that um but
+
+228
+00:22:15,280 --> 00:22:23,120
+ it is it is possible to uh invoke that communication uh and and bypass that check if it's using um the
+
+229
+00:22:23,120 --> 00:22:30,080
+ objects window.origin or just origin is that a security feature like is does that get set to null
+
+230
+00:22:30,080 --> 00:22:37,360
+ automatically because whenever you are trying to give sandbox um iframe execution to something it gives you
+
+231
+00:22:37,360 --> 00:22:43,280
+ some sort of security from the parent yeah so the the reason that exists is and i'm going to read it from
+
+232
+00:22:43,280 --> 00:22:52,160
+ the from the docs here because i've actually got it right here um so uh a sandbox resource is otherwise
+
+233
+00:22:52,160 --> 00:22:58,240
+ so unless if you don't specify allow same origin in the sandbox attributes then so just what it is by
+
+234
+00:22:58,240 --> 00:23:04,560
+ default when you're using sandboxed a sandbox resource is otherwise treated as being from an opaque origin
+
+235
+00:23:04,560 --> 00:23:09,920
+ which ensures that it will always fail same origin policy checks yeah so they said it's a null so that
+
+236
+00:23:09,920 --> 00:23:13,920
+ it fails same origin policy yeah and and it's interesting because it's not just null right because
+
+237
+00:23:13,920 --> 00:23:19,520
+ if you if you have two iframes that are both null origin they're gonna say hey we're both in or or
+
+238
+00:23:19,520 --> 00:23:24,160
+ null origin that fails the same origin check and i'm like no that's the same origin but but no it's
+
+239
+00:23:24,160 --> 00:23:32,240
+ not it's a different null right um so those nulls aren't the same but their their string representations
+
+240
+00:23:32,240 --> 00:23:39,040
+ are the same are the same yeah right and so when you do window.origin equals the string and ull back
+
+241
+00:23:39,040 --> 00:23:45,120
+ and you compare that to the other null origin yes that and ull then you're going to get a hard match
+
+242
+00:23:45,120 --> 00:23:49,520
+ yeah right so so the practical tip here is to basically look for places where that is the security
+
+243
+00:23:49,520 --> 00:23:55,760
+ constraint if it's if it's checking uh like if it's saying event.origin equals event.source then
+
+244
+00:23:55,760 --> 00:24:01,440
+ you know you've probably got a bug because you can set on both the null exactly yeah yeah yeah so uh
+
+245
+00:24:01,440 --> 00:24:06,560
+ essentially i i double checked it i i was like confused for a second because i was like window.source
+
+246
+00:24:06,560 --> 00:24:11,520
+ wait which one was it but it's it is you know event.origin essentially is what needs to be used
+
+247
+00:24:11,520 --> 00:24:17,200
+ to get the null piece out of the the null iframe sending a post message and then you compare that
+
+248
+00:24:17,200 --> 00:24:21,120
+ to window window.origin yep so it's event origin and window origin that if they're doing that
+
+249
+00:24:21,120 --> 00:24:27,520
+ comparison check you're able to uh bypass it by having them both set to null because it does a string
+
+250
+00:24:27,520 --> 00:24:32,720
+ comparison of that value exactly now here's the interesting thing typically if the origin was null on
+
+251
+00:24:32,720 --> 00:24:37,600
+ that page then you know there's not a lot of other stuff you can do you can't iframe hop or anything
+
+252
+00:24:37,600 --> 00:24:47,680
+ like that um but you can do requests uh still fetch requests still work and like so you can do a bunch
+
+253
+00:24:47,680 --> 00:24:53,840
+ of uh stuff with it if you're able to like pop an xss inside of it or something like that um and this
+
+254
+00:24:54,480 --> 00:25:01,280
+ so um yeah so i guess that's where do i go down some other post message stuff or do i go into the
+
+255
+00:25:01,280 --> 00:25:06,320
+ iframe stuff now tricky tricky tricky yeah just whichever one's the most relevant to what we're
+
+256
+00:25:06,320 --> 00:25:10,560
+ talking about yeah i i guess i'll stay in post message and then we'll go back to it really quick
+
+257
+00:25:10,560 --> 00:25:15,120
+ okay a couple couple other quick shout outs is that post messages a lot of people don't know that post
+
+258
+00:25:15,120 --> 00:25:22,720
+ messages the first parameter in you know dot post message is your message and that can be uh an
+
+259
+00:25:22,720 --> 00:25:26,960
+ object not just a string a lot of people think it's a string and then they run like json dot parse on
+
+260
+00:25:26,960 --> 00:25:32,080
+ it or whatever right that can be an actual object okay so you can just pass in curly brackets you know
+
+261
+00:25:32,080 --> 00:25:40,480
+ whatever um inside javascript and it will work just fine um uh what's also interesting there is that you
+
+262
+00:25:40,480 --> 00:25:49,760
+ can send complex types through uh post message some of them um for example big int is it is a javascript
+
+263
+00:25:49,760 --> 00:25:58,640
+ object or like type that is not like you know json's stringifiable uh and you can send that through
+
+264
+00:25:58,640 --> 00:26:04,080
+ post message interesting so um so if there's ever something on the other side that's expecting only
+
+265
+00:26:04,080 --> 00:26:08,720
+ json stringifiable things you're probably going to go down a weird code path that's not unexpected
+
+266
+00:26:08,720 --> 00:26:15,280
+ yeah and it can also send some regex related stuff it can send like there's a ton of stuff that that
+
+267
+00:26:15,280 --> 00:26:21,680
+ you can do with that yeah if if it is um not doing like strict type checking um so keep in mind that
+
+268
+00:26:21,680 --> 00:26:27,120
+ you're not just constrained to the basic json types right string array object you know integer that
+
+269
+00:26:27,120 --> 00:26:33,120
+ sort of thing you can send more complex types through post message as well cool yeah that's awesome okay
+
+270
+00:26:33,120 --> 00:26:39,280
+ last one on last one on post messages is this concept called message ports okay so you said you
+
+271
+00:26:39,280 --> 00:26:42,960
+ wanted a little analogy i'll give you an analogy for this one i tried with the other one you know it's
+
+272
+00:26:42,960 --> 00:26:47,840
+ like a letter you're throwing it back and forth between the different frames right um but message
+
+273
+00:26:47,840 --> 00:26:55,200
+ ports are very much like one of those little cans you know with a string on the other end yeah right and you
+
+274
+00:26:55,200 --> 00:26:59,520
+ kind of put the can up to your ear and you can listen and you can like throw somebody else the other side
+
+275
+00:26:59,520 --> 00:27:04,320
+ of it and then you know talk into it and then they can listen um that's kind of like what these message
+
+276
+00:27:04,320 --> 00:27:11,680
+ ports are okay so essentially instead of post messaging into a window you post message into a uh a
+
+277
+00:27:11,680 --> 00:27:19,200
+ message port okay and only the person that has a reference to the message port on the other side will be able to listen
+
+278
+00:27:19,200 --> 00:27:26,560
+ to that message um so you're you see this sometimes nowadays um so that people don't lose references to
+
+279
+00:27:26,560 --> 00:27:32,320
+ windows and like try to figure all that out they just shoot a port the person that the you know the
+
+280
+00:27:32,320 --> 00:27:37,840
+ other side has the port and then we just communicate over this port now um and depending on which tool
+
+281
+00:27:37,840 --> 00:27:45,120
+ you're using to like monitor message ports um you know or your post messages it may or may not hook these
+
+282
+00:27:45,120 --> 00:27:50,160
+ messages ports so understand that there could be some some post message communication happening in the
+
+283
+00:27:50,160 --> 00:27:56,640
+ background that you know fancy tracker for firefox or fronds is old post message tracker they may not
+
+284
+00:27:56,640 --> 00:28:01,440
+ be hooking into okay yeah so these are not your traditional style ports this is like another place
+
+285
+00:28:01,440 --> 00:28:05,920
+ where we're overloading like the word message is overloaded and the word port is overloaded here
+
+286
+00:28:05,920 --> 00:28:12,160
+ yeah yeah so it's a little different so these are not ports like on like a web server and these are yeah
+
+287
+00:28:12,160 --> 00:28:17,920
+ yeah these these are just these are just like essentially it's an object you throw data into it
+
+288
+00:28:17,920 --> 00:28:25,600
+ you know and and uh and the data comes out the other side regardless of what frame has the the reference
+
+289
+00:28:25,600 --> 00:28:32,560
+ um so yeah i could see your face fitting a little bit well what i'm curious about is like does does this um
+
+290
+00:28:33,440 --> 00:28:38,400
+ is this uh resilient to like closing the other tab and reopening like is it stored like some sort of
+
+291
+00:28:38,400 --> 00:28:42,800
+ like local storage where it's like it knows that that page can like reopen the same port it had
+
+292
+00:28:42,800 --> 00:28:47,920
+ opened before the same message port like i'm just curious like what value it adds i don't know i don't
+
+293
+00:28:47,920 --> 00:28:55,840
+ know how i don't know how you would store it i i think i i think that it is not resilient of that okay
+
+294
+00:28:55,840 --> 00:29:01,440
+ you know but but it is still a browser feature it's not like a web page feature yeah it is and it's
+
+295
+00:29:01,440 --> 00:29:07,920
+ facilitated via via the browser and you know um you know you're throwing these messages into instead of
+
+296
+00:29:07,920 --> 00:29:12,640
+ a window you're throwing them into a port okay and then it's coming out the other side right it's
+
+297
+00:29:12,640 --> 00:29:18,560
+ kind of the thought behind it yeah besides that is it treated very similar to post message like does
+
+298
+00:29:18,560 --> 00:29:26,160
+ it still have a dot event or like an event um yeah okay yeah it does and um and i will also say if you
+
+299
+00:29:26,880 --> 00:29:31,040
+ in the past i have been using some weird tooling for these and like not been able to catch message
+
+300
+00:29:31,040 --> 00:29:37,280
+ ports and i think even fancy tracker for chrome which uh is really good i think it sometimes it has
+
+301
+00:29:37,280 --> 00:29:44,800
+ some problems with message ports recently i i've seen so um whenever i i suspect there's some
+
+302
+00:29:44,800 --> 00:29:49,040
+ communication happening in the background i just find the event listener and set a conditional breakpoint
+
+303
+00:29:49,040 --> 00:29:55,760
+ inside of it uh that just does console.log and just logs to the console okay um as sort of like a
+
+304
+00:29:55,760 --> 00:30:00,560
+ redundant hook to make sure i'm monitoring all communication that comes through those those um
+
+305
+00:30:00,560 --> 00:30:05,280
+ those message ports yeah that's a sick tip right i mean people like we're immediately going to ask okay
+
+306
+00:30:05,280 --> 00:30:09,280
+ if it's if if the things i'm using to listen to post messages aren't finding this how do i do it right
+
+307
+00:30:09,280 --> 00:30:15,760
+ and so yeah good tip yeah all right so that's what i had for post messages um let's go and jump over to
+
+308
+00:30:15,760 --> 00:30:20,800
+ iframe tricks since we were talking about that just a second ago so um the first thing that's really
+
+309
+00:30:20,800 --> 00:30:25,680
+ interesting about iframes is you know knowing how to create this node origin which is essentially
+
+310
+00:30:25,680 --> 00:30:32,800
+ specifying the sandbox attribute um inside of that sandbox attribute you can specify a bunch of different
+
+311
+00:30:32,800 --> 00:30:40,080
+ um like permissions that uh the sandbox attribute or the sandbox iframe has okay a couple of these are
+
+312
+00:30:40,080 --> 00:30:47,680
+ allow same origin allow scripts you know allow pop-ups those sort of things right um and understanding
+
+313
+00:30:47,680 --> 00:30:55,280
+ what each one of those does is really important to be able to craft um really good payloads um using these
+
+314
+00:30:55,280 --> 00:30:59,680
+ okay i have a really i have a really kind of like dumb but maybe smart question here i think when it comes
+
+315
+00:30:59,680 --> 00:31:05,200
+ to talk about iframes especially around front end hacking it's it's like um always a little bit
+
+316
+00:31:05,200 --> 00:31:11,040
+ unclear in my mind like who like if you're working in an iframe or if you're the one creating the iframe
+
+317
+00:31:11,040 --> 00:31:17,600
+ to then do the hacking right because like obviously a normal website can have an iframe but then also
+
+318
+00:31:17,600 --> 00:31:22,880
+ like a normal website that you're hacking can be iframed by you on your domain which i assume is often
+
+319
+00:31:22,880 --> 00:31:28,800
+ where you're hacking but then i know sometimes if you have like html injection then you're like on one of
+
+320
+00:31:28,800 --> 00:31:34,880
+ their domains putting in your putting in an iframe to one of their other domains to pop a bug right
+
+321
+00:31:34,880 --> 00:31:38,800
+ and so i think that some i think that sometimes is like a little confusing to my brain to wrap around
+
+322
+00:31:38,800 --> 00:31:43,920
+ it so in this case the majority of attacks come from you taking your domain and you just putting in
+
+323
+00:31:43,920 --> 00:31:49,600
+ code that creates or instantiates an iframe to the vulnerable domain right and that's almost what you're
+
+324
+00:31:49,600 --> 00:31:54,800
+ always doing or or are you then also using that to then do post messages to it to the uh to the other
+
+325
+00:31:54,800 --> 00:32:00,080
+ window it's it's all of the above you just described the the beauty of iframes and like
+
+326
+00:32:00,080 --> 00:32:07,280
+ freaking client side yeah loveliness dude um is that yeah all of those right there could there
+
+327
+00:32:07,280 --> 00:32:10,880
+ could be an iframe on their page there could be an iframe on your page you could be iframeing your
+
+328
+00:32:10,880 --> 00:32:17,120
+ own page iframeing your own page to create a null origin which is a separate origin from your attacker page
+
+329
+00:32:17,120 --> 00:32:22,560
+ and then use that null origin to open up another page you know like there there's just like a ton of
+
+330
+00:32:22,560 --> 00:32:28,960
+ fun okay aren't you just aren't you just thrilled you're not looking as thrilled no no no no i'm just
+
+331
+00:32:28,960 --> 00:32:32,800
+ thinking i'm just thinking through like if there's like an easy way to conceptualize this is it kind of
+
+332
+00:32:32,800 --> 00:32:40,560
+ like um is it kind of like post messages basically have and not just post messages but i guess other iframe
+
+333
+00:32:40,560 --> 00:32:48,080
+ tricks as well but is it basically like you have a a set of tools in your toolbox which are both the
+
+334
+00:32:48,080 --> 00:32:54,080
+ ways in which um like the different parameters with which a message can be sent which are like kind of
+
+335
+00:32:54,080 --> 00:32:59,200
+ the things that you mentioned above right like whether it is yeah a null origin or not or and like
+
+336
+00:32:59,200 --> 00:33:05,360
+ the domain that you're on and then also depending on the cookies that exist for that domain and then
+
+337
+00:33:05,360 --> 00:33:11,920
+ those um those sets of attributes control both what you can do and what might be vulnerable and so you
+
+338
+00:33:11,920 --> 00:33:17,120
+ have to like basically test all of those different things this is good this is elevating my thinking a
+
+339
+00:33:17,120 --> 00:33:22,880
+ little bit here from my nuts and bolts okay so let me try to abstract it a little bit yeah for you um
+
+340
+00:33:23,600 --> 00:33:31,280
+ uh having you know an iframe is for several purposes one is a window reference right so i need to be
+
+341
+00:33:31,280 --> 00:33:38,320
+ able to reference a a victim's you know window of that origin right so that's useful for scenarios
+
+342
+00:33:38,320 --> 00:33:43,440
+ where you're like sending post messages or or something like that right um so getting a window
+
+343
+00:33:43,440 --> 00:33:47,760
+ reference an iframe is one way to do that another way to do that is window.open which just opens up a
+
+344
+00:33:47,760 --> 00:33:52,560
+ new tab by getting a window reference you mean like the victim would go to your website
+
+345
+00:33:53,120 --> 00:33:58,400
+ then you would you would load an iframe to the website that has a vulnerability on it and and then
+
+346
+00:33:58,400 --> 00:34:02,640
+ you can reference that window now and you can now attack the victim exactly but before that you didn't
+
+347
+00:34:02,640 --> 00:34:06,960
+ have a window to even reference you need a place to stand right you know like you know what's that
+
+348
+00:34:06,960 --> 00:34:10,800
+ that quote from like some philosopher like give me a lever and a place to stand and i can move the earth
+
+349
+00:34:10,800 --> 00:34:14,800
+ archimedes lever yeah yeah that's it and and and so you know that's kind of how i think about this a lot of
+
+350
+00:34:14,800 --> 00:34:19,120
+ what i think about this a lot of time is i need a place to stand when i'm when i am you know using
+
+351
+00:34:19,120 --> 00:34:27,280
+ these window references um so that's one one way the other the other piece is oftentimes or sometimes
+
+352
+00:34:27,280 --> 00:34:36,240
+ you can incur constraints on those domains uh when they are in an iframe or um yeah you can control the
+
+353
+00:34:36,240 --> 00:34:40,800
+ context in which they load that maybe that's a little bit better right um and you see this with
+
+354
+00:34:40,800 --> 00:34:46,880
+ credentialless iframes you see this with um sandboxed iframes right um these are ways that you can
+
+355
+00:34:46,880 --> 00:34:53,120
+ control the context in which interesting okay this is making sense to me now because you control
+
+356
+00:34:53,120 --> 00:34:58,240
+ the parameters of the iframe being loaded if you load it with different settings if you want to
+
+357
+00:34:58,240 --> 00:35:03,440
+ think about it that way then that actually can change what occurs inside of that iframe exactly yeah
+
+358
+00:35:03,440 --> 00:35:10,160
+ so so a really good example of this is um one that i mentioned just a second ago let's say you
+
+359
+00:35:10,160 --> 00:35:16,320
+ you create a attacker controlled page and that attacker controlled page has a null origin attacker
+
+360
+00:35:16,320 --> 00:35:23,520
+ controlled iframe right so i'm iframing myself yep i've got it set to null origin and then i from there
+
+361
+00:35:23,520 --> 00:35:28,480
+ i i have in the sandbox i have allow pop-ups and allow scripts right so i can run javascript and i
+
+362
+00:35:28,480 --> 00:35:35,200
+ can uh allow pop-ups for this sandbox iframe yeah so from that sandbox iframe i do a window.open to
+
+363
+00:35:35,200 --> 00:35:40,720
+ you know with the victim's site or whatever now that victim's site has the null origin as well right
+
+364
+00:35:41,280 --> 00:35:48,640
+ um it it inherits this is one thing that i really want to emphasize here it inherits the sand boxed
+
+365
+00:35:48,640 --> 00:35:57,200
+ properties of the attacker control null origin page yep okay so if you if you said um let's say you said
+
+366
+00:35:57,200 --> 00:36:04,640
+ no no script right let's say you said no script and you did the pop-up via a uh an a tag or something
+
+367
+00:36:04,640 --> 00:36:09,680
+ like that right in straight html right that victim page is now running without any job script
+
+368
+00:36:10,320 --> 00:36:14,560
+ that's so weird so that's so if they ended up on router.com and you did this all of a sudden a new
+
+369
+00:36:14,560 --> 00:36:19,440
+ window would pop up to the to the victim website google.com to google.com with no javascript with
+
+370
+00:36:19,440 --> 00:36:24,000
+ no javascript javascript is not allowed to run okay you know and and and that's one of the beautiful
+
+371
+00:36:24,000 --> 00:36:28,720
+ things about this is like you are incurring constraints yeah unanticipated constraints on
+
+372
+00:36:28,720 --> 00:36:39,360
+ these third-party sites yes right um and another example and i'll give a shout out to um uh to jordan
+
+373
+00:36:39,360 --> 00:36:44,560
+ in the the uh cool research channel on the critical thinking discord he's just constantly dropping cool
+
+374
+00:36:44,560 --> 00:36:49,520
+ shit in there man um hopefully by the time this episode goes live he'll have his write-up um on
+
+375
+00:36:49,520 --> 00:36:56,720
+ lab.ctv.show up on this sort of thing but um one of the things he dropped in the chat recently was that
+
+376
+00:36:56,720 --> 00:37:04,400
+ he was able to use this and he the things he specified were allow same origin allow pop-ups allow scripts but
+
+377
+00:37:04,960 --> 00:37:10,480
+ he did not specify allow forms so what was happening is there was a page that was auto submitting a form
+
+378
+00:37:10,480 --> 00:37:17,120
+ right and he needed it to not auto submit a form so that he could he could attack it right uh and so
+
+379
+00:37:17,120 --> 00:37:23,120
+ he used this constraint it inherited the sandboxed properties of the other origin yeah right of the
+
+380
+00:37:23,120 --> 00:37:26,880
+ other and it doesn't necessarily have to be a null origin right in this scenario he he said allow same
+
+381
+00:37:26,880 --> 00:37:32,240
+ origin so it was just the normal origin for this page yeah but it did inherit the fact that it's not
+
+382
+00:37:32,240 --> 00:37:39,280
+ allowed to submit forms so when it went to auto submit the form it failed it failed right and so
+
+383
+00:37:39,280 --> 00:37:43,520
+ there are lots of ways that you can sort of manipulate these target pages that have been
+
+384
+00:37:43,520 --> 00:37:48,640
+ spawned from sandboxed iframes does that make sense yep yeah and you know a lot of these again are
+
+385
+00:37:48,640 --> 00:37:52,240
+ affecting different code paths like they may have expected that to always auto submit and so when it
+
+386
+00:37:52,240 --> 00:37:58,640
+ didn't what happens some sort of fallback right you know like it's man sometimes you see the craziest
+
+387
+00:37:58,640 --> 00:38:05,280
+ fallbacks like uh i think i've seen one of the fallbacks i've seen for like not being able to parse json
+
+388
+00:38:06,080 --> 00:38:14,320
+ was just run eval on the string oh my gosh and it's like what um fallback execute rc yeah exactly it's
+
+389
+00:38:14,320 --> 00:38:21,440
+ like okay uh yeah so a lot of these fallbacks can trigger unanticipated code paths um so knowing about
+
+390
+00:38:21,440 --> 00:38:29,040
+ these uh sandboxed uh like attributes that you can apply to these third-party sites can be really valuable
+
+391
+00:38:29,040 --> 00:38:35,920
+ yeah um i will say there is an exception to that so i i said i talked about sandbox inheritance here
+
+392
+00:38:35,920 --> 00:38:43,520
+ um the exception to that is allow top navigation so there is this specific um flag that you typically
+
+393
+00:38:43,520 --> 00:38:50,480
+ need to specify in your sandboxed uh iframe yep that's that will allow it to navigate the top level
+
+394
+00:38:50,480 --> 00:38:58,720
+ page there is a specific exception made in the docs for inherited window you know windows that have
+
+395
+00:38:58,720 --> 00:39:05,760
+ inherited those sandboxed properties from a iframe uh but it was opened via window.open so it's in its
+
+396
+00:39:05,760 --> 00:39:12,000
+ new tab right because it's saying okay well hold on a sec like we can't not let them navigate themselves
+
+397
+00:39:12,000 --> 00:39:17,440
+ right right and because it's in a new window so that is going to have implicitly have allowed top
+
+398
+00:39:17,440 --> 00:39:22,560
+ navigation associated with it cool and it will be able to navigate itself what does allow top nav do
+
+399
+00:39:22,560 --> 00:39:28,240
+ allow top navigation allows you to navigate the url bar for that tab okay yeah so i just wanted to
+
+400
+00:39:28,240 --> 00:39:33,840
+ make sure i put that that um caveat out there are you tracking with me so far i know that that's very
+
+401
+00:39:33,840 --> 00:39:39,760
+ convoluted i'm tracking extremely well with you and that's that's great because i you know came in
+
+402
+00:39:39,760 --> 00:39:43,840
+ not knowing you know nearly as much and so i think even our beginner listeners will have followed almost
+
+403
+00:39:43,840 --> 00:39:49,920
+ all this so that's great i i think um i think a lot of times like i mean i love this stuff obviously but i
+
+404
+00:39:49,920 --> 00:39:56,400
+ i you know whenever i go to talk about it it's so nuanced and convoluted i'm sure i'm i'm sure freaking
+
+405
+00:39:56,400 --> 00:40:02,640
+ demo or like some some turbo or whatever jorian some of the listeners are going to be like find
+
+406
+00:40:02,640 --> 00:40:06,720
+ something that i said in this episode i'm sure in the corrections channel so please do because that's
+
+407
+00:40:06,720 --> 00:40:12,960
+ how i learn as well but um this is uh is my best my best shot at representing these concepts you're
+
+408
+00:40:12,960 --> 00:40:21,360
+ doing great all right so uh let's talk about two more things uh credential lists is one of them which
+
+409
+00:40:21,360 --> 00:40:27,600
+ is another attribute on iframes and this one was it's fairly new actually uh but the thing you need
+
+410
+00:40:27,600 --> 00:40:32,160
+ to know about this we've covered it on the pod before is that if you apply the credential list
+
+411
+00:40:32,160 --> 00:40:36,560
+ attribute to an iframe yeah it just means that it is using a new ephemeral
+
+412
+00:40:36,720 --> 00:40:44,560
+ context so no cookies no local storage no no nothing associated with that domain is going to survive
+
+413
+00:40:44,560 --> 00:40:50,960
+ that credential list context cool um and and so that's useful if you've got you know a cookie that
+
+414
+00:40:50,960 --> 00:40:55,520
+ you need not to be set for your attack to happen but of course that cookie is going to be set if the
+
+415
+00:40:55,520 --> 00:40:59,920
+ if the user even uses this website right right so you need to like get them in a state where
+
+416
+00:40:59,920 --> 00:41:05,360
+ they don't have the cookie set but they're still logged into the page or something like that right
+
+417
+00:41:05,360 --> 00:41:13,440
+ um credential list uh is really good for this um and here's something that i should have looked up before
+
+418
+00:41:13,440 --> 00:41:18,080
+ the pod actually maybe we'll pause and i'll look it up right now i'm not sure that credential lists
+
+419
+00:41:18,080 --> 00:41:24,560
+ inherits on window.open so let me go check that right now okay it doesn't look like it inherits the
+
+420
+00:41:24,560 --> 00:41:31,920
+ credential lists uh attribute so this one's only uh helpful if you're like inside of an iframe itself which
+
+421
+00:41:31,920 --> 00:41:37,280
+ does make this a little tricky because not every page nowadays is is iframeable due to like extreme
+
+422
+00:41:37,280 --> 00:41:43,600
+ options and csp so yeah so that's uh interesting little nuance but it has saved our butts a couple
+
+423
+00:41:43,600 --> 00:41:49,920
+ times um you got that one i know we've covered that one before yeah no that's great i was gonna ask are
+
+424
+00:41:49,920 --> 00:41:53,120
+ there any other iframe attributes that you think are key that we haven't mentioned yet or that you
+
+425
+00:41:53,120 --> 00:41:57,600
+ think are interesting or we've mentioned most of them um yeah i mean these are the ones that's just kind of
+
+426
+00:41:57,600 --> 00:42:04,160
+ popped into head um there there are a couple things the name attribute is really important right that
+
+427
+00:42:04,160 --> 00:42:08,160
+ that controls the name of the frame yeah um and we'll talk about that one in just a second with
+
+428
+00:42:08,160 --> 00:42:14,800
+ window hijacking um there are lots of interesting other attributes like you can specify a csp that
+
+429
+00:42:14,800 --> 00:42:20,880
+ uh the victim page must conform to and if it doesn't load that csp then it's not gonna load you know
+
+430
+00:42:20,880 --> 00:42:26,960
+ so there's there are some interesting things you can do with that um but we'll we'll save those for a
+
+431
+00:42:26,960 --> 00:42:31,920
+ time when i've uh researched them a little bit more recently and can talk about them more uh more
+
+432
+00:42:31,920 --> 00:42:36,480
+ clearly um the one i did want to specify though was window hijacking which goes back to the name
+
+433
+00:42:36,480 --> 00:42:44,560
+ attribute that i was mentioning before so um here's a really cool thing um you can name your windows and
+
+434
+00:42:44,560 --> 00:42:52,720
+ your frames and stuff like that various things so uh let's say you name your win uh your window abc or
+
+435
+00:42:52,720 --> 00:43:02,400
+ whatever right if uh there there is a scenario where you can force a victim page to open their window.open
+
+436
+00:43:02,400 --> 00:43:07,120
+ into that iframe so so consider this scenario okay and actually if you want to visualize it joseph so you
+
+437
+00:43:07,120 --> 00:43:13,920
+ can see click that um frame hijacking attacker page uh link that i put in the in the um doc there yeah
+
+438
+00:43:13,920 --> 00:43:20,960
+ consider this scenario you've got an attacker controlled page um you embed inside of that
+
+439
+00:43:20,960 --> 00:43:30,720
+ page an iframe to the victim site called abc sure okay so that's the name then you do a window.open to
+
+440
+00:43:30,720 --> 00:43:36,960
+ a victim page that victim page uh you know goes through some a lot flow whatever and then does a
+
+441
+00:43:36,960 --> 00:43:41,760
+ window.open with the name abc right of course it wouldn't be abc it'd be like a login session or
+
+442
+00:43:41,760 --> 00:43:48,880
+ whatever right what will happen is it will look for any other pages before in the browsing context
+
+443
+00:43:48,880 --> 00:43:54,960
+ yes that are the same origin as itself so it has to be the same as victim.com sure and then it will
+
+444
+00:43:54,960 --> 00:44:01,760
+ open into that iframe rather than doing a window pop-up right and since you embedded that iframe in the
+
+445
+00:44:01,760 --> 00:44:06,720
+ first place right you control where it's pointing to so then you can you know redirect it to something else
+
+446
+00:44:07,200 --> 00:44:11,760
+ and then or like put something in the hash or something like that and then when it redirects
+
+447
+00:44:11,760 --> 00:44:15,760
+ back to the victim page and that thing is still in the hash it might try to read the hash and do
+
+448
+00:44:15,760 --> 00:44:21,040
+ something with it right um so this is what i'm talking about like having iframes open allow you
+
+449
+00:44:21,040 --> 00:44:28,880
+ to control the context in which pages are running and in this scenario we just hijacked a pop-up right
+
+450
+00:44:28,880 --> 00:44:34,480
+ and instead we put it in our attacker controlled page that's super we have control over it that's super
+
+451
+00:44:34,480 --> 00:44:39,280
+ weird and cool that that works isn't that amazing yeah i do think that another disjoint in my
+
+452
+00:44:39,280 --> 00:44:46,560
+ understanding is from like what is possible inside of an iframe that is iframe from it like attacker.com
+
+453
+00:44:46,560 --> 00:44:50,960
+ right sure like yeah that's interesting you can't redirect it for sure like that that is what you said
+
+454
+00:44:50,960 --> 00:44:54,800
+ you can't just like reach in and then get those cookies right yeah you can't right yeah because
+
+455
+00:44:54,800 --> 00:44:58,720
+ there's yeah there's still and you can't even you can't even see them on the way in even though you
+
+456
+00:44:58,720 --> 00:45:03,440
+ i-framed it right right right yeah so it's interesting it is a little weird like knowing the
+
+457
+00:45:03,440 --> 00:45:07,760
+ nuances about what's possible with that iframe is another reason why i think there's like a gap in
+
+458
+00:45:07,760 --> 00:45:10,880
+ understanding between people who are like really in the front end versus those that aren't
+
+459
+00:45:11,520 --> 00:45:16,400
+ yeah yeah and and the only way to get that is experimentation yeah is for you to listen to this
+
+460
+00:45:16,400 --> 00:45:21,200
+ podcast and like pop open your browser and like build pages that represent the scenarios we're
+
+461
+00:45:21,200 --> 00:45:26,640
+ talking about and toy around with it yourself yeah um or you can do what you do which is understand it
+
+462
+00:45:26,640 --> 00:45:32,080
+ at like just a deep enough level where you can say hey this is weird hey justin yes this is your
+
+463
+00:45:32,080 --> 00:45:37,200
+ shit and this is what i do for you with ai stuff you know and uh and then we kind of bounce off of
+
+464
+00:45:37,200 --> 00:45:40,880
+ each other which is great no i think this is huge though and honestly i think all of this front-end stuff
+
+465
+00:45:40,880 --> 00:45:47,200
+ is extremely uh important and good even for kind of this like new ai hacking stuff because there's so
+
+466
+00:45:47,200 --> 00:45:55,760
+ much html injection and so much like room for xss and other front-end like um sensory when it comes to
+
+467
+00:45:55,760 --> 00:46:00,960
+ all of these different ai apps that are popping up because they very often are either i-framing it in
+
+468
+00:46:00,960 --> 00:46:06,080
+ or doing translation between markdown to html or they just straight up have xss to begin with so
+
+469
+00:46:06,080 --> 00:46:10,800
+ no i think this is like all extremely um beneficial so so so here's another really interesting thing
+
+470
+00:46:10,800 --> 00:46:16,480
+ okay oftentimes what will happen is let's say you're on like some ai page right and it's generating
+
+471
+00:46:16,480 --> 00:46:24,560
+ a markdown output which has a link in it yep um if that link is allowed if that a tag is allowed to
+
+472
+00:46:24,560 --> 00:46:32,160
+ have the target attribute then you've got something really cool here okay uh because what you can do is
+
+473
+00:46:33,200 --> 00:46:38,400
+ let's say let's say we're on gemini for example okay gemini uh has an invisible iframe you know in
+
+474
+00:46:38,400 --> 00:46:43,920
+ it to do like analytics or like you know supply whatever feedback form or something like that right
+
+475
+00:46:43,920 --> 00:46:50,800
+ that that feedback form or whatever is named you know abc what if you can get the ai to spit out a
+
+476
+00:46:51,360 --> 00:47:00,480
+ a tag that has target equal to abc when they click that link it's going to open into that iframe wow so
+
+477
+00:47:00,480 --> 00:47:06,880
+ now you've got like a persistent invisible iframe with your attacker controlled page inside of gemini
+
+478
+00:47:06,880 --> 00:47:14,640
+ right and unless that iframe is sandboxed you can also do like you you can uh do like top dot location
+
+479
+00:47:15,600 --> 00:47:20,800
+ navigate and and change the top level page right and there's just or you can send post messages from
+
+480
+00:47:20,800 --> 00:47:25,360
+ like an advantaged position and bypass coop like i'm gonna go i'm gonna go find you this a place
+
+481
+00:47:25,360 --> 00:47:30,320
+ where we can control target and libraries i'm gonna go please please let me know because like um the
+
+482
+00:47:30,320 --> 00:47:34,240
+ target unfortunately the target attribute is a little bit tricky to smuggle in there but if you can
+
+483
+00:47:34,240 --> 00:47:40,560
+ there's like a ton of really cool stuff you can do with it yeah so keep that in mind um all right dude we
+
+484
+00:47:40,560 --> 00:47:47,440
+ man i your boy can yap about client-side stuff hey this is great okay um let me see where we want to go
+
+485
+00:47:47,440 --> 00:47:55,360
+ next let's talk about url parsing okay um this one is kind of an yeah i want to make sure we hit cspt
+
+486
+00:47:55,360 --> 00:48:02,400
+ before we uh sign off too okay we can skip that one we'll hit cspt as well um let's jump to url parsing
+
+487
+00:48:02,400 --> 00:48:09,440
+ first sure uh start us off with a basic one oftentimes backslash slash gets converted into
+
+488
+00:48:10,080 --> 00:48:17,040
+ uh double back or double slash yep which uh will allow you to actually produce an absolute url rather
+
+489
+00:48:17,040 --> 00:48:24,000
+ than a relative url that causes so many bugs so uh like always keep that in mind yeah yeah that's also
+
+490
+00:48:24,000 --> 00:48:31,680
+ probably applicable to ai because like yeah the like i just had the best bug of a amazon ipc and it was
+
+491
+00:48:31,680 --> 00:48:39,280
+ that's a bypass where the um markdown image rendering happened with slash slash so if they
+
+492
+00:48:39,280 --> 00:48:43,920
+ then go fix that with slash slash then backslash forward slash would potentially work to bypass it
+
+493
+00:48:43,920 --> 00:48:48,800
+ right exactly yeah and and you can do you know if it's inside of an attribute or whatever you can do
+
+494
+00:48:48,800 --> 00:48:54,240
+ all sorts of you know encodings html encodings that sort of thing so there's lots of lots of depth that
+
+495
+00:48:54,240 --> 00:49:00,560
+ that can happen there um this is one that is is also quite interesting is that recently and i think we
+
+496
+00:49:00,560 --> 00:49:07,840
+ covered this on the pod as sort of like a side note when it first came out but recently uh chrome
+
+497
+00:49:07,840 --> 00:49:15,520
+ conformed to safari's behavior about parsing javascript uris such that javascript uris can now have a
+
+498
+00:49:15,520 --> 00:49:23,200
+ a host name associated with them so so if you do javascript colon slash slash rhinerrader.com
+
+499
+00:49:23,200 --> 00:49:29,760
+ slash rhinerrader.com is the host name for that javascript uri which doesn't make a lick of
+
+500
+00:49:29,760 --> 00:49:35,920
+ sense that's really weird because like that's not what the uri is for yeah right and they had it
+
+501
+00:49:35,920 --> 00:49:39,920
+ the safer way before which is that it was null yeah but then they were like ah well you know
+
+502
+00:49:39,920 --> 00:49:43,760
+ the spec says that it should be like this and safari's doing it this way so we're also going to do it
+
+503
+00:49:43,760 --> 00:49:51,120
+ this way and the hackers were like yes um so have you seen this use already oh yeah yeah yeah i've
+
+504
+00:49:51,120 --> 00:49:57,760
+ used it many times and i've seen many people use it um but this now makes it so that if there is a
+
+505
+00:49:57,760 --> 00:50:04,880
+ new url right you know parsing of this this um scheme and it does dot hostname and compares it to
+
+506
+00:50:04,880 --> 00:50:09,760
+ like the hostname of this page or something like that then you can have that but then when they do
+
+507
+00:50:09,760 --> 00:50:15,600
+ location dot uh you know window dot location equals this it will run javascript and you can just do
+
+508
+00:50:15,600 --> 00:50:19,920
+ like percent away at the end of the javascript to create a new line because slash slash is a comment
+
+509
+00:50:19,920 --> 00:50:24,560
+ in javascript right yeah so do you see how that works right like javascript colon slash slash now we're
+
+510
+00:50:24,560 --> 00:50:29,120
+ in a comment there's a comment yep then you get the next line who cares what happens there right
+
+511
+00:50:29,120 --> 00:50:35,360
+ it's like just the stars aligning in so many good ways isn't that awesome that's cool yeah um so that
+
+512
+00:50:35,360 --> 00:50:38,400
+ one's a really good one it's very seldom you see new features unlock a bunch of bugs
+
+513
+00:50:38,400 --> 00:50:43,920
+ yeah yeah which i mean i guess people probably reported it as like firefox only bugs already right
+
+514
+00:50:43,920 --> 00:50:50,400
+ but yeah and i've reported it as a safari only bug but last time i reported it uh you know before they
+
+515
+00:50:50,400 --> 00:50:55,680
+ they changed it i saw in the you know in the critical thinkers channel we've got like the data
+
+516
+00:50:55,680 --> 00:51:01,760
+ feeds or whatever and i saw uh on the intent to ship feed that uh they were gonna change it and i
+
+517
+00:51:01,760 --> 00:51:05,440
+ put that in my report and they paid me the full thing like it wasn't gonna because they like chrome
+
+518
+00:51:05,440 --> 00:51:09,280
+ is gonna ship this so it's you know we're just getting ahead of the curve and i was like yes that's
+
+519
+00:51:09,280 --> 00:51:14,720
+ awesome um so that one's a cool one the other one that's really interesting and sort of relates
+
+520
+00:51:14,720 --> 00:51:22,320
+ back to post messages as well is that you know then then the string no that represents the null origin
+
+521
+00:51:22,320 --> 00:51:34,240
+ uh is kind of weird because it is just a string and uh the that string like can be perceived in
+
+522
+00:51:34,240 --> 00:51:40,080
+ different ways so here's an example of how this might work one of the before they i think the
+
+523
+00:51:40,080 --> 00:51:47,600
+ prevalence of uh the url parsing um framework that they have in in in javascript now uh one of the
+
+524
+00:51:47,600 --> 00:51:57,440
+ ways that you would commonly see to parse a uh a url is to create do document.create an a tag and then
+
+525
+00:51:57,440 --> 00:52:04,320
+ set the href to a specific url right um and so let's say you got a post message and you wanted to
+
+526
+00:52:04,320 --> 00:52:09,760
+ extract the host name from that post message in a in a reliable way logic that i've seen before is say
+
+527
+00:52:09,760 --> 00:52:18,240
+ document.create element a a dot href equals event dot origin right so you're setting the href of that a
+
+528
+00:52:18,240 --> 00:52:26,880
+ tag to the origin of the post message and then grab the host name of the a tag which is pre-populated
+
+529
+00:52:26,880 --> 00:52:34,560
+ into that like object yeah um what's interesting is that if you send this from a null origin it passes
+
+530
+00:52:34,560 --> 00:52:41,440
+ null into the href of the a tag and null if you just put null as a string it says oh that's a that's a
+
+531
+00:52:41,440 --> 00:52:50,080
+ relative url that's slash null right and so what is the host name of a relative url oh that's the current
+
+532
+00:52:50,080 --> 00:52:56,640
+ page that we're on right and so it just fills in the very helpfully fills in the current the current
+
+533
+00:52:56,640 --> 00:53:03,200
+ pages host again by the stars aligning only exactly right and and and then it compares it to itself and it's
+
+534
+00:53:03,200 --> 00:53:09,600
+ like always passes right that's cool um so i've seen that logic a couple times when they use um create
+
+535
+00:53:09,600 --> 00:53:16,640
+ element a as like their their way to extract the host name this does not work in new url unfortunately
+
+536
+00:53:16,640 --> 00:53:23,280
+ like uh uh because of some constraints that they have in the system for that uh but it does work
+
+537
+00:53:23,280 --> 00:53:30,080
+ in other methods of extracting the host name yeah um okay you said you wanted to go to cspts next yeah um
+
+538
+00:53:30,080 --> 00:53:36,400
+ dude like the thing is i've talked about cspts so much on this podcast so i don't know i could go a
+
+539
+00:53:36,400 --> 00:53:41,920
+ little bit deeper than what i've got in the in the doc there but um yeah i guess i'll go a little bit
+
+540
+00:53:41,920 --> 00:53:49,760
+ deeper okay so um this is advanced techniques all right all right cspts i'm not going to explain what
+
+541
+00:53:49,760 --> 00:53:56,320
+ cspts are you know tldr you get data from the url or from the path you stick it into a sub resource
+
+542
+00:53:56,320 --> 00:54:01,520
+ request and you can induce path traversal there's also another subset of these i will say that i don't
+
+543
+00:54:01,520 --> 00:54:07,280
+ really know what to call them i kind of think maybe it's like request hijacking but this is when
+
+544
+00:54:08,240 --> 00:54:12,640
+ you take something from a query parameter or a path and you inject it directly into the domain
+
+545
+00:54:12,640 --> 00:54:16,080
+ of a fetch request right so it's not a pass traversal you're just overwriting what host
+
+546
+00:54:16,080 --> 00:54:22,800
+ the the fetch request the sub resource request is is actually going to right so be on the lookout
+
+547
+00:54:22,800 --> 00:54:27,840
+ and this is common in like cloud providers and stuff right yeah totally yeah you you know what i'm
+
+548
+00:54:27,840 --> 00:54:35,840
+ talking about actually um yeah but these sort of um these sort of vulnerabilities are are pretty common and
+
+549
+00:54:35,840 --> 00:54:43,520
+ uh i would say one thing that that is really uh useful to exploit these is knowing that you can
+
+550
+00:54:43,520 --> 00:54:48,480
+ exploit the difference between what what the browser perceives and what actually hits the fetch sync
+
+551
+00:54:48,480 --> 00:54:53,600
+ uh and this was a great shout out by turbo i think he mentioned it on his episode or maybe it was in
+
+552
+00:54:53,600 --> 00:55:00,400
+ the the chat but anything like percent zero nine or like new lines and stuff like that all of that just
+
+553
+00:55:00,400 --> 00:55:06,480
+ get straight stripped from anything passed passed into fetch as a part of the hosting so you can do
+
+554
+00:55:06,480 --> 00:55:15,200
+ you know rhino raider tab dot com and and it will just pull the tab out when it does the fetch
+
+555
+00:55:15,200 --> 00:55:23,040
+ so if there's any sort of like parsing or like um an analysis of that data that you're passing in
+
+556
+00:55:23,040 --> 00:55:29,040
+ you can really you can oftentimes finagle it by adding white space throughout there yeah um and
+
+557
+00:55:29,040 --> 00:55:32,240
+ then and then also just be on the lookout for different levels of encoding here like i think
+
+558
+00:55:32,240 --> 00:55:35,440
+ that's where a lot of the vulnerabilities occur you're not always just going to be able to
+
+559
+00:55:35,440 --> 00:55:42,160
+ insert like a slash or you know a backslash or something you got to try percent 2f percent 5c percent
+
+560
+00:55:42,160 --> 00:55:50,080
+ 25 2f percent 25 2c percent 4 4 0 right for the at sign you know like all sorts of things like this that
+
+561
+00:55:50,080 --> 00:56:00,960
+ can sort of break these various contexts yep um okay um going from there let's talk a little bit about
+
+562
+00:56:00,960 --> 00:56:09,440
+ client-side routes um client-side routes i don't know man like i feel like i don't really know how to hack
+
+563
+00:56:09,440 --> 00:56:15,040
+ applications that don't have client-side routes anymore man like it's just so overpowered that in
+
+564
+00:56:15,040 --> 00:56:21,520
+ single page applications that you just have access to essentially like the full app in the js files
+
+565
+00:56:21,520 --> 00:56:26,960
+ like right in front of you yeah i've been doing um hacking on hacker one challenges that don't have
+
+566
+00:56:26,960 --> 00:56:32,560
+ that and they're it's so frustrating i mean it's also really rewarding when you find a new path
+
+567
+00:56:32,560 --> 00:56:36,160
+ especially if it's one that like you're not supposed to have access to and the page actually loads
+
+568
+00:56:36,160 --> 00:56:41,200
+ it's like a massive adrenaline rush but it is weird to go back to those because so many pages are just
+
+569
+00:56:41,200 --> 00:56:45,440
+ single page apps these days yeah i think we talked about it on the pod like last week or the week
+
+570
+00:56:45,440 --> 00:56:49,440
+ before but like you know there's just a totally different approach you've got to take where you're
+
+571
+00:56:49,440 --> 00:56:54,320
+ just like you know looking for patterns brute forcing stuff it is a lot more brute force heavy
+
+572
+00:56:54,320 --> 00:57:00,880
+ whereas with spas um all you have to do is just figure out how these routes are defined and and i i think
+
+573
+00:57:00,880 --> 00:57:05,680
+ the best way to do this in so many levels is just reverse engineer what you've got right what page am
+
+574
+00:57:05,680 --> 00:57:11,520
+ i on okay well that page has got a route somewhere so just take the page put it into con you know
+
+575
+00:57:11,520 --> 00:57:16,560
+ control shift f in dev tools where you're searching all of the js files and then find where the place
+
+576
+00:57:16,560 --> 00:57:20,720
+ where the routes are defined and then just look at every single route right that's like one of the
+
+577
+00:57:20,720 --> 00:57:27,200
+ first things to do on my checklist uh is just like you know go through every single route understand
+
+578
+00:57:27,200 --> 00:57:33,680
+ everything that's happening and go from there um yeah yeah yeah i like that second tip that you have
+
+579
+00:57:33,680 --> 00:57:38,160
+ here that's basically you do it seems like you almost do the same thing for parameters like what what
+
+580
+00:57:38,160 --> 00:57:44,400
+ what and how are all these parameters used how are they parsed what do they do yeah totally and and
+
+581
+00:57:44,400 --> 00:57:50,480
+ and you know look for the nuances in the route definitions as well uh you know because sometimes
+
+582
+00:57:50,480 --> 00:57:57,360
+ there'll be like parameter like uh colon you know path id or you know object id or whatever in there so
+
+583
+00:57:57,360 --> 00:58:03,120
+ they're taking path parameters right um and then also like you said look at the way they're the
+
+584
+00:58:03,120 --> 00:58:09,920
+ framework they're using they're probably going to do consistent parsing or access to given uh query
+
+585
+00:58:09,920 --> 00:58:16,400
+ parameters so are they using url search params are they using like you know a react or a view um
+
+586
+00:58:16,880 --> 00:58:22,640
+ uh piece here to grab grab query parameters and that sort of thing and then look at every single
+
+587
+00:58:22,640 --> 00:58:28,160
+ query parameter that ever gets parsed ever in the whole app right and and understand every single
+
+588
+00:58:28,160 --> 00:58:34,160
+ piece of data that you can pass into this application by a by a force by by forcing them into a specific url
+
+589
+00:58:34,160 --> 00:58:38,720
+ okay so i've obviously heard you talk a lot about client side paths versions and i've seen them a lot of
+
+590
+00:58:38,720 --> 00:58:44,400
+ places but it's just dawning on me that i think that i've failed to test for a ton of places because i
+
+591
+00:58:44,400 --> 00:58:50,400
+ definitely see like the slash colon id or whatever but if that's ever controlled by me i can always
+
+592
+00:58:50,400 --> 00:58:55,360
+ check for if i name that object or if it's like attacker controlled if i have like for example let's
+
+593
+00:58:55,360 --> 00:59:02,400
+ just say it's a username like if it's like slash slash user slash reso if i go make my username dot dot
+
+594
+00:59:02,400 --> 00:59:08,560
+ slash what happens right like yeah yeah there's there's scenarios where you can get stored cspt with that
+
+595
+00:59:08,720 --> 00:59:14,160
+ where it will load you know from the database your name and then that gets causes a path traversal
+
+596
+00:59:14,160 --> 00:59:20,480
+ right what is going on yeah um yeah and then yeah you can also just do you know it's a little bit
+
+597
+00:59:20,480 --> 00:59:23,920
+ trickier when it's path parameters because you got to do like various levels of encoding and stuff like
+
+598
+00:59:23,920 --> 00:59:29,360
+ that but let's say you've got slash user slash you know user id yeah you know do slash user slash percent
+
+599
+00:59:29,360 --> 00:59:35,920
+ to f you know dot dot percent to f you know yeah and you know have that encoded version and if that
+
+600
+00:59:35,920 --> 00:59:40,800
+ if it's resolving those then do percent 25 to f right so you can still find path traversals inside of
+
+601
+00:59:40,800 --> 00:59:47,440
+ path parameters um so definitely be on the lookout for that uh the other thing is that one of the
+
+602
+00:59:47,440 --> 00:59:53,120
+ ways that you know with with the on-site of same-site cookies which you know i think is i feel like
+
+603
+00:59:53,120 --> 00:59:59,280
+ that's a little bit more of an inter intermediate topic but um uh with it with the onset of same-site
+
+604
+00:59:59,280 --> 01:00:05,120
+ cookies um sea surfs are getting a little bit more challenging and one of the ways that you can
+
+605
+01:00:05,120 --> 01:00:09,920
+ exploit sea surfs um pretty reliably nowadays is just by making sure that the request originates
+
+606
+01:00:09,920 --> 01:00:15,360
+ from the attack the victim's page um and a lot of times that happens via these callback routes
+
+607
+01:00:15,360 --> 01:00:21,680
+ where it hits a third-party provider whatever i want to link my account and then it comes back to
+
+608
+01:00:21,680 --> 01:00:27,280
+ this page on a specific route that is responsible for completing that linkage right but if you can just
+
+609
+01:00:27,280 --> 01:00:33,280
+ grab your attacker control data redirect the victim to that finalize route right then it will send a uh you
+
+610
+01:00:33,280 --> 01:00:38,960
+ know a post request or whatever to modify the victim's account then boom you got a sort of a c-surf oh
+
+611
+01:00:38,960 --> 01:00:45,040
+ that's cool that's really cool yeah um and then sometimes you can hijack those as well right maybe
+
+612
+01:00:45,040 --> 01:00:49,600
+ there's a cspt inside of that and it's sending a post request so you use it to hit a different endpoint
+
+613
+01:00:49,600 --> 01:00:55,920
+ and then do a different c-surf right um so it's this whole cspt to c-surf idea that was really covered
+
+614
+01:00:55,920 --> 01:01:02,480
+ well by um doyan sec in their in their cspt uh paper they did a while back um so lots of lots of
+
+615
+01:01:02,480 --> 01:01:09,760
+ neat nuances there um dude your throat going out my throat is getting a little raspy i'm going to close
+
+616
+01:01:09,760 --> 01:01:16,800
+ it up with um just uh one two more little quick shouts and that is one i kind of mentioned url search
+
+617
+01:01:16,800 --> 01:01:25,200
+ params earlier but that is a uh a class in javascript that is used to parse create like query parameters
+
+618
+01:01:25,200 --> 01:01:33,680
+ right so really good place for dom dom logger plus plus um hooks and also uh just control effing for url
+
+619
+01:01:33,680 --> 01:01:38,560
+ search params to see where parameters are being parsed yeah um so that's just a little tip i'll
+
+620
+01:01:38,560 --> 01:01:45,280
+ throw out there and also do not ignore on hash change events because hash change is something that
+
+621
+01:01:45,280 --> 01:01:51,280
+ you can control as a as a hacker right on your evil page i don't know if this is something that's commonly
+
+622
+01:01:51,280 --> 01:01:55,360
+ i didn't know that yeah so how does this happen yeah so let's say you do a window.open to a victim
+
+623
+01:01:55,360 --> 01:02:01,520
+ page right and you know what url they're on you can do that same window.open again to that same url
+
+624
+01:02:01,520 --> 01:02:06,320
+ with a different hash and it will swap the hash without refreshing oh interesting and it will
+
+625
+01:02:06,320 --> 01:02:11,840
+ trigger the on hash change event on that page and sometimes when the hash changes various things will
+
+626
+01:02:11,840 --> 01:02:19,200
+ occur on that page um so that's really cool yeah is on hash change how like um it like jumps to
+
+627
+01:02:19,200 --> 01:02:26,000
+ um different like table contents buttons or no uh sometimes depending on yeah or is that there is some
+
+628
+01:02:26,000 --> 01:02:32,560
+ page load uh there is some functionality for that but i i think like most of the stuff now that i'm
+
+629
+01:02:32,560 --> 01:02:37,120
+ talking about here is just hooked into this event that you can register it says hey whenever the hash
+
+630
+01:02:37,120 --> 01:02:42,000
+ changes i want this code to run and you look at that code and you say oh okay well one of those is a
+
+631
+01:02:42,000 --> 01:02:47,600
+ redirect so i redirect to this hash and then it you know drops your javascript source or something like
+
+632
+01:02:47,600 --> 01:02:54,480
+ that you know your javascript uri into a window location or something yeah um so great stuff there
+
+633
+01:02:54,480 --> 01:03:00,480
+ um the last thing that i had here this is and this is just like a random piece that i decided to throw
+
+634
+01:03:00,480 --> 01:03:04,480
+ into this episode i probably should have bumped this up to the top uh when covered it during news but
+
+635
+01:03:04,480 --> 01:03:12,000
+ it's actually a post from tear jank back from 2021 wow that somehow recently came across my my uh x feed
+
+636
+01:03:12,560 --> 01:03:19,200
+ um and he was saying that something that really blew my mind which is and this is something i guess to
+
+637
+01:03:19,200 --> 01:03:23,680
+ cover a little bit more from a higher level perspective is like there's this concept of the
+
+638
+01:03:23,680 --> 01:03:30,160
+ dom right which is the rendered um uh the document object model that it's like your html that's been
+
+639
+01:03:30,160 --> 01:03:36,320
+ shown on the page and a lot of times for stuff to run you have to create an element in js and then
+
+640
+01:03:36,320 --> 01:03:41,200
+ attach it into the page right you could do document.body.appendchild or something like that
+
+641
+01:03:41,200 --> 01:03:46,240
+ so you create the element now it's just living in javascript land and then you insert it into the
+
+642
+01:03:46,240 --> 01:03:54,320
+ dom makes sense what's really weird here is that uh what terjank tweeted out was that like you can
+
+643
+01:03:54,320 --> 01:03:59,760
+ create an an element so let's say you do document.create element div or whatever and then you say div dot
+
+644
+01:03:59,760 --> 01:04:06,800
+ inner html equals you know image source equals x on error equals alert one right that still has not been
+
+645
+01:04:06,800 --> 01:04:14,080
+ inserted into the dom yet so it's not like it shouldn't be rendering uh but for some reason that will run
+
+646
+01:04:14,080 --> 01:04:21,920
+ uh that on event on error handler will run uh are there any protections like obviously dom purify
+
+647
+01:04:21,920 --> 01:04:27,840
+ uh implies that it's purifying the dom yeah would that like not get purified because it's not
+
+648
+01:04:27,840 --> 01:04:32,320
+ uh that's kind of the first thing that came to my mind as well was like i feel like some of these
+
+649
+01:04:32,320 --> 01:04:40,960
+ parsers are probably like depending on the fact that they can like take the html and stick it inside
+
+650
+01:04:40,960 --> 01:04:47,760
+ of like another html element that they crafted in the javascript you know vm or whatever and then like
+
+651
+01:04:47,760 --> 01:04:53,200
+ do stuff to it right but but if you even get it to that point you're already done because it's gonna run
+
+652
+01:04:53,200 --> 01:04:57,760
+ it makes me think it makes me think that there are a lot of cases where people have like tried to get
+
+653
+01:04:57,760 --> 01:05:04,240
+ xss but failed but they never try to dot enter html yeah yeah well it it's very it's very interesting
+
+654
+01:05:04,240 --> 01:05:08,240
+ and there could be other nuances around dot enter html because i know that that's you know that is a
+
+655
+01:05:08,240 --> 01:05:14,720
+ pretty dangerous function that a lot of um uh people will try to uh avoid when they're doing these
+
+656
+01:05:14,720 --> 01:05:18,400
+ parsing but i i still wouldn't have thought it would have triggered i i wouldn't have thought that it
+
+657
+01:05:18,400 --> 01:05:24,160
+ would trigger even without being inserted into the dom and and it is interesting as well because i know
+
+658
+01:05:24,160 --> 01:05:30,400
+ this is just making me think a little bit i know that there is a bug in dom purify where if you put a
+
+659
+01:05:30,400 --> 01:05:39,520
+ meta tag in into the dom purified like uh parser that meta tag will be applied to the page uh even though
+
+660
+01:05:39,520 --> 01:05:48,640
+ it got sanitized away so so they are like definitely taking that in doing something with it where so i
+
+661
+01:05:48,640 --> 01:05:52,880
+ don't i don't think this is a dom purify bypass because that's like a very vanilla paper that i'm
+
+662
+01:05:52,880 --> 01:05:59,200
+ saying here but like but like um there's definitely some weird nuance of uh of that because that's the
+
+663
+01:05:59,200 --> 01:06:03,760
+ same thing that's happening with this meta tag that uh jrock mentioned back on his episode back in the day
+
+664
+01:06:03,760 --> 01:06:07,840
+ so something on something odds happening there i got to double click into that a little bit i'm sure
+
+665
+01:06:07,840 --> 01:06:13,360
+ something is will come out of this episode almost definitely yeah for sure man um all right that was
+
+666
+01:06:13,360 --> 01:06:17,760
+ a lot of justin yapping you got any questions about any of that or do we think we're uh we're good for
+
+667
+01:06:17,760 --> 01:06:23,440
+ now no dude i think you explained it super well i uh it's funny this is like the advanced episode but
+
+668
+01:06:23,440 --> 01:06:27,040
+ we also were like super beginner all the way to the advanced stuff so i think this will be super useful
+
+669
+01:06:27,040 --> 01:06:31,520
+ for both sets of listeners which is probably great because if it was only advanced then i feel like half
+
+670
+01:06:31,520 --> 01:06:35,680
+ people stop listening immediately but there will be enough listeners like me that will like hang on for
+
+671
+01:06:35,680 --> 01:06:40,160
+ the ride because you uh you bridged it so well so thank you for that of course man yeah i think there's
+
+672
+01:06:40,160 --> 01:06:44,800
+ a lot of a lot of both here a lot of you know covering some of the foundational concepts but also like
+
+673
+01:06:44,800 --> 01:06:50,640
+ this super weird like double null origin iframe stuff that's that's pretty whack so hopefully we
+
+674
+01:06:50,640 --> 01:06:55,440
+ triggered some some advanced minds out there to go down some some paths with some of this stuff and help
+
+675
+01:06:55,440 --> 01:06:59,280
+ some of the beginners along as well yeah dude sweet all right man peace good episode
+
+676
+01:07:00,720 --> 01:07:04,320
+ and that's a wrap on this episode of critical thinking thanks so much for watching to the end
+
+677
+01:07:04,320 --> 01:07:08,800
+ y'all if you want more critical thinking content uh or if you want to support the show head over to
+
+678
+01:07:08,800 --> 01:07:13,920
+ ctbb.show/discord you can hop in the community there's lots of great high level hacking discussion
+
+679
+01:07:13,920 --> 01:07:20,160
+ happening there on top of master classes hack alongs exclusive content and a full-time hunters guild if
+
+680
+01:07:20,160 --> 01:07:26,400
+ you're a full-time hunter it's a great time trust me all right i'll see you there
+

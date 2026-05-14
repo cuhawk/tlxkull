@@ -1,0 +1,3532 @@
+Yeah, I think it was right here. Dude, this, this is what I'm talking about, Kevin.
+When, when I am reading articles, this is exactly the kind of shit that I want to see.
+Best part of hacking when you can just, you know, critical thing, right?
+Yeah, right.
+Yeah, dude.
+All right, Mr. Kevin Mizu, the master of DOM Purify, thank you for gracing us with your presence here on CTPB Podcast.
+Yeah, it's a pleasure to be there. I can't wait to speak about DOM Purify today.
+Awesome, dude. You've been doing great work on the Critical Thinking Research Lab as well.
+It's been a pleasure to have you in there. And when I saw you write this stuff up and release it,
+I had the pleasure of, of pre-reading it. And as I was reading through, I was like trying to stay focused
+on like being a good proofreader and like trying to find, you know, maybe we should reword this,
+reword that. But as I'm reading, I'm like, oh my God, that's really interesting. Oh my God. Oh,
+you kept getting distracted by the content. So, um, great, great work on this article really. And,
+you know, like I said in the chat, I just, I wanted to devote a whole episode to this because
+DOM Purify is so widely used in so many different, uh, you know, applications and, um,
+um, and what you wrote up here, the, the, don't get me wrong, Kevin, the first article was amazing,
+right? Absolutely amazing. But the second article is like, wow, this is so applicable for a bug bounty
+hunter because these misconfigurations are what bug bounty hunters live off of, right? That's where we,
+I think that's where we live. Um, so I was really excited to talk about both of them. Um, but first we
+gotta, gotta cut your teeth in the bug, in the, uh, CTPB podcast world. We gotta start off with a, a bug that
+you're really proud of. Um, so what, what bug did you bring for us today? Um, well, so I think it's
+probably the bug that I'm the most proud of that I found recently. Uh, it's a clean side chain. Um,
+so I will try to explain it a bit quickly, but, uh, I had like, um, a gadget which allows me to have an
+account takeover on the main application of a website. Um, but it do requires me to have control over
+cookies. So I need to find somehow a cookie injection or simply an XSS on a subdomain.
+And after looking a bit, uh, through all the subdomain of that website, I found one which had a
+get parameter, which was using in a fetch request. But this fetch request has to be same, same origin.
+So you still be limit, limited by the feature, which is present on the application itself. Um, and the
+response of that fetch request was finishing in a document.writeSync. So it's mostly an XSS as a feature.
+Uh, but the problem was that, um, that application only have two routes, which was doing anything. I mean,
+there is no feature related to it except the XSS and I have, uh, no file upload feature, no API,
+and nothing that can actually use to, to have a bug. So after playing a bit with it, I, um, found that
+the application was hosted behind Cloudflare. And after playing a bit with the CDN CGI image endpoints,
+Mm. Mm-hmm .
+I, I found that that application was, uh, actually having, um, another, uh, domain,
+which was historically used and that specific domain was still allowed in the Cloudflare configuration.
+Okay. That that's great. How did you, how did you identify that? How did you find that?
+Honestly, I was a bit like lazy and I took the top 100, uh, websites or something like that,
+just a web, um, just a world list on internet, try to puzzle of them. And luckily I found one, but
+No way. Wow. That's awesome. That's great.
+It was really lucky, honestly. And when I found that domain, I saw that I was able to use not only
+the main domain of, uh, the historical one, but also the subdomain related to it. And yes, thanks to
+this, I managed to find an IDEN file upload feature, which allows me to, um, use an image that I control
+on the CDN CGI, um, endpoints. So in short, thanks to this, I was able to make a fetch request to CDN CGI,
+which returns me an image that I control, which contain into it in the exif and HTML payload.
+And then when it's, uh, can get consumed by document.write, it dpng gets converted to HTML,
+which creates an XSS. Wow. Okay. Okay. Okay. So I see that I'm looking at the doc right now. There's
+14 bullet points under this bug. And so, and we're about halfway through right now. So let me take a
+second to summarize. So let correct me if I got any part of this wrong. Okay. So we find this, this gadget on
+a subdomain and we go specifically looking for this gadget because we have a session fixation based ATO.
+So we've, we've, we find this gadget on the subdomain that allows you to control the destination of a
+fetch request. And that fetch request output is just dumped directly into document.write, but it has to
+be same origin. So there's, there's no other paths on this. So we hit the CDN, uh, CGI image endpoint,
+which is a part of Cloudflare, which allows you to retrieve an image from a different server. Um, but it's
+limited to just a specific set of domains, which you had numerated by brute forcing. And then you
+find a place in that domain where you can upload a file and put HTML data inside of the EXIF metadata
+for that file. And then you hit that via the fetch request and dump it into document.write. Is that right?
+Yep. Oh my God, dude. Oh my God. That's amazing. It's crazy to me that, I'm sorry, I'm getting derailed, but,
+but it's crazy to me that, that the CDN CGI endpoint doesn't strip like that, that metadata or those,
+those tag, like, or at least HTML tags. Like I feel like that would be a good security feature
+for them to implement. Um, if anybody from Cloudflare is listening to this, don't do that. Do not implement
+that. Um, what do you, what do you think about that? Um, I'm, I think it's complicated because there
+is so many ways to hide like, uh, Charles within an image and source characters could be like, um,
+legit. There is maybe some way that's an image needs to have source tags within it. So.
+That's true. Yeah. Or like SVGs as well, right? Like if you allow legitimate SVGs, you can't just like
+replace the left bracket bracket or whatever, left angle bracket. Okay. All right. So then we hit that,
+but you run into a CSP, it seems, right? Yep. So the, the CSP bypass wasn't really, um,
+difficult actually. I simply used an AngularJS gadget and I was able to have the XSS. Nice.
+It's not really the most important part of, uh, of the bypass, but thanks to this XSS, which was on a
+completely useless domain, I was finally able to, uh, end that chain, which was, I think, very interesting in
+the end. Um, so the login feature of the main websites was using, uh, something interesting,
+which was when you go on the login page, you get redirected to a specific page, which has in the
+link, uh, UID V4. So you can't reinforce it. Okay. And that UID is associated with two cookies,
+one session cookies with, um, which has specific value and another one, which is prefixed with
+double underscore host dash, which has the same value. Okay. And the double underscore host cookies
+is like not something that you want to see when you want to perform a fixation fixation because you
+can't set it, um, through JavaScript. Right. Right. That has to be, that's an HTTP only one,
+I think. Yeah. Um, and not only it's, um, I think it's a reserved prefix, so it absolutely can't be set
+from the JavaScript, but that's all. Yeah. Yeah, absolutely. Yeah. And so to abuse that,
+I've, I mean, there is something that I need to explain to them because, uh, if you have like two
+clients, um, which has the exact same configuration, like the same UID, the same session cookies,
+and one of them authenticates on, uh, the application, then the, the, the first one or the
+second one just need to refresh the page to be authenticated as well. So it was like a very
+interesting feature. Yeah. Yeah. So the only thing that I was, uh, needing to do is finding a way to
+force the victim to have the same setup as I do. And to do that, I wasn't able to directly do
+session fixation because the session cookie was set for something like a year and has the
+priority over mine. But after playing a bit with the application, I've thought that, uh, if you go
+like, uh, on any path, like, uh, slash a, uh, with, uh, two session cookie with different value,
+then the application will detect that, um, something wrong is actually happening. Maybe it detects that
+it is an attack actually, and it's, we'll try to remove the cookies on the top level domain,
+because this is the only way for the browser to have two cookies in the same time.
+But the problem when you try to do that is that if you do a set cookie with an empty value,
+you need to have the exact, uh, cookie configuration, uh, to remove it.
+Right. With the domain and the path, right?
+Exactly. So if you try to remove the cookie on Slate, but it has been set on Slate A, it won't work at all.
+Mm. Mm.
+So to bypass this, the application was trying to guess the path on which it has been set. And to do
+that, it was simply taking the request URL provided by the user and putting it, uh, in the set cookie header.
+Ah, okay.
+Okay. So what I was able to do is simply going, doing a session fixation, going on slash,
+a semi-colon domain equal semi-colon. And that's why I was able to force the application,
+not to remove my cookie, but the one from the user.
+Ah, nice. That's amazing. That's so good.
+Very good. So now you've got your, your, uh, session fixated on there. And then.
+On the first cookie, but I was still needing to find a way to control the second one with the
+double underscore, uh, host cookie.
+Right. With the proof next, because you can't set it from JavaScript.
+Yeah. But actually this one wasn't too hard to, uh, like, uh, set because when you go on a login
+page with a valid UID link to a valid session value, if you don't provide the double underscore
+host cookie, um, the application will detect that something is going wrong,
+but it will suppose that you are going, you are doing something like, um, legitimate.
+So you are trying to log in with the correct value. So it would say like,
+Oh, you're missing that cookie. Let me set this cookie to the right value that you need.
+Let me just help for you.
+Exactly.
+So I was just needing to do a post request cross sites, uh, with the session cookie with
+same site none. And that way, everything was ready. I just need to wait the user to log into his account
+and refresh my page to get an account takeover.
+Wow. Very cool, man. That, that is an amazing bug. Lots of cookie, cookie quirks, crazy, creative XSS.
+I love it, dude. I love it. You, you have established, uh, your authority now to speak on the
+CTVB podcast after that bug for sure. I do have a question about it though. Um, and, and this is just,
+I can't pull it out of my head. I'm wondering if we could have done anything with, um, with cookie jar
+overflows here, uh, where you can force that host cookie and force the original cookie out of the
+cookie jar. And then, and then, you know, just fixate your, your stuff. Did, did you try that?
+Or did it occur to you? Cause I don't remember if underscore host can be affected by that attack.
+I didn't, but for two reasons, because first I think that, uh, cookie jar overflow only works in,
+if you set cookies on the actual domain on which you would, you want to do the attack.
+Mm. You can't do that cross domain. Yeah. I think. Okay. And the second reason is that,
+uh, since from a post request, I was able to have like the exact configuration I was needing. I don't
+even, uh, try to do that. Yeah. Yeah. Okay. That makes sense. Yeah. I'm gonna,
+I'm gonna have to research that. Cause, cause cookie jar overflow would be a little bit more helpful if we
+could just delete cookies. Like if I had an XSS on subdomain.site.com, if I could delete cookies for
+site.com, that would be pretty helpful with the cookie jar. It would be amazing. But honestly,
+if you, if you do manage to do that, I think it will be a Chromium zero day.
+Oh, really? Oh geez. Okay.
+Yes. Because there are supposed to be some boundary between, uh, different sites, even if they are
+same sites. So I might be wrong, but. But, but it's just interesting because like the reason the
+cookie jar overflow works is, is because you're pushing, you know, those cookies out of storage.
+Right. So I don't understand how, I guess maybe the storage is segmented a little bit different by
+site. Perhaps that's what's going on. It's segmented by site. And even so it can send more cookies than
+are in the cookie jar to the server, but it can't store those in that same site cookie. Okay. Okay.
+That makes sense. I'm going to validate that after this. Um, all right. Very cool. So let's, let's,
+um, let's go ahead and jump into, uh, now we, now we do things a little weird here on CTPP podcast. Okay.
+Now we're going to jump back. Kevin Mizu. I said your name, who are you? What do you work for? You
+know, what, what are you, what are you up to in life right now, man? Um, so currently I finished my
+studies something like a year ago. Okay. I'm working in a small French company called, uh, B-Secure,
+in which I'm doing mostly pen tests and, uh, web audits. And, um, on my free time, I'm doing some
+research, some development, like on the, like a place. And when I finally have some time, I'm doing bamboo
+tea actually, but I prefer to focus on research and, um, developing stuff. Yeah, dude, it's, it's been
+great to see your research come through and, and I'm really excited for some of the stuff you're
+building from an automation perspective. Obviously, you know, Dom logger plus plus is a masterpiece.
+And I love it, but also you've got some really cool, um, sort of JS and headless browser based
+automation you're working on right now, which I'm excited to see come out soon. Um, but yeah, no, and,
+and to be honest, dude, that, um, Dom purify or not Dom purify the, uh, Dom logger plus plus
+masterclass that we did for, for the pod was like one of my favorite masterclasses we've ever done.
+That was just so fun and so insightful. So thank you so much for doing that. Now you're,
+now you're a guest in the masterclasses and a guest on the pod. So, um, definitely excited for that.
+Um, all right, let's go ahead and jump into, um, the main topic for today, which is Dom purify.
+Uh, and it's, it's various misconfigurations and bypasses. Um, Kevin did a two article series on
+Dom purify and the research that he put into Dom purify on his blog, mizu.re, which if you haven't
+subscribed to you should, and definitely go follow him on Twitter at Kevin underscore mizu. Um,
+and so the, these articles were broken out into two, um, two articles. The first one was mostly just
+focused on, on research and, uh, the, the Dom purify bypasses that, uh, that you worked on and
+that other people have worked on sort of documenting the sort of state of the art as far as Dom purify
+bypasses go. And then the second one was taking that research and then building on upon it with
+misconfigurations and, um, taking some of the knowledge from, um, the, the research that was
+done in the beginning and applying those with misconfigurations to find ways to exploit Dom purify in,
+you know, really hands-on production environments. Um, and when I, when I hit you up about this,
+I told you we were going to do, we're going to do things a little weird, you know, like first we
+jump into the bug, then we go into the introduction and we're going to skip, we're going to skip to the
+end to, um, first talk about the Dom purify misconfigurations. And the reason we're doing this
+is because, um, listen guys, I'm a, I am a client side guy. I love client side stuff. I don't profess to be
+a particular expert in mutation XSS, right? Which is a lot of what this is, but that first article is
+dense guys. Um, and, and it is tricky to, it don't get me wrong, Kevin. It is, it is amazingly done,
+especially with the way you embedded all of the, um, you know, Dom stuff into what's the name of that,
+that thing from, yes, we hack that you, uh, Dom Explorer, which has been developed by a bit.
+I love that. It's so, it's so clean, but it's a little bit difficult to convey that via the audio
+medium to the listeners. So what we're going to do is we're going to hop into misconfigurations.
+We're going to talk about misconfigurations as much as we can, um, until we start needing some of that
+requisite knowledge from the first article, then we'll go back, hit that, and then we'll finish up
+the misconfigurations, which are most, um, relevant to the bug hunters. Does that sound good? Am I crazy?
+Yeah. Perfect. Okay. All right. All right, cool. So let's, let's do it. All right. So we're going to start
+with, um, a little bit about Dom purify. Correct me where I'm wrong on this. And then I'll, I'll,
+you can kind of take the explanation a little further. Dom purify is an HTML sanitization library,
+the, the premier HTML sanitization library. Um, and essentially what it allows you to do is take
+untrusted user input, sanitize it, and then put it into the Dom. And this should allow you if the,
+the configurations in Dom purify should allow you to do that without fear of, um, XSS occurring from
+that, that HTML sanitization. Um, and there's some, there's some questionable defaults, I think,
+in, in Dom purify with style and with form and stuff like that. But by default, it should pretty
+much clean everything up. Um, is there anything, do you have anything else you want to say on like
+what Dom purify does and how it functions and what makes it unique as an HTML sanitizer?
+Um, yeah, probably because I think Dom purify is said is very special because by default,
+uh, Q53, which is the, the company which has developed them purify, try to provide not only a
+basic sanitizer, but one which allows by default has as much stuff as they could allow. So what a task,
+man, what a task. Like they could have tried to simply put a sanitizer which only only allows like
+H tag or I don't know, I don't know, but actually they do allow the edge vision and space, the math
+MLM space, the HTML space. And I think that this is probably one of the only HTML sanitizer that
+actually allows that. It's crazy ambitious for them to do that, man. It really is. Yeah.
+Yeah. Um, so yeah, it's used all over the place. We see it everywhere. Um, very, very cool project that
+cure 53 put out. I have so much respect for those guys. Um, really, they, they do an amazing job. Um,
+and one of the other things that makes Dom purify unique is it can be run on the server side and the
+client side, right? Um, so is it more common for us to see it on the server side? Is it more common
+for us to see it on the client side? You know, when you're approaching Dom purify re from a research
+perspective and also as a bounty hunter, you know, uh, what, what have you seen? What's your experience
+with that, Ben? Um, actually most of the time I think it's being used on the client side. Um, I did try to
+see some statistics like on NPM, uh, the number of key downloads and like on CDNs, but actually,
+if you look at NPM, it's represent both client side and server side usage. And on CDN, you can't
+really have the number of applications that are currently using it because you just have the number
+of individual conviction. Yeah. Um, but 800 million monthly. Yeah. That's a lot. Holy crap. That's insane.
+That's yeah. Things don't pre-ify can only be used on a JavaScript backend. I think that's
+it probably mostly being used on the client side. Yeah. Yeah. That, that makes sense. It dude,
+let me just say to the listeners as well, like perhaps for you guys, as you're listening, wherever
+you are, whatever you're doing, you know, it just sounds like a good episode, right? You know,
+you listen to the episode, you're like, wow, that's a great episode. This episode is so well prepared.
+Kevin, thank you for going into the doc here and do it. Like I just threw a question in there. I said,
+more common server side or client side. And he like breaks down, grabs all the CDN statistics,
+the NPM statistics, like the prep that went into this is amazing. So thank you. Thank you for doing
+that, Kevin. I have to shout you out. Um, thank you. Um, okay. Awesome. So we're, we're dealing with
+it mostly on the client side. So what, what we might expect to see with that, let's say, for example,
+let's say it's a stored XSS. We, we, um, you know, we send some, some HTML to the server side,
+it's stored in that format. And then it comes back to the client side, you know, maybe as the result
+of a fetch request and we see the valid, you know, uh, XSS payload in the response from the server.
+But then by the time it hits the, the dom it's sanitized. Right. And that's, that's like a classic
+scenario where you'd be like, okay, yeah, there's some sensitization happening at the, at the client side
+level. Um, okay. I see where we're at there. Um, so I guess, man, there's so many ways that we could
+go with this, right? Because one of the things that I want to ask you about is like, okay, let's talk
+about the server side for a second, because it's so much more impactful if we can get an XSS on the
+server side, right? Like you can, if you can get an XSS on like a headless browser, that's like
+generating an invoice or something like that. A lot of times you have a route to SSRF and RCE. Um, so let me
+ask you this, if you're in a blind scenario where it's just generating a PDF and you can see the
+output physically, right? But, but you can't actually inspect the, the dom. How do I fingerprint
+whether it's dom purify or not? Is there, um, is that like, I don't know if that's like a crazy hard
+question or not, but does anything come to your mind? Not really. Actually, there is a trick for that,
+uh, that I've used several times in bug bounty. Uh, if you do have like an HTML injection in a PDF
+and you don't know really what happened with your inputs, you can just use the plain text tag,
+which is a deprecated tag, which is going to convert the end of the dom as raw text.
+So that way you will be able to see like the text version of your HTML inputs.
+And like, that's where you will be able to see what's going to be sanitized, what is going to be
+replaced. And I've seen a lot of time, like very bad sanitizer being used in that context. And simply by
+being able to see what happens, you see like, what the fuck there is an A replace it there.
+And you just need like to, to update your payload to have something working.
+Wait, wait, wait. So, so, and does, let's say it is dom purify. Will the plain text
+tag make it through dom purify or is it, is it in a different environment?
+Um, it depends because if your PDF is generated, for example, with an headless browser,
+uh, then the purify is going to be used, uh, before the input being inserted into the dump.
+So what you are going to see is the sanitized version of the inputs. That's, uh, this time in text.
+So then you can like play with the out the text output version of the purify to see if there is
+some patterns that might fit them purify or I don't know, another sanitizer, dude,
+then start playing with it.
+That's a great, that's a great tip. Okay. Very cool. And then when we're,
+when we're fingerprinting dump purify on the client side, I see you've got another trick here in, in,
+in the, in the doc relating to the CID, uh, aspect of the href. Can you tell me about that?
+Um, I might be wrong, but I think that them purify is one on the own of the only sanitizer that's
+a loss by default, the CID shimmer in the hashtag tag attribute, I think. Okay.
+But honestly, if you want to see if, if it is the purify on the client side, there is so many ways to
+just simply check into the sources. You can just open up the sources and control F for
+Dom purify. It's not, it's not ever like you haven't run into anything where it's obfuscated
+or anything like that before. Okay, cool. So it should be pretty easy on the client side. You just
+control that for it. Boom. Um, if you're, if you're dealing with something, you know, where you can
+inspect the, uh, the href, um, we can use CID if it's like server side or if it's, um, uh, client side,
+and then you don't feel like using your resources tab, I guess. Um, okay, cool. So that, that makes
+sense. Um, now let's go into a little bit of the misconfiguration step that we sort of talked about
+now that we've kind of set, set the, set the tone. Um, so one of the things that you said moving into this
+second article was that you sort of ended the first article with, okay, now Dom purify security
+solely relies on one regex being executed correctly. Um, what is that regex and like, why is that regex
+so important to Dom purify security? Um, actually I will try to explain it without, uh, needing to explain
+everything that has been covered in the first article, but yeah, in short, when you want to do
+mutation XSS, most of the time you will hide the payload within an attribute value. Um, so we'll need to use, um,
+something like a command closure or maybe a style or a title closure tag. And those are like mandatory if you
+want to do a mutation XSS.
+Because those are different contexts on the, on the inside of those tags. Is that the reason for that?
+Um, more or less, yes.
+Like you can't have HTML tags inside those?
+Uh, actually you do can, but it's, it's like on the, when you are using an HTML sanitizer, you have
+like two parsing. So the first one is what Dom purify is going to see. And the second is what the
+Dom is going to receive.
+Right.
+And when you are going to do mutation XSS, you want to have a different context between the browser and
+the profile. And the, the goal in the end is to have a context, which is going to break, uh, an HTML
+attribute and create the XSS. So one way of fixing it is to limit the attribute value.
+And I think it's a good way actually, but it's still like not perfectly limited because if you
+find a way to bypass that regex in the end, um, the mutation is still present.
+Okay. Okay. So what, what you're saying there is that a lot of times the, the flow, the strategy that
+we use to get these mutation XSS is we put HTML tags inside of the attribute, right? Because we, we can
+use those characters, you know, the angle brackets, that sort of thing inside of the HTML attribute.
+And then what we try to cause with the mutation is that, that H that attribute moving from an attribute
+state to a, to an actual HTML processing state. And then that's where the mismatch occurs. Is that accurate?
+Exactly.
+Okay. Perfect. And so what Dom purify did, and I did kind of give you an impossible mission here. I'm like,
+explain the regex without explaining the first part. Great answer. That makes sense. Um, and the reason
+why that's so important, just trying to quickly summarize that, that first part is that, um, there,
+there's a pretty well-documented way to bypass, um, Dom purify. If you are able to smuggle HTML tags
+inside of that, that regex, right? Um, so the regex that they implemented is simply to remove all HTML
+like tags, or maybe just a set of HTML like tabs from the attribute.
+Not exactly because your 53 still want to have something which doesn't limit the developer at all.
+So that's why they haven't implemented that regex before while, uh, there is a lot of research that's
+have already made a been made in the past. So they decided to only limit to style title and comments
+tags, uh, which are being used in mutation XSS. So you, you still can use like image tag in an
+attribute. You won't be limited, but if you try to do something malicious, it won't work.
+These guys, these guys are legends, man. They really, really do try to go for the minimum,
+you know, secure, maximum secure, but with the minimum restrictions that you can possibly have.
+Um, super cool. Okay. So we've got no HTML comments, no title, no style in our, in our HTML attributes.
+Um, and if we can figure out a way to not make that regex hit, then we are good to go, um, to, to trigger
+that, that, uh, that mutation XSS. Um, I just need to charge my computer. Excuse me.
+Oh, you're good. You're good. You're good. We can, we can cut or we cannot cut, you know, we'll see.
+It's fine. This pod is very chill. Okay. Perfect.
+No, you're good. Yeah. Um, okay, cool. So that makes sense. Now let's move to the misconfigurations.
+And some of these misconfigurations are like clear as day and other ones utilize this, this like regex
+bypass, um, to, to cause the mutation, um, and, and do trigger the excess. So first one on the list,
+dangerous tags, uh, a dangerous allow list. Tell me a little bit about that.
+Um, well, Domplify aims also to provide a lot of ways to be configured to a web developer.
+So when you are using it, you can like modify which tags are being allowed, uh, and which tag you want
+to add to the default other lists. So, those are commonly used, but most of the time you won't see
+any dangerous tag because, uh, obviously the developer wants a low like a script tag.
+Hmm.
+But sometimes who knows, maybe, um, they could be used in a way that, uh, they shouldn't be used.
+Um, so you have, we have the list on the doc. Uh, maybe you want me to cite them.
+Yeah. Yeah. Let me, let me go ahead and share my screen as well. I probably should be
+sharing my screen. Sorry, Christian. Uh, my, my video editor is always like, dude,
+just share your screen so we can give these people some visuals. Um, okay. Let me, let me jump to
+this. Yeah. So what have we got here in the, in the, yeah, what is the default allow list here?
+Um, I could give you the link, but it's present on the temporary file code.
+Okay. Gotcha. So the, the default allow list is pretty, is pretty liberal.
+Um, let's see. Yeah. Almost every HTML tag are being allowed, like, except maybe scripts,
+no scripts, iframe or, um, dungo stuff like that. But. Right. Okay. And, and so when they,
+so we have these, these several configuration settings that are passed into Dom Purify,
+allowed tags, allowed attributes, add tags, add attributes. Okay. So if, if we're using allowed
+tags or allowed attributes, we are overriding the default list, um, and allowing, uh, only these
+specific tags. So you're sort of limiting the amount of tags that are there. Yeah. How, on the other hand,
+if we're using add tags or add attributes, then that's adding it to the already default allowed
+list and creating, making the policy a little bit more lax. Is that accurate?
+Exactly. Exactly. Cool. And, and I think, I don't know, uh, now that I'm in here,
+I'm remembering it. Um, but yeah, I think it was right here. Dude, this, this is what I'm talking
+about. When, when I am reading articles, this is exactly the kind of shit that I want to see. Okay.
+So, um, in the beginning of, of this article, I should have put this before we started in the
+miscalifications. He says, Hey guys, here is what you should do. If you're ever looking at a Dom
+Purify miscalification. And he gives you a string to search for that will just take you directly to the
+beginning of the sanitize function in Dom Purify and that sanitize function. You know, if you just
+inspect that sanitize function, you can easily grab out the configuration values that are being passed
+into Dom Purify. And then like that is just such a valuable tip. Okay. Like it's just amazing because
+it creates an easy entry point. You don't have to source jump through all the code. It's always,
+you're always going to go to the same spot. If it's Dom Purify, you're going to set a breakpoint or a log
+point right at the beginning of that sanitize function. And then you inspect the
+configuration values and look for any of these misconfigurations that we're talking about
+further down in the, in the article. So awesome stuff there. Obviously the, the ways you can shoot
+yourself in the foot with the dangerous allow lists would be like allowing something like script,
+or like onload or anything like that for the attributes. Is there anything else sort of that we
+should be on the lookout for with these allow tags, allow attributes, configurations?
+I don't think so. Because anyway, even if you allow tag, it would be sanitized by Dom Purify in the end.
+So it needs to be a tag that's have a direct impact with the Dom like iframe source doc or something like that.
+Hmm. Hmm. Okay, solid. Yeah, that makes sense. Okay. And then later down in that same section, you're talking about
+um, the default setting for Dom Purify, which is pretty, pretty liberal, like we talked about is allow data
+attributes and allow ARIA attributes. So essentially you can set any attribute as long as it starts with
+data equals or ARIA equals. Um, why are they doing that? And why is that important to know for bypassing Dom Purify?
+Hmm. I think why they are doing it is like everything that they are doing with Dom Purify, they want to have
+something flexible. And why this is important in the context of bug bounty? Well, I, there is an example
+in right after this, this snippet, but there is a lot of HTML gadgets, which can be found like with UGS,
+which is present on Ruby framework, by default, I think. Yeah, by default on Ruby. Yeah. And yeah,
+a lot of data attributes can be abused to like hijack some JavaScript flows and trigger on XSS,
+which Dom Purify won't be able to see. Hmm. Hmm. Yeah. The data attributes, I think I've seen this
+a couple of times. Uh, I think it was with, um, with Johan, Johan Carlson doing some research,
+um, that one of the best ways to bypass in a highly CSP environment, I think we actually talked about
+it when he came on the pod, um, is these are these sort of gadgets, right? Where it's like, okay, I
+can't, I can't run script, you know, unsafe inline or anything like that, but I can, you know, add
+something to the Dom with a specific data attribute or whatever. And there's something, some observer
+sort of watching the Dom and saying, okay, when this gets added, we're going to trigger some, some code.
+Right. And then it just becomes a gadget hunting where you're like, okay, you know, what can I add to the
+Dom that changes the state of the Dom that changes the state of my specific tag that triggers some
+code that accomplishes a malicious purpose. Um, and I think, uh, if I remember correctly, uh, Domlogger
+plus plus is one of the best ways to sort of find these gadgets, right? So like, have you, have you,
+um, cause you can, you can hook after something's been added to the Dom in particular, right? Can you,
+can you talk a little bit about that? Um, yeah, I've made a, um, a configuration which should be
+available on the GitHub, which basically aim to start logging everything which is happening after
+a specific, um, event have been, uh, triggered within the Dom. So it could be like, uh, you start
+logging in when your inputs reach, uh, the documents and that way you will be sure that you won't have any
+false positive when you are auditing some codes. Hmm. So you say, okay, um, there's going to be a tag.
+There's going to be an, an a tag with the data dash. Justin is checking something, you know,
+ID. And then we hooked that into Domlogger plus plus, and then everything, as soon as that element
+hits the Dom, then Domlogger will start going, you know, and it'll start, it'll, you like, you like
+how my brain and then Domlogger is going to go. Um, and then Domlogger will start logging everything.
+And then we'll, we'll, uh, be able to see what is happening after that, uh, that hits the Dom so
+we can find, um, the, those gadgets. Okay, cool. There is also something which could be interesting
+to look for the auditors, which is the JavaScript event delegation. So basically there is several
+ways to create an event in JavaScript. When, one way is simply to put the event on a specific tag,
+like, uh, the on click events, but another way, which is, um, exactly what UGS is actually doing
+under the hood is you will put the on click events on the documents. And at the time you click on the
+body, you will check all the, um, event dot target nodes and check if one of those nodes have a specific
+attributes or whatever. And the main difference with, um, the first way to set an, uh, an event is that
+the, um, you can have like an HTML injection, which occurs after the, the event have been created.
+Because anyway, the event is present on the documents, but when, when you are going to click,
+when you are going to click on the, the node in the end, it will simply check if it has the property
+that you want him to have to trigger the events. So, so I guess maybe, is this what's happening when
+I'm not sure if I, if I tracked with that, but I'll try. Um, is this what's happening when I'm like,
+oh, okay, I've got like this button. I want to see what happens when I click this button. So I like go
+into dev tools and I click on it and then I go to like events and stuff like that. And I try to find
+the click event and then there's nothing there. Right. Yeah, probably.
+And what's happening is it is the click event is actually happening at a higher level.
+And then it's, it's saying, okay, what's the target of that event? Oh, it's this button.
+Now I'm going to register that callback. Is that dude, I've always wondered why that was happening.
+I'm like, how are they triggering something if there's no on click event? That makes, that makes
+sense though. Yeah. Because when you click on the page, it's going to trigger the events on all the
+elements that are related to that action. So putting the event on the document works. And this is why
+um, you are able to abuse the UGS gadget actually, because when the page logs, uh, UGS is probably
+one of the first thing, which is actually being executed. Um, but even if your HTML injection happened
+at the end, you still be able to abuse it because this is how actually the event is being used.
+Dude, that's, that is really helpful. That is so helpful. Kevin, dude, this episode is already
+amazing. I've, I'm, I'm hyped. Um, I learned so much stuff already. Um, okay. Any, any final comments
+on this, um, on this dangerous allow list section of the misconfigurations?
+I don't think so.
+Okay. Let's move on to the next one then dangerous URI attribute configuration. And when I saw this dude,
+I was like, hell yeah, a regex, you know, like, like this is what we love to see as, as, um, as
+hackers. It's like, wow, if there's a regex people always mess that up. Um, and it's interesting too,
+because I don't know if this was intentional or not, but like, um, the allowed URI regex that you
+put in the thing, you know, it, it has the unescaped dot there. And I, whenever I see a dot
+without a backslash in it, I'm like triggered, you know, obviously it has, doesn't have the, uh,
+the carrot or the dollar sign as well, which is what you exploited here. But it's, it's whenever
+I look at this regex, which, um, for anybody who's listening on audio only, uh, is literally just,
+you know, a domain, um, mizu dot re which is where his blog is hosted, but the dot isn't escaped.
+My brain just goes triggered exploit that. Um, um, so what is this allowed URI regex, um, uh,
+configuration that can get passed into, um, Dom Purify? Um, I'm not sure to understand the
+question, but like it allows you to simply overwrite which links can be used, um, in Dom Purify.
+Um, so basically by default, Dom Purify has a pretty strong regex, but sometimes you might have
+something a bit more custom. I've seen it on several websites and yeah, I don't think that developers
+understand that they are overwriting the default value and they might be forgetting the dollar at
+the beginning, uh, at the end, I think. The dollar at the end. Um, yeah, there is a lot of ways to
+be as it actually. Okay. So, so, so what this does is it overrides the, the URL regex, which is pretty
+strict, although it does include the CID thing that we mentioned before, um, that that's default to,
+to, um, Dom Purify whenever it's put in like an H ref or something like that. And the example that,
+that we have here is they just provided their, you know, you just provided your domain, which I could
+totally see happening, right? They'd be like, Oh, I just popped my, uh, my headphone cord out. Um,
+but I could totally see that happening, right? Where it's like, ah, I only want this to be able to point
+specifically towards my domain. No other links to any other sites on this, uh, you know, in this specific
+setup. Um, but what they forget is that this is a holistic regex. So it needs to have the, the
+dollar or the carrot at the beginning, the little upward arrow and the dollar sign at the end in
+order to match that whole, whole flow. So what you did to exploit that was you put JavaScript colon alert
+one, and then you just get commented out the rest of the line and then put in the value that they
+wanted to see. And that matches the regex, which allowed you to, um, pass through a malicious, uh,
+href into your attack. Um, that, that, that makes sense. Um, and, and then is this only,
+is this regex only for the a href, um, attribute or is this other used in other places as well?
+Uh, no, it's for every, um, like your attributes. Um, so the href attribute of the use tag is going to be
+involved as well. Uh, the, um, action, I think, um, every attribute that needs to have a, um, a URI are going to be impacted.
+Okay. Very cool. And then what is this, um, add URI safe attribute, uh, setting?
+Um, it's mostly the same. Honestly, I never saw this being used somewhere, but it was important to be, to be mentioned.
+Um, so this, this option allows you to say, Hey, um, that specific attributes, uh, is not safe and you don't need to check it anymore.
+Oh, okay. So basically.
+Just don't worry about it. Uh, we got it.
+Yeah, exactly. Wow.
+You just downgrade the, uh, sanitization in some place.
+That's, that's a, that's an easy one to look out for. And all of these will be present in that sanitize function where we put that, that breakpoint, you know, at the beginning of the sanitize function.
+Dude, this is, this is easy, man. You make it too easy, Kevin. You know, one of the things we talked about on the pod before, and I even shouted you out for this, um, was that there, there are a lot of hackers, um, that have done this really cool thing where they have become the go-to person for one thing.
+Right. Classy example of that is, uh, Alex Chapman, who is the, the go-to guy for anything headless browser. Right.
+And I think you've done the same thing for Dom purify. You know, if I've got a Dom purify scenario, I'm just like, yep, it's going to go to Kevin right now.
+But now Kevin, I could just load up mizu.re and look at this methodology and you made it too easy to, to know how to bypass, um, Dom purify.
+But, uh, really do appreciate the, the, the contribution to the community.
+Um, yeah.
+Okay. So let's, let's go to this next one.
+I think there is something important to be mentioned, uh, because, uh, since the beginning, we are saying that it's, you can easily retrieve the option passed to, um, document.sanitize call.
+Yeah.
+It's important to remind that each time Dom purify is being used, it might have a different configuration.
+Like I've seen it a lot of time.
+Uh, we even abused this, uh, once with, uh, Matt Amber, uh, on the back, but, um, yeah, it's not because you see a specific configuration that is safe, that the next call will be safe as well.
+Hmm. So it would be interesting then to be able to do like a Dom logger, um, plus plus hook at that sanitize function.
+And I, and I told you that before, and you told me some problem with that and I can't remember what it was.
+What was that problem?
+Actually, there is some way to hook the sanitize function.
+Like you can hook for a Dom parser prototype, uh, parse from string, which is used to parse, um, the HTML in the end.
+So we, you will be able to see when your HTML input is being passed.
+Um, but if you want to retrieve the configuration, the problem is that, uh, Dom purify could be initialized anywhere within the JavaScript.
+And actually it's almost impossible to retrieve a local viable, which is, uh, used somewhere you do, you don't have information about.
+Yeah.
+That that's interesting.
+Cause right.
+Like even if we did something like, okay.
+One of the first lines, I think, I mean, this is how you, you find the sanitize thing is like doing a string run.
+Even if we override the string replace function to do something that we're going to do, it's, you can't jump up that extra call in the stack to go into the, okay.
+To get access to the local variables in the Dom lugger plus plus sanitization or the Dom purify sanitization function.
+Okay.
+Yeah.
+That's tricky.
+Okay.
+So you, I mean, you kind of have to do it a little bit manually, um, each time.
+Yeah.
+Yeah.
+You can simply use a lock points at the beginning of the sanitize function and just look into your dev tools.
+If there is any configuration that are being used, which are dangerous.
+Yeah.
+That, that makes sense.
+Okay, cool.
+Let's jump into this next one.
+Um, bad usage, not enough context.
+As I understand this, this is not using Dom purify how it's intended to be used.
+Um, and essentially it's adding some, like text area or some no script style XMP.
+You listed a bunch of tags here that, that could affect how Dom purify will be able to effectively sanitize the user input.
+Um, uh, before, you know, after in a pending that after the sanitization already occurs.
+Um, is that accurate?
+And what have you seen this often?
+This seems like this would be really, really common.
+Um, honestly, I've mostly, I've seen it in CTF challenge.
+Um, but I still believe that, uh, having a sanitized inputs, which finish in a title tag might be possible.
+Just people absolutely don't look into the title tag because they assume that it is safe most of the time, I think.
+Um, but yeah, the, the problem is that when you're using Dom purify, uh, mostly on the server side, uh, you will provide him only parts of the body as a context.
+So we'll, you will like sanitize the user inputs, but that's user input is going to finish somewhere within the page.
+And when the server responds, um, to the browser with the whole page, that time the browser will pass everything at once.
+Mm.
+And yeah, if you put like the output of the verify of something into something that draws, then, uh, you might break everything.
+Okay.
+So the reason why this is bad in the specific scenario is, um, the, the code that you gave here was that it sanitizes the user's input and then places it inside a text area tag.
+Um, and a text area tag prevents the, the actual, uh, content inside of it from being parsed as a HTML tag up until the next, the closed text area tag.
+So it's just, it's considered to be plain text.
+So then what we do, we pass in a, um, a div that has the ID or whatever other approved attribute of closed text area.
+And then whatever our, our XSS payload is that will be permitted inside the attribute because the, you know, they've got to be super permissive with their, with their attributes.
+Exactly.
+
+Actually this since three dots one dot three, it doesn't work anymore with Thailand title as we've said at the beginning.
+Okay.
+But they still have decided to leave text scripts and also tag being a load in an attributes because they do want to have something, uh, which don't limit the developer in the end.
+Wow.
+Yeah.
+That's amazing.
+So then, so then when it, when it is added to the Dom with the text area, the, the div tag, which we previously had, it is just plain text.
+It's not a, it's not a, a tag.
+So the, the ID attribute isn't being processed up until, you know, the, the closed text area.
+And then our image tag that proceeds that directly is being parsed as HTML.
+And that's where the bypass works.
+Okay, cool.
+So the, the TLDR of all that is look at where your specific sanitized output is being placed and try to manipulate the, the payload that's going through, um, uh, Dom purify.
+I keep on wanting to say Dom logger cause why are they so similar Kevin?
+Um, the payload that's going through, uh, Dom purify to actually fit that context that it, that it's in that, that may allow for some additional bypasses.
+Okay.
+Solid, solid.
+Any, anything else, um, that the user should know about in this specific session?
+I see some stuff with, uh, with Jason here.
+Um, this one is a bit more specific, but it's not working anymore on the latest version.
+It was a bug that I did found, uh, in that bounty.
+Um, but I think it's still interesting.
+Um, it was a case where, uh, Dom purify was used twice in a row with a user inputs.
+And what's your user inputs right next to each other.
+I feel like that should be pretty common.
+Yeah, exactly.
+And what you can do in a search specific version is thanks to the first HTML injection, you hijack the document get element by ID to this time, um, puts an 8.3 tag.
+So now the second Dom purify Sanita is going to be used not in the HTML namespace, but within the 8.3.3.2.2.
+You was able to simply bypass it.
+Just because it was using it twice.
+So it's a little bit of like, it's not necessarily Dom clobbering, but it's like a little bit of like a query selector or a get element by ID selector, um, hijacking.
+Yeah.
+In the page.
+So, okay.
+If there's multiple, there's multiple calls to Dom purify and you're able to hijack one of those calls, then that may allow you to swap the namespaces and trigger the XSS.
+Okay.
+Dude, little side tangent.
+I love query selector and, uh, get element by ID selector, um, hijacking.
+That is just such an interesting bug class.
+And you can trigger so many interesting pieces of functionality with that.
+It's crazy.
+It really is.
+Um, all right, let let's, let's jump down into this, uh, into this next one.
+Okay.
+So we've got bad usage replacing the output.
+Yeah, dude, this is really, this is a really cool one.
+And I think this is a, this is one that sort of applies to, um, security in general, right?
+If you do sanitization and then after that sanitization, you modify it in some way, right?
+Further than that, that really can, um, affect the integrity of the sanitization.
+So tell us a little bit about the bad usage and replacing the output misconfiguration.
+Um, actually there is two examples.
+So in that section, um, the first one is related to an old CV, which have been found in 2020.
+Um, so shortly, um, jQuery in a specific, in oldest version was, uh, doing some kind of specific replacements in the HTML function, uh, to make it like, um, compatible with the old xhtml, uh, parsing.
+So there was making replacements with the slash and, uh, greater than to force the tag from being closed.
+Hmm.
+And so when Masato have found that, um, um, core 53 decided to fix it and to put some very strict rules about that to ensure that the verify can't be bypassed, uh, because of that issue, because jQuery was used almost everywhere also.
+And the fact is, um, since a lot of, uh, protection have been added in Domplify, um, since 2020, they decided, um, something like a year ago to remove that protection.
+And now, thanks to the recent bypasses, if, uh, the application is using jQuery with an older version, which, um, is still vulnerable to that issue, then it's possible to use the recent Domplify bypasses research to bypass Domplify.
+Again.
+Wow.
+Okay.
+So I'm, if I'm looking at this correctly, it says by default, since that version, the filter is deactivated.
+So you are able to use this, this, uh, alternative close app, uh, tag.
+Is that, is that right?
+Exactly.
+Okay.
+You should be able to see in the snippets that I'm using a style slash instead of a slash style.
+Right here.
+Okay.
+Yeah.
+So that's what I'm saying.
+Yeah.
+Yeah.
+Okay.
+So that's what I'm saying.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Thanks to this, if the attribute is being too uppercase, you can hide a style tag from
+the regex, which is going to then be converted to the ASCII equivalents because of that normalization.
+Dude, that is just... I want to know what the code point for this is. Okay, it's Unicode
+0.009C that gets normalized to an ST when it goes to uppercase. And I think there's another one here too. There's two that kind of, when they go to uppercase convert to ST. What a gift from heaven that is. Right? Like that we have out of these like, what is there? Like 10 to 15 characters that actually convert to something completely different when they are uppercased. One of them goes to ST, which is exactly what we need for a style tag.
+Oh my gosh, dude. That's amazing. Okay. So then somebody is just simply doing an innocent two uppercase on the contents of this attribute. And we can use that to bypass dump purify by creating a style attribute, which is one of those ones that we're not allowed to have in the attribute. Is that right?
+Exactly.
+Man, the hits keep coming, man. That is very cool. And yeah, I think for anybody who is listening to the podcast and didn't know about this too uppercase thing, one, you should either go back and listen to the podcast that you haven't listened to where we've talked about this, or you should try to take this opportunity right now in this moment to remember that forever. Because that is extremely helpful.
+Because that is extremely helpful in so many scenarios, this Unicode normalization, and this alone can really result in some crazy bounties. You know, being able to do this in a email or like a username or something like that can allow you to just get ATO super easy.
+So Unicode normalization is definitely something that any serious hacker, web hacker in particular should look into, I think.
+All right. Node manipulation, insert before. What is this one?
+What is this one?
+So this one is mostly related to the load and purify applied to sanitize an HTML input.
+So as we said, it will iterate over the DOM from the top of topest node to the bottomest one.
+Right. Yep. Yep. Yep. And so if within any hooks, the developer decides to take a node and insert it above the current node, then this is something that Dumprify won't be able to see at all because it's going to continue downwards.
+Right. Okay. So if it has a reference to a specific div or something like that, that's above it, maybe by an ID, and you just say, insert before that, boom, we've now jumped in effectively hidden that node from Dumprify so it can't be sanitized.
+And this can bypass Dumprify in many ways because imagine that this happens, I don't know, in the sanitize element function and the inserted node isn't dangerous at all.
+Like it's just a simple P tag that you control, but that P tag has the regex bypass, then it's enough to bypass Dumprify.
+Dude, it's crazy to see, it's crazy to look at this example here and just see, see like the Dumprify output in Dumprify just be a perfect, uh, XSS step.
+Yeah. That's crazy.
+And like, you can play with the, with the integration actually, if you want to update it, uh, in the bar, it's actually working in live.
+Dude, that freaking Dumprify is so cool, dude.
+Yeah. I love that.
+Very cool.
+All right, cool. So we got to keep in mind the order of, um, the sanitization that's occurring.
+And if there's any elements being inserted into a node that has already been sanitized, then, then that is not going to get touched at all.
+That makes sense. Easy peasy. Um, let me see how many more of these we've got left here.
+Uh, maybe the name, the node name normalization is interesting.
+No name case confusion. Is that the one?
+Um, not the base base hash have pollution. This one is very technical, very deep, but, uh, the impact is, um, not that much.
+Yeah. And we sort of already talked about it, right? This is using a base tag to affect the, the fully qualified URLs of the, um, items, the, the relative URLs in the body of the DOM that is parsed by DOM purify. Right?
+Uh, yes. But, but not only there is also the, the fact that I'm abusing that DOM purify is trimming all the attribute values to have like some collision between what it is going to use, then what the DOM is going to receive.
+But in the end, uh, this is it's, uh, you have a way to, uh, control the, um, final hash have, which is going to be sanitized within the hook.
+Wow. Damn it, Kevin. All right. Fine. Well, we'll have to come back to that. That one is very, very technical. I do love the output of it though. This is just a beautiful exploit.
+Um, so I'm gonna, we're gonna leave that one, um, to the listeners to go check out themselves.
+Yep. And then we'll talk about this one.
+This one is node name namespace case confusion. Is that the one you, you wanted to talk about?
+Yes, because I think that one is, um, pretty common. Like I've seen it a lot of time in bug bounty.
+Um, well, it, it might sound a bit stupid, but when you try to access the node name value, depending on the namespace,
+depending on the namespace of, uh, the node on which you're trying to retrieve that value, the case is going to be different.
+Like if you try to access the name in the HTML namespace, it's going to be uppercase.
+But if you try to do the same within the HVG namespace, it's going to be lowercase.
+Why?
+I don't know.
+That's crazy. Is that something specifically done by DOM purify or is that a part of the, like, HTML spec?
+Uh, it's part of the HTML specification. Like this is something that browsers do.
+Dot node. Yeah, of course. Dot node name. Okay.
+Current node. We're actually, we're using the browser. Wow.
+Okay. So that's weird. So in, and if we hit dot node name, typically, um, in the HTML namespace, it's going to be uppercase.
+But if it is in the SVG namespace, then it's going to be lowercase.
+Exactly. And interesting.
+I've seen some application using that specifically to sanitize style tag, for example, to sanitize the contents and limits what the user can do.
+Uh, you, you actually sent me an example, right? That's already in the article, but yeah.
+Yeah. Yeah.
+This is something very common. And by simply putting your style tag within the SVG tag, in case it's do not check it with two uppercase, then you will just bypass this condition and we're able to do a full CSS exfiltration.
+Wow. Okay. So in that output there that has SVG tag style inside of it, that's perfectly valid HTML, uh,
+Yes.
+Style tag that will execute on the page. Having it wrapped inside of an SVG doesn't like hijack the functionality of it at all.
+Um, I'm sorry. I'm trying to understand the question.
+That's fine. So, you know, the output here of the sanitization that you showed is SVG, um, and then a style tag, right?
+So the style tag is wrapped in the SVG. Um, but that doesn't affect the functionality of the style tag at all. The style tag still works normally on the pitch.
+
+Wow. Very cool. Very cool. Okay. Do you want to cover this last one? I know that this is like a DOM clobbering DOS, but I actually let's do it if we can, because I think this, you made a great point that DOM clobbering inside of an HTML, um, parser like this or sanitizer can have really bad effects.
+On applications. Yes. Um, so this, I think this kind of exploitation is still very specific. Like if you are trying to DOS, uh, Dump purify or any JavaScript library in a page that isn't visited at all, it might be useless.
+But, um, if you manage to use DUM clobbering to like, uh, DOS DUM purify within the chats, uh, then you will be able to block the conversation for all the user, which is way more impactful.
+Very impactful.
+And, um, when you are using as a developer before sanitize elements, um, in DUM purify, this specific hook occurs before the DUM clobbering check have been made.
+Mm. So if like the developer use any attributes, uh, function of, of a node, then you can simply clobber it on a form and DUM purify is going to crash.
+Hmm. Hmm. Okay. So it, it will, if there's any, if there's anything being done before sanitize elements, then that is before the DUM clobbering check. So you can just blow it up essentially. Wow. Okay. That, that seems like a problem.
+That, that seems like a problem. Yeah. I wonder why they didn't move the DUM clobbering check to before.
+Mm. It's complicated because they want the developer to be able to manipulate the node before it's being sanitized by DUM purify. Um, so I'm not really sure there is something they can do about that.
+Yeah, I agree. I agree. Okay. Um, let's jump into the miscellaneous category here. Um, the regex that this is the regex, by the way, for everybody who we've been
+I don't know that I've showed it on the screen yet. My bad. Um, this is the regex that everybody needs to know. Um, uh, and I'm sorry for people that are, uh, you're just, you're screwed this time. Um, I'm not going to read a regex out loud to you. Um, but the, the code that uses this regex is actually prefixed by an if statement. And, uh, the if statement says, if safer HTML and, and regex test. Right. And then it goes through our regex. Um, so you say, you know, of course, if this is,
+false, if this is, uh, false, then we triggered the bypass. So, so when does that, is that a specific configuration that can be passed in?
+Um, yes, I actually have, I've seen it recently with a friend in bug bounty where, um, in a library, the developer was like using it because he wasn't able to use comments within the attributes.
+attributes. So when I first see it, I was like, okay, that seems legit, but yeah, you're just breaking the wall.
+Don't verify sanitization. And yeah, this is something that's, uh, is mentioned in the, uh, don't verify read me.
+Uh, but if the developer doesn't take it into account, the fact that there is a warning about it, um, then you can bypass it.
+Very cool, man. Very cool. So if they, if they pass in safer XML set to false, then it's just boom, game over. You're done.
+
+Okay. Um, there are a lot of other really cool things in here.
+Yep. Uh, um, let's, I'm going to do these two. I know I said that I was going to be done, but I'm actually not going to be done.
+Suck it listeners. You better keep listening. Cause this is cool shit. Okay. So, all right, this is it though. After this, I'm going to do this.
+This is it though. After this, I'll, I'll, I'll end it. I know we're, we're going long. Um, this misconfiguration is really, really cool.
+And this switches back over to the server side, right? This in the scenario where we are in the server side.
+Um, and what's being done is that there's a JS DOM that's just Dom is being used with, with Dom purify.
+Um, and just Dom is the recommended, uh, server side, um, uh, parser for, for this to be used in conjunction with, um, with Dom purify.
+Uh, but what do this is like really gold. If there is no content, um, type char set defined, right? If there's no char set defined for that specific Dom, which I would imagine would happen all the time.
+If people are just on the fly, sanitizing HTML, they're not going to set like a content type header or whatever.
+Um, then, then this would be resulting in a full bypass using, um, that sort of, what, what is the name of that research that, that came from, um, SC here? Let me see.
+Let me see it. It's encoding differentials. Why char sets matters.
+It's some research that has been made by Sona.
+Mm.
+But, um, yeah.
+Am I tripping here?
+Something fun about that research is that, um, this is something I have found like one month before Sona released everything.
+No!
+So I wanted that to Dom purify and, um, um, Cure 53 told me that this is some, not something that they could fix. This is something that had to be reported to Google.
+And actually I was just seeking, thinking that this is not something that's was going to be fine quickly by someone else.
+So I decided to play a bit with it with the, in the bounty and like something, a month ago, I see the world research here.
+And I was like, okay, great.
+But unfortunately,
+so you had it before research collision, of course it happens.
+Um, but what this, if I, if I understand correctly, this is that same research as well, that was talking about how, um, you can use like one of the Japanese character sets to, to trigger.
+Uh, is that, is that accurate?
+Right.
+Where it, where it, where it, it.
+That's one.
+Yes.
+It will.
+ISO GP 2022.
+Right.
+Okay.
+So what you're doing here is you are manipulating the fact that there's no, uh, char set set on the server side.
+And then using that fact to make the browser sniff the char set.
+And since dumb purify, isn't aware of that, then, uh, in JS dom, then it will, it will bypass it.
+Is that accurate?
+That's it.
+Wow.
+Dude.
+Yeah.
+Like, am I, am I crazy to think that this is going to be like super common, a super common bypass?
+I, I can't imagine somebody setting a char set like that.
+Like a lot of framework by default set a char set nowadays.
+Um, I think where it's going to be, um, the more presence is in file uploads.
+Hmm.
+Like if you can upload, for example, it's an exigy and it's being sanitized.
+Uh, most of the framework, when they do send the file, they won't set the char sets.
+Um, so this should be vulnerable all the time.
+Kevin, Kevin, I'm misunderstanding what's happening here.
+The, the, the problem is not with, so we also have to have a char set not defined at the,
+uh, when it hits the sink on the client side.
+Is that accurate?
+Um, not really.
+It's like when the, the browser is like loading the page, it do needs to not have a char set being defined.
+The browser, the final, like the final rendering of the payload.
+Um, no, I mean the HHP response, uh, in the content type response header, it do need to not have a char set for it to be sniffed.
+Right.
+But what I'm, what I'm wondering here is whether we can take, so there's two things happening here, right?
+It's creating a new, it's creating a JS DOM, right?
+And then it loads that into DOM purify and then it runs DOM purify sanitize on that specific string.
+Right.
+And that specific string has, um, the stuff to indicate that it's the Japanese care set or char character set.
+And then, you know, renders it.
+And then the output of that, it does that also need to not have a character set or can it just, can it be integrated into a UTF eight character set?
+And it's, it's fine.
+It's fine.
+It's like, um, it's, I think it's the, uh, like escape Charles, which is an, a basic ASCII character that you need to use to trigger the cut point to switch between, uh, the Japanese Charles and the ASCII one.
+Okay.
+So this is something that is going to be allowed most of the time by any text parser or sanitizer like DOM purify.
+Okay.
+So I'm looking at this code right here.
+This, this, you set the header text HTML here.
+Could this have the UTF eight character set in it or, or is that necessary to not have that?
+Um, it's not mandatory, but nowadays almost every frameworks to have it set by default.
+So,
+Right.
+So if it did have it, would the, would, would this clean not work or would it, or would it still work?
+Um, it won't work, but there is still some tricks that can be made.
+Like even if the content type is set to text HTML, uh, semi-colon char set is equal UTF width, UTF eight.
+Excuse me.
+Um, there is something funny is that, um, if somehow you can control the two first bytes of the response,
+you can use the, the BOM characters to specify the browser to pass it as UTF 16.
+And even if the chart set is defined as, as UTF eight, it still will work.
+So it's could be possible to be bypassed that way, but don't verify do not allows to use, um, like characters.
+Okay.
+Those characters.
+Okay.
+So I guess my question is this right here on this line where it says clean equals DOM purify.sanitize,
+and then passes in our specific input.
+Will the output of clean after this is done when passed to a specific or, or when passed to like a normal browser DOM with, uh, text HTML, UTF eight.
+Oh, okay.
+I get the question.
+Will that trigger an XSS or does the, the, the end browser also have to have a, um,
+um, no, no, no, no, no, no.
+Okay.
+Okay.
+Good question.
+Uh, well, that depends on the, uh, actual, um, like library that you are using in the context of the purified JS DOM.
+Mm.
+And by defaults, it do not execute JavaScript.
+Mm-hmm.
+So even if there is a way for you to trigger JavaScript within Dom purify, it won't be executed at all only because, uh, this is disabled by default.
+Okay.
+Okay.
+Uh, but if you are using, uh, for example, a library like happy DOM, which is present right.
+Okay.
+Happy DOM right here.
+This is something that can happen.
+Okay.
+So they specifically, so they say use JS DOM, but if you're using something else like happy DOM,
+then you can trigger JS execution inside of DOM purify sanitization.
+Yes.
+And actually this is sense.
+How do I manage to get an RCE?
+Because obviously the JavaScript execution occurs within the sandbox.
+Mm.
+So you can't really escape it.
+But the fun fact was, um, that's when you provide, um, to that passing library, uh, scripts with a specific source,
+it's going to use, uh, a sub process using, uh, node dash E to like fetch the file, reserve it, execute it.
+And the link that is provided within script source is single quoted.
+And why this is bad.
+Dude.
+That's nuts.
+Because the, within the pass and within the anchor, you can put single quotes, which won't be encoded by default within the, uh, URL URL.
+Yeah.
+So that way it was just able to hide, um, like node.js code directly within my script source.
+So you should be able to see it, uh, in the second snippet.
+Yeah.
+Right here.
+Uh, which are going to be executed, uh, um, directly within the library.
+That's crazy.
+It's like that, that, um, that old flash thing.
+This is what we always reference in these sort of scenarios where the way that you used to trigger flash based XSS, a lot of times was, was do like just, you could just close off the, it would just dump it right into a JS eval and you could just close off all the functions and, and stuff.
+That's crazy that this is happening with a happy DOM as well.
+And this is something I've found a lot in the bounty.
+Like, uh, sometime the developers simply reflects a different path within a JavaScript viable.
+But if you do that, uh, with a single quoted string, like you, you can just escape it using a single quote since it's not encoded.
+Wow.
+That's nuts, dude.
+How do you, I guess, then we go back to the fingerprinting problem.
+How do you figure out if they're doing it server side, what, um, Dom parsing they're using?
+Like happy DOM versus JS DOM.
+That gets a little trickier, right?
+Um, maybe if you like, create a local setup and you try to see some differences between the HTML parsing, you will be able to find something.
+Mm.
+I feel like there's some stuff out there for that.
+Yeah.
+Yeah.
+All right, Kevin, we are an hour 45 minutes in.
+I have, this is you right here.
+I have squeezed you for every last bit of wisdom that I can get on Dom purify, at least the second article.
+Um, and we still didn't even get into the first article.
+So, um, thank you so much for coming on for sharing so willingly about, um, all of this research that you've done.
+Um, yeah, really, really appreciate it.
+This is really a masterclass on, on Dom purify.
+Um, anything you want to say or anything you want to shout before we, we wrap this pod.
+That's fair.
+It's, it was a pleasure for being there.
+Like, um, it was amazing speaking about Dom purify today and yeah, I think that's all.
+I'm very happy being there.
+Awesome.
+Thank you so much.
+Thank you so much, Kevin.
+Appreciate you, brother.
+Peace.
+And that's a wrap on this episode of critical thinking.
+Thanks so much for listening.
+And if you want more critical thinking content, head over to ctbb.show slash discord, join the discord.
+There's lots of great conversations and chats going on over there.
+And if you want to support the show, there's the discord subscriber tiers, which give you access to masterclasses, AMAs, hack alongs, exclusive scripts, and an exclusive chat channel with us.
+We'll see you there.
+See you there.
+
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+
+

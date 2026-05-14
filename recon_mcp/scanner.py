@@ -1,6 +1,7 @@
 """Drive the per-target phase pipeline on a single droplet."""
 from __future__ import annotations
 
+import os
 import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -31,8 +32,11 @@ _PHASE_BIN = "/opt/recon/scripts"
 
 def _phases_for(target: Target) -> list[str]:
     if target.kind is TargetKind.WILDCARD:
-        return ["subdomains", "resolve", "httpx", "ferox"]
-    return ["scan", "subdomains", "resolve", "httpx", "ferox"]
+        phases = ["subdomains", "resolve", "httpx", "ferox"]
+    else:
+        phases = ["scan", "subdomains", "resolve", "httpx", "ferox"]
+    skip = {p.strip() for p in os.environ.get("RECON_SKIP_PHASES", "").split(",") if p.strip()}
+    return [p for p in phases if p not in skip]
 
 
 def _input_payload(target: Target) -> dict[str, str]:

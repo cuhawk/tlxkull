@@ -1,0 +1,577 @@
+ So then it's gonna set it to another payload.
+ And so you can like, oh, wow, we just found a vulnerability in Kaido.
+ That's really funny and really cool.
+ This will definitely be fixed by the time it goes live, but that's hilarious.
+ I'm actually going to send that right now to the team.
+ Best part of hacking when you can just, you know, critical thing, right?
+ All right, hackers, here's the deal.
+ Before you skip forward, give me like two seconds to give you a takeaway.
+ Okay, here it is.
+ Threat Lockhart Detect is the best EDR around.
+ They have a ton of tool integrations.
+ The alerts are high signal, so you're not swimming in a bunch of garbage.
+ And both alerting and remediation actions are super customizable.
+ It's definitely the one you want.
+ Okay, that's it.
+ Skip forward if you must.
+ But I do feel like you should know why I think that, right?
+ Well, we've talked a lot about the Threat Locker suite, and frankly, they're the best
+ implemented tools around from a technical perspective.
+ With this EDR, they're focusing a lot on customization and high signal stuff like
+ PowerShell activity, log deletion, sketchy RDP sessions, stuff that I have wished many
+ times EDRs were not detecting actively.
+ Okay.
+ And while it does work out of the box, it also gives you the experienced purple teamer, the tools you need to implement custom logic to lock hackers
+ out of your network at the first sign of trouble.
+ That trouble is the trouble that you are the most qualified to recognize.
+ So they're equipping you to deal with it right away.
+ They're definitely the ones you guys want to go with if you're looking for a new EDR tool.
+ All right, that's it.
+ Let's go back to the show.
+ What's up, hackers?
+ Got the This Week in Bug Bounty segment for you.
+ First up is this NullCon Berlin live hacking event that is being run by YesWeHack.
+ This is just around the corner, September 4th through 5th, and it seems like a really great opportunity.
+ The way that YesWeHack runs these live hacking events is they reveal the target the day of.
+ I do have a little piece of insight that it is a big company known all over the world.
+ So, and it's open to all NullCon participants.
+ So if you're hitting that up in Germany, then definitely check out the live hacking event with YesWeHack.
+ Next is also something from YesWeHack, the Bug Bounty Bulletin, which is something
+ that I wasn't really on my radar until just a week ago.
+ But apparently it's like pretty big.
+ It's got like 17,000 subscribers on LinkedIn, and it is YesWeHack's sort of weekly newsletter.
+ Got some great content in there.
+ Oh, what is this?
+ Is this, oh, is this critical thinking?
+ Oh, how did that get in there?
+ It's so funny.
+ No, but this is another great place to get news on Bug Bounty stuff.
+ So certainly check it out.
+ They talk about Kaido, a new Kaido video, another live hacking event.
+ YesWeHack ran.
+ It's looking like a good roundup.
+ All right.
+ Last but not least, we've got Grab with HackerOne.
+ Grab has been running their program for 10 years.
+ And as a result, they're doing an anniversary promotion, which is a 2x bounty multiplier from
+ August 11th to September 10th.
+ Okay.
+ So definitely going to want to check that out.
+ Uh, also just check out the stats for this program.
+ Three hours to first response, three days to triage, six days to bounty.
+ That is like S tier response time.
+ And they're doubling their bounties and they've got a massive scope.
+ So, uh, this is looking like an amazing program that I've been sleeping on.
+ You guys should definitely check it out too.
+ All right.
+ That's it for the, this week in Bug Bounty.
+ Let's get back to the show.
+ Hey guys, welcome back to the critical thinking podcast.
+ Um, Joseph Reza this time, and I'm interviewing the great Jack Cable and I'll
+ get into his intro in a minute, but first we'll kick it off with a bug.
+ Of course, so Jack, um, you just teased it to me and I'm pretty excited about it.
+ So what bug did you bring for us today?
+ Awesome.
+ Well, first of all, thank you so much for having me great to, to be on the podcast.
+ So, so the one that I've got for today is a fun one, right?
+ Um, so, um, that this relates to clearly, uh, which imagine that, uh, people, um, might be
+ familiar with, you know, they, they've gotten a decent amount of attention lately.
+ Um, and this was maybe a month or so ago, I was, uh, poking around on their desktop app,
+ uh, found a number of things, which we can probably get into to later, um, around, um,
+ understanding their, their system prompt, things like that.
+ But the, the interesting bug was I was looking into, um, essentially saying if there were ways
+ to compromise the, the desktop application, um, and I saw a few things, right?
+ Because it's an electron app, um, and they were loading in basically, you know, it essentially
+ takes a screenshot your computer, sends it off to, to their server, which sends it to open AI or
+ anthropic, um, and it kind of renders the, the response, uh, from their server as markdown.
+ Um, so, so that got me interested, right?
+ Um, and of course, um, with, with electron apps, um, since they're just, you know, websites,
+ basically, if you can get cross-site scripting, um, that, that, that can be pretty severe.
+ And, um, the, the interesting thing here is that, um, I noticed one, they weren't using the electron
+ sandbox, um, and two, um, kind of, I noticed that if you were able to say, get a link to be displayed,
+ and then the user clicks that opens it up, um, it turns out they were passing quite a bit of, uh, context
+ to that new website. Um, and, and in particular, there were a number of, uh, post message, um,
+ handlers available that would essentially, um, receive, um, messages, uh, right from the application.
+ I think this is probably, um, intended for like internally, right? Because they want to do things
+ like take screenshots or update different permissions. Um, but what I don't think they
+ anticipated was that any website that was opened and clearly could access this. And in particular,
+ probably the, the most dangerous one, right, was the, the function to take a screenshot. So I tested
+ that out and takes a screenshot of your screen unsurprisingly, but that's pretty bad to give any
+ arbitrary website the ability to do. Um, so essentially, right. I rigged up that POC where I
+ just continually took a screenshot of, uh, the person's computer. Um, so effectively you're now
+ recording their screen and all they have to do is, um, click a link. Um, so what you should have done
+ is given that to Amazon. So when anyone was using clearly in interviews, it was actually monitoring
+ the interviewee screen, right? It's like, it's like a reverse clue. They think they're getting away with
+ cheating on the, uh, interview, but actually Amazon's just monitoring their screen the whole time.
+ Yeah. Yeah, exactly. You're, you're the one who's being recorded instead.
+ Right. Um, so, so, so yeah, that was a fun one. Um, I, uh, disclosed it to them. They did, uh, fix it,
+ uh, quickly. Did any of the post message allow for XSS? Because where it's an electron app,
+ that could have just been RCE, right? So, so yeah, I was also looking for access. I can't talk XSS or,
+ um, things like whether kind of input from that would go into a system command, uh, beyond that there,
+ there wasn't a ton of attack service. There were, um, functions, for instance, like request microphone
+ access, things like that, but no thing that necessarily took in input, um, yeah. But still,
+ I mean, pretty bad screenshots of the, of the desktop is basically leaking any secrets and
+ anything else. So that's cool. Yeah. Yeah, exactly. Sweet dude. Good find. Well,
+ I will now intro you, um, since you're appropriately christened here. Um, yeah. So, uh, for anybody who
+ doesn't know who Jack Cable is, he was a very top bug hunter. I think he has like 10,000 rep on hacker one.
+ And, um, was kind of around the live hacking scene and stuff for a little bit, but has since,
+ uh, started a company called corridor.dev. Did you do anything in between those two things?
+ Like, was that, did you have any, like, uh, do you have a company before corridor?
+ So, so I was actually working in government, uh, before this, and that was a lot of the reason,
+ you know, that I, um, stopped doing bug bounty as much because as it turns out, when you're working
+ in government, you, you can't really get income from, um, outside sources. Um, so spent a couple of years
+ was, um, working in the, um, Senate for, for one year writing, um, legislation around, um, things
+ like open source software security. And then what was at, um, CISA cybersecurity and infrastructure
+ security agency for, for two years, uh, leading on the, the, the secure by design initiative.
+ So it did a lot to try to get tech companies to, to improve that their software security.
+ Yeah. Yeah. That's awesome. Did, did being involved deeper than any of the rest of us are
+ make you more hopeful or kind of like, uh, less helpful for a positive change in that way? Like,
+ do you think that being a part of government and then also even more than just being a part of like,
+ you know, a specific agency, but like also just being involved in the legislation process,
+ was that like disheartening or was it actually like not that bad?
+ Um, so, so, uh, I think there, there's some of both, right? Where the time I was, um, in the Senate,
+ for instance, uh, was, uh, a very productive time kind of around cybersecurity legislation. There, there
+ was a lot of bipartisan support that there still is some today, but, but, um, it may be a little less
+ so, um, and so, so it saw a lot of kind of positive momentum, um, and likewise being at CISA found that
+ when you're in the right place in government, kind of when appropriately empowered, there's a lot that
+ can be done. Um, so it did a bunch of work to, um, get commitments from, from companies, for instance,
+ to improve their product security. One of the elements, for instance, this was the, the secure by design
+ pledge was to, um, operate a vulnerability disclosure policy. Um, so, so, um, tried to really kind of
+ strengthen the role of security research. Um, so, so I think there are opportunities to, to have, um,
+ some large scale impact here. Of course, change doesn't happen overnight. Uh, but, but I do think
+ it's important for, for, you know, um, technical people to, to be in the room because ultimately-
+ Oh yeah. 100%.
+ Yeah. You, you, you need to understand how things work under the hood.
+ What is that like VDP or VR, or VRP thing that Casey Ellis kind of started?
+ Did, um, any of the work you- Disclose.io?
+ Yeah. Was that, uh, at all like an inspiration or useful to you guys in that whole-
+ Certainly.
+ Yeah.
+ Yeah. Yeah. So, so now I, I got involved with, with Disclose.io, um, a, a while ago,
+ uh, when it was starting out. Um, and, and I, I think definitely a lot of that, that momentum
+ kind of helped to, to underpin a lot of, a lot of the work that got done, where, you know, now we're
+ in a point where it is really the, the norm to operate a vulnerability disclosure policy, right?
+ That's sort of the bare minimum for, for a company who wants to be responsible around security. Of course,
+ even better to, to go incentivize research with a bug bounty. Um, but at the, the baseline, you,
+ you need to have a way to, to take in reports from hackers and a lot of the work that Casey and I
+ did as well as around advocating for legal safe harbor to, uh, get, give these assurances that a
+ company won't, uh, take, um, legal action against you. Um, so, so, so that work, what was really
+ essential and, um, yeah, a lot of what I focused on government, right, was kind of helping to, to
+ continue to, to make this the, the, the norm, um, and making the expectation that that companies
+ would, um, like that, that that's in the pledge language is also to have safe harbor within their
+ vulnerability disclosure policy, um, to basically reduce friction there to deploy it a lot like
+ easier or cause no company's going to do it. If it's a heavy lift to actually like, you know,
+ put those terms and those agreement out there, but if it's like a one click or like a, here,
+ just put this on your website, then all of a sudden it becomes really feasible. Right.
+ Exactly. Exactly. Cool. Well, one thing I wanted to do was like talk kind of practically about AI
+ stuff, obviously. Um, it's kind of. What people expect me to talk about, but it's also what I love
+ and I find enjoyable. So what, at what point, well, I guess kind of two things. One, I was going to see
+ when it, when did it click for you or when did like, what kind of opened your eyes or made you find
+ kind of AI app sec more interesting and then to like, you know, what have you been doing in that
+ field or kind of pressing into, and obviously court.dev has a little bit of that to say there,
+ but let's start with that first question. What, what exactly got you, where are you like, wow,
+ what was the eye opening kind of moment for the mixture of AI and security, whether it's from the
+ offensive side of things or the defensive side of things? Yeah. Yeah. I mean, for, for me,
+ it was really twofold. So, so one, um, and through the course of the, the work at CISA, right. As well
+ as, uh, just my time doing bug bounties saw just how much companies were struggling with product
+ security. And as you know, right. Often it's the very basic vulnerabilities that slipped through and
+ cause a lot of impact, cause a lot of harm. Um, and kind of just got me thinking, okay, there has to be a
+ better way. Um, and, and then really what, what I think kind of made, made me realize there's a lot,
+ a lot of opportunity here was just using the, these tools for development. So using cursor, um,
+ quad code, some other tools and seeing kind of just how capable they are. Um, of course they're, they're,
+ they, they all have their limitations, but like as a software developer, these tools have helped
+ me work out of five, 10 times as fast. And kind of if I try to, you know, go code something without,
+ um, one of these tools now, I'm just going to be so much slower. Um, so, so it kind of got me thinking,
+ okay, if AI is this good at understanding code, writing code, um, it, it must be quite capable as well
+ around, um, aspects like vulnerability discovery, as well as other, uh, workflows within, um, application
+ security. Um, so that was kind of the starting point. Yeah. I made that same leap in my head,
+ but I don't know if that was intuitively true or like, I don't know if it was intuitive to everyone
+ else when that first kind of popped off. Right. Like it makes complete sense, but it is kind of
+ interesting how like the theory of mind works for, uh, humans versus like, uh, like people who are
+ familiar and intimate kind of with like, um, LLMs today and what they're expecting that other LLMs
+ would be capable of, even just like the theory of mind of a brain that's working off of tokens
+ instead of like our brains, which can see both words or characters and can like parse them both
+ independently and uniquely and how LLMs kind of parse things via tokens. And like being able to have
+ theory of theory of mind for what the AI might see with like how it's viewing the world in tokens,
+ instead of viewing it with characters versus words is like very interesting to me. And so I think that's
+ kind of like a similar thing you did there where you basically understood that, Hey, if this thing's
+ good at development, it's also processed all the PRs and all the security fixes across all of GitHub as
+ well. So it probably also knows what vulnerabilities look like and how to exploit them and that sort of
+ thing. Um, yeah, so that's cool. And so then like, what do you, what exactly are you all building with
+ corridor.dev? Yeah. So, so really the, the focus with corridor, right. Is building, um, kind of applying
+ AI to help, um, product security teams. Um, and I I'd say it's really a full range of, of the, the, the work
+ that they do. So, so it's both around kind of better enabling vulnerability discovery, um, and really
+ building up the, the kind of context of a code base. Uh, but, but then it's tying this into kind of every
+ stage of the development process. Um, so, so we talked to product security teams who almost, you know,
+ universally are overwhelmed. They have too much work to do. Um, their existing like stack analysis tools
+ are surfacing, I don't know, like 90% plus false positives. They don't have time to go through those.
+ Developers don't have time. Um, and they're also missing the, the vulnerabilities that, that actually
+ matter. Um, so, so what we're focusing on is really enabling these product security teams to, to
+ multiply their work, just like, you know, curse or other tools have totally changed the game of software
+ development, but in many ways it feels like security teams are still living in the past with their tooling.
+ Um, so, so, so it's around capitalizing on these advancements to, um, kind of help product security
+ teams review every pull request, be able to, um, take all the, you know, bug bounty reports that they're
+ getting, act on them more quickly. Those sorts of, of workflows that I think are, are really underexplored.
+ Yeah. Yeah. That's awesome. When you were doing, uh, bug bounty, what was kind of your bread and butter?
+ What type of vulnerabilities were you like typically finding more of versus the other ones?
+ So, so yeah, it was a mix. I think probably the most interesting, most frequent ones were, were,
+ were authorization vulnerabilities. And you know, some of them can be quite simple IDORs where you just
+ change an ID and it gives you all sorts of, um, sensitive information. Others could be kind of a
+ little more, uh, kind of complicated business logic things. But I think those were really some of the,
+ the more impactful, uh, vulnerabilities that I reported over the years. Um, and there are some,
+ some interesting ones too. Kind of like right when I was getting into, to bug bounties,
+ this is when I was like 15 or 16, on some of the kind of initial things I was looking for were race
+ conditions. Um, and, and did this especially on like cryptocurrency websites where it would basically
+ go to everyone and see, okay, can I like withdraw money multiple times? Can I, um, kind of do other
+ actions that will allow me to, um, basically, yes, um, steal money if I want to and found a number of those
+ vulnerabilities that I disclosed? There was one exchange where I think like I could have drained their
+ wallet of like a hundred K or something in Bitcoin if I had wanted to. Um, so a lot of those types of
+ flaws that, I mean, you know, might, um, can't go missed without, uh, more extensive testing.
+ Yeah. That's interesting. Cause that was back before, um, the BERT plugin for race condition specific
+ tests, right? Like the last time I could attack it was before that. Yeah. Do you remember how you were doing it?
+ Yeah. I mean, I, and I, I still do this and where it works a good amount of the time, basically just,
+ um, you know, doing BERT copy as curl and then opening a terminal, sending off, uh, multiple requests
+ in parallel. Um, so I'm sure yet doesn't, that's all the things that the, yeah, yeah, exactly. Yeah.
+ The BERT extension probably has a better detection rate, but at least for a lot of these things where,
+ you know, it's not, uh, um, like instantaneous operation, um, it can do quite well. Yeah. I think
+ I, this is like when I was like 15, I read this blog post of someone who'd done this in like Starbucks
+ or something. And then I was like, wow, I should really start testing this out. And it worked quite
+ a bit. There's so many cool little small bug classes like race conditions or like, um,
+ the most recent episode that just aired, uh, today, as we're recording this, uh, July 24th,
+ uh, Justin interviewed Matias and he, um, it's all about archive attacks. I don't know if you,
+ if you saw it in your feed yet, but it's like really neat. It's basically like a bunch of,
+ you know, variations of the old, like, uh, zip slip attacks, but, um, you know, just new variations of
+ it. And, you know, obviously pretty big impact. It's neat the way that there are so many like little
+ tiny niches. Um, cool. Yeah. So coming back to the quarter to depth thing, one thing that I thought
+ was interesting was I think you tweeted or saw about it and that, um, no, no, it was actually in one of
+ your congressional speaking things. You're basically like, you know, AI is going to write, you know,
+ plenty of vulnerabilities. And I found that to definitely be true in my kind of, uh,
+ vibe coding in the last few months, but I'm also like, yeah, but so are plenty of like novice developers,
+ right? Like, uh, before vibe coding bug bounty was lucrative because humans write lots of
+ vulnerabilities. And so like, it doesn't change the game too much. Like it's like, um, it's almost
+ independent of AI writing vulnerabilities that AI project would actually be useful. Right. It's like,
+ even if we didn't have vibe coding, this would still be a very high utility tool.
+ Yeah. Yeah. So, so to me, what, what's really interesting, right. Is that a lot of how I think
+ about it is in terms of volume and scale. And we, we know that the, these AI development tools are
+ allowing developers to write code much faster than ever before, much higher volumes. We also know
+ that's enabling people who have never code before to go in, you know, vibe code, a website or something like
+ that. Um, so, so, so I think it does to your point, um, just continue expanding the attack surface, uh,
+ where, where I'm less worried about, you know, novel vulnerabilities getting introduced from a vibe code
+ app, but it's more about, okay, these, um, models are going to introduce that the same types of flaws
+ that we've known about for decades that humans haven't been able to root out, um, that, that are going to
+ continue to give us problems. Um, and I, the, the chance to, to, uh, testify to Congress, this was maybe
+ a month or two ago, um, at Stanford, um, and, and a lot of the, the focus was around how, how AI was
+ affecting security. I love the things I mentioned there is there's this benchmark called BaxBench,
+ which looks at, um, how well LLMs do at writing secure code. Um, and, and it found maybe unsurprisingly
+ that even the best models about 20 to 30% of the time, uh, do introduce vulnerabilities, uh, right.
+ And they can, can, can often can be, you know, basic things like SQL injections, excess I've had,
+ like when using models myself, it's like, adds a command injection vulnerability or something. And
+ if you tell it like, okay, write a secure command execution, then it'll, um, do it securely,
+ but, but otherwise it won't. Um, so, so it's things like that, that these models are introducing,
+ and especially when it gets to, to things like business logic flaws, I, I think that's where a lot
+ of the, you know, vulnerabilities in, in vibe code apps that, that we'll see will originate, uh, because
+ again, that, that requires kind of the, the person who's behind the wheel, who's using these tools to
+ actually understand that the security model, um, and as we, we allow people with, with less than less
+ experience to, to build these apps. I think the, the kind of, yeah, uh, attack surface is just gonna
+ kind of continue to, to balloon. Yeah. Same, same kind of story there for,
+ you know, human like coders, or I guess what I'm trying to think, what I'm trying to say is like,
+ you know, big companies with big budgets have had static code analysis tools for a long time,
+ right? It's gonna find the places where you might have code injection or where you might have,
+ um, XSS or you might have a SQL injection, but the business logic flaws and, you know, um, permission
+ issues like RBAC permission issues are just like never going to be found by static analysis or probably
+ even like lots of times from code review, because it just requires the app to actually be running to
+ test a lot of those things. Right. Um, so yeah, that's really interesting. Uh, and I, and I actually think that
+ the, the very final form there, um, will hopefully be eventually be solved by hack bots. Right. Because
+ it really does need to have like live testing on top of something like corridor or what I don't
+ understand why this hasn't existed yet. I hope with the GitHub release and GitHub spark this week
+ that they'll eventually release it. But I don't understand why GitHub doesn't have automatic security
+ PR reviews. It's just like, it's right for the taking it's right there. I would pay a subscription for
+ every company would if like every PR you put out just had an automated security, like, like, uh, uh,
+ wow. What's it called code review? Yeah. Yeah. Yeah. Yeah, exactly. That. And that's something
+ we've been doing and found that can work quite well. Um, and to your point, like, yeah, I think,
+ um, like, especially when it comes to, to authorization type bugs, that that's not something you're going to
+ be able to find with like static analysis. It's something that you need to actually understand
+ how the, the application works and operates. Um, and like, you see this a lot with these, like,
+ you know, zero code five coded sites. A lot of them use like Supabase or Firebase for the database
+ and have like pretty secure configurations, but the, the aspect that can go wrong, right? That you can't
+ just like tell hard code or kind of, yeah, prevent that by default is when it comes to permissions.
+ Cause like with Supabase, for instance, you need to define authorization policies for who can access
+ what, um, and, and kind of securely doing that is not a, a trivial problem. So, so it's, it's areas like
+ that, that I think are really going to be the, the long tail that, um, to your point, um, AI can,
+ can help us to, to understand how an application works. But, um, like, I think as you know, the,
+ the, if there's, I think, yeah, you know, one, one security that it's, that as the amount of code grows,
+ as the complexity of code grows, that the number of vulnerabilities, um, it increases, uh, by, uh,
+ quite a bit. So I think we'll, we'll, we'll just see more of that. Yeah. And honestly, like that's,
+ I had never thought about this before, but the fact that vibe coding kind of breaks down at a certain
+ size is like a good thing for security right now, because it's still manageable to kind of code review
+ it and to like find those little vulnerabilities whenever it can go slightly longer horizon. Like
+ if you were like to let, for example, Gemini two, five pro output, you know, a 500,000 token app,
+ like the chance of vulnerabilities is way higher. Like you said, because the more complexity and the
+ more code, the more likely there are to be vulnerabilities. And so, and these coding systems
+ are going to keep improving, right? It's right now, it's the worst it'll ever be as they always say.
+ So as these systems in the next year or two ramp up to being able to build much more complex app,
+ there's going to be many more vulnerabilities. The other thing I thought about that you mentioned
+ on the permissioning thing with Supabase, because I do think that's a big deal is, do you know if
+ Supabase is able to be deployed via like Terraform in the same way you can do like GitHub repos
+ such that you can manage permissions with like configuration files? Because like, you know,
+ when you're adding new members to a new organization and get up or whatever, if you've got it all deployed
+ via Terraform or something, you can like actually manage those permissions in the file. And I think that
+ would make LLMs much better than them having to use the UI or UX, right? Of Supabase.
+ Yeah, yeah, yeah. I think that is what many of these like VibeCoding tools are doing is that they'll
+ generate like a kind of, a lot of them are using Supabases like row level security kind of
+ configurations. And they do have a file that contains the essentially authorization policies
+ for your code base. So certainly, yeah, I think, you know, having these configuration files is a good
+ thing, but what really matters is, okay, are the contents of them actually kind of lining up with
+ the security model of the application. And to your point, the bigger the code base grows, the more
+ potential for missteps there. I've noticed that my apps, whenever I'm letting an LLM develop them,
+ often get insecure when I'm struggling with something that is usability, which is kind of funny because it's
+ that tension between usability and security. Like I was working on an app where it's basically just
+ like read-only public or admins. And I wanted the read-only public to basically show the results from
+ like a bunch of matches. But it, but like the, the table kept getting like 401 or 403 based on the way
+ it had set up the API to pull those results, to pull, to pull those matches. And then, so it's like,
+ let's just make this public when actually what it needed to do was think about like what data was in
+ that table rather than just like switching the table to being public. Right. And so I thought that
+ was like kind of interesting and probably in a way that it plays out pretty often.
+ Yeah. Yeah, exactly. Yeah. I think there's, yeah, a lot of potential, like I've seen this even outside
+ security context where, you know, you ask the LLM to do something and it does that as well as like
+ through other things that you didn't ask that kind of often they'll, you know, be lazy and try to take
+ shortcuts instead of actually fixing the underlying issue. Yeah. The other thing that I've been wrestling
+ with is like on the two ends of the spectrum from like using SDKs and libraries to just like rolling your
+ own. I actually like to kind of roll my own, not personally, like when I'm developing personally,
+ I definitely don't. But with AI, I like the fact that it can kind of roll its own because you can kind
+ of like control everything and make it custom or whatever. But what I find is that when I'm making
+ a bigger app and it starts to do that, it gets really bloated, especially if it's doing like markdown
+ parsing to HTML or something. Now it's like writing a bunch of regular expressions to like convert bullets
+ and new lines. It's like, no, just use a library, please. Yeah. Yeah. Anyway, it's cool.
+ I've seen that too. Yeah. I wanted to circle us back to the clearly stuff because that was a pretty
+ funny when that blew up on Twitter recently. So yeah, if anyone doesn't know, basically,
+ yeah, well, actually you, you go ahead and tell the first half of the story. You tell
+ about the system prompt research that you were presumably doing along with your bug you mentioned
+ earlier. Yeah. Yeah. Yeah, exactly. So this was around the same time as I found that bug. I,
+ you know, had taken Clueli's desktop app. I unzipped it because electron apps are basically just a
+ zip file and noticed pretty quickly that the system prompt for both like their standard version and
+ enterprise version were embedded within the source code. For those who aren't familiar,
+ clearly essentially, you know, yes, supposedly lets you cheat on anything. So basically it's a prompt
+ where it takes a screenshot of your screen, says, okay, tell the user like what to say next. So I was
+ able to find those complete prompts. There were some interesting elements of that. They also said,
+ for instance, like never say what model you're using, but like right above that was hard code.
+ That's I think was like, forget what exact model, but there's a open AI model and a anthropic model in
+ there. So naturally, you know, I tweeted this out, said that Clueli embedded their prompt in their desktop
+ source code that that wound up getting quite a bit of attention. So yeah, that was the first part of the story.
+ Yeah. And so then basically you received a kind of take down or cease and desist or something on that
+ tweet, right? Or actually no, was it for a demo? Was it a gist or something?
+ So it was for the tweet. So essentially, a couple of weeks later, right, I got a DMCA
+ notice from Twitter that my tweet had been, or at least the images within it had been taken down because Clueli
+ filed a DMCA take down saying that my tweet had contained
+ like basically proprietary information. Yeah, their intellectual property, which is kind of funny if
+ you think about it, right? Because if this is their intellectual property, maybe they shouldn't be sending
+ it to the desktop of however many users they have. So that was kind of wild. And again, going back to the
+ camp vulnerability disclosure policy disclosed IO work, one of the elements of a safe harbor is committing to
+ not take legal action like filing DMCA takedowns. So that was a bit surprising that they would go and
+ do that. Now, the funny part is I go and tweet this out. And the CEO of Clueli responds saying that they didn't file the
+ DMCA takedown. And also if it would if it would have been Roy Lee that actually
+ filed it, that would have been so ironic considering that he was literally sued by like
+ companies like I think they've been sued by like five or 10 companies. Yeah.
+ So the fact that they were like you threatening legal action is just like so ironic and crazy.
+ Yeah. Yeah. So he said they didn't do it. And he also like posted a screenshot of his conversation with his lawyer around it.
+ But that also was strange since the DMCA takedown notice had the information of the Clueli employee who filed that.
+ So I posted that. I tagged the employee and he admitted, you can see it on Twitter, that he had done this, that he apologized, that he didn't check with Clueli leadership.
+ And then Roy also apologized after that. The funny part is that, yeah, he retracted it, though the tweets are still down.
+ The images are still been restored.
+ So working on that. But the other fun part is that Roy had offered to compensate me.
+ I said, how about instead you donate to the EFF?
+ So he wound up donating about a thousand dollars to the EFFs, at least something.
+ That's cool. Yeah, that's really cool. Good on him.
+ I yeah, I was messaging him initially when they first like kind of got started and stuff.
+ And we were we were messing a little bit, but I don't think that he likes me too much anymore.
+ I basically was just like sharing some other vulnerabilities they had at the very beginning.
+ And he was like, no, no, no, it's not vulnerable.
+ And then when it came out, it was super vulnerable.
+ I was like, I told you so. And then he hated that.
+ So but anyways, yeah, that's funny and cool.
+ And I think that if anything, they probably viewed that as like free media attention
+ with the way that they run their company.
+ So I don't think that he is actually bothered at all.
+ Yeah. Cool.
+ Yes, I do think you would maybe be a good person to talk about this.
+ This is a little bit of a hot take.
+ I personally don't think that there's a lot of risk these days for a known bug hunter
+ to hack on things that they do not have permission to hack on.
+ And from being on the legislative side and working at CISA and also being like a reasonable, ethical, moral person.
+ I would be interested in your thoughts on that.
+ And I think we can kind of break this down into two categories.
+ One is, let's say, testing with your own account.
+ So I know because of that, like Supreme Court's recommendation, I think testing with your own
+ accounts is like most people think that that actually is probably fine, or at least the people that I kind
+ of talked to about this and then and then let's say another situation where like you don't have two
+ accounts and you can't get two accounts because it's like tied to your identity or something.
+ And you still want to vet the application for your own usage.
+ So it is still well, then maybe there's three categories.
+ Sorry to make this confusing.
+ So one is you're testing an app that you're using and you have two users and you only test your users you own.
+ Two is you're testing an app that you do actually use and you can claim that you're like actually
+ wanting to test it for your own usage, for example, but you don't have a second account
+ and you want to check for things like, you know, that would disclose other people's information
+ like ID or whatever else.
+ And then the third category will say is apps that you actually don't use and you have no
+ right to be testing on.
+ So like you're trying to hack F1 or, you know, you're trying to hack the NBA, right?
+ Like, but they don't have bug bounty programs or VDPs.
+ And so I still, you know, I don't do it.
+ I have a wife and three children and, you know, my risk tolerance is low, so I don't do it.
+ But I still talk to people and I basically tell people that I think that the real true risk
+ of legislation coming, if you're willing to disclose whatever you find responsibly,
+ is basically infinite, like approaching zero these days, especially if you have a reputation
+ with the, you know, bug bounty platforms or whatever.
+ So give me your take on those three, on those three things.
+ So, yeah, yeah.
+ Super interesting topic.
+ And of course, I'll start this by saying I'm not a lawyer.
+ Please don't take this as legal advice.
+ So the current state of things.
+ So one, in terms of what is legally okay,
+ it is one, if you are testing something that you have locally.
+ So for instance, like in this clearly scenario, right, this was their desktop application.
+ I was testing on my computer in the past, like decades ago, companies would bring, you know,
+ kind of legal action under say DMCA against researchers saying you didn't have the right to reverse engineer
+ that program or that program.
+ We now have, there's a security research exemption in the DMCA.
+ So if you're doing good faith security research, then you are allowed to, to test something locally.
+ Now, where it does get a lot fuzzier is when that application isn't, you know, hosted on yourselves,
+ but it's someone else's application.
+ So if it's client-side JavaScript,
+ are you like, I guess, technically allowed to probably look at that part,
+ but you can't test for server-side volumes or something?
+ Like if you're reading letter of the law.
+ Yeah, yeah, you can essentially, you know, reverse engineer the client-side JavaScript or like desktop
+ application, or if you get, I don't know, like the binary of an application or something like that.
+ Where it gets fuzzier in the US is the, so the Computer for Unabuse Act, CFA, says essentially any
+ unauthorized access to a computer system is illegal, unless you have permission,
+ specific permission to test it.
+ And that's where, again, right, having a VDP or bug bounty program, which proactively is a company
+ saying, hey, we want you to test this. Here are the rules that you can follow. Ideally, they'll have
+ a safe harbor to say, we commit to not taking legal action. But that's the reason that's so important,
+ right, is that's providing authorization for you to go and test a system. In the absence of that,
+ right, in your examples, technically anything that you do could be considered to be unauthorized access and
+ violating CFA. Now, to your point, like if you are testing on your own account, if you find something,
+ if you responsibly disclose it, it's unlikely that a company would choose to take legal action against
+ you. But it's always a possibility. And like I've experienced in my own instances, you know, outside
+ of clearly where there have been investigations and fortunately haven't had anything happen. But I do
+ think there are still risks. Unfortunately, that's why I think it is really positive that we have so many
+ more companies having VDPs. I've also done a bunch of work to get state governments to operate on
+ vulnerability disclosure policies, federal government. Now, every federal agency has one. So we're making a
+ lot of good progress. And then we also have the Department of Justice a couple of years ago put out
+ an updated sentencing policy to say essentially they wouldn't sentence people for CFA violations. Where are
+ they demons? Good faith, security research. So we're in a bit of a better place. But I think still a lot of
+ work to be done to make this something that you can, you know, truly go and do good faith, security
+ research without having to worry at all about legal action. Yeah. Yeah, that's interesting. So you're
+ saying that you actually do think there is more legal action brought against people or at least
+ threatened legal action against people than maybe gets publicized because I basically never see it.
+ I think so. It's not like I'm not saying it's super common, but personally, I've experienced it. I know
+ some other friends who have. And right, even if like, I mean, even the samples of you and some friends
+ would be enough to convince me that it were common because. Yeah. Yeah. Yeah. And even short of, you
+ know, like actually getting sentenced or convicted of a crime, there's all sorts of kind of things that go
+ into to the legal cases and lawyers are notorious for not being cheap. So yeah, I think it is still a real
+ consideration. Certainly we're better off now than we were five, 10, 15, 20 years ago. But I think
+ there's certainly room to go. Yeah. Cool. Sweet. Are you going to be at DEF CON?
+ I will be. Yeah. Yeah. Excited to be heading back there. We're going to be sponsoring B-Sides this
+ year and then I'll be hanging out around DEF CON as well. Nice, dude. Well, I don't typically do this
+ since we're not too late on time at all. Do you have any like thoughts or questions for me or any like
+ kind of just, you know, we were talking before we kind of started here. We're both joining like a kind
+ of a smaller potential contract base, like red team thing. Is there any red team topics or anything
+ that's interesting to you that you've kind of heard about or thought about lately? I mean, I'd love to
+ hear just like how you've been using AI in your own testing. Like what have you found most effective?
+ What's your day to day workflow? Cool. Yeah. I think this episode will go out late enough where
+ this is fine to talk about. And if it, yeah, based on our content calendar for the pod, it looks like
+ it'll go out maybe plenty late. Yeah. 139. Okay, cool. Yeah. So this will, this will definitely be out by
+ then. So I can definitely share this. So me and Justin and Bebix have been working in Kaido. You know,
+ you probably heard of our app shift, which was fine. It didn't do, you know, crazy well or anything,
+ but you know, Kaido wanted to, you know, really take on more of like an AI perspective. And so
+ there is a really cool shift agents thing that we're dropping that I will share my screen about.
+ Let me find a safe project. Actually, let me just make a new temp project. But what it is is,
+ and Justin's been talking about this for a while. It's called shift agents. So I will start a new
+ project project, test, create. All right. Yeah. So check this out. I'm sorry for audio listeners.
+ I'll describe what I'm doing. Okay. In case you're watching, but where's the share button? Here it is.
+ So share screen window, Kaido. So in Kaido, basically there's going to be the thing called
+ shift agents. And what's really cool is we have some built-in system prompts for things like XSS
+ testing, SSRF testing, passversal SQL injection, and then you can add custom prompts here. And how these
+ are used by the agents is really cool. So let's say you send this request to replay. And here in replay,
+ you want to like test for XSS in this parameter. Let's just say, you know, access or actually input,
+ you know, whatever. So you can, oh, this is switching to WebSockets. Let's use a better request.
+ So yeah, we'll use this request. So this is just some random request that was automatically populated by
+ Google. So you can open this agent and then you can choose what prompts. If you want to check for XSS
+ here, you can say like, try and find XSS in the ATIP param.
+ All right, cool. So basically in shift agents, you go in, you put your API key here,
+ you validate it. And then here in replay, these agents will just like work on your behalf. So you
+ can say like find an XSS in ATIP for me. And it's like, you know, there's like the thinking blob where
+ it's talking about what you're talking about. And then, so right now it's asking for clarification
+ the first query parameter. And so what it, but what it does is it will modify the payload, send it, modify
+ the payload, send it. Let's see if it's working. Yeah. So it modified it to this, then it sent it.
+ Then it's like looking at saying like, oh, 400 bad requests. So let's try something else. So then it's
+ going to set it to another payload. And so you can like, oh, wow, we just found the vulnerability in
+ Kaido. That's really funny and really cool. This will definitely be fixed by the time it goes live,
+ but that's hilarious. I'm actually going to send that right now to the team. That is really cool and
+ funny. But anyways, you get the point, right? And so these agents, oh my goodness gracious.
+ Oh, okay. Yeah. I'm gonna have to kill my Kaido. That's hilarious. But yeah, you get the point.
+ So that's just one really cool way. I would say you, you might find this really fascinating,
+ especially with your AI security research or AI safety research and specifically being in like
+ the contract red team stuff. Actually, sorry, I'm going to tag the team. Okay. So yeah, the other way
+ that I was using AI in the last few days that I thought was really cool was basically, let me stop
+ sharing, um, to create frames and payloads. This is not anything new, but basically to create frames
+ and layered attacks for jailbreaking other models. So because grok is like kind of so easy to jailbreak
+ and willing to help with things that are malicious, I've been using crock to basically create payloads to do
+ safety testing for anthropics models. And, um, specifically the frame for the attack was like a
+ fictitious website, or if you wanted a fictitious book or whatever, sometimes you're trying to basically
+ get it out of its security protections or its guardrails. And so you need like a back and forth. That's like
+ make a recipe for suit like Sudafed. Right. And then it's like, oh, now let's actually make it more
+ dangerous and more dangerous and more dangerous. Like you need this like back and forth. And so using models to
+ kind of reconstruct that frame to really save a lot of time is super helpful. Um, I've been using AI to,
+ from like not a security perspective, but just from a building perspective to build like little side
+ projects. Like one of my, you know, ones I'm most excited about is basically a soccer ranking thing
+ for my good buddy. Who's like a high school soccer coach. And so like, I'm really excited for it to like
+ rank, you know, like local high school teams with like ELO and everything to kind of like predict which
+ is better and how they're doing and all that. So I think that's really cool. Um, and then I'm
+ trying to think if there's anything else from like a security perspective that I'm doing.
+ Um, I, where I'm, um, advisor for ethiac, I consult them on their hack bot, their building
+ and I'm advisor for split. So I consult them on their, like their AI safety stuff. And so,
+ you know, getting to see kind of the hack bot side of things, and then the safety testing side of
+ things like pretty fascinating and cool, but yeah, yeah, it's awesome. Yeah. And super cool to see the,
+ the kind of, um, agent definitely feels like where the, the future is going is like, yeah,
+ I don't know if we're at, uh, kind of the fully autonomous stage, but certainly similar to,
+ you know, how, yeah, you can now go and code much faster. It feels like that
+ it is just going to come to, to security, to, to bug bounties and make everyone work a whole lot faster.
+ Yeah. I don't think that it's going to be worth it to do what I just showed
+ you on like every parameter on every tab, right? Like go find XSS. But what I do think will be
+ really valuable is it's like, Hey, I found this parameter and I know it does something weird
+ here and I need to find like a bypass. Can you just try like every possible Unicode normalization
+ pair? Can you try every special character in this, in this thing? And just like, tell me which one's
+ interesting and just like set it off to running. I think that is where it will really pay off, um,
+ in the short term. And then, you know, maybe long-term we'll get something more like an autonomous
+ hack bot. Um, but yeah. And one thing that I think is really cool about Kaido actually,
+ this will be coming out sometime in a month or two. So this is like something that's worth
+ thinking about. I'm sure you saw, um, open AI just released their new agent thing. I actually just
+ got access today. I haven't played with it yet, but that along with all these other companies are
+ basically building browser use. And what's really neat about Kaido, which is not true for Burp,
+ is that it is a website, right? But it's like basically a little web server. And so you can,
+ you can just tell these agents, like, especially if they're like local ones. So, um, if you're,
+ you know, what's the new one, it's, um, perplexity comment or the dia browser. Like if you're using
+ browser use stuff like that, and these models are going to keep getting better at browser use,
+ um, to use your, you know, use your own computer or whatever, set up something you can have Kaido,
+ just like boot it up and these models can actually browse around in Kaido to do things. So you could,
+ you know, have it actually take actions in Kaido to help you hack or to like set up some sort of
+ hacking thing or whatever. So I think that's pretty cool. And a reason why I'm excited to be an advisor
+ for Kaido. Uh, cause I do think them being browser based is actually going to be a huge key differentiator.
+ So yeah, yeah, it's super exciting. Cool dude. Well, we really appreciate you coming on the pod and I look
+ forward to seeing you at Defcon and for anyone listening to this, um, uh, heed Jack's words on what
+ you shouldn't shouldn't hack and go, uh, go promote your, your local governments, but also your company's,
+ uh, VDP or VRP program if they don't have one. So cheers.
+ Exactly. Well, yeah.
+ Oh, actually where can people find you, Jack? Yeah. Where can people find you?
+ Awesome. Yeah. I'm on, you know, Twitter, Jack H cable, LinkedIn as well. Um, so, and yeah,
+ I'll be around Defcon as well. Awesome. Thanks. See ya. Peace.
+ Thank you. And that's a wrap on this episode of critical thinking. Thanks so much for watching
+ to the end y'all. If you want more critical thinking content, uh, or if you want to support
+ the show, head over to ctbb.show/discord. You can hop in the community. There's lots of great
+ high level hacking discussion happening there on top of masterclasses, hack alongs,
+ exclusive content and a full-time hunters guild. If you're a full-time hunter, it's a great time.
+ Trust me. I'll see you there.

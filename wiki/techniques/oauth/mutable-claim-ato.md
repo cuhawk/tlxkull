@@ -2,7 +2,7 @@
 title: Mutable OAuth Claim Used as Account Identifier (ATO)
 slug: mutable-claim-ato
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/oauth, technique/ato]
 inbound: []
 ---
@@ -76,6 +76,8 @@ For privilege escalation via mutable permission claim:
 | date | target / library | notes |
 |---|---|---|
 | 2025 | Django OAuth Toolkit (2M monthly downloads) | ZeroPath: 7 vulns. `preferred_username` used as account UID. Okta and NetIQ identifiers mutable. Tokens for deactivated users could be refreshed indefinitely. CVE series reported by ZeroPath. |
+
+- {date: 2026-04-09, source: CT Ep 169} — Brandon: also applicable to "mutable permission claim" privilege-escalation variant; recommends auditing every claim used as a permissions source.
 
 ## References
 

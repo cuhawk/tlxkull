@@ -1,0 +1,4572 @@
+1
+00:00:00,760 --> 00:00:01,160
+ I love it.
+
+2
+00:00:01,160 --> 00:00:07,280
+ When you pop a bone quick, you know, that's like the opposite of imposter syndrome.
+
+3
+00:00:07,280 --> 00:00:11,160
+ It's like, oh, my God, you know, for a split second, you're like, I'm the best.
+
+4
+00:00:11,160 --> 00:00:18,720
+ Best parts of hacking when you can just, you know, critical thing.
+
+5
+00:00:30,000 --> 00:00:38,720
+ All right, hackers, I was just looking into this, and I think I figured out how ThreatLocker
+
+6
+00:00:38,720 --> 00:00:40,420
+ Elevation Control works, okay?
+
+7
+00:00:40,420 --> 00:00:45,180
+ So when a user launches an elevated processor, they try to, ThreatLocker agent will hook that
+
+8
+00:00:45,180 --> 00:00:49,140
+ into its own elevation flow, so we don't see any UAC prompt or anything.
+
+9
+00:00:49,140 --> 00:00:53,800
+ The ThreatLocker admin will be able to grant that process elevated permissions for a certain
+
+10
+00:00:53,800 --> 00:00:56,760
+ amount of time or whatever, very granular control there.
+
+11
+00:00:56,760 --> 00:01:02,580
+ And then the ThreatLocker agent on the user's device injects a modified process security token,
+
+12
+00:01:02,580 --> 00:01:04,580
+ which will elevate that process directly.
+
+13
+00:01:04,580 --> 00:01:09,820
+ This is awesome because it avoids things like UAC, which leaves NTLM hashes and stuff like
+
+14
+00:01:09,820 --> 00:01:13,420
+ that in memory, right, in lsas.axe.
+
+15
+00:01:13,420 --> 00:01:16,700
+ It creates a time-bounded elevation, right?
+
+16
+00:01:16,700 --> 00:01:19,960
+ And it does the elevation to the process rather than to the user.
+
+17
+00:01:19,960 --> 00:01:22,820
+ Really great stuff, but of course, there's always, like, maintenance mode and that sort
+
+18
+00:01:22,820 --> 00:01:26,740
+ of thing if you have to get in there and do a bunch of administrative activities.
+
+19
+00:01:26,740 --> 00:01:27,940
+ Great stuff by ThreatLocker once again.
+
+20
+00:01:27,940 --> 00:01:28,940
+ All right, let's go.
+
+21
+00:01:28,940 --> 00:01:29,940
+ Back to the show.
+
+22
+00:01:29,940 --> 00:01:30,940
+ What's up, Hackers?
+
+23
+00:01:30,940 --> 00:01:36,000
+ We've got the This Week in Bug Bounty segment real quick, and we've got a couple items here.
+
+24
+00:01:36,000 --> 00:01:40,400
+ First one is that the Adobe team wanted us to let you know that they are going to be at
+
+25
+00:01:40,400 --> 00:01:41,400
+ B-Sides London.
+
+26
+00:01:41,400 --> 00:01:44,800
+ They're a platinum sponsor this year, and they would like to meet some of the community out
+
+27
+00:01:44,800 --> 00:01:45,800
+ there in London.
+
+28
+00:01:45,800 --> 00:01:50,040
+ So if you're going to be at B-Sides London, drop by, look for people that are wearing Adobe
+
+29
+00:01:50,040 --> 00:01:54,600
+ swag, and go up and say, hey, they'd love to connect with you all.
+
+30
+00:01:54,600 --> 00:01:59,980
+ The next one up was this one right here, which is a HackerOne report on CloudFlare that recently
+
+31
+00:01:59,980 --> 00:02:00,980
+ got disclosed.
+
+32
+00:02:00,980 --> 00:02:03,800
+ And I wanted to shout this out because of how beautiful this bug is.
+
+33
+00:02:03,800 --> 00:02:08,180
+ It's entitled Bypass of CloudFlare's cache keys in WAF via header overflow.
+
+34
+00:02:08,180 --> 00:02:15,360
+ And essentially what happened here is that the attacker was able to provide a large amount
+
+35
+00:02:15,360 --> 00:02:16,040
+ of headers, right?
+
+36
+00:02:16,040 --> 00:02:17,100
+ 94 in this scenario.
+
+37
+00:02:17,100 --> 00:02:23,640
+ And this would overflow the maximum number of headers for CloudFlare's cache key.
+
+38
+00:02:23,640 --> 00:02:30,020
+ And the cache key is the thing that determines what a unique page is as far as caching goes.
+
+39
+00:02:30,020 --> 00:02:35,320
+ And you can see some of the things that are in CloudFlare's cache key by default are things
+
+40
+00:02:35,320 --> 00:02:40,940
+ like the X method override header, X HTTP method override header, the sort of things that will
+
+41
+00:02:40,940 --> 00:02:45,020
+ break the backend probably if they're included, right?
+
+42
+00:02:45,020 --> 00:02:47,140
+ And they shouldn't be cached with the main asset.
+
+43
+00:02:47,140 --> 00:02:51,640
+ But if you're able to provide one of those after a certain number of headers that exceeded,
+
+44
+00:02:51,640 --> 00:02:57,520
+ made it exceed the max number of 100 headers, including the internal headers added by CloudFlare,
+
+45
+00:02:57,520 --> 00:03:01,940
+ then you'd be able to sneak those in and get your resource cached with the malicious HTTP
+
+46
+00:03:01,940 --> 00:03:05,680
+ method override key or header in there.
+
+47
+00:03:05,680 --> 00:03:08,140
+ And that would result in story XSS or DOS.
+
+48
+00:03:08,140 --> 00:03:10,600
+ I just thought this was a beautiful one to shout out.
+
+49
+00:03:10,600 --> 00:03:17,220
+ And I like, man, whenever these things pop up on Hacktivity, I'm like, wow, that's been sitting there
+
+50
+00:03:17,220 --> 00:03:17,920
+ for so long.
+
+51
+00:03:17,920 --> 00:03:20,680
+ And we could have found that just by sending a bunch of headers.
+
+52
+00:03:20,680 --> 00:03:22,180
+ Beautiful.
+
+53
+00:03:22,180 --> 00:03:23,100
+ All right.
+
+54
+00:03:23,100 --> 00:03:26,220
+ Last but not least, for those of you on YouTube, you can see that I'm wearing this sick,
+
+55
+00:03:26,220 --> 00:03:30,560
+ like ugly Christmas sweater that Wiz sent us.
+
+56
+00:03:30,560 --> 00:03:32,440
+ So I just wanted to give a shout out to the Wiz team.
+
+57
+00:03:32,440 --> 00:03:34,440
+ Thank you for this beautiful, what is it?
+
+58
+00:03:34,440 --> 00:03:40,680
+ It's like Arctic intelligence, you know, AI security, ugly Christmas sweater.
+
+59
+00:03:40,680 --> 00:03:42,780
+ So I'm going to be wearing this one all holiday season.
+
+60
+00:03:42,780 --> 00:03:43,780
+ Thanks, Wiz team.
+
+61
+00:03:43,780 --> 00:03:44,780
+ All right, let's go.
+
+62
+00:03:44,780 --> 00:03:45,780
+ Let's jump into the show.
+
+63
+00:03:45,780 --> 00:03:47,600
+ All righty, man.
+
+64
+00:03:47,600 --> 00:03:48,600
+ We're rolling.
+
+65
+00:03:48,600 --> 00:03:49,600
+ Happy Thanksgiving.
+
+66
+00:03:49,600 --> 00:03:50,600
+ Yeah.
+
+67
+00:03:50,600 --> 00:03:51,600
+ Happy Thanksgiving.
+
+68
+00:03:51,600 --> 00:03:54,060
+ And for some reason, you think that half the world won't know what that is.
+
+69
+00:03:54,060 --> 00:03:55,060
+ Do you want to tell people this?
+
+70
+00:03:55,060 --> 00:03:56,940
+ I mean, it's it's an American holiday.
+
+71
+00:03:56,940 --> 00:04:01,120
+ I don't I don't think it's a given that that people will know what that is.
+
+72
+00:04:01,120 --> 00:04:02,120
+ Yeah.
+
+73
+00:04:02,120 --> 00:04:05,360
+ Yeah, I feel like that people have probably heard of it and know what it is, even if it's
+
+74
+00:04:05,360 --> 00:04:06,360
+ not celebrated.
+
+75
+00:04:06,360 --> 00:04:10,460
+ But maybe maybe I just feel like I don't know the holidays for a lot of other countries.
+
+76
+00:04:10,460 --> 00:04:11,460
+ Yeah.
+
+77
+00:04:11,460 --> 00:04:12,460
+ Yeah, that's fair.
+
+78
+00:04:12,460 --> 00:04:17,120
+ But I guess like a lot of businesses and stuff do operate off of like US holidays and stuff
+
+79
+00:04:17,120 --> 00:04:18,120
+ like that.
+
+80
+00:04:18,120 --> 00:04:18,620
+ Yeah.
+
+81
+00:04:18,620 --> 00:04:22,080
+ So anyways, Thanksgiving is a holiday where people talk about what they're thankful for
+
+82
+00:04:22,080 --> 00:04:23,800
+ and eat specific types of food.
+
+83
+00:04:23,800 --> 00:04:24,800
+ Yeah.
+
+84
+00:04:24,800 --> 00:04:26,460
+ What are you what are you thankful for this year, man?
+
+85
+00:04:26,460 --> 00:04:27,700
+ Oh, that's a great question.
+
+86
+00:04:27,700 --> 00:04:28,700
+ Um, hmm.
+
+87
+00:04:28,700 --> 00:04:31,940
+ So it's my first year doing full time bug bounty.
+
+88
+00:04:31,940 --> 00:04:35,180
+ I think I think I've doubled my annual goal.
+
+89
+00:04:35,180 --> 00:04:37,100
+ So praise God for that.
+
+90
+00:04:37,100 --> 00:04:38,100
+ Yeah.
+
+91
+00:04:38,100 --> 00:04:39,100
+ It's amazing.
+
+92
+00:04:39,100 --> 00:04:44,180
+ So yeah, but outside of that, I think from the hacking community, I'm like extremely thankful
+
+93
+00:04:44,180 --> 00:04:47,180
+ for, um, I guess openness of information.
+
+94
+00:04:47,180 --> 00:04:53,680
+ Like, I think that I think that the openness of like GitHub, for example, has made AI models
+
+95
+00:04:53,680 --> 00:04:57,460
+ incredible at coding and I just get benefit from that every single day.
+
+96
+00:04:57,460 --> 00:05:03,000
+ And then I, and then I just think in the hacker community, like we didn't have to develop, um,
+
+97
+00:05:03,000 --> 00:05:06,040
+ the hacker community didn't have to develop in such a way where people wanted to share information.
+
+98
+00:05:06,040 --> 00:05:09,580
+ I think all the time about how people travel to conferences all over the US for basically
+
+99
+00:05:09,580 --> 00:05:13,740
+ zero pay to share niche research to like 15 people in a room.
+
+100
+00:05:13,740 --> 00:05:16,260
+ And sometimes it blows up, but like they're really excited about it.
+
+101
+00:05:16,260 --> 00:05:17,280
+ They've been prepping all year, dude.
+
+102
+00:05:17,280 --> 00:05:19,340
+ Like they've been working hard in their off hours.
+
+103
+00:05:19,340 --> 00:05:23,260
+ They have a salary job and they're going to go and present at this conference in DC to
+
+104
+00:05:23,260 --> 00:05:25,780
+ 15 people in a small room about their little niche area of research.
+
+105
+00:05:25,780 --> 00:05:28,940
+ It's like, man, the security industry is really cool in that regard.
+
+106
+00:05:28,940 --> 00:05:29,620
+ It is, man.
+
+107
+00:05:29,620 --> 00:05:31,980
+ It is the, the dissemination of information.
+
+108
+00:05:31,980 --> 00:05:32,820
+ Yeah, for sure.
+
+109
+00:05:32,820 --> 00:05:33,940
+ People just love talking about it.
+
+110
+00:05:33,940 --> 00:05:37,980
+ I think people are really passionate, you know, um, which, which makes sense.
+
+111
+00:05:37,980 --> 00:05:41,980
+ Yeah, dude, I'm, I'm thankful for having you on the team this, this year.
+
+112
+00:05:41,980 --> 00:05:42,740
+ Well, thank you.
+
+113
+00:05:42,740 --> 00:05:45,340
+ It's been amazing, uh, to be hosting the podcast.
+
+114
+00:05:45,340 --> 00:05:49,340
+ I'm, I'm, uh, also grateful for the whole CTPB team.
+
+115
+00:05:49,340 --> 00:05:51,340
+ They just are unbelievable.
+
+116
+00:05:51,340 --> 00:05:53,700
+ Um, so I know they're editing it right now.
+
+117
+00:05:53,700 --> 00:05:55,940
+ I can, I can see their little stupid smiles.
+
+118
+00:05:55,940 --> 00:05:57,860
+ So thank you guys for all of your hard work.
+
+119
+00:05:57,860 --> 00:06:00,180
+ Um, and for the CTPB community as well.
+
+120
+00:06:00,180 --> 00:06:04,360
+ Dude, like this community is so awesome because like one of the things we were thinking about
+
+121
+00:06:04,360 --> 00:06:08,580
+ when we, we built this community in the beginning, Joel and I were like, man, I really wish this community
+
+122
+00:06:08,580 --> 00:06:10,360
+ existed so that we can be a part of it.
+
+123
+00:06:10,360 --> 00:06:14,360
+ You know, and then I'm just sitting there like in the discord reading all this stuff and I'm like, man, this is great.
+
+124
+00:06:14,360 --> 00:06:16,360
+ Like, wait, this is my, my baby.
+
+125
+00:06:16,360 --> 00:06:17,360
+ Like this is so awesome.
+
+126
+00:06:17,360 --> 00:06:30,360
+ It really does feel like you get to like reap the rewards of the awesome thing that you built when people are like sharing novel research, when they're collaborating, when they're popping insane bugs, when they're like sharing their bounties and their success stories that that community has contributed to.
+
+127
+00:06:30,360 --> 00:06:31,360
+ Right.
+
+128
+00:06:31,360 --> 00:06:32,360
+ Yeah.
+
+129
+00:06:32,360 --> 00:06:34,360
+ I was thinking about that recently too.
+
+130
+00:06:34,360 --> 00:06:52,360
+ Um, obviously we have a few different things we're kind of doing for promo for Thanksgiving and, um, and black Friday that I want you to mention after I say this, but I was actually thinking about, man, how cool it is that we are in an industry where we get to actually, um, pat the backs of our friends in ways that are financially meaningful to them and their family.
+
+131
+00:06:52,360 --> 00:06:55,360
+ Like me, like me and Douglas archangel, we're hacking on a thing this week.
+
+132
+00:06:55,360 --> 00:06:56,360
+ And I thought about that.
+
+133
+00:06:56,360 --> 00:06:59,360
+ Like he got me invited to a, you know, to a private challenge or whatever.
+
+134
+00:06:59,360 --> 00:07:05,360
+ And it resulted in, you know, five plus, um, or I think it's going to result in five plus figures of bounties.
+
+135
+00:07:05,360 --> 00:07:16,360
+ And it's just like, wow, that is so cool that I have a friend who like, can I like shares that type of, um, that type of like, I don't know, blessing or gift with my family on like a regular basis.
+
+136
+00:07:16,360 --> 00:07:21,360
+ Yeah, dude, private program invites are like challenge invites and stuff like that are pretty meaningful.
+
+137
+00:07:21,360 --> 00:07:24,360
+ Gret me, got me into one the other day and I was like, dang, we crushed this.
+
+138
+00:07:24,360 --> 00:07:25,360
+ This is great.
+
+139
+00:07:25,360 --> 00:07:26,360
+ Thanks man.
+
+140
+00:07:26,360 --> 00:07:34,360
+ Like, and it's funny for him as well, because you know, he was my mentee for like, I don't know, a year and a half, two years, you know?
+
+141
+00:07:34,360 --> 00:07:37,360
+ And then I'm like, yes, I'm reaping the reward of mine.
+
+142
+00:07:37,360 --> 00:07:38,360
+ Exactly.
+
+143
+00:07:38,360 --> 00:07:39,360
+ So.
+
+144
+00:07:39,360 --> 00:07:41,360
+ And just even small leads though.
+
+145
+00:07:41,360 --> 00:07:45,360
+ Like the reason why my mind jumped to this is because like there's a small scale of that that happens in our community and the critical thinkers.
+
+146
+00:07:45,360 --> 00:07:48,360
+ Chat or in the guild chat where people are just posting leads.
+
+147
+00:07:48,360 --> 00:07:50,360
+ And it's like, Hey, I think I have a gadget here.
+
+148
+00:07:50,360 --> 00:07:51,360
+ Can I turn it into a bug?
+
+149
+00:07:51,360 --> 00:07:52,360
+ And then people are like, Oh, here's the bug.
+
+150
+00:07:52,360 --> 00:07:53,360
+ And then they both get paid.
+
+151
+00:07:53,360 --> 00:07:54,360
+ And so it's really cool.
+
+152
+00:07:54,360 --> 00:07:58,360
+ It's like a gift to both people that like, had they not had that connection, nobody would got paid.
+
+153
+00:07:58,360 --> 00:07:59,360
+ Yeah.
+
+154
+00:07:59,360 --> 00:07:59,360
+ It's beautiful too.
+
+155
+00:07:59,360 --> 00:08:02,360
+ I mean, especially in the C tiers tier, a lot of people will drop stuff all the time.
+
+156
+00:08:02,360 --> 00:08:04,360
+ Like, Hey, you know, how do I solve this?
+
+157
+00:08:04,360 --> 00:08:08,360
+ And then somebody gives them the answer and it's like, well, that just paid for 10 years of CTVB.
+
+158
+00:08:08,360 --> 00:08:09,360
+ Exactly.
+
+159
+00:08:09,360 --> 00:08:10,360
+ Yeah, exactly.
+
+160
+00:08:10,360 --> 00:08:11,360
+ All right, here we go.
+
+161
+00:08:11,360 --> 00:08:20,360
+ So, um, yeah, well going back to the black Friday thing though, um, what we're going to do just as a part of black Friday for those of you guys that don't know black Friday is like a, I don't know.
+
+162
+00:08:20,360 --> 00:08:28,360
+ You know, consumeristic holiday, um, where all the, you know, companies try to give deals and stuff like that.
+
+163
+00:08:28,360 --> 00:08:38,360
+ And, uh, essentially what we're going to do is we're just going to give out five to 10 free swag codes, um, for black Friday in the C tiers discord, um, surrounding Thanksgiving and black Friday.
+
+164
+00:08:38,360 --> 00:08:45,360
+ So, uh, if you guys are interested, hop into the critical thinkers tier, or we're going to be dropping those, uh, swag codes and get some.
+
+165
+00:08:45,360 --> 00:08:54,360
+ And we're also going to do, uh, a raffle for the new paperback version of Gareth Hayes, JavaScript for hackers.
+
+166
+00:08:54,360 --> 00:08:55,360
+ Okay.
+
+167
+00:08:55,360 --> 00:08:57,360
+ So he's, uh, Gareth is doing a little promotion.
+
+168
+00:08:57,360 --> 00:09:07,360
+ Um, I think surrounding Christmas and surrounding the holidays, uh, releasing the paperback version of his amazing book, JavaScript for hackers, which I recommend all of you guys listen to and have recommended.
+
+169
+00:09:07,360 --> 00:09:09,360
+ Do you multiple times already?
+
+170
+00:09:09,360 --> 00:09:10,360
+ Yeah.
+
+171
+00:09:10,360 --> 00:09:12,360
+ Um, so here's the paperback version right here.
+
+172
+00:09:12,360 --> 00:09:16,360
+ We're going to do three copies to existing critical thinkers.
+
+173
+00:09:16,360 --> 00:09:17,360
+ We're going to raffle those off.
+
+174
+00:09:17,360 --> 00:09:24,360
+ And then we're going to do three copies to new critical thinkers that join surrounding Thanksgiving and black Friday.
+
+175
+00:09:24,360 --> 00:09:28,360
+ So, uh, be on the lookout for those, uh, black Friday and Thanksgiving opportunities.
+
+176
+00:09:28,360 --> 00:09:30,360
+ It's such an appropriate price there of the book.
+
+177
+00:09:30,360 --> 00:09:30,360
+ Yeah.
+
+178
+00:09:30,360 --> 00:09:31,360
+ Yeah, dude.
+
+179
+00:09:31,360 --> 00:09:36,360
+ I went through this, dude, I didn't even notice, man.
+
+180
+00:09:36,360 --> 00:09:37,360
+ Oh God.
+
+181
+00:09:37,360 --> 00:09:38,360
+ Am I a hacker?
+
+182
+00:09:38,360 --> 00:09:40,360
+ I don't even know if I'm a hacker anymore, dude.
+
+183
+00:09:40,360 --> 00:09:41,360
+ Jeez.
+
+184
+00:09:41,360 --> 00:09:42,360
+ That's funny.
+
+185
+00:09:42,360 --> 00:09:45,360
+ The Kindle version or the audio book version should be like $137 or something.
+
+186
+00:09:45,360 --> 00:09:46,360
+ Yeah.
+
+187
+00:09:46,360 --> 00:09:47,360
+ True.
+
+188
+00:09:47,360 --> 00:09:51,360
+ Um, all right, man, let's, uh, let's jump into the content.
+
+189
+00:09:51,360 --> 00:09:53,360
+ Um, I'll go ahead and take the first one since I'm already sharing my screen.
+
+190
+00:09:53,360 --> 00:10:05,360
+ Uh, the first one that I wanted to cover with you guys today was Searchlight Cyber's research on, uh, CV 2025 61757, which is, uh, Oracle Identity Manager's pre-authority.
+
+191
+00:10:05,360 --> 00:10:08,360
+ And guys, this one was such a simple bug.
+
+192
+00:10:08,360 --> 00:10:15,360
+ Like it's, it's just a beautiful example of like what you can do when you actually take the time to get access to source code.
+
+193
+00:10:15,360 --> 00:10:16,360
+ Okay.
+
+194
+00:10:16,360 --> 00:10:22,360
+ So, um, as usual, Searchlight Cyber team doing research, picking apart enterprise applications.
+
+195
+00:10:22,360 --> 00:10:32,360
+ They grabbed the source code for Oracle, uh, Identity Government governance suite and started tearing it apart and found a bunch of, uh, EAR and WAR files.
+
+196
+00:10:32,360 --> 00:10:42,360
+ Um, the first thing that I kind of noted about this write up was that they do what lots of us hackers call the, uh, find the endpoint game.
+
+197
+00:10:42,360 --> 00:10:47,360
+ I think, uh, Sam was, uh, the first one that, that coined that in my knowledge, at least.
+
+198
+00:10:47,360 --> 00:10:52,360
+ Um, and essentially they, they knew about a file help pages, main dot JSPX.
+
+199
+00:10:52,360 --> 00:10:56,360
+ Um, and they were like, okay, well, we know that that file exists from just playing around with the app.
+
+200
+00:10:56,360 --> 00:10:58,360
+ So let's go find where that is.
+
+201
+00:10:58,360 --> 00:10:59,360
+ Right.
+
+202
+00:10:59,360 --> 00:11:04,360
+ So they grabbed through all the, the WAR files and found it deep within the file system there.
+
+203
+00:11:04,360 --> 00:11:17,360
+ Um, and then they started tearing apart the jars surrounding that and found that Oracle dash IDM UI shell dot jar was the jar file that had all of the, um, main functionality for the application.
+
+204
+00:11:17,360 --> 00:11:18,360
+ There.
+
+205
+00:11:18,360 --> 00:11:21,360
+ Um, so they started looking at all the routes and stuff like that.
+
+206
+00:11:21,360 --> 00:11:25,360
+ And they noticed that a couple of them were unauthenticated.
+
+207
+00:11:25,360 --> 00:11:28,360
+ So they tried to reach them, reach out to them, but they hit a 401.
+
+208
+00:11:28,360 --> 00:11:30,360
+ And they're like, what the heck is going on here?
+
+209
+00:11:30,360 --> 00:11:31,360
+ These are unauthenticated routes.
+
+210
+00:11:31,360 --> 00:11:33,360
+ Like, why are we hitting a 401?
+
+211
+00:11:33,360 --> 00:11:50,360
+ And so they take a peek back at the web XML file and find that something that we love to see guys that, uh, all of the, you know, security constraints for these routes are being implemented by one central security filter.
+
+212
+00:11:50,360 --> 00:11:53,360
+ Um, which is like bad news.
+
+213
+00:11:53,360 --> 00:11:54,360
+ Okay.
+
+214
+00:11:54,360 --> 00:12:01,360
+ So this is a really, this is like a good overarching, um, principle, uh, that you could take into other enterprise applications.
+
+215
+00:12:01,360 --> 00:12:06,360
+ Um, and this is the, I'm just going to read a quote from the, the right up right here at searchlight cyber.
+
+216
+00:12:06,360 --> 00:12:09,360
+ We have found that central filters like this are almost always bypassable.
+
+217
+00:12:09,360 --> 00:12:18,360
+ The reason tends to be as follows this, the security filter handles every route in the application, but there's almost always a set of routes.
+
+218
+00:12:18,360 --> 00:12:22,360
+ The developer wants to allow for all users, including unauthenticated ones.
+
+219
+00:12:22,360 --> 00:12:36,360
+ Um, so we saw here just like a traditional story of, uh, uh, you know, off bypass here where they found that, uh, the developers were trying to let access to all waddle files through.
+
+220
+00:12:36,360 --> 00:12:43,360
+ And they were able to hit any arbitrary route by just tacking semi-colon dot waddle at the end of that route.
+
+221
+00:12:43,360 --> 00:12:44,360
+ Classic.
+
+222
+00:12:44,360 --> 00:12:52,360
+ Such a classic example of just like, yeah, a filter that's regex-based that you can just find a funny bypass to, right?
+
+223
+00:12:52,360 --> 00:12:53,360
+ Exactly, man.
+
+224
+00:12:53,360 --> 00:12:54,360
+ Exactly.
+
+225
+00:12:54,360 --> 00:13:01,360
+ And, you know, but one, one little gotcha that they did have here was of course they started with, um, you know, question mark.
+
+226
+00:13:01,360 --> 00:13:07,360
+ Uh, but then actually, you know, they were using get request URI, not get request URL.
+
+227
+00:13:07,360 --> 00:13:09,360
+ So it had to be in the actual path itself.
+
+228
+00:13:09,360 --> 00:13:10,360
+ Oh, interesting.
+
+229
+00:13:10,360 --> 00:13:13,360
+ Um, but then Java comes to the rescue with path parameters.
+
+230
+00:13:13,360 --> 00:13:26,360
+ Uh, so they were able to just do semi-colon dot waddle and then get RCE via hitting a route, a route called groovy script status, which takes, uh, some, some groovy script in and compiles it.
+
+231
+00:13:26,360 --> 00:13:29,360
+ And then tells you whether there's compilation errors.
+
+232
+00:13:29,360 --> 00:13:32,360
+ Um, but it doesn't actually execute the code.
+
+233
+00:13:32,360 --> 00:13:39,360
+ So they had to know, they solved that problem to get RCE by knowing that Java annotations are processed at compile time.
+
+234
+00:13:39,360 --> 00:13:40,360
+ Oh, wow.
+
+235
+00:13:40,360 --> 00:13:41,360
+ That's cool.
+
+236
+00:13:41,360 --> 00:13:42,360
+ Yeah.
+
+237
+00:13:42,360 --> 00:13:49,360
+ So even though the code wasn't actually run, the annotation, the custom annotation that they defined was being, uh, run because those are run at compile time.
+
+238
+00:13:49,360 --> 00:13:57,360
+ And they were able to get arbitrary code execution, um, through a, uh, annotation that they passed into that endpoint.
+
+239
+00:13:57,360 --> 00:14:00,360
+ Um, so dude, that's pretty odd.
+
+240
+00:14:00,360 --> 00:14:01,360
+ That's really cool.
+
+241
+00:14:01,360 --> 00:14:02,360
+ GG, dude.
+
+242
+00:14:02,360 --> 00:14:03,360
+ Yeah.
+
+243
+00:14:03,360 --> 00:14:04,360
+ Yeah.
+
+244
+00:14:04,360 --> 00:14:05,360
+ The goal, the dream.
+
+245
+00:14:05,360 --> 00:14:06,360
+ Yeah.
+
+246
+00:14:06,360 --> 00:14:07,360
+ Beautiful.
+
+247
+00:14:07,360 --> 00:14:08,360
+ So shout out to the SL cyber team.
+
+248
+00:14:08,360 --> 00:14:09,360
+ That was an awesome writer.
+
+249
+00:14:09,360 --> 00:14:11,360
+ That was like published yesterday or today.
+
+250
+00:14:11,360 --> 00:14:12,360
+ Yeah.
+
+251
+00:14:12,360 --> 00:14:13,360
+ I think it was pretty recent.
+
+252
+00:14:13,360 --> 00:14:14,360
+ Yeah.
+
+253
+00:14:14,360 --> 00:14:15,360
+ That's awesome.
+
+254
+00:14:15,360 --> 00:14:16,360
+ Yep.
+
+255
+00:14:16,360 --> 00:14:17,360
+ Sweet dude.
+
+256
+00:14:17,360 --> 00:14:20,360
+ I brought us a, uh, right up from Ajax.
+
+257
+00:14:20,360 --> 00:14:26,360
+ Um, many, many people know Ajax 01 as the, uh, SSO or OAuth guy.
+
+258
+00:14:26,360 --> 00:14:28,360
+ I don't know if you've, uh, ran to him in a while.
+
+259
+00:14:28,360 --> 00:14:31,360
+ He was doing the life hacking circuit for a little bit, but.
+
+260
+00:14:31,360 --> 00:14:32,360
+ Oh yeah.
+
+261
+00:14:32,360 --> 00:14:33,360
+ Yeah.
+
+262
+00:14:33,360 --> 00:14:34,360
+ I've seen this.
+
+263
+00:14:34,360 --> 00:14:35,360
+ Yeah.
+
+264
+00:14:35,360 --> 00:14:36,360
+ Yeah.
+
+265
+00:14:36,360 --> 00:14:37,360
+ So I'm going to share my screen real quick.
+
+266
+00:14:37,360 --> 00:14:39,360
+ It's called who still needs or who needs a blind XSS.
+
+267
+00:14:39,360 --> 00:14:41,360
+ And so it's kind of interesting.
+
+268
+00:14:41,360 --> 00:14:42,360
+ I think this is like years incoming.
+
+269
+00:14:42,360 --> 00:14:45,360
+ I remember like actually playing with this, uh,
+
+270
+00:14:45,360 --> 00:14:50,360
+ uh, exploit back with HX and Eric back in the day, like a couple of years ago.
+
+271
+00:14:50,360 --> 00:14:53,360
+ Um, I'm friends with both of them, both of them.
+
+272
+00:14:53,360 --> 00:14:54,360
+ I think that there's a third person.
+
+273
+00:14:54,360 --> 00:14:55,360
+ Yeah.
+
+274
+00:14:55,360 --> 00:14:56,360
+ Sajib.
+
+275
+00:14:56,360 --> 00:14:59,360
+ Um, and so basically what they did was, and you've seen this before,
+
+276
+00:14:59,360 --> 00:15:01,360
+ cause we've used it with AI stuff, but.
+
+277
+00:15:01,360 --> 00:15:07,360
+ Um, they're using the import HTML, um, Google docs, uh, function.
+
+278
+00:15:07,360 --> 00:15:08,360
+ Google docs function.
+
+279
+00:15:08,360 --> 00:15:09,360
+ Okay.
+
+280
+00:15:09,360 --> 00:15:10,360
+ Yes.
+
+281
+00:15:10,360 --> 00:15:14,360
+ To basically concatenate the, you know, the top left data, but you could do any data,
+
+282
+00:15:14,360 --> 00:15:17,360
+ you know, in a, in a real attack scenario with their server.
+
+283
+00:15:17,360 --> 00:15:18,360
+ So that automatically leaks.
+
+284
+00:15:18,360 --> 00:15:21,360
+ Obviously I'm sure that a lot of people have probably heard of this strategy.
+
+285
+00:15:21,360 --> 00:15:22,360
+ And if not, it's really neat.
+
+286
+00:15:22,360 --> 00:15:23,360
+ Basically Google docs.
+
+287
+00:15:23,360 --> 00:15:27,360
+ When you open the tab, if there's an import, HTML will make like a client side.
+
+288
+00:15:27,360 --> 00:15:29,360
+ That's your quest.
+
+289
+00:15:29,360 --> 00:15:31,360
+ Very similar to AI related image markdown volumes, right?
+
+290
+00:15:31,360 --> 00:15:37,360
+ Where there's like a client side, um, from the, from the victim's browser fetch, um, with that data.
+
+291
+00:15:37,360 --> 00:15:39,360
+ And it, and it includes the dynamic data from the table.
+
+292
+00:15:39,360 --> 00:15:40,360
+ And so it gets leaked.
+
+293
+00:15:40,360 --> 00:15:45,360
+ I was actually gonna ask you before I go onto this, is there a word for that whole class of attacks?
+
+294
+00:15:45,360 --> 00:15:50,360
+ Like, you know, like image source, import HTML, or is it just called like a client side?
+
+295
+00:15:50,360 --> 00:15:54,360
+ These are, are you talking about like CSV injections in particular here?
+
+296
+00:15:54,360 --> 00:16:02,360
+ Because that's pretty much all you do with CSV injections is like, uh, you know, exfil data via like a HTTP function or something like that.
+
+297
+00:16:02,360 --> 00:16:18,360
+ No, no, I'm just talking about like both, like, you know, like for example, if you have an AI application that's rendering markdown images into like an image source tag, the, the browser, the, like the victim's browser is making a client side fetch to a attacker's server in order to leak the data.
+
+298
+00:16:18,360 --> 00:16:21,360
+ And that's exactly what this does, but it's a completely different mechanic, right?
+
+299
+00:16:21,360 --> 00:16:29,360
+ Like this is like some sort of like, you know, fancy JavaScript in the Google Sheets thing that's doing it rather than like an image source tag for markdown.
+
+300
+00:16:29,360 --> 00:16:34,360
+ But at the core component, they're both leaking it via a dynamic URL coming from the client side browser.
+
+301
+00:16:34,360 --> 00:16:37,360
+ And so I didn't know if there was like an overarching term for both of those.
+
+302
+00:16:37,360 --> 00:16:39,360
+ Not that I can, not that I can think of, man.
+
+303
+00:16:39,360 --> 00:16:48,360
+ I mean, I like just leaks via, you know, HTTP request, I guess, but like, you know, even something like, it's not really like a client side or like a cross site leak.
+
+304
+00:16:48,360 --> 00:16:50,360
+ Cause it's not necessarily done that way.
+
+305
+00:16:50,360 --> 00:16:51,360
+ Right.
+
+306
+00:16:51,360 --> 00:16:52,360
+ Yeah.
+
+307
+00:16:52,360 --> 00:16:53,360
+ I mean, I don't know.
+
+308
+00:16:53,360 --> 00:16:54,360
+ Yeah.
+
+309
+00:16:54,360 --> 00:16:55,360
+ It is an interesting bold category though.
+
+310
+00:16:55,360 --> 00:16:56,360
+ Yeah.
+
+311
+00:16:56,360 --> 00:16:57,360
+ They're similar in that way.
+
+312
+00:16:57,360 --> 00:17:08,360
+ Um, and I would be interested in, um, if it, uh, uh, if something like this could be used with import HTML, with like an image thing for that image refer vulnerability, like that zero data was in Google.
+
+313
+00:17:08,360 --> 00:17:14,360
+ Obviously it did, it did work in markdown to image source and AI apps, but I'm curious if it would work in something like this.
+
+314
+00:17:14,360 --> 00:17:16,360
+ Anyways, I digress.
+
+315
+00:17:16,360 --> 00:17:26,360
+ Basically their goal was to spray this type of payload, import HTML with, you know, um, with a domain that they owned with a concatenation of the data.
+
+316
+00:17:26,360 --> 00:17:35,360
+ So they could prove, you know, data exfil across a bunch of different locations, across a bunch of bug bounty programs to see if they would get callbacks to their server.
+
+317
+00:17:35,360 --> 00:17:39,360
+ If anybody's ever tried this with Google forms, it sanitizes it.
+
+318
+00:17:39,360 --> 00:17:41,360
+ And there are lots of other apps that sanitize it.
+
+319
+00:17:41,360 --> 00:17:52,360
+ So I did want to, I did want to call out, um, and they, they didn't get a lot of success initially, but success came days and weeks later when that data was then used at some point by an employee down the line.
+
+320
+00:17:52,360 --> 00:18:02,360
+ And so the two, there are, there are two ways that this happened that they found one was employee employees exporting CSVs from CRMs like Salesforce or Zendesk or HubSpot.
+
+321
+00:18:02,360 --> 00:18:05,360
+ Um, you know, these may have things that escape it locally when you view it.
+
+322
+00:18:05,360 --> 00:18:12,360
+ Well, I mean, none of these are going to run a Google docs, um, function anyway, but, um, and because they're not Google docs, they don't have a reason to sanitize the data.
+
+323
+00:18:12,360 --> 00:18:13,360
+ Right.
+
+324
+00:18:13,360 --> 00:18:19,360
+ Um, and then, um, when you, when you import into certain ways from Google docs, it does get sanitized.
+
+325
+00:18:19,360 --> 00:18:24,360
+ But what they found was that if you, one, when you copy and paste, it doesn't always do it.
+
+326
+00:18:24,360 --> 00:18:31,360
+ And then two automation tools like Zapier work auto and other custom integration, insert the rows directly into Google sheets.
+
+327
+00:18:31,360 --> 00:18:32,360
+ So things like this.
+
+328
+00:18:32,360 --> 00:18:35,360
+ So this is like a Zapier, uh, for the listeners.
+
+329
+00:18:35,360 --> 00:18:44,360
+ I'm just, there's a screenshot on their, on their blog post that just shows like a Zapier extension that allows you to take a CRM lead from Salesforce and basically automatically put it into Google sheets.
+
+330
+00:18:44,360 --> 00:18:46,360
+ So anyways, they got a bunch of hits.
+
+331
+00:18:46,360 --> 00:18:56,360
+ The funniest one, which I just have to mention on the pod before we move on is that a bug bounty life hacking event form was one of the, was one of the exploits they saw.
+
+332
+00:18:56,360 --> 00:19:00,360
+ And look, it looks like it has, please provide researcher information.
+
+333
+00:19:00,360 --> 00:19:01,360
+ Oh no.
+
+334
+00:19:01,360 --> 00:19:02,360
+ Something about being invited.
+
+335
+00:19:02,360 --> 00:19:05,360
+ So I'd be really curious to know which, uh, which company this was, but.
+
+336
+00:19:05,360 --> 00:19:07,360
+ Dude, that's hilarious, man.
+
+337
+00:19:07,360 --> 00:19:08,360
+ Pretty cool.
+
+338
+00:19:08,360 --> 00:19:09,360
+ Yeah.
+
+339
+00:19:09,360 --> 00:19:17,360
+ I think that, I think that blind, you know, injections like this always, they just boggle my mind when they work.
+
+340
+00:19:17,360 --> 00:19:19,360
+ I'm like, oh my gosh, I just can't believe that happened.
+
+341
+00:19:19,360 --> 00:19:20,360
+ But yeah, totally.
+
+342
+00:19:20,360 --> 00:19:31,360
+ I mean, I could definitely see how Zapier connections or something like that, you know, would really make that happen because there's, there's no reason to have it sanitized, you know, when it, when the row is getting inserted.
+
+343
+00:19:31,360 --> 00:19:33,360
+ So, um, yeah, that makes sense.
+
+344
+00:19:33,360 --> 00:19:37,360
+ Uh, but man, that's such like a shadow IT thing too, though.
+
+345
+00:19:37,360 --> 00:19:46,360
+ It is like, if your team is like, your marketing team is like spinning up a, a, a form and then they connect it to Zapier and then it leaks all the information submitted by the form.
+
+346
+00:19:46,360 --> 00:19:48,360
+ You're like, like, what is it?
+
+347
+00:19:48,360 --> 00:19:50,360
+ The company's going to be like, okay guys.
+
+348
+00:19:50,360 --> 00:19:51,360
+ All right.
+
+349
+00:19:51,360 --> 00:19:52,360
+ Yeah.
+
+350
+00:19:52,360 --> 00:19:54,360
+ Here's the bounty, you know, but like, what, how do they fix that?
+
+351
+00:19:54,360 --> 00:19:55,360
+ You know?
+
+352
+00:19:55,360 --> 00:19:56,360
+ Like, yeah, that's true.
+
+353
+00:19:56,360 --> 00:19:58,360
+ This is something that I can see not getting paid from some programs.
+
+354
+00:19:58,360 --> 00:19:59,360
+ Cause there's not like a code base fix, right?
+
+355
+00:19:59,360 --> 00:20:01,360
+ It's like, tell your employees not to do this silly thing.
+
+356
+00:20:01,360 --> 00:20:04,360
+ But if it is via Zapier extension, then maybe it would automatically get paid.
+
+357
+00:20:04,360 --> 00:20:07,360
+ Cause you can go import the data in a better way.
+
+358
+00:20:07,360 --> 00:20:08,360
+ Right?
+
+359
+00:20:08,360 --> 00:20:09,360
+ Yeah.
+
+360
+00:20:09,360 --> 00:20:10,360
+ Yeah.
+
+361
+00:20:10,360 --> 00:20:11,360
+ Potentially good, good, uh, good shout, man.
+
+362
+00:20:11,360 --> 00:20:12,360
+ Yeah.
+
+363
+00:20:12,360 --> 00:20:16,360
+ I, I, I like to see it when people talk about it more than just theoretically, they're like, okay.
+
+364
+00:20:16,360 --> 00:20:24,360
+ And then we went and submitted every single Salesforce form that exists, you know, or whatever, you know, to see if where this data would end up back in Google sheets or whatever.
+
+365
+00:20:24,360 --> 00:20:25,360
+ Yeah, exactly.
+
+366
+00:20:25,360 --> 00:20:31,360
+ I think, uh, a check kind of had the idea, but then reach out to Eric and I'm pretty sure they've been doing this for at least like more than a year.
+
+367
+00:20:31,360 --> 00:20:35,360
+ So I think they probably sprayed it everywhere and gotten a good number of bounties from it.
+
+368
+00:20:35,360 --> 00:20:36,360
+ Yeah.
+
+369
+00:20:36,360 --> 00:20:37,360
+ Yeah.
+
+370
+00:20:37,360 --> 00:20:38,360
+ That makes sense, man.
+
+371
+00:20:38,360 --> 00:20:39,360
+ Good, good stuff guys.
+
+372
+00:20:39,360 --> 00:20:48,360
+ Um, next one on the list that we had here was actually a, uh, crit research lab, um, post, which guys I've been so pleased with the results of the research lab.
+
+373
+00:20:48,360 --> 00:20:57,360
+ We kind of came up with this idea to, um, sponsor research, um, by people in the community and we've gotten some really good finds out here.
+
+374
+00:20:57,360 --> 00:21:03,360
+ Um, so this one is entitled ASP.net MVC view engine search patterns by FSI.
+
+375
+00:21:03,360 --> 00:21:13,360
+ And essentially the concept of this research is that FSI, um, takes a look at the scenario where you have arbitrary file, right.
+
+376
+00:21:13,360 --> 00:21:20,360
+ Uh, on a, uh, ASP.net environment, but you can't access the files that you're writing.
+
+377
+00:21:20,360 --> 00:21:28,360
+ Uh, because there's no paths that allow you to access .aspx files or CS, HTML files.
+
+378
+00:21:28,360 --> 00:21:30,360
+ So you can't get code execution.
+
+379
+00:21:30,360 --> 00:21:41,360
+ So what he did in this scenario is, and he breaks it down in a lot more depth in the actual blog, but he hooked, uh, procmon up to the actual exe that was processing all of these hits.
+
+380
+00:21:41,360 --> 00:21:53,360
+ And found that it was attempting to read a bunch of paths, um, uh, files that doesn't, that don't exist when he hit a certain, um, model view controller path in the ASP.net framework.
+
+381
+00:21:53,360 --> 00:21:53,360
+ Right.
+
+382
+00:21:53,360 --> 00:22:02,360
+ So essentially there's like a default, um, file that it will try to read, you know, that ends in .cs, HTML or whatever.
+
+383
+00:22:02,360 --> 00:22:06,360
+ Um, when you try to hit some of these, uh, what, what is it?
+
+384
+00:22:06,360 --> 00:22:07,360
+ Let's see if I can find the one right here.
+
+385
+00:22:07,360 --> 00:22:15,360
+ Um, when you try to hit a path, like slash model slash, uh, view or slash controller slash view right here.
+
+386
+00:22:15,360 --> 00:22:17,360
+ Um, and then it will take that.
+
+387
+00:22:17,360 --> 00:22:19,360
+ It'll take your controller name and your, and your method name.
+
+388
+00:22:19,360 --> 00:22:26,360
+ And then, uh, it will craft a, um, an actual file that it tries to read from the file system and executes that code.
+
+389
+00:22:26,360 --> 00:22:27,360
+ Right.
+
+390
+00:22:27,360 --> 00:22:31,360
+ Um, so if you've got access to like the MVC interface, right.
+
+391
+00:22:31,360 --> 00:22:33,360
+ But you can't access the actual file itself.
+
+392
+00:22:33,360 --> 00:22:34,360
+ You can use your arbitrary file, right.
+
+393
+00:22:34,360 --> 00:22:40,360
+ To write into one of these, you know, files that, that the system looks for by default.
+
+394
+00:22:40,360 --> 00:22:49,360
+ And then it will go ahead and process that and run that code as a result of this MVC, um, uh, you know, uh, interface here.
+
+395
+00:22:49,360 --> 00:22:51,360
+ So I thought this was really great research.
+
+396
+00:22:51,360 --> 00:22:58,360
+ I love it when researchers dive deep into specific frameworks that we, we see all the time, like ASP.net, right.
+
+397
+00:22:58,360 --> 00:22:59,360
+ Yeah.
+
+398
+00:22:59,360 --> 00:23:04,360
+ And give us a writeup of exactly what's happening under the hood so that we can know better how to exploit some of these niche scenarios.
+
+399
+00:23:04,360 --> 00:23:05,360
+ Yeah.
+
+400
+00:23:05,360 --> 00:23:08,360
+ A million percent because all it takes is this one person putting out this research.
+
+401
+00:23:08,360 --> 00:23:15,360
+ And now everyone who comes across a similar situation knows how to like further the exploit, you know, how to actually get the next step or the amount of impact.
+
+402
+00:23:15,360 --> 00:23:16,360
+ Exactly.
+
+403
+00:23:16,360 --> 00:23:34,360
+ And, and, you know, one of the things he was saying specifically here is that, um, a lot of times what you'll see in these, uh, web.config files is that only specific file extensions are allowed or, um, you know, the dot file extension allow is allowed, which means an empty, empty file extension.
+
+404
+00:23:34,360 --> 00:23:37,360
+ And that correlates really well with the, um, MVC environment.
+
+405
+00:23:37,360 --> 00:23:43,360
+ That's why, you know, he had this, this, uh, this very limited allow list.
+
+406
+00:23:43,360 --> 00:23:50,360
+ And he was able to use that to still arbitrary, uh, arbitrarily execute code via, uh, CS HTML file.
+
+407
+00:23:50,360 --> 00:23:51,360
+ Um, right.
+
+408
+00:23:51,360 --> 00:23:52,360
+ So pretty awesome.
+
+409
+00:23:52,360 --> 00:24:04,360
+ And on the topic of the current research lab in general, like you said, I feel like, um, we were excited about it and you launched it and then like, we didn't really do a lot with it for a while, but then over the last, the last two months, it's just been like, bam, bam, bam, bam.
+
+410
+00:24:04,360 --> 00:24:05,360
+ So it's been so good.
+
+411
+00:24:05,360 --> 00:24:06,360
+ Yeah.
+
+412
+00:24:06,360 --> 00:24:08,360
+ It feels like every episode we're talking about something new.
+
+413
+00:24:08,360 --> 00:24:14,360
+ So, um, if you're interested in trying to figure out some ASP.net MVC stuff, then this is a great, uh, a great writeup.
+
+414
+00:24:14,360 --> 00:24:21,360
+ And if I remember correctly, I think I've got an unread message by, uh, FSI right now trying to do a, a, a, a followup to this.
+
+415
+00:24:21,360 --> 00:24:26,360
+ Um, so you might see a followup on the crit lab research website.
+
+416
+00:24:26,360 --> 00:24:33,360
+ So, and I don't know if it was, uh, him or someone else, but we have had some people say, Hey, instead of this little token bounty, can I just get some swag?
+
+417
+00:24:33,360 --> 00:24:37,360
+ And so if you're wanting to earn some swag, you can also do a small writeup for swag.
+
+418
+00:24:37,360 --> 00:24:38,360
+ Totally.
+
+419
+00:24:38,360 --> 00:24:39,360
+ Yeah.
+
+420
+00:24:39,360 --> 00:24:40,360
+ Yeah.
+
+421
+00:24:40,360 --> 00:24:47,360
+ Definitely down to give CTVB swag instead of, you know, the 25 to $50 that we do for a lot of these writeups and, uh, micro research.
+
+422
+00:24:47,360 --> 00:24:48,360
+ Yeah.
+
+423
+00:24:48,360 --> 00:24:49,360
+ Okay.
+
+424
+00:24:49,360 --> 00:24:50,360
+ Sweet.
+
+425
+00:24:50,360 --> 00:24:51,360
+ Um, the next one you said, what the heck is this?
+
+426
+00:24:51,360 --> 00:24:53,360
+ And I said, wait until we're on the pod to talk about it.
+
+427
+00:24:53,360 --> 00:24:55,360
+ Uh, first of all, it has a really cool name.
+
+428
+00:24:55,360 --> 00:24:56,360
+ It's called heretic.
+
+429
+00:24:56,360 --> 00:24:58,360
+ Um, but it is AI related.
+
+430
+00:24:58,360 --> 00:25:01,360
+ So I'm going to share my screen super quick for the viewers.
+
+431
+00:25:01,360 --> 00:25:02,360
+ Um, interesting.
+
+432
+00:25:02,360 --> 00:25:03,360
+ Okay.
+
+433
+00:25:03,360 --> 00:25:04,360
+ Oh, you're already skimming it.
+
+434
+00:25:04,360 --> 00:25:05,360
+ Justin, come on.
+
+435
+00:25:05,360 --> 00:25:06,360
+ I'm sorry, man.
+
+436
+00:25:06,360 --> 00:25:07,360
+ I'm sorry, dude.
+
+437
+00:25:07,360 --> 00:25:08,360
+ Blow me away.
+
+438
+00:25:08,360 --> 00:25:09,360
+ No, it's fine.
+
+439
+00:25:09,360 --> 00:25:14,360
+ No, it's, it's actually just extremely cool new research and it does stand on the shoulders of giants.
+
+440
+00:25:14,360 --> 00:25:23,360
+ So basically, um, there are, there's a thing called obliteration and it's a way in which, uh, there are people who remove the safety alignment from open source models.
+
+441
+00:25:23,360 --> 00:25:35,360
+ Um, you know, obviously this has pros and cons, we're not, we're not here to debate the ethics of it, but it's often useful for security researchers and hackers because, um, some of these models will be very resistant to helping write payloads and do that sort of thing.
+
+442
+00:25:35,360 --> 00:25:48,360
+ And so kind of having this strategy to obliterate or like kind of remove the safety alignment from top open source models in the future will be really useful for people like us and people like our community that want to use open source models for exploit writing.
+
+443
+00:25:48,360 --> 00:25:59,360
+ Um, and this is basically the latest and greatest breakthrough in that generally when you obliterate a model, it re it reduces the quality of the model by a huge amount.
+
+444
+00:25:59,360 --> 00:26:01,360
+ Um, and I don't understand what all these words mean.
+
+445
+00:26:01,360 --> 00:26:09,360
+ A lot of this is AI and I'll speak, but basically the KL divergence is what they say goes down significantly and they basically solve that.
+
+446
+00:26:09,360 --> 00:26:13,360
+ So they solved it where now you can obliterate the model, but leave the quality really high.
+
+447
+00:26:13,360 --> 00:26:18,360
+ And, um, this, this, um, repo makes it totally possible for anyone to do it.
+
+448
+00:26:18,360 --> 00:26:20,360
+ Like just, um, with like, just right.
+
+449
+00:26:20,360 --> 00:26:21,360
+ It's basically just running the script.
+
+450
+00:26:21,360 --> 00:26:24,360
+ You don't have to do anything fancy and it kind of just figures everything out for you.
+
+451
+00:26:24,360 --> 00:26:25,360
+ Wow, dude.
+
+452
+00:26:25,360 --> 00:26:26,360
+ Yeah.
+
+453
+00:26:26,360 --> 00:26:39,360
+ They did it on Gemma and, um, and, and Quinn, but one of the coolest things is basically they have a list of harmful prompts and the default Google Gemma 3 12, 12 billion parameter model refuses 97 of the 100 harmful prompts.
+
+454
+00:26:39,360 --> 00:26:41,360
+ So there's probably just three like duds in there, right?
+
+455
+00:26:41,360 --> 00:26:44,360
+ Like things that aren't actually harmful or whatever in their dataset.
+
+456
+00:26:44,360 --> 00:26:48,360
+ But then after it's, um, obliterated, it only rejects three.
+
+457
+00:26:48,360 --> 00:26:51,360
+ Dude, that's pretty sick.
+
+458
+00:26:51,360 --> 00:26:52,360
+ Yeah.
+
+459
+00:26:52,360 --> 00:26:53,360
+ It's really, really cool.
+
+460
+00:26:53,360 --> 00:27:04,360
+ The fact that it, um, and they say down here at the bottom, but it's built on top of auto obliteration, obliteration.py and a bunch of these other, um, things that they, that's prior art basically that kind of inspired them and made the technique possible.
+
+461
+00:27:04,360 --> 00:27:11,360
+ Um, but it's just a really cool breakthrough, um, for getting a model to be like quote unquote, you know, fully gel broken or fully.
+
+462
+00:27:11,360 --> 00:27:12,360
+ Yeah.
+
+463
+00:27:12,360 --> 00:27:13,360
+ Yeah.
+
+464
+00:27:13,360 --> 00:27:23,360
+ I think that's, I think that's going to be, I think within the next year or so, we're going to see a lot of, uh, the stuff that we want to be able to accomplish in cybersecurity, being able to be done by local models.
+
+465
+00:27:23,360 --> 00:27:24,360
+ Yeah.
+
+466
+00:27:24,360 --> 00:27:26,360
+ And then of course you would want to do it at a local model for sure.
+
+467
+00:27:26,360 --> 00:27:28,360
+ You know, like, and, uh, having to fight with it.
+
+468
+00:27:28,360 --> 00:27:29,360
+ So like.
+
+469
+00:27:29,360 --> 00:27:30,360
+ You know, hacks.
+
+470
+00:27:30,360 --> 00:27:33,360
+ I promise I'm a bug bounty hunter and this is the scope.
+
+471
+00:27:33,360 --> 00:27:34,360
+ Hey, you want it.
+
+472
+00:27:34,360 --> 00:27:35,360
+ Yeah.
+
+473
+00:27:35,360 --> 00:27:37,360
+ You want a tiny trick that I think has been working for me a little bit lately.
+
+474
+00:27:37,360 --> 00:27:44,360
+ Well, often I do actually want like, um, a header, an X bug bounty header in my requests, but I've been putting that in the very first request.
+
+475
+00:27:44,360 --> 00:27:53,360
+ Anytime I ask these like agentic frameworks, whether it's codex or cloud code, I'll be like, and make, and you know, make sure you append this header to any requests you make, you know?
+
+476
+00:27:53,360 --> 00:28:03,360
+ And so then it writes it into the script and then it's less, it's just more like, it's less likely to reject you because I've noticed that sonnet four or five, if I'm not careful, will often reject me where sonnet four didn't.
+
+477
+00:28:03,360 --> 00:28:06,360
+ So I do think that they are trying to make their models safer over time.
+
+478
+00:28:06,360 --> 00:28:11,360
+ Um, actually on that topic, um, Anthropic does have a private bug bounty program.
+
+479
+00:28:11,360 --> 00:28:14,360
+ You can just like fill out a form to request access to, and they do quite well.
+
+480
+00:28:14,360 --> 00:28:21,360
+ I think we've talked about them on the pod once or twice, but, um, some of my, some of my AI red teaming friends all got payouts this week and they were pretty significant payouts.
+
+481
+00:28:21,360 --> 00:28:24,360
+ You know, it was like 18,000, 14,000, 12,000.
+
+482
+00:28:24,360 --> 00:28:26,360
+ And then like, you know, a couple that were like two, four, six.
+
+483
+00:28:26,360 --> 00:28:27,360
+ And this is for jail breaks.
+
+484
+00:28:27,360 --> 00:28:29,360
+ This is not for like security vulnerabilities.
+
+485
+00:28:29,360 --> 00:28:30,360
+ It's for safety issues.
+
+486
+00:28:30,360 --> 00:28:31,360
+ Right.
+
+487
+00:28:31,360 --> 00:28:40,360
+ And, um, and so anyways, yeah, I just wanted to mention that because I do think the companies are continuing to care more and more about safety and that's, um, that's going to make it harder.
+
+488
+00:28:40,360 --> 00:28:42,360
+ It's going to make it harder and harder for us to generate payloads later.
+
+489
+00:28:42,360 --> 00:28:44,360
+ So things like this heretic, uh, are really cool.
+
+490
+00:28:44,360 --> 00:28:45,360
+ Dude.
+
+491
+00:28:45,360 --> 00:28:50,360
+ That is, those are some serious bounties for jail breaks, like five figure bounties.
+
+492
+00:28:50,360 --> 00:28:51,360
+ It is.
+
+493
+00:28:51,360 --> 00:28:52,360
+ Yeah.
+
+494
+00:28:52,360 --> 00:28:53,360
+ And these people are not people who were like into bug bounty before.
+
+495
+00:28:53,360 --> 00:28:56,360
+ So for them, it's like, kind of like, uh, you know, hooking them.
+
+496
+00:28:56,360 --> 00:28:58,360
+ So they're, they're seeing the beauty of it all.
+
+497
+00:28:58,360 --> 00:28:59,360
+ That's exactly.
+
+498
+00:28:59,360 --> 00:29:00,360
+ Exactly.
+
+499
+00:29:00,360 --> 00:29:01,360
+ Dude, freaking bug bounty, man.
+
+500
+00:29:01,360 --> 00:29:02,360
+ It is unbelievable.
+
+501
+00:29:02,360 --> 00:29:03,360
+ It really is.
+
+502
+00:29:03,360 --> 00:29:04,360
+ Um, yeah.
+
+503
+00:29:04,360 --> 00:29:05,360
+ Uh, all right.
+
+504
+00:29:05,360 --> 00:29:08,360
+ So you go, uh, I, yeah, I got the next one.
+
+505
+00:29:08,360 --> 00:29:11,360
+ This one is, um, you know, let me go ahead and share this.
+
+506
+00:29:11,360 --> 00:29:16,360
+ This is actually a presentation that I stumbled upon, uh, as I was just scrolling through Twitter.
+
+507
+00:29:16,360 --> 00:29:23,360
+ Um, and the guy that retweeted it was, uh, social sec, uh, zero X zero social sec.
+
+508
+00:29:23,360 --> 00:29:28,360
+ Um, I don't know if it's his presentation cause there's nothing, you know, in the actual presentation
+
+509
+00:29:28,360 --> 00:29:35,360
+ that says who this is, but it's the title of it is, um, lesser known techniques for large scale subdomain enumeration.
+
+510
+00:29:35,360 --> 00:29:38,360
+ I was like, okay, let me just like, you know, thumb through this.
+
+511
+00:29:38,360 --> 00:29:39,360
+ I glazed over this.
+
+512
+00:29:39,360 --> 00:29:42,360
+ I didn't look at it cause I thought it was stuff we'd all seen before.
+
+513
+00:29:42,360 --> 00:29:46,360
+ And then I was like, okay, let me, let me just look at this really quick.
+
+514
+00:29:46,360 --> 00:29:50,360
+ And technique number one was ENTs and no errors, which is something that we've talked about on the pod before,
+
+515
+00:29:50,360 --> 00:29:57,360
+ but actually is, you know, what I would categorize as a less known, uh, technique for doing subdomain enumeration.
+
+516
+00:29:57,360 --> 00:30:04,360
+ Um, and essentially, uh, what this will tell you is whether there is a node without resource records.
+
+517
+00:30:04,360 --> 00:30:07,360
+ Uh, but, but there are descendants, right?
+
+518
+00:30:07,360 --> 00:30:17,360
+ So if you've got, you know, justin.ctbb.rinerader.com and you, and you, you know, hit ctbb.rinerader.com and there is descendants, right?
+
+519
+00:30:17,360 --> 00:30:20,360
+ It'll tell you whether or not, whether there's a record that's below it.
+
+520
+00:30:20,360 --> 00:30:21,360
+ Right.
+
+521
+00:30:21,360 --> 00:30:22,360
+ If there's justin.ctbb.
+
+522
+00:30:22,360 --> 00:30:26,360
+ Um, so this is a really helpful piece for knowing whether you're getting good coverage.
+
+523
+00:30:26,360 --> 00:30:35,360
+ And, uh, this was something that I think we covered in the masterclass, um, with NBK in the, uh, uh, exclusive, uh, content for the critical thinkers.
+
+524
+00:30:35,360 --> 00:30:42,360
+ But I did want to shout it out as well to anybody that's really into the subdomain enumeration game and wants to get really, really good coverage.
+
+525
+00:30:42,360 --> 00:30:55,360
+ Um, knowing how to utilize these ENTs and no errors, uh, will help you make sure you're getting coverage and identifying and not, you know, and not wasting, um, time trying to get access to records that are, uh, that don't have any descendants.
+
+526
+00:30:55,360 --> 00:30:56,360
+ Right.
+
+527
+00:30:56,360 --> 00:30:59,360
+ You, you don't want to be brute forcing underneath something that doesn't have descendants.
+
+528
+00:30:59,360 --> 00:31:00,360
+ Right.
+
+529
+00:31:00,360 --> 00:31:02,360
+ Um, so I thought that was a cool one to shout out.
+
+530
+00:31:02,360 --> 00:31:04,360
+ Have you, have you heard of that one before, Joseph?
+
+531
+00:31:04,360 --> 00:31:05,360
+ No, I have not.
+
+532
+00:31:05,360 --> 00:31:08,360
+ And is this like, uh, independent of whether it's a wild card or not?
+
+533
+00:31:08,360 --> 00:31:11,360
+ Um, that's a good question.
+
+534
+00:31:11,360 --> 00:31:16,360
+ I'm not actually sure if it's, if it has wild car, I'm not sure how wild cards affect this actually.
+
+535
+00:31:16,360 --> 00:31:17,360
+ That's something to look into.
+
+536
+00:31:17,360 --> 00:31:18,360
+ Yeah.
+
+537
+00:31:18,360 --> 00:31:19,360
+ Yeah.
+
+538
+00:31:19,360 --> 00:31:25,360
+ Cause that's what my mind goes to is like, you know, it's often nice to, to fuzz or look for domains where there's wild card.
+
+539
+00:31:25,360 --> 00:31:32,360
+ Um, but you can detect wild cards, you know, like, um, uh, but, but I mean, are you, you're talking about an exception?
+
+540
+00:31:32,360 --> 00:31:35,360
+ Well, I'm just saying like, this would be like another case.
+
+541
+00:31:35,360 --> 00:31:36,360
+ Like if you're, if you're building some system, right.
+
+542
+00:31:36,360 --> 00:31:40,360
+ It's like, yeah, well, let's, let's make sure we run, um, you know.
+
+543
+00:31:40,360 --> 00:31:47,360
+ Um, you know, like a common file name or like known words that are associated with an organization whenever there is a wild card.
+
+544
+00:31:47,360 --> 00:31:51,360
+ But then this would also let you know that you need to do it in other non wild card cases too.
+
+545
+00:31:51,360 --> 00:31:52,360
+ It's true.
+
+546
+00:31:52,360 --> 00:31:54,360
+ Did you say this tells you that the descendant is Justin or no?
+
+547
+00:31:54,360 --> 00:31:57,360
+ No, it tells you that there is a descendant.
+
+548
+00:31:57,360 --> 00:31:57,360
+ Yeah.
+
+549
+00:31:57,360 --> 00:31:58,360
+ That's what I'm saying.
+
+550
+00:31:58,360 --> 00:31:59,360
+ So then you do have to kind of go fuzz for it, right?
+
+551
+00:31:59,360 --> 00:32:01,360
+ Or is there some way to then pull it?
+
+552
+00:32:01,360 --> 00:32:03,360
+ Yeah, no, there's, there's not a way to just pull it.
+
+553
+00:32:03,360 --> 00:32:04,360
+ Well, actually, okay.
+
+554
+00:32:04,360 --> 00:32:13,360
+ Now that you mentioned that, um, there, there is a, uh, another one, which is very interesting, which is NSEC zone walking.
+
+555
+00:32:13,360 --> 00:32:14,360
+ And I've heard of zone walking before.
+
+556
+00:32:14,360 --> 00:32:17,360
+ I thought that was like, you know, an older technique.
+
+557
+00:32:17,360 --> 00:32:26,360
+ And I think, you know, a lot of times it's not working nowadays and sometimes it does work, but, um, essentially this one is, uh, I'm just going to read this line from the presentation.
+
+558
+00:32:26,360 --> 00:32:33,360
+ NSEC is a DNSSEC record type that proves non-existence of a DNS record by pointing to the next existing name.
+
+559
+00:32:33,360 --> 00:32:34,360
+ Ooh, that's cool.
+
+560
+00:32:34,360 --> 00:32:36,360
+ Uh, which is crazy.
+
+561
+00:32:36,360 --> 00:32:46,360
+ And, and I obviously, you know, that, um, has its problems, but apparently there's NSEC three now, which returns hashed names instead of actual subdomains.
+
+562
+00:32:46,360 --> 00:32:48,360
+ But that's still super helpful.
+
+563
+00:32:48,360 --> 00:32:49,360
+ Right.
+
+564
+00:32:49,360 --> 00:32:58,360
+ Um, so you can, uh, take those hashes, pull them offline and then try to like, uh, offline, you can maybe crack them.
+
+565
+00:32:58,360 --> 00:32:59,360
+ Yeah.
+
+566
+00:32:59,360 --> 00:33:00,360
+ Yeah.
+
+567
+00:33:00,360 --> 00:33:04,360
+ Um, so that's, and that's going to be a lot more efficient than trying to, you know, brute force for.
+
+568
+00:33:04,360 --> 00:33:06,360
+ Oh, and there's already a tool link there for the cracking.
+
+569
+00:33:06,360 --> 00:33:07,360
+ That's sick.
+
+570
+00:33:07,360 --> 00:33:08,360
+ Yeah.
+
+571
+00:33:08,360 --> 00:33:09,360
+ Yep.
+
+572
+00:33:09,360 --> 00:33:10,360
+ NSEC three map is what it's called.
+
+573
+00:33:10,360 --> 00:33:11,360
+ Um, so this one I actually really hadn't heard of.
+
+574
+00:33:11,360 --> 00:33:13,360
+ I don't know how often this is used.
+
+575
+00:33:13,360 --> 00:33:17,360
+ I've not tried this technique before, but definitely something worth looking into.
+
+576
+00:33:17,360 --> 00:33:29,360
+ And I feel like, you know, worst case scenario, you, you know, how many records there are, which is, which is a cool thing to know, you know, and you've got this set of hashes that might just, you know, crack.
+
+577
+00:33:29,360 --> 00:33:30,360
+ Boom.
+
+578
+00:33:30,360 --> 00:33:31,360
+ Boom.
+
+579
+00:33:31,360 --> 00:33:32,360
+ Dude.
+
+580
+00:33:32,360 --> 00:33:33,360
+ That's so cool.
+
+581
+00:33:33,360 --> 00:33:34,360
+ Yeah.
+
+582
+00:33:34,360 --> 00:33:35,360
+ I, yeah.
+
+583
+00:33:35,360 --> 00:33:38,360
+ I mean, anyone who does big recon definitely needs to install insect three map and start cracking those hashes.
+
+584
+00:33:38,360 --> 00:33:39,360
+ If they can find that for any domain.
+
+585
+00:33:39,360 --> 00:33:40,360
+ That's a really cool.
+
+586
+00:33:40,360 --> 00:33:41,360
+ Yeah, for sure.
+
+587
+00:33:41,360 --> 00:33:49,360
+ And then number three was, I can see ZDS, uh, which is centralized zone data service.
+
+588
+00:33:49,360 --> 00:33:50,360
+ I love this.
+
+589
+00:33:50,360 --> 00:33:58,360
+ It's just, uh, it just says, uh, you know, anybody who is interested in getting a access to the zone files for participating top level domains.
+
+590
+00:33:58,360 --> 00:34:02,360
+ Can just request a zone fires for a whole TLD.
+
+591
+00:34:02,360 --> 00:34:03,360
+ Also known as nafi.com.
+
+592
+00:34:03,360 --> 00:34:04,360
+ Yeah, exactly.
+
+593
+00:34:04,360 --> 00:34:05,360
+ Right.
+
+594
+00:34:05,360 --> 00:34:08,360
+ Um, just a place to go request zone files.
+
+595
+00:34:08,360 --> 00:34:09,360
+ That's amazing.
+
+596
+00:34:09,360 --> 00:34:10,360
+ Yeah.
+
+597
+00:34:10,360 --> 00:34:11,360
+ Yeah.
+
+598
+00:34:11,360 --> 00:34:12,360
+ So, um, very interesting.
+
+599
+00:34:12,360 --> 00:34:14,360
+ I wonder what TLDs are on there.
+
+600
+00:34:14,360 --> 00:34:15,360
+ I, I haven't.
+
+601
+00:34:15,360 --> 00:34:16,360
+ Sorry.
+
+602
+00:34:16,360 --> 00:34:16,360
+ Sorry.
+
+603
+00:34:16,360 --> 00:34:17,360
+ Sorry.
+
+604
+00:34:17,360 --> 00:34:17,360
+ One second.
+
+605
+00:34:17,360 --> 00:34:21,360
+ I'm going to go, uh, register for, uh, this portal.
+
+606
+00:34:21,360 --> 00:34:22,360
+ Okay.
+
+607
+00:34:22,360 --> 00:34:23,360
+ I'm not joking.
+
+608
+00:34:23,360 --> 00:34:24,360
+ I really want to, but.
+
+609
+00:34:24,360 --> 00:34:25,360
+ Oh my gosh.
+
+610
+00:34:25,360 --> 00:34:26,360
+ Yeah.
+
+611
+00:34:26,360 --> 00:34:35,360
+ Um, so I mean, but it'd be interesting, you know, a lot of times web, uh, some of these companies will be like trying to do something cool with their domain name, you know, like do like the first part of their name.
+
+612
+00:34:35,360 --> 00:34:39,360
+ Like, for example, we, we own kai dot dough at kai dough, right?
+
+613
+00:34:39,360 --> 00:34:41,360
+ Like what the heck is the dough?
+
+614
+00:34:41,360 --> 00:34:51,360
+ You know, uh, TLD and does this, you know, centralized zone service have all of the zone files for that whole, you know, that would be crazy.
+
+615
+00:34:51,360 --> 00:34:52,360
+ Yeah.
+
+616
+00:34:52,360 --> 00:34:57,360
+ So could be some really good wins there if a, a company is using an obscure TLD.
+
+617
+00:34:57,360 --> 00:34:58,360
+ Yeah.
+
+618
+00:34:58,360 --> 00:34:59,360
+ Do you think it's only obscure TLDs?
+
+619
+00:34:59,360 --> 00:35:00,360
+ I guess it would be for any main ones.
+
+620
+00:35:00,360 --> 00:35:01,360
+ It would be ginormous.
+
+621
+00:35:01,360 --> 00:35:02,360
+ Yeah.
+
+622
+00:35:02,360 --> 00:35:07,360
+ There's no way they're giving out like dot com zone files or something ridiculous like that.
+
+623
+00:35:07,360 --> 00:35:08,360
+ Um, so anyway.
+
+624
+00:35:08,360 --> 00:35:09,360
+ Is that even possible?
+
+625
+00:35:09,360 --> 00:35:10,360
+ Do you think that exists?
+
+626
+00:35:10,360 --> 00:35:12,360
+ Is there a DB of like all comms?
+
+627
+00:35:12,360 --> 00:35:13,360
+ It's got to.
+
+628
+00:35:13,360 --> 00:35:14,360
+ It's got to.
+
+629
+00:35:14,360 --> 00:35:16,360
+ Cause that's how the DNS architecture works, you know?
+
+630
+00:35:16,360 --> 00:35:20,360
+ Uh, so I think, I mean, I guess they, they distribute it out to authorities.
+
+631
+00:35:20,360 --> 00:35:22,360
+ Name servers or whatever, but either way it's, it's helpful.
+
+632
+00:35:22,360 --> 00:35:23,360
+ Yeah.
+
+633
+00:35:23,360 --> 00:35:24,360
+ That's cool.
+
+634
+00:35:24,360 --> 00:35:25,360
+ Good finding.
+
+635
+00:35:25,360 --> 00:35:26,360
+ I'm glad you ended up skimming that.
+
+636
+00:35:26,360 --> 00:35:28,360
+ Like I said, I just glazed over it and I should not have.
+
+637
+00:35:28,360 --> 00:35:29,360
+ Yeah.
+
+638
+00:35:29,360 --> 00:35:30,360
+ Yeah.
+
+639
+00:35:30,360 --> 00:35:31,360
+ I thought that was cool.
+
+640
+00:35:31,360 --> 00:35:32,360
+ Um, all right.
+
+641
+00:35:32,360 --> 00:35:33,360
+ You got something else on the list here?
+
+642
+00:35:33,360 --> 00:35:34,360
+ Yeah.
+
+643
+00:35:34,360 --> 00:35:35,360
+ Yeah, of course.
+
+644
+00:35:35,360 --> 00:35:36,360
+ Yeah.
+
+645
+00:35:36,360 --> 00:35:37,360
+ Um, I was going to mention, this is like maybe two things.
+
+646
+00:35:37,360 --> 00:35:39,360
+ I mentioned both Gemini three and anti-gravity.
+
+647
+00:35:39,360 --> 00:35:40,360
+ Oh yeah.
+
+648
+00:35:40,360 --> 00:35:43,360
+ People probably already saw this, but Gemini three dropped yesterday, I think.
+
+649
+00:35:43,360 --> 00:35:45,360
+ And it's just like crazy good.
+
+650
+00:35:45,360 --> 00:35:49,360
+ I mean, uh, it on a lot of benchmarks, it's like the first like big gap.
+
+651
+00:35:49,360 --> 00:35:52,360
+ You know, like you see like these little tiny steps as new models come out.
+
+652
+00:35:52,360 --> 00:35:56,360
+ And for some of these is like a huge leap, um, for some of these benchmarks.
+
+653
+00:35:56,360 --> 00:35:58,360
+ And obviously benchmarks are not everything.
+
+654
+00:35:58,360 --> 00:36:01,360
+ There are a bunch of models that do well on benchmarks that then kind of struggle.
+
+655
+00:36:01,360 --> 00:36:05,360
+ Um, when you go to use them, I've heard that's true on Kimmy T2 or whatever.
+
+656
+00:36:05,360 --> 00:36:06,360
+ Yeah.
+
+657
+00:36:06,360 --> 00:36:11,360
+ Um, but I mean, obviously Google puts out great models and what's absurd about this is you can
+
+658
+00:36:11,360 --> 00:36:13,360
+ go use it on AI.dev right now for free.
+
+659
+00:36:13,360 --> 00:36:16,360
+ Literally any in the world, just go to AI.dev and use it for free and you can turn thinking
+
+660
+00:36:16,360 --> 00:36:17,360
+ on high there.
+
+661
+00:36:17,360 --> 00:36:18,360
+ And it's great.
+
+662
+00:36:18,360 --> 00:36:19,360
+ No way.
+
+663
+00:36:19,360 --> 00:36:20,360
+ Wow.
+
+664
+00:36:20,360 --> 00:36:21,360
+ Yeah.
+
+665
+00:36:21,360 --> 00:36:25,360
+ And, and I think even like just normal pro subscribers can go to, uh, gemini.google.com
+
+666
+00:36:25,360 --> 00:36:28,360
+ and turn on thinking with a little drop down there.
+
+667
+00:36:28,360 --> 00:36:32,360
+ Um, and so, yeah, you basically have a thinking model of the best model in the world.
+
+668
+00:36:32,360 --> 00:36:35,360
+ I think more people should be throwing crazy problems at Gemini three.
+
+669
+00:36:35,360 --> 00:36:36,360
+ Yeah.
+
+670
+00:36:36,360 --> 00:36:37,360
+ I do this all the time.
+
+671
+00:36:37,360 --> 00:36:41,360
+ You know, like, um, I'm specifically doing it in this area of research with Mark down to
+
+672
+00:36:41,360 --> 00:36:45,360
+ HTML with Valentina right now, I'll basically give it a bunch of like, um, existing payloads
+
+673
+00:36:45,360 --> 00:36:51,360
+ that work for some like cool subset of libraries for generating, you know, XSS or CSS injection
+
+674
+00:36:51,360 --> 00:36:54,360
+ or whatever, and say like, come up with some more ideas.
+
+675
+00:36:54,360 --> 00:36:57,360
+ And then I'll put in my tester and then I'll come up with some more ideas.
+
+676
+00:36:57,360 --> 00:36:59,360
+ This didn't work just over and over again.
+
+677
+00:36:59,360 --> 00:37:00,360
+ Right.
+
+678
+00:37:00,360 --> 00:37:02,360
+ You gotta hook it up to an agent, man.
+
+679
+00:37:02,360 --> 00:37:04,360
+ Get it on like Gemini CLI or something.
+
+680
+00:37:04,360 --> 00:37:05,360
+ That's true.
+
+681
+00:37:05,360 --> 00:37:06,360
+ Yeah.
+
+682
+00:37:06,360 --> 00:37:07,360
+ What I want.
+
+683
+00:37:07,360 --> 00:37:08,360
+ Yeah.
+
+684
+00:37:08,360 --> 00:37:10,360
+ We can talk more about that after, but the way I used it yesterday actually was, um,
+
+685
+00:37:10,360 --> 00:37:11,360
+ generating more paths, right?
+
+686
+00:37:11,360 --> 00:37:14,360
+ We've talked about that a million times, but I think Gemini three is going to be even better
+
+687
+00:37:14,360 --> 00:37:15,360
+ at that than the other models.
+
+688
+00:37:15,360 --> 00:37:20,360
+ So I gave it like the, the, the site tree of a banking app I was hacking on and was like,
+
+689
+00:37:20,360 --> 00:37:22,360
+ I have to find some other secret things.
+
+690
+00:37:22,360 --> 00:37:25,360
+ Actually, this is something kind of interesting that you might have something to say about
+
+691
+00:37:25,360 --> 00:37:27,360
+ for the audience on like a way to hack better.
+
+692
+00:37:27,360 --> 00:37:34,360
+ Um, it's an app where it's clear that the pages are being totally rendered server side
+
+693
+00:37:34,360 --> 00:37:35,360
+ and then served.
+
+694
+00:37:35,360 --> 00:37:41,360
+ So like there's no single page app like voodoo I can do on my side to like, um, you know,
+
+695
+00:37:41,360 --> 00:37:45,360
+ be able to see more functionality or try to like know what paths exist or what objects exist.
+
+696
+00:37:45,360 --> 00:37:47,360
+ It's like all executing server side.
+
+697
+00:37:47,360 --> 00:37:49,360
+ And I'm sure there's a bunch of different technologies that do that.
+
+698
+00:37:49,360 --> 00:37:55,360
+ But, um, but anyways, uh, so I was able to basically find like four or five pages.
+
+699
+00:37:55,360 --> 00:38:02,360
+ Um, by asking Gemini three to come up with some paths that are most likely to exist given the ones that it can see do exist.
+
+700
+00:38:02,360 --> 00:38:06,360
+ And, um, um, most of them didn't result in a bug, but one of them did.
+
+701
+00:38:06,360 --> 00:38:08,360
+ It was like a delete user endpoint.
+
+702
+00:38:08,360 --> 00:38:11,360
+ And whenever, and whenever I hit it, it was like, Oh, I can't delete this user.
+
+703
+00:38:11,360 --> 00:38:17,360
+ But then it loaded the full page and showed me all of the users and all their serial numbers and all their usernames for everyone in my org.
+
+704
+00:38:17,360 --> 00:38:19,360
+ And as a low privilege user, I was able to execute that.
+
+705
+00:38:19,360 --> 00:38:20,360
+ So pretty cool.
+
+706
+00:38:20,360 --> 00:38:21,360
+ Dang dude.
+
+707
+00:38:21,360 --> 00:38:22,360
+ Good find.
+
+708
+00:38:22,360 --> 00:38:23,360
+ Yeah.
+
+709
+00:38:23,360 --> 00:38:25,360
+ In answer to that question, like that definitely makes it more tricky.
+
+710
+00:38:25,360 --> 00:38:35,360
+ I'm so used to single page applications nowadays and just like, you know, thumb through the JavaScript and like grab pretty much all the routes that are going to be utilized.
+
+711
+00:38:35,360 --> 00:38:44,360
+ But I mean, I also think that's a little bit of like, uh, uh, you know, something that we, we think that we've got all the routes, but we actually don't have all the routes.
+
+712
+00:38:44,360 --> 00:38:45,360
+ That's true. That's true.
+
+713
+00:38:45,360 --> 00:38:47,360
+ I do find a lot of APIs for that reason.
+
+714
+00:38:47,360 --> 00:38:48,360
+ Yeah, I actually don't.
+
+715
+00:38:48,360 --> 00:38:54,360
+ And I should, uh, but when the scenario that you mentioned made me think of a live hacking event that I like absolutely destroyed it.
+
+716
+00:38:54,360 --> 00:38:56,360
+ Like this is a couple of years back.
+
+717
+00:38:56,360 --> 00:38:57,360
+ I think this was 22.
+
+718
+00:38:57,360 --> 00:39:01,360
+ And I think this is still one of the highest earning bug bounty events I've ever been in.
+
+719
+00:39:01,360 --> 00:39:03,360
+ Uh, and I, I found this app.
+
+720
+00:39:03,360 --> 00:39:04,360
+ It was an older app.
+
+721
+00:39:04,360 --> 00:39:05,360
+ It was doing exactly what you said.
+
+722
+00:39:05,360 --> 00:39:07,360
+ And everything was vulnerable.
+
+723
+00:39:07,360 --> 00:39:11,360
+ Every, like nobody had just gotten access to this thing, super high paying program.
+
+724
+00:39:11,360 --> 00:39:13,360
+ Um, and it was, everything was vulnerable.
+
+725
+00:39:13,360 --> 00:39:14,360
+ I was just having the best time of my life.
+
+726
+00:39:14,360 --> 00:39:19,360
+ And I was like, I have to find every single bleeping page on this app.
+
+727
+00:39:19,360 --> 00:39:20,360
+ Right.
+
+728
+00:39:20,360 --> 00:39:21,360
+ And so I went ham.
+
+729
+00:39:21,360 --> 00:39:22,360
+ Right.
+
+730
+00:39:22,360 --> 00:39:25,360
+ And I was like, I was looking at the routes and I was like trying to figure out the patterns.
+
+731
+00:39:25,360 --> 00:39:42,360
+ So my first tip there is like, look at the patterns, you know, figure out, you know, sometimes, um, this is a tip from, um, inhibitor 181, a Cosmin, you know, look at how the path in the, uh, URL correlates to class names in the, uh, you know, in the actual HTML.
+
+732
+00:39:42,360 --> 00:39:54,360
+ How it correlates to, um, like form identifiers, uh, you know, try to correlate between path and, and URL, um, or path and, uh, like attributes of the HTML.
+
+733
+00:39:54,360 --> 00:40:01,360
+ Um, but what I did actually was I just, uh, took all the documentation, pulled out all of the words.
+
+734
+00:40:01,360 --> 00:40:02,360
+ Nice.
+
+735
+00:40:02,360 --> 00:40:05,360
+ I figured out all of the patterns, you know, like, okay, you know, this word goes here.
+
+736
+00:40:05,360 --> 00:40:06,360
+ This one's capitalized.
+
+737
+00:40:06,360 --> 00:40:13,360
+ There's a dash, you know, here's the verb, you know, categorize each word by like what, what part of speech it is, you know, that sort of thing.
+
+738
+00:40:13,360 --> 00:40:20,360
+ And then just had a Python script just generate like a massive, uh, massive list and then threw it at it.
+
+739
+00:40:20,360 --> 00:40:30,360
+ And it just like, it found like 15 more, I mean, definitely mid five figures in bugs from that little script.
+
+740
+00:40:30,360 --> 00:40:31,360
+ I'm like, yeah.
+
+741
+00:40:31,360 --> 00:40:32,360
+ I'm going to go run that.
+
+742
+00:40:32,360 --> 00:40:33,360
+ I'm going to go do that.
+
+743
+00:40:33,360 --> 00:40:34,360
+ Yeah.
+
+744
+00:40:34,360 --> 00:40:39,360
+ I've done that before for other things, but that's a, that's a really clutch technique that probably a lot of people aren't necessarily doing where,
+
+745
+00:40:39,360 --> 00:40:52,360
+ um, when you're fuzzing for lots of things, whether it's API points, whether it's parameters or whatever, if you find like their pattern and then create a script that, you know, creates a bunch of, uh, examples of that pattern, that's the best way to do it.
+
+746
+00:40:52,360 --> 00:40:56,360
+ Yeah. Yeah. And I think, I don't know, sometimes they don't follow the patterns, right?
+
+747
+00:40:56,360 --> 00:41:03,360
+ Especially in the vulnerable apps that are just like thrown together by like six different, you know, uh, developers or whatever, but sometimes they do.
+
+748
+00:41:03,360 --> 00:41:08,360
+ And when you do, especially when you're in those situations where it's like, everything is going to be vulnerable if you can find it.
+
+749
+00:41:08,360 --> 00:41:09,360
+ Uh huh.
+
+750
+00:41:09,360 --> 00:41:10,360
+ You got to hit it.
+
+751
+00:41:10,360 --> 00:41:11,360
+ It's worth it.
+
+752
+00:41:11,360 --> 00:41:11,360
+ Yeah.
+
+753
+00:41:11,360 --> 00:41:11,360
+ Yeah.
+
+754
+00:41:11,360 --> 00:41:11,360
+ Yeah.
+
+755
+00:41:11,360 --> 00:41:12,360
+ This one's one of those ones.
+
+756
+00:41:12,360 --> 00:41:18,360
+ Like there were some pages that are called like page XYZ, you know, like they have other ones called like had user delete user.
+
+757
+00:41:18,360 --> 00:41:20,360
+ And there's like page XYZ and that's modify users.
+
+758
+00:41:20,360 --> 00:41:21,360
+ Like, what are you thinking?
+
+759
+00:41:21,360 --> 00:41:23,360
+ Why did you create a page XYZ?
+
+760
+00:41:23,360 --> 00:41:24,360
+ But yeah.
+
+761
+00:41:24,360 --> 00:41:25,360
+ Oh my gosh, dude.
+
+762
+00:41:25,360 --> 00:41:26,360
+ That's crazy.
+
+763
+00:41:26,360 --> 00:41:27,360
+ Um, yeah.
+
+764
+00:41:27,360 --> 00:41:28,360
+ Well, good luck, dude.
+
+765
+00:41:28,360 --> 00:41:29,360
+ Oh, sorry.
+
+766
+00:41:29,360 --> 00:41:29,360
+ Yeah.
+
+767
+00:41:29,360 --> 00:41:31,360
+ On that Gemini 3 front really quickly.
+
+768
+00:41:31,360 --> 00:41:32,360
+ Thank you.
+
+769
+00:41:32,360 --> 00:41:36,360
+ I did want to mention they launch at the same time as something called anti-gravity.
+
+770
+00:41:36,360 --> 00:41:43,360
+ And people on the pod probably don't realize this, but there was a whole bunch of drama around like Google acquired windsurf's intellectual property, but not their team.
+
+771
+00:41:43,360 --> 00:41:47,360
+ And a bunch of the team kind of got screwed, but then they were like scooped up by a company called cognition.
+
+772
+00:41:47,360 --> 00:41:52,360
+ Long story short is they got the intellectual property of the app windsurf, which is basically like a cursor clone.
+
+773
+00:41:52,360 --> 00:42:02,360
+ And, um, and it was like for 2.4 billion and they have now rebranded windsurf as, um, what's it called?
+
+774
+00:42:02,360 --> 00:42:03,360
+ Anti-gravity.
+
+775
+00:42:03,360 --> 00:42:04,360
+ Yeah.
+
+776
+00:42:04,360 --> 00:42:05,360
+ And it's totally free right now.
+
+777
+00:42:05,360 --> 00:42:09,360
+ I don't know how long it will be free for, but if anyone wants to go use it, um, they could go use it for free right now.
+
+778
+00:42:09,360 --> 00:42:17,360
+ So if you've been like a holdout on, you know, cursor or Claude or codex or whatever, it's basically just a VS code fork, but now maintained by Google, which is pretty sweet.
+
+779
+00:42:17,360 --> 00:42:20,360
+ And, um, it's like an agentic coding platform.
+
+780
+00:42:20,360 --> 00:42:23,360
+ Dude, I can't be, I cannot imagine being a holdout on cursor.
+
+781
+00:42:23,360 --> 00:42:26,360
+ You know, like how much time are you sacrificing?
+
+782
+00:42:26,360 --> 00:42:34,360
+ I think about this all the time, even just people who don't have like a subscription to any of the services who just try to use the free tier and not get any of the extra features.
+
+783
+00:42:34,360 --> 00:42:36,360
+ It's like, you can find bugs in these, which is sweet.
+
+784
+00:42:36,360 --> 00:42:42,360
+ And also you're just like, you know, saving $10 or $20 to like lose hours of your life.
+
+785
+00:42:42,360 --> 00:42:43,360
+ Yeah.
+
+786
+00:42:43,360 --> 00:42:44,360
+ Of your time, man.
+
+787
+00:42:44,360 --> 00:42:47,360
+ You know, it's like, oh my gosh, but you know, and it's not thing.
+
+788
+00:42:47,360 --> 00:42:48,360
+ I don't know.
+
+789
+00:42:48,360 --> 00:42:51,360
+ Maybe for some people it is things they enjoy, but for me, it's not things I enjoy.
+
+790
+00:42:51,360 --> 00:42:55,360
+ Like I trade my time for things that I like to do, you know, that are menial tasks.
+
+791
+00:42:55,360 --> 00:42:57,360
+ Like for example, I could pay someone to come wash my dishes every day.
+
+792
+00:42:57,360 --> 00:42:58,360
+ Right.
+
+793
+00:42:58,360 --> 00:43:09,360
+ But it'd be expensive, but you know, I kind of like being in the kitchen and, and washing my dishes and, and, you know, looking out my window and, you know, having the counter be nice and clean when I'm done.
+
+794
+00:43:09,360 --> 00:43:10,360
+ It's therapeutic.
+
+795
+00:43:10,360 --> 00:43:11,360
+ Yeah.
+
+796
+00:43:11,360 --> 00:43:12,360
+ It's a little therapeutic.
+
+797
+00:43:12,360 --> 00:43:21,360
+ The family's around, you know, the kids see you doing house tasks, you know, and, uh, that's the thing about, you know, having, being a little bit of a high earning person.
+
+798
+00:43:21,360 --> 00:43:24,360
+ My, my brain goes into like, you know, optimization mode.
+
+799
+00:43:24,360 --> 00:43:29,360
+ Like, yeah, actually I should pay someone to do that, but no, I mean, I should be, you know, a human.
+
+800
+00:43:29,360 --> 00:43:30,360
+ Yes.
+
+801
+00:43:30,360 --> 00:43:32,360
+ Um, so I think it is different culturally too.
+
+802
+00:43:32,360 --> 00:43:42,360
+ Like I've heard that like a lot of, a lot of hackers in like Spain or Portugal or other places in the world, like they get a lot of joy actually out of hiring someone to do their housework because they're actually providing jobs to people who really need those jobs locally to them.
+
+803
+00:43:42,360 --> 00:43:54,360
+ Whereas in the U S it's like not really a scene as much that way, I feel like, but, um, but yeah, I mean, in general, I think that, like you said, you love hacking, you love popping like sick bugs.
+
+804
+00:43:54,360 --> 00:44:03,360
+ And so if AI writing a script that removes the friction, as you often say, in order to like retest something way more often, it's like, now that's probably what you're using AI for the most.
+
+805
+00:44:03,360 --> 00:44:04,360
+ Right.
+
+806
+00:44:04,360 --> 00:44:07,360
+ It's like you're making, you're helping AI to reduce the friction so you can find more bugs.
+
+807
+00:44:07,360 --> 00:44:08,360
+ Exactly.
+
+808
+00:44:08,360 --> 00:44:09,360
+ Exactly.
+
+809
+00:44:09,360 --> 00:44:10,360
+ Yeah.
+
+810
+00:44:10,360 --> 00:44:11,360
+ Dude.
+
+811
+00:44:11,360 --> 00:44:12,360
+ Uh, it's definitely necessary.
+
+812
+00:44:12,360 --> 00:44:13,360
+ I'm, I freaking love cursor dude.
+
+813
+00:44:13,360 --> 00:44:14,360
+ I really do.
+
+814
+00:44:14,360 --> 00:44:15,360
+ Um, I don't use it anymore.
+
+815
+00:44:15,360 --> 00:44:18,360
+ I'm still cloud coding codecs like every day, all day.
+
+816
+00:44:18,360 --> 00:44:19,360
+ Dude.
+
+817
+00:44:19,360 --> 00:44:20,360
+ Like I, I don't know, man.
+
+818
+00:44:20,360 --> 00:44:22,360
+ Like I don't like that.
+
+819
+00:44:22,360 --> 00:44:26,360
+ I have a hard time seeing what cloud code and Gemini CLI actually have done.
+
+820
+00:44:26,360 --> 00:44:27,360
+ Right.
+
+821
+00:44:27,360 --> 00:44:32,360
+ Like in cursor, it's so nice with the, with the green and the red, you know, what they removed, what they added.
+
+822
+00:44:32,360 --> 00:44:35,360
+ And if I think I was truly vibe coding where I'm just like, do it.
+
+823
+00:44:35,360 --> 00:44:36,360
+ Yeah.
+
+824
+00:44:36,360 --> 00:44:38,360
+ You know, then I would, I would use that.
+
+825
+00:44:38,360 --> 00:44:46,360
+ But, and I do sometimes like when I'm really like, I know that it can one shot this, I'm just going to like throw it in Gemini CLI really quick and it one shots it and it's fine.
+
+826
+00:44:46,360 --> 00:44:55,360
+ You know, but, but, uh, when I'm actually doing like large scale code changes and stuff like that, I always use cursor because I need to, you know, review what, what it's done every time and be like, no, no, no, no, no.
+
+827
+00:44:55,360 --> 00:44:56,360
+ You didn't need to tweak that.
+
+828
+00:44:56,360 --> 00:44:57,360
+ Leave that the way that it is.
+
+829
+00:44:57,360 --> 00:44:58,360
+ You know?
+
+830
+00:44:58,360 --> 00:45:02,360
+ Um, well, I will say this, not, uh, I, I often feel like I am, uh, argumentative, right?
+
+831
+00:45:02,360 --> 00:45:03,360
+ No, no, no.
+
+832
+00:45:03,360 --> 00:45:04,360
+ Hit me, man.
+
+833
+00:45:04,360 --> 00:45:10,360
+ Well, what I was going to tell you is actually when you use code code inside of cursor, it does, it does show you all the diffs on all the pages and all the tabs.
+
+834
+00:45:10,360 --> 00:45:11,360
+ It's all integrated perfectly.
+
+835
+00:45:11,360 --> 00:45:12,360
+ What do you mean cloud code inside of cursor?
+
+836
+00:45:12,360 --> 00:45:13,360
+ Just like open up the terminal.
+
+837
+00:45:13,360 --> 00:45:14,360
+ What?
+
+838
+00:45:14,360 --> 00:45:15,360
+ In cursor.
+
+839
+00:45:15,360 --> 00:45:18,360
+ If you run cloud code in the terminal in cursor, it will show you all the diffs.
+
+840
+00:45:18,360 --> 00:45:19,360
+ It'll open up the tabs.
+
+841
+00:45:19,360 --> 00:45:20,360
+ What kind of way is doing that?
+
+842
+00:45:20,360 --> 00:45:23,360
+ Like how many layers of AI are you nesting in here, dude?
+
+843
+00:45:23,360 --> 00:45:24,360
+ There's lots of people to do that.
+
+844
+00:45:24,360 --> 00:45:28,360
+ Maybe I'm wrong about it being, I'm pretty sure it's in cursor, but maybe it's in VS code.
+
+845
+00:45:28,360 --> 00:45:39,360
+ But basically if you have an ID open, like if you have a VS code, it's in VS code, it's in VS code.
+
+846
+00:45:39,360 --> 00:45:42,360
+ Like if you have a VS code fork open and you're using cloud code, it will show you all the tabs.
+
+847
+00:45:42,360 --> 00:45:45,360
+ So you can see all the files just like you probably want out of cursor.
+
+848
+00:45:45,360 --> 00:45:46,360
+ And so anyways, it's probably worth it.
+
+849
+00:45:46,360 --> 00:45:51,360
+ But like cursor has like that review button where you can click it and it goes through like each.
+
+850
+00:45:51,360 --> 00:45:52,360
+ Yeah, that's fair.
+
+851
+00:45:52,360 --> 00:45:53,360
+ You know, and it walks you through.
+
+852
+00:45:53,360 --> 00:45:54,360
+ I don't know.
+
+853
+00:45:54,360 --> 00:45:56,360
+ I feel like that's pretty nice, but I didn't know you could do that.
+
+854
+00:45:56,360 --> 00:45:57,360
+ That is kind of interesting.
+
+855
+00:45:57,360 --> 00:45:58,360
+ Yeah, that is neat.
+
+856
+00:45:58,360 --> 00:45:59,360
+ So that's pretty cool.
+
+857
+00:45:59,360 --> 00:46:00,360
+ All right.
+
+858
+00:46:00,360 --> 00:46:02,360
+ I've got a couple more items and then we'll, we'll call it.
+
+859
+00:46:02,360 --> 00:46:04,360
+ We got a shout out our boy Vitor.
+
+860
+00:46:04,360 --> 00:46:05,360
+ Yeah.
+
+861
+00:46:05,360 --> 00:46:07,360
+ Let's, let's take a look at that really quickly.
+
+862
+00:46:07,360 --> 00:46:10,360
+ So, uh, Victor, I don't know.
+
+863
+00:46:10,360 --> 00:46:11,360
+ Vitor, Victor.
+
+864
+00:46:11,360 --> 00:46:12,360
+ Vitor.
+
+865
+00:46:12,360 --> 00:46:13,360
+ But just call him Bus.
+
+866
+00:46:13,360 --> 00:46:14,360
+ Bus Factor.
+
+867
+00:46:14,360 --> 00:46:15,360
+ Yeah.
+
+868
+00:46:15,360 --> 00:46:18,360
+ Bus Factor, uh, has this awesome website up called Bug Bounty Daily.
+
+869
+00:46:18,360 --> 00:46:19,360
+ You guys gotta go check this out.
+
+870
+00:46:19,360 --> 00:46:22,360
+ Like if you like, I feel like this is where I should just be going, right?
+
+871
+00:46:22,360 --> 00:46:28,360
+ Right off the bat and just clicking through all of these and like, um, yeah, just reading these every day.
+
+872
+00:46:28,360 --> 00:46:35,360
+ But this is a feed of Bug Bounty articles and, um, essential resources that is being updated each day.
+
+873
+00:46:35,360 --> 00:46:37,360
+ He's got an email subscribe button.
+
+874
+00:46:37,360 --> 00:46:41,360
+ Now you can submit content if you want your content hosted on Bug Bounty Daily.
+
+875
+00:46:41,360 --> 00:46:43,360
+ It's kind of like a news aggregator there.
+
+876
+00:46:43,360 --> 00:46:45,360
+ Um, he's also seeding it with old stuff.
+
+877
+00:46:45,360 --> 00:46:50,360
+ So he had me send him like my, my very best, um, write-ups from my blog.
+
+878
+00:46:50,360 --> 00:46:51,360
+ Yeah.
+
+879
+00:46:51,360 --> 00:46:52,360
+ So it's pretty neat.
+
+880
+00:46:52,360 --> 00:46:58,360
+ It's, it's really high quality stuff and it's by somebody who is, who knows their shit, you know, which is different.
+
+881
+00:46:58,360 --> 00:46:59,360
+ Trust me.
+
+882
+00:46:59,360 --> 00:47:07,360
+ So, uh, yeah, I would definitely recommend checking this out, um, and getting, you know, subscribe to that if you're gonna try to keep up with Bug Bounty content.
+
+883
+00:47:07,360 --> 00:47:09,360
+ Cause it is, I mean, it's a lot.
+
+884
+00:47:09,360 --> 00:47:12,360
+ Sometimes you miss stuff on, on Twitter or, or whatever.
+
+885
+00:47:12,360 --> 00:47:15,360
+ And I think this is a good place to grab the high quality stuff.
+
+886
+00:47:15,360 --> 00:47:17,360
+ I know I'm always mentioning AI stuff.
+
+887
+00:47:17,360 --> 00:47:20,360
+ It would be also a pretty cool resource to like set up as like a rag database.
+
+888
+00:47:20,360 --> 00:47:24,360
+ Like if you're asking about AI bugs, like that would look across all those write-ups would be really cool.
+
+889
+00:47:24,360 --> 00:47:25,360
+ Yeah.
+
+890
+00:47:25,360 --> 00:47:26,360
+ I think he's working on that.
+
+891
+00:47:26,360 --> 00:47:27,360
+ Okay, sick.
+
+892
+00:47:27,360 --> 00:47:27,360
+ Yeah.
+
+893
+00:47:27,360 --> 00:47:28,360
+ Hey, actually on that note.
+
+894
+00:47:28,360 --> 00:47:33,360
+ And I don't know if I'm getting like too technical, like into the, the weeds of AI stuff.
+
+895
+00:47:33,360 --> 00:47:35,360
+ Too technical on CTBB.
+
+896
+00:47:35,360 --> 00:47:36,360
+ I know, I know.
+
+897
+00:47:36,360 --> 00:47:46,360
+ That's not what I meant to say, but like, it's, it's AI stuff versus like, you know, most of our bug bounty stuff, but I don't know exactly how like vector embeddings work.
+
+898
+00:47:46,360 --> 00:47:49,360
+ And, and I can explain it in like one minute.
+
+899
+00:47:49,360 --> 00:47:50,360
+ Okay.
+
+900
+00:47:50,360 --> 00:47:51,360
+ Go ahead and finish your question first.
+
+901
+00:47:51,360 --> 00:47:52,360
+ Yeah.
+
+902
+00:47:52,360 --> 00:47:53,360
+ Let me, let me ask.
+
+903
+00:47:53,360 --> 00:48:14,360
+ So what I'm, I'm wondering is whether it is impossible or whether it is possible to generate your vector embeddings locally or, and then send those up to an LLM or whatever, and whether that is possible to reverse those embeddings back to the actual text that they, that they, you know, came from.
+
+904
+00:48:14,360 --> 00:48:20,360
+ So the short answer is I'm not a super professional expert on this, but yes.
+
+905
+00:48:20,360 --> 00:48:21,360
+ Yeah.
+
+906
+00:48:21,360 --> 00:48:22,360
+ Everything I've ever heard is that you can reverse embeddings.
+
+907
+00:48:22,360 --> 00:48:23,360
+ Okay.
+
+908
+00:48:23,360 --> 00:48:32,360
+ And, and you definitely can run embedding models locally, but most people you do it via API because they run slightly bigger embeddings model at like open AI and stuff.
+
+909
+00:48:32,360 --> 00:48:42,360
+ Um, there is a company called, I think it's called cyborg, um, DB that is like very passionate about this whole like encrypted embeddings thing.
+
+910
+00:48:42,360 --> 00:48:43,360
+ Yeah.
+
+911
+00:48:43,360 --> 00:48:44,360
+ I had, I had a call with them recently.
+
+912
+00:48:44,360 --> 00:48:45,360
+ That's what I was thinking.
+
+913
+00:48:45,360 --> 00:48:50,360
+ Basically they, they encrypt and have, they have like a parent signing key and then like a smaller keys per index.
+
+914
+00:48:50,360 --> 00:48:52,360
+ So then like, it's like encrypted.
+
+915
+00:48:52,360 --> 00:48:54,360
+ I mean, everything's encrypted at rest.
+
+916
+00:48:54,360 --> 00:48:55,360
+ Right.
+
+917
+00:48:55,360 --> 00:48:57,360
+ But it's like, it's like encrypted when it's sitting there live on the file system.
+
+918
+00:48:57,360 --> 00:49:05,360
+ So if you're like a company or whatever, and you have, you know, a rag DB and you don't want once it gets, if it gets popped through the attackers be able to access everything.
+
+919
+00:49:05,360 --> 00:49:09,360
+ Um, then you would, you could use their system and they would not be able to access at all.
+
+920
+00:49:09,360 --> 00:49:12,360
+ So you can like kind of store the embeddings encrypted.
+
+921
+00:49:12,360 --> 00:49:13,360
+ Hmm.
+
+922
+00:49:13,360 --> 00:49:14,360
+ Yeah.
+
+923
+00:49:14,360 --> 00:49:15,360
+ That's very interesting.
+
+924
+00:49:15,360 --> 00:49:16,360
+ That's kind of what I was thinking about for it.
+
+925
+00:49:16,360 --> 00:49:18,360
+ I was thinking about it from multiple perspectives.
+
+926
+00:49:18,360 --> 00:49:32,360
+ One was, you know, if I'm trying to avoid, um, you know, a bunch of costs, would it be better for me to, you know, do this embeddings calculation on some data locally and then send it up.
+
+927
+00:49:32,360 --> 00:49:40,360
+ And also, uh, you know, I know that, um, private compute for AI is like a massive problem, right?
+
+928
+00:49:40,360 --> 00:49:45,360
+ Like if we can figure out a way to do private, uh, you know, LLM, right.
+
+929
+00:49:45,360 --> 00:49:48,360
+ Without the model providers being able to see it.
+
+930
+00:49:48,360 --> 00:49:49,360
+ Yeah.
+
+931
+00:49:49,360 --> 00:49:55,360
+ The math, the math for the similarity of like the lookup of like what's most similar related to my input is all local and cheap.
+
+932
+00:49:55,360 --> 00:49:56,360
+ Okay.
+
+933
+00:49:56,360 --> 00:50:00,360
+ So if you, so, and like, and you can use your own local rack database, it's called chroma DB.
+
+934
+00:50:00,360 --> 00:50:01,360
+ It's by far the most popular one.
+
+935
+00:50:01,360 --> 00:50:02,360
+ Yeah.
+
+936
+00:50:02,360 --> 00:50:03,360
+ Yeah.
+
+937
+00:50:03,360 --> 00:50:08,360
+ So the, what most people script actually does though, is it calls opening eyes embeddings for your data, but then it stores the embeddings locally.
+
+938
+00:50:08,360 --> 00:50:09,360
+ And then it does the comparison locally.
+
+939
+00:50:09,360 --> 00:50:10,360
+ Okay.
+
+940
+00:50:10,360 --> 00:50:12,360
+ So like that's, that's no big deal.
+
+941
+00:50:12,360 --> 00:50:14,360
+ And all it's doing is doing a cosine similarity difference link.
+
+942
+00:50:14,360 --> 00:50:21,360
+ So if you imagine like a 3d plot and there's two points in it, it's like, or there's 10 points and you have a new input point, which point is the closest to your point.
+
+943
+00:50:21,360 --> 00:50:22,360
+ Right.
+
+944
+00:50:22,360 --> 00:50:23,360
+ Right.
+
+945
+00:50:23,360 --> 00:50:24,360
+ It's going to be the most similar.
+
+946
+00:50:24,360 --> 00:50:25,360
+ That's all it's doing.
+
+947
+00:50:25,360 --> 00:50:26,360
+ Um, yeah.
+
+948
+00:50:26,360 --> 00:50:29,360
+ And so basically if anybody's curious what embeddings are, I'm going to do that one minute explanation.
+
+949
+00:50:29,360 --> 00:50:30,360
+ I told, I would do for Justin.
+
+950
+00:50:30,360 --> 00:50:41,360
+ Um, so an embedding is basically just taking any arbitrary length of text and turning it into a, you know, a number right in that graph that I was just talking about.
+
+951
+00:50:41,360 --> 00:50:44,360
+ And it can be as small as like one word or it can be as big as like a whole paragraph.
+
+952
+00:50:44,360 --> 00:50:45,360
+ Right.
+
+953
+00:50:45,360 --> 00:50:48,360
+ And so there's lots of optimizations there on, like, it can be a whole page.
+
+954
+00:50:48,360 --> 00:50:49,360
+ It can be as much text as you want.
+
+955
+00:50:49,360 --> 00:50:53,360
+ But, and so I think, um, there's often like, what are you wanting to match for?
+
+956
+00:50:53,360 --> 00:50:53,360
+ Right.
+
+957
+00:50:53,360 --> 00:50:58,360
+ So like, if you're looking for an answer from an FAQ, you would want to embed each question and answer or whatever.
+
+958
+00:50:58,360 --> 00:51:07,360
+ So then when a user puts on a question, you would find the most similar question and go ahead and pull that question and answer out of that similarity search into the AI.
+
+959
+00:51:07,360 --> 00:51:09,360
+ And then that way the AI can basically like have that as context.
+
+960
+00:51:09,360 --> 00:51:17,360
+ So if that actually is the real question, it can answer it, um, depending on no matter how many typos the user has in their query or whatever, it's still going to find it cause it's going to be similar.
+
+961
+00:51:17,360 --> 00:51:24,360
+ But then obviously the AI will know that that answer, that, that question answer that was pulled from the rag database is not the same as the user's asking.
+
+962
+00:51:24,360 --> 00:51:25,360
+ It's just similar.
+
+963
+00:51:25,360 --> 00:51:29,360
+ And so it might be able to speculate or tell it, it doesn't know or what have you, but that's how it works.
+
+964
+00:51:29,360 --> 00:51:31,360
+ Very interesting, man.
+
+965
+00:51:31,360 --> 00:51:32,360
+ Very interesting.
+
+966
+00:51:32,360 --> 00:51:34,360
+ I feel like I got to go a little bit deeper on this.
+
+967
+00:51:34,360 --> 00:51:38,360
+ And I know drop did a presentation at, at Defcon on some rag related stuff.
+
+968
+00:51:38,360 --> 00:51:40,360
+ So I need to go check that out.
+
+969
+00:51:40,360 --> 00:51:42,360
+ Um, I do think there are some cool implications.
+
+970
+00:51:42,360 --> 00:51:50,360
+ Like if, if you embedded all of the requests in the site tree of like Kaido, for example, and then you were asking like login, like you just typed in the word, like login requests.
+
+971
+00:51:50,360 --> 00:52:00,360
+ Anyway, it pulled like the most similar five URLs that were like associated with the word login, because the path contains the word login or because there's like username and password parameters in the body or whatever that would probably work.
+
+972
+00:52:00,360 --> 00:52:02,360
+ So there's cool things you can do with it.
+
+973
+00:52:02,360 --> 00:52:06,360
+ Is that, is that, is that similarity calculation local?
+
+974
+00:52:06,360 --> 00:52:07,360
+ Yes.
+
+975
+00:52:07,360 --> 00:52:10,360
+ The similarity is local and easy and cheap.
+
+976
+00:52:10,360 --> 00:52:12,360
+ And even the embeddings are often cheap.
+
+977
+00:52:12,360 --> 00:52:14,360
+ Now you will have to have an embeddings model on your computer.
+
+978
+00:52:14,360 --> 00:52:20,360
+ But if you're willing to just like, if you're don't think the data sensitive and you don't mind to ship it off to open AI or Google for the embeddings, it's also cheap.
+
+979
+00:52:20,360 --> 00:52:23,360
+ Like it's way cheaper to embed text than it is like run an LLM.
+
+980
+00:52:23,360 --> 00:52:28,360
+ So none of this is that expensive, but I do think it would be expensive if you were doing your whole HTTP history.
+
+981
+00:52:28,360 --> 00:52:34,360
+ That's why I said the site map, because to do a few hundred or a few thousand is no big deal, but you don't want to run this on 50,000 requests.
+
+982
+00:52:34,360 --> 00:52:35,360
+ Right.
+
+983
+00:52:35,360 --> 00:52:36,360
+ Right. Right. That makes sense.
+
+984
+00:52:36,360 --> 00:52:37,360
+ Okay. All right.
+
+985
+00:52:37,360 --> 00:52:39,360
+ Well, the brain's going to spin on that.
+
+986
+00:52:39,360 --> 00:52:43,360
+ I got something to talk to you about, uh, off air about that afterwards.
+
+987
+00:52:43,360 --> 00:52:48,360
+ But, um, yeah, let's, uh, I'm going to hit this last item, this last news item here.
+
+988
+00:52:48,360 --> 00:52:50,360
+ Actually, I'm not going to bother sharing my screen for this one.
+
+989
+00:52:50,360 --> 00:52:54,360
+ Um, you guys have probably all heard of acid notes, surf, uh, utility.
+
+990
+00:52:54,360 --> 00:52:59,360
+ This is a utility that they built to hand it a, uh, a bunch of domains.
+
+991
+00:52:59,360 --> 00:53:08,360
+ And then it takes those domains, tries to reach out to them and anything that's not reachable, either because it's an internal IP or because it's an external IP without HTTP or HTTP.
+
+992
+00:53:08,360 --> 00:53:10,360
+ or HTTPS exposed.
+
+993
+00:53:10,360 --> 00:53:14,360
+ It puts into a word list for you to try to hit with blind SSRF or SSRF.
+
+994
+00:53:14,360 --> 00:53:15,360
+ Right.
+
+995
+00:53:15,360 --> 00:53:17,360
+ Um, to prove that you can hit internal hosts.
+
+996
+00:53:17,360 --> 00:53:18,360
+ Nice.
+
+997
+00:53:18,360 --> 00:53:20,360
+ So, um, really awesome tool.
+
+998
+00:53:20,360 --> 00:53:21,360
+ Super simple.
+
+999
+00:53:21,360 --> 00:53:22,360
+ Love the concept.
+
+1000
+00:53:22,360 --> 00:53:32,360
+ Um, we were, uh, Emil and I were kind of vibing on something the other day and actually ended up just building a, you know, vibe coding a, uh, a copy of surf for Kaido directly.
+
+1001
+00:53:32,360 --> 00:53:39,360
+ Because oftentimes you're going to be using automate to like, uh, you know, run this actual, uh, you know, or SSRF exploitation.
+
+1002
+00:53:39,360 --> 00:53:47,360
+ So we're like, ah, makes sense to just do it in Kaido and then just press upload as word list, you know, and then it pushes it into your files list.
+
+1003
+00:53:47,360 --> 00:53:49,360
+ Um, so we went ahead and built that.
+
+1004
+00:53:49,360 --> 00:53:50,360
+ That's at Kaido community slash surf.
+
+1005
+00:53:50,360 --> 00:53:54,360
+ Probably by the time this airs, we'll, uh, we'll have it pushed to the Kaido store.
+
+1006
+00:53:54,360 --> 00:54:05,360
+ Um, but definitely it makes it a lot easier for you to go ahead and take your, your massive domain list and then just convert it to a really easy accessible list of URL.
+
+1007
+00:54:05,360 --> 00:54:11,360
+ So you can pass into your SSRF to prove that you have internal, internal access, uh, internal network access.
+
+1008
+00:54:11,360 --> 00:54:11,360
+ Yeah.
+
+1009
+00:54:11,360 --> 00:54:12,360
+ You said Kaido community slash surf.
+
+1010
+00:54:12,360 --> 00:54:16,360
+ It's github.com slash Kaido dash community slash surf.
+
+1011
+00:54:16,360 --> 00:54:17,360
+ Yep.
+
+1012
+00:54:17,360 --> 00:54:18,360
+ Yes.
+
+1013
+00:54:18,360 --> 00:54:19,360
+ That's right.
+
+1014
+00:54:19,360 --> 00:54:20,360
+ Yeah.
+
+1015
+00:54:20,360 --> 00:54:21,360
+ That one.
+
+1016
+00:54:21,360 --> 00:54:22,360
+ Sweet dude.
+
+1017
+00:54:22,360 --> 00:54:23,360
+ My last thing was very, very small.
+
+1018
+00:54:23,360 --> 00:54:24,360
+ It was just a small humble brag.
+
+1019
+00:54:24,360 --> 00:54:25,360
+ I was excited about it.
+
+1020
+00:54:25,360 --> 00:54:26,360
+ Douglas messaged me yesterday.
+
+1021
+00:54:26,360 --> 00:54:27,360
+ I get off.
+
+1022
+00:54:27,360 --> 00:54:28,360
+ I like, I prioritize family like you.
+
+1023
+00:54:28,360 --> 00:54:29,360
+ I get off at like 4:30.
+
+1024
+00:54:29,360 --> 00:54:30,360
+ Yeah.
+
+1025
+00:54:30,360 --> 00:54:32,360
+ And it was like, Hey, I got this private invite.
+
+1026
+00:54:32,360 --> 00:54:33,360
+ You know, do you want to look at it?
+
+1027
+00:54:33,360 --> 00:54:36,360
+ And of course my hacker brain's like, Oh yeah, I definitely really want to look at this.
+
+1028
+00:54:36,360 --> 00:54:39,360
+ And my kids are like walking in from the neighbors and we're like supposed to hang out and eat dinner.
+
+1029
+00:54:39,360 --> 00:54:41,360
+ I'm like, yeah, just, just one second, one second guys.
+
+1030
+00:54:41,360 --> 00:54:42,360
+ I like pull it up.
+
+1031
+00:54:42,360 --> 00:54:47,360
+ And within like three minutes, I had already found, uh, it could render a marked on image.
+
+1032
+00:54:47,360 --> 00:54:50,360
+ And, and, um, I'd already made like a really nice payload.
+
+1033
+00:54:50,360 --> 00:54:56,360
+ They would like get it to actually respond with it, even though it had like some guardrails and it was like, just go figure out delivery, go find delivery.
+
+1034
+00:54:56,360 --> 00:54:59,360
+ And then eventually a few hours later, he's like, Oh yeah, I got it in this.
+
+1035
+00:54:59,360 --> 00:55:01,360
+ You know, this user profile field.
+
+1036
+00:55:01,360 --> 00:55:05,360
+ And so if I, if I ask about their users in this app or whatever, it'll automatically pop it.
+
+1037
+00:55:05,360 --> 00:55:06,360
+ And it just felt so good.
+
+1038
+00:55:06,360 --> 00:55:07,360
+ Uh, yeah.
+
+1039
+00:55:07,360 --> 00:55:08,360
+ Freaking love that man.
+
+1040
+00:55:08,360 --> 00:55:13,360
+ Like I love it when you pop a phone quick, you know, I, I do that on a program.
+
+1041
+00:55:13,360 --> 00:55:14,360
+ That's fine.
+
+1042
+00:55:14,360 --> 00:55:15,360
+ That's like the opposite of imposter syndrome.
+
+1043
+00:55:15,360 --> 00:55:19,360
+ It's like, Oh my God, you know, for a split second, you're like, I'm the best.
+
+1044
+00:55:19,360 --> 00:55:20,360
+ Yeah.
+
+1045
+00:55:20,360 --> 00:55:21,360
+ Yeah.
+
+1046
+00:55:21,360 --> 00:55:22,360
+ Freaking love that man.
+
+1047
+00:55:22,360 --> 00:55:28,360
+ Hey, one thing we didn't mention earlier that I did want to mention, not only are we going to give away swag pack or sorry, swag.
+
+1048
+00:55:28,360 --> 00:55:34,360
+ Um, promotional codes or free coat codes in the black or in the CT years chat next Friday for black Friday.
+
+1049
+00:55:34,360 --> 00:55:38,360
+ But we may or may not have some exclusive new swag coming out soon.
+
+1050
+00:55:38,360 --> 00:55:40,360
+ Yeah, dude, that's going to be a blast.
+
+1051
+00:55:40,360 --> 00:55:44,360
+ We had a meeting with the team this morning to kind of design it and get all that figured out.
+
+1052
+00:55:44,360 --> 00:55:47,360
+ I don't know if it'll be ready by black Friday, but, um, maybe they can save their code.
+
+1053
+00:55:47,360 --> 00:55:48,360
+ How long will the code last?
+
+1054
+00:55:48,360 --> 00:55:49,360
+ That's the question.
+
+1055
+00:55:49,360 --> 00:55:51,360
+ Well, people will probably redeem it instantly.
+
+1056
+00:55:51,360 --> 00:55:52,360
+ So I don't know.
+
+1057
+00:55:52,360 --> 00:55:53,360
+ Maybe we'll figure something out for that.
+
+1058
+00:55:53,360 --> 00:56:00,360
+ But, um, yeah, or we could build a little service where it like, if you're the first to hit it, then you save it and you can use it in a week or two.
+
+1059
+00:56:00,360 --> 00:56:01,360
+ Exactly.
+
+1060
+00:56:01,360 --> 00:56:01,360
+ Yeah.
+
+1061
+00:56:01,360 --> 00:56:03,360
+ Then you get, cause it is the perfect Christmas gift.
+
+1062
+00:56:03,360 --> 00:56:09,360
+ If anybody's looking for things that they're trying to tell their parents, I always struggle to think of things as an adult, like that I don't just buy for myself.
+
+1063
+00:56:09,360 --> 00:56:14,360
+ Uh, you can recommend your parents or, you know, friends or family or something, get you something from the merch store.
+
+1064
+00:56:14,360 --> 00:56:15,360
+ Yeah, totally, man.
+
+1065
+00:56:15,360 --> 00:56:15,360
+ Yeah.
+
+1066
+00:56:15,360 --> 00:56:16,360
+ Well, um, yeah, that's a good point.
+
+1067
+00:56:16,360 --> 00:56:18,360
+ We probably should have mentioned that earlier in the episode.
+
+1068
+00:56:18,360 --> 00:56:25,360
+ Uh, you know, but Hey, you know, for those of you guys that, that wait till the end of the episode, you listen to the whole episode, you reap the reward.
+
+1069
+00:56:25,360 --> 00:56:26,360
+ The juicy, the juicy information.
+
+1070
+00:56:26,360 --> 00:56:27,360
+ Yeah.
+
+1071
+00:56:27,360 --> 00:56:28,360
+ All right.
+
+1072
+00:56:28,360 --> 00:56:28,360
+ That's a wrap.
+
+1073
+00:56:28,360 --> 00:56:29,360
+ Yeah.
+
+1074
+00:56:29,360 --> 00:56:29,360
+ Cool.
+
+1075
+00:56:29,360 --> 00:56:30,360
+ Yep.
+
+1076
+00:56:30,360 --> 00:56:30,360
+ See you guys.
+
+1077
+00:56:30,360 --> 00:56:31,360
+ Peace.
+
+1078
+00:56:31,360 --> 00:56:32,360
+ Peace y'all.
+
+1079
+00:56:32,360 --> 00:56:34,360
+ And that's a wrap on this episode of critical thinking.
+
+1080
+00:56:34,360 --> 00:56:36,360
+ Thanks so much for watching to the end y'all.
+
+1081
+00:56:36,360 --> 00:56:41,360
+ If you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show/discord.
+
+1082
+00:56:41,360 --> 00:56:43,360
+ You can hop in the community.
+
+1083
+00:56:43,360 --> 00:56:51,360
+ There's lots of great high level hacking discussion happening there on top of the masterclasses, hack alongs, exclusive content, and a full-time hunters guild.
+
+1084
+00:56:51,360 --> 00:56:53,360
+ If you're a full-time hunter, it's a great time.
+
+1085
+00:56:53,360 --> 00:56:54,360
+ Trust me.
+
+1086
+00:56:54,360 --> 00:56:55,360
+ I'll see you there.
+
+1087
+00:56:55,360 --> 00:56:59,360
+ Alrighty, my guy.
+
+1088
+00:56:59,360 --> 00:57:00,360
+ Happy Thanksgiving.
+
+1089
+00:57:00,360 --> 00:57:01,360
+ Dude.
+
+1090
+00:57:01,360 --> 00:57:01,360
+ What's up?
+
+1091
+00:57:01,360 --> 00:57:02,360
+ Happy Thanksgiving.
+
+1092
+00:57:02,360 --> 00:57:03,360
+ Pretty good, man.
+
+1093
+00:57:03,360 --> 00:57:04,360
+ Pretty good, man.
+
+1094
+00:57:04,360 --> 00:57:06,360
+ This is going to be a, uh, a good.
+
+1095
+00:57:06,360 --> 00:57:07,360
+ Oh, you said happy Thanksgiving.
+
+1096
+00:57:07,360 --> 00:57:08,360
+ Not Howard Thanksgiving.
+
+1097
+00:57:08,360 --> 00:57:11,360
+ They do sound really similar.
+
+1098
+00:57:11,360 --> 00:57:12,360
+ They do.
+
+1099
+00:57:12,360 --> 00:57:13,360
+ They did.
+
+1100
+00:57:13,360 --> 00:57:16,360
+ I, I like reverse processed it.
+
+1101
+00:57:16,360 --> 00:57:17,360
+ Okay.
+
+1102
+00:57:17,360 --> 00:57:18,360
+ Richard, we're cutting that.
+
+1103
+00:57:18,360 --> 00:57:19,360
+ We are cutting that.
+
+1104
+00:57:19,360 --> 00:57:20,360
+ Okay.
+
+1105
+00:57:20,360 --> 00:57:22,360
+ Don't do anything weird with that.
+
+1106
+00:57:22,360 --> 00:57:31,360
+ Alrighty, my guy.
+
+1107
+00:57:31,360 --> 00:57:32,360
+ Happy Thanksgiving.
+
+1108
+00:57:32,360 --> 00:57:33,360
+ Yeah.
+
+1109
+00:57:33,360 --> 00:57:38,360
+ Dude.
+
+1110
+00:57:38,360 --> 00:57:38,360
+ What's up?
+
+1111
+00:57:38,360 --> 00:57:39,360
+ Happy Thanksgiving.
+
+1112
+00:57:39,360 --> 00:57:46,360
+ Pretty good, man.
+
+1113
+00:57:46,360 --> 00:57:48,360
+ This is going to be a, uh, a good.
+
+1114
+00:57:48,360 --> 00:57:55,360
+ Oh, you said happy Thanksgiving.
+
+1115
+00:57:55,360 --> 00:57:56,360
+ Not Howard Thanksgiving.
+
+1116
+00:57:56,360 --> 00:57:57,360
+ I'm going to be a little bit more.
+
+1117
+00:57:57,360 --> 00:57:57,360
+ I'm going to be a little bit more.
+
+1118
+00:57:57,360 --> 00:57:58,360
+ I'm going to be a little bit more.
+
+1119
+00:57:58,360 --> 00:57:59,360
+ I'm going to be a little bit more.
+
+1120
+00:57:59,360 --> 00:58:00,360
+ I'm going to be a little bit more.
+
+1121
+00:58:00,360 --> 00:58:01,360
+ I'm going to be a little bit more.
+
+1122
+00:58:01,360 --> 00:58:02,360
+ I'm going to be a little bit more.
+
+1123
+00:58:02,360 --> 00:58:03,360
+ I'm going to be a little bit more.
+
+1124
+00:58:03,360 --> 00:58:04,360
+ I'm going to be a little bit more.
+
+1125
+00:58:04,360 --> 00:58:05,360
+ I'm going to be a little bit more.
+
+1126
+00:58:05,360 --> 00:58:06,360
+ I'm going to be a little bit more.
+
+1127
+00:58:06,360 --> 00:58:07,360
+ I'm going to be a little bit more.
+
+1128
+00:58:07,360 --> 00:58:08,360
+ I'm going to be a little bit more.
+
+1129
+00:58:08,360 --> 00:58:09,360
+ I'm going to be a little bit more.
+
+1130
+00:58:09,360 --> 00:58:10,360
+ I'm going to be a little bit more.
+
+1131
+00:58:10,360 --> 00:58:11,360
+ I'm going to be a little bit more.
+
+1132
+00:58:11,360 --> 00:58:12,360
+ I'm going to be a little bit more.
+
+1133
+00:58:12,360 --> 00:58:13,360
+ I'm going to be a little bit more.
+
+1134
+00:58:13,360 --> 00:58:14,360
+ I'm going to be a little bit more.
+
+1135
+00:58:14,360 --> 00:58:15,360
+ I'm going to be a little bit more.
+
+1136
+00:58:15,360 --> 00:58:16,360
+ I'm going to be a little bit more.
+
+1137
+00:58:16,360 --> 00:58:17,360
+ I'm going to be a little bit more.
+
+1138
+00:58:17,360 --> 00:58:18,360
+ I'm going to be a little bit more.
+
+1139
+00:58:18,360 --> 00:58:19,360
+ I'm going to be a little bit more.
+
+1140
+00:58:19,360 --> 00:58:20,360
+ I'm going to be a little bit more.
+
+1141
+00:58:20,360 --> 00:58:21,360
+ I'm going to be a little bit more.
+
+1142
+00:58:21,360 --> 00:58:22,360
+ I'm going to be a little bit more.
+
+1143
+00:58:22,360 --> 00:58:23,360
+ I'm going to be a little bit more.
+

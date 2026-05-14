@@ -1,0 +1,350 @@
+Hey guys real quick I just wanted to tell you about our sponsor Threat Locker now wait wait
+before you hit the skip forward button let me just say this most of the stuff that holds my attention
+nowadays is red team stuff as well but I sat down with the Threat Locker team this past week to do
+a demo of their EDR software and it was super technically fascinating how this thing works so
+check this out you drop this thing on a system right and for the first week or so it's creating
+a policy and a profile for that system it's logging all the executables what child processes are being
+spawned the files and their hashes that sort of thing and it's creating this policy okay then after
+the learning mode is up we're in secured mode and that policy gets put into place and anything that's
+not on that allow list is immediately auto denied that's the zero trust piece right so in addition
+to that they've got a bunch of crazy features like ring fencing and dynamic access controls that would
+stop a malicious hacker at pretty much every step along the way actually I was watching this demo
+and I was kind of freaked out because I have no idea how I would cope with getting dropped into a
+Threat Locker system as a red teamer anyway if you want to learn more about this head over to
+ThreatLocker.com and request a demo and when you do ask for my boy Andrew his demo was super to the
+point and he was able to answer all my technical questions all right cool back to the show yo yo yo
+what's going on everybody this is techno geek uh Joel we're doing a solo episode today um so this one is
+going to be all focused on part-time bug bounty um you know as Justin is a full-time bug bounty hunter
+but I am a part-time bug bounty hunter and uh this was a requested episode from um some of the listeners
+um within our discord server so I wanted to take some time to talk about some strategies and some
+different aspects of the part-time uh bug bounty hacking life so to speak um I'm a lot more versed on
+than I then Justin is I think so I it's definitely a unique perspective and I wanted to just share
+some of my thoughts share some of my strategies share some of the tips and tricks and all that sort
+of good stuff uh all around that but first I wanted to talk about some news uh so I I know the last few
+episodes have been interviews so um I don't know if there's been too much news but there were two main
+things that I want to talk about um that had come up in the last couple weeks um the first one was a
+really cool post by uh retro reg with a zero uh on zero reg.dev that's that's their blog um patrick peng
+um and this blog post was all about an evernote bug that they found that was it started as a font
+injection basically javascript injection into pdf.js within the evernote um desktop application
+and they were able to escalate that all the way up to remote code execution so it's a really really
+awesome blog post um it's very in-depth it talks about sort of the whole strategy the whole mindset
+the the whole you know behind the scenes of what went into finding the bug and how they were able
+to locate this um basically what they were able to do is they they found that evernote uses pdf.js which
+is very large very well-known uh javascript library for um rendering pdfs and within this there's this
+font um this font you know construct or whatever I'm not sure what the right word is directive I guess
+um and you can create these font objects and the way that it's parsed by pdf.js is faulty and you can
+use this to basically sync all the way into a function creation call within the javascript that creates a
+new javascript function to get arbitrary javascript execution so from there you have javascript
+execution when a pdf gets loaded and rendered by pdf.js within the evernote app but due to the
+restrictions that were in place for security purposes you couldn't steal their cookies you
+couldn't you know take over the account very easily you couldn't do do much at that point but there is
+this inter-process communication um you know functionality that's built into these electron apps
+that allows um apps to talk with different parts different other parts of the app um you know
+there's like bridges and there's you know sort of sectioned off parts of the application that are
+communicated through this ipc process and through this there was a specific ipc handler called like
+the broker bridge um where you could do all these different actions and one of those actions ended up
+being that you could open file attachments um and so through this very elaborate payload which uh
+is if you read through it you're like what the heck is this um but it he he does a great job of sort of
+breaking down all the different parts and what each part means and how it works and and so on um and it
+basically allows you to put through a file path like calc.exe that will you know fully execute and open
+on the uh on the on the victim when the pdf gets rendered and opened by the evernote application so
+it's a really really awesome blog post very very cool um great research uh really does a great job of
+demonstrating how you can sort of take that to the next level because i think you probably could have
+just submitted it as is and said hey you know i have this vulnerability i can execute javascript
+within the pdf when it loads done you know maybe it's a medium maybe it's a high or something and
+just call it a day but um he really pushed through went the extra mile and found that that impact
+there and uh and got it all the way to uh remote code execution code execution file execution not
+really sure which which one it would be i guess not really rc but file execution remote file execution rfe
+anyways um yeah so very very cool check out that blog post read read through it um
+i know a lot of electron apps are out there it's a very interesting attack surface if you ask me
+because it's sort of that bridge between um where xss starts to affect client applications there's a ton
+of electron apps out there i think a really famous example is um discord uh i don't know if it's still
+fully electron but it's javascript based um and you know it basically is has a console and everything so
+um yeah there's there's definitely a lot of applications out there that are using javascript
+and are using electron and it's probably a probably a ripe attack surface for some vulnerabilities um
+cool the next bug blog post i want to talk about was from acid note as always the folks over at acid
+note are doing crazy crazy awesome research um and this one was a very elaborate bug chain in service now
+um that let them escalate to um being able to access basically all of your service now data
+um so it started out that they were they noticed that there was this strange decoding behavior where
+uh there's sort of two levels of um protection on this rendering there's there's this template renderer
+um and if you can manage to get some tags through this template rendering process then you would have
+you know potentially very serious implications uh through full template injection and so they started
+looking through the service now application and they found a specific spot where there uh there's no
+escaping explicitly being done on user input um and they were able to find a way to get a user
+control parameter that just dumps directly into the page and they started fiddling around with it so
+um acid note does a really awesome job of sort of walking you through their thought process as well of
+you know this is what we tried this didn't work then we looked here oh we noticed this interesting
+thing then we tried that that didn't work oh we noticed another thing and so on so it's a very very
+good read it's very easy very digestible but it's it's an awesome demonstration of how you can
+escalate a bug so they went back and forth basically with the application they noticed okay there's a
+sanitizer here oh we can only put certain tags through all right style tag is allowed we use a
+style tag to escape the html now we can put arbitrary tags in okay now how do we actually get
+this to do what we want we want to use this evaluate tag so that we can actually run our own code
+uh in the template execute in the template uh rendering engine right but you can only use these
+certain types of tags so they try you know defining their own tag they try changing the namespace there's
+a specific check for that they can't define the namespace um then they try overriding the default
+namespace uh and then there's another check on that they go and they look how does that check work oh the
+check works with a regex is the regex satisfactory no you can bypass it with single quotes instead of
+double double quotes and so and so on and so on so it's a really really awesome bug um it's it's super
+super cool that shows again sort of this thought process of um you know sort of one step at a time
+getting past these security controls testing iterating figuring out how to continue to escalate this
+further and further and further until you get to sort of your maximum input impact uh point and um
+yeah it's a really really awesome bug um at the end of the day they were able to get you know
+arbitrary file read essentially on the server so they could read um you know user uh data they could
+read um the config files for the server they could also on a lot of instances i guess there's this
+uh cross uh server communication thing so similar kind of like an ipc but it's not inner process it's
+it like inner node um and it basically is just rce as a service so you can just run commands you can
+run curl and just have it you know run whatever you want um that worked uh evidently it seems so
+there was a lot of really interesting stuff that they were able to do um and since they have sort
+of this evaluate context where they're within um the template engine they have access to different
+classes and and all sorts of very complex sort of attack vectors uh that are that are now available
+to them because they're within like sort of java java execution context so it's a very very
+interesting blog post definitely go check it out it's on the asset note uh website and yeah um last
+thing i'd be nervous if i didn't mention this obviously crowd strike stuff uh i don't really
+have much to say about this from a bug bounty perspective uh that it wasn't really bug bounty
+related it's just some crazy uh crazy security stuff that came up uh in the last couple weeks
+um for those of you who don't know there was a crowd strike um they pushed i guess a bug
+or something in one of in the crowd strike agent on windows and it was causing blue screens it
+created huge outages all around uh the world all around tons of industries i believe there were
+many airlines who were down who were down for like many many days i think delta might still be dealing
+with problems um but yeah obviously um just goes to sort of show how stuff can cascade right and
+and what the impacts of very small bugs even not necessarily a security bug but just a bug in
+general uh can have so just uh just some food for thought hey guys real quick i just wanted to give
+a shout to the hacker content team they have been absolutely killing it the past couple months taking
+the content from the podcast and condensing it down into consumable social media posts whether it be
+shorts or text posts or whatever they've been rocking it so uh i just wanted to give them a shout out
+and let you know that they do all sorts of cyber security content as well as social media management
+they do technical blogs they do uh comprehensive social media management uh so if your organization
+could benefit from any of those types of services make sure you head over to hackercontent.com drop
+them a line and mention the podcast when you do to get your first month of cyber security content
+marketing services for free all right that's it let's get back to the pod uh all right let's get into
+the main content for today which is part-time bug bounty all right so as i mentioned i am a part-time
+bug bounty hunter um that is you know my main focus um i uh i work full-time um and i have like a million
+other side things that i do all the time including this podcast um and so i think for a lot of people
+it can be very daunting to figure out sort of the time management aspects especially and so i just wanted
+to cover like sort of a couple different topics around part-time bug bounty and and the first one
+is how to balance your time um between like hacking and family and um work and life and not going insane
+and all that kind of stuff right so i think the first thing that you really have to do is you have
+to choose how serious you want to take this um you know bug bounty can be a very lucrative way to make
+a lot of money it can also be just like a very normal side hustle maybe you make you know 100 bucks
+a month 500 bucks a month um you know it really it is what you make of it and you can be very successful
+or you can take it very casually um i think especially when you're doing it part-time it's
+really important to remember you're doing a lot already okay so for whatever your reasons are whether
+you're in school whether you're um you're employed full-time whether you have kids whether you're
+working two jobs like whatever it is like you've probably already got a lot going on if bug bounty
+is something that you're aiming to do part-time um and so it's important to just to recognize that
+right um if you're gonna go really hard on this you're gonna go intense you're gonna go all in
+then set some strict schedules you know give yourself um you know you say i'm gonna hack two
+three hours a day five hours whatever you know from this time to this time and you put that on
+your calendar and you block it out and you say sorry i'm busy i i have something going on i have an
+appointment you know um you just need to be dedicated and be explicit and be um intentional
+about your time when you're if you're gonna be serious about it um along with that like you need
+to commit to what your schedule is right so if you're saying that you're gonna work for two hours
+a day from you know 7 to 9 p.m then at 7 p.m you drop what you're doing and you go if somebody says hey
+can you uh are you free at 7 30 nah sorry i've got something going on right you you have to
+commit to that and you need to hold yourself accountable and you need to build accountability
+into it right so whether that's tracking your time whether that's having a buddy to hack with
+whether that's having someone who you say yeah i hacked today no i didn't hack today um you know
+build accountability into your process so that you can hold yourself accountable and you can be honest
+with yourself right um if you're gonna track your time there's a couple really easy
+ways to do that um you can do it through there's a great application i like called clockify which
+basically you can just set projects and it's just a desktop app and you click start stop you say
+i'm working on this and it tracks your time um you can view all your stats it syncs online it's free
+easy it's great um if you don't want to do that you can just use a timer on your phone um you can
+uh track it in a google sheet um i've done that as well actually this year is a new thing for me i've
+been tracking all of my time spent hacking i've been tracking how many bugs i submit um bounties
+that i earn every single day of the year um just so that you know have those numbers and if you're not
+hacking you put a zero in there all right that's how it works that's called being honest you got to be
+honest with yourself with yourself if you're going to take this seriously uh which i think you should
+um regardless of how intense you take it you need to be honest with yourself how much time are you
+actually spending how much time how many bugs are you actually submitting how many bugs are actually
+getting paid out and then at the end of the year if you don't like what those numbers look like
+then you can try and make some changes and you can say okay i wanted to do this but i but i i didn't
+and this is what the actual this is what reality looked like versus what i wanted it to look like
+what went wrong did i not take it seriously enough like what what happened there um so you know build
+build an accountability track your time track you know your your progress be honest about that tracking
+with yourself um if you need to find somebody who you can hack with find someone to collab with we got
+a ton of people in our discord ctbb.show discord go find some find find a hacking partner find a
+hacking buddy it's split 50 50 and just you know go ham um another strategy that i love um that franz
+uses and i also like to use sometimes is like using cliffhangers um or you can use any sort of dopamine
+chasing strategy that works for you so whether that's um you know setting setting up you know
+something that's really exciting and then stopping hacking right before that so that the next day you're
+really excited to come and look at that thing that you were looking at the day before um you can do that
+or you know if it's changing targets frequently whatever works for you um that like gives you
+that rush use that to your advantage um you have to sort of be your own coach in this scenario where
+you need to find the strategies that work for you that allow you to work optimally and capitalize on
+those so that you are in the optimal space to hack when you want to hack and when you need to hack okay
+next picking programs picking programs is a big topic for part-time hackers um because there's
+all sorts of questions around you pick one target you pick a bunch of targets you change target targets
+three times a day um do you do you hone in and go ham on a single target like what do you do so um
+there's definitely a lot of different ways to do this i don't want to get too much into the weeds on like
+you should focus specifically on this one program or not if that's your hacking style that's great um
+if i always recommend going deep you know getting very intimate with the application finding all of
+the routes all of the ins and outs all the little quirks and nuances and abbreviations and everything
+about that program so that you are as knowledgeable as an engineer at that company when you're hacking on
+that and that will allow you to make connections and tie things together and use those gadgets very very
+effectively if you're that comfortable with the application it's going to be a lot harder to do
+that if you're not that that's just that's what i found right um that's not to say that you can't
+find bugs without doing that right there's tons of ways to do that and i'll talk a little bit about
+that later um but you know that's definitely a a good way to keep yourself um you know focused is to
+go deep on an application and and focus only on that one application become an expert there um so
+one thing that i like to do when i'm looking for programs is optimize for payouts um and impact um
+and so i think those two things go hand in hand if you want the highest payout you want the highest
+impact right so there's a script that i wrote um it's going to be released to the critical thinkers
+hopefully before this episode if not check the discord but um it uh it will be exclusive to the
+critical thinkers and it basically does a bunch of program stats using your hacker one token your cookie
+whatever off off cookie to look at all the programs that you're on and we'll look at their bounties and
+look at their stats on their bounty tables and it will identify programs that are potentially really
+good targets um and the way that it does this is that it looks at some of the payout statistics based
+on what is the average bounty based on their bounty table what is the percentage of bounties that are
+within high high and crit range how far off from the max high and crit are the average payouts for
+highs and crits stuff like that so it's a very very useful tool it definitely identified a couple
+different programs that me and justin were both very interested in so uh it works and it's it's a it's
+a super useful tool i'm working out some minor quirks with the authentication problems for some
+reason it works for me but it doesn't work for other people so um i'm i'm still working out some
+of the kinks there but it's a very useful tool um so that'll be available to our critical thinker tier but
+um you can do that manually as well so if you want just go to your program dashboard your you know
+hacker dashboard or whatever start looking through programs and start looking at their tables and see
+what percentage of reports or highs and crits how far are they deviating from their payout table in terms
+of bounties how how hard are they adhering to their bounty table and cvss and that's going to tell
+you how how easy it's going to be in terms of bounties right when you have a program who really
+strongly adheres to cvss and their bounty table where it's a high it gets this much it's a crit it
+gets this much um that type of program is as a part-time hunter where you want to be spending your
+time because you want to be making the most amount of money without fighting back and forth about the
+team you if you find a high you want that back right so um that's definitely something to keep in mind
+another thing to keep in mind is from the impact scenario right so put yourself in the shoes of
+the security team when you are submitting a bug you want to think about what it would be like to be
+sitting at your desk as the security team and a researcher with your username
+submit a report and it just came into your inbox number one how does it read right so remember that
+you're communicating with a real human um and that some real person is going to be reading that report
+so how how are you speaking how are you phrasing things is it easy to understand is it overly
+complicated is there unnecessary details that don't need to be in there there's a lot of aspects to
+writing a good report um that can be solved by just thinking about how it would be by reading it from
+the perspective of the security team the other thing is the impact assessment from the security team so
+if you're in the shoes of the security team what is your worst case scenario what uh is it user data
+is it rce is it accessing some specific service is it being able to bypass this certain role um what is
+you know what is the worst case scenario and what are those more or less impactful things that you can
+do on that program um as you know if you're on the security team what would make a bug more impactful
+what would make a bug less impactful what things would be mitigating factors that an attacker would
+need to get around or find a way to bypass in order to raise the impact on their bug um you know when
+time is limited when when it's scarce you have to hyper optimize the things that you're looking for
+and you have to angle and orient your reports in a way such that they highlight the highest possible
+impact scenario for that program so that you can maximize your severity you can maximize your impact
+you can maximize your payout right so on the topic of optimizing and especially keeping your flow
+as streamlined as possible let's talk about spending your time efficiently um i've mentioned a couple
+times impact versus volume are you going for a lot of reports that may be mediums or are you going for
+three crits a month one crit a month what is your goal here right um make sure that you're setting your
+goals appropriately and that you're not switching back and forth if you are if you have a target and
+you constantly change that target you're never going to be able to make progress towards that target
+because the target's always shifting so set a target keep that target and continue to focus towards
+it if that target is i want to find a crit go until you find a crit don't go for three hours and then
+say okay never mind that's actually too hard i want to find a medium now like that's fine but you should
+set goals and you should work towards those goals until you achieve it not just constantly shift it
+because you're going to feel like you're constantly stalling and it's going to put you in a negative headspace
+um another great strategy is to follow douglas day's uh nose talk about looking for the nose in an
+application uh douglas day aka archangel a friend of the show friend of the he's been on the pod a couple
+times uh he has a great talk about looking for nose in an application which are basically things that are
+explicitly called out as you shouldn't be able to do this uh it shouldn't be possible to do this thing
+um you know they're it users should only be able to do x y and z right look look at the documentation
+read through um what the application says about itself look for permissions look for role-based
+access controls um these are the types of things that you want to try and get around those can be
+really easy wins and those can also have very strong impact scenarios where you can say here's your
+documentation that says you shouldn't be able to do this here's me doing it very very straightforward
+cut and dry usually works very very well um another thing for spending your time efficiently is to map
+the product and identify your whole attack surface so the first thing that i always try and do when i'm
+looking at an application is figure out what am i dealing with what stuff is available to me what looks
+interesting where are my possible attack scenarios what possible routes and gadgets do i have available
+what endpoint is returning what to me where do i have user info where do i have permissions where do i
+have access control checks all sorts of things make these notes take notes write them down right um
+super super important that you figure out just the fundamentals of the application that you explore
+and you you get hands on time with the application if you're trying to hack it efficiently and you're
+trying to be able to make those connections in your brain when you see something funny all right um
+for the impact side when when i talked about volume versus impact if you're going to be going after impact
+focus on high impact bugs okay you have to set those targets appropriately don't be like oh maybe i'll
+find an idor that leaks user info maybe you will and that could be a very severe bug but that's going
+to depend on the program and that's going to depend on their impact scenario that's going to depend on
+their risk model right so again when you're putting yourself in the shoes of that security team think about
+what their risk model looks like what is their threat and impact model is it leaking user data or is it
+account takeover is it access to internal applications is there a walled garden going on right so
+look for account takeovers look for ssrfs look for ways to bypass parsers pdf exports file exports template
+injection rce right there's a lot of really juicy scenarios nowadays that aren't just all in the browser that are really high impact
+um that are really high impact and if you focus just on those you're definitely going to find
+at least a few of them um and as i mentioned going going deep um becoming super intimate with the
+application again like the those couple of hours that you spend every single day over one week two weeks
+a month that will add up to a lot of time and you will become very very well versed with that application
+and as soon as you see a bug you're going to be able to connect the dots in your head and you're going
+to be able to to write up a bug immediately you're going to you're going to know exactly what to do
+you're going to see it you're going to go oh i have a thing for this yeah so last thing i wanted to talk
+about streamlining streamlining your process make it efficient um how do how do we how do we add some
+grease into the system how do we you know slow as smooth smooth smooth as fast whatever how do we make
+this better how do we streamline our process okay step one just like grease reduce friction okay this is
+going to depend person by person you need to find where the highest friction areas are in your process
+so when you're hacking there's going to be things where you're going to be like this is so annoying
+i hate this part uh this is always so annoying for me it's so frustrating that i have to do xyz
+and i'm not going to start hacking because i have to do that or it off you know it's off putting right
+whatever those friction points are whatever those those negative annoyances are you need to fix those
+things okay so whether that's creating report templates because writing reports sucks whether
+that's using bash aliases and creating shell scripts for yourself that you can execute to do a bunch of
+different commands at the same time because remembering all that stuff is annoying whether that's creating
+custom automations and tools and scanning suites find your own blockers and solve your own blockers
+right this is a really important part of your process that you can't just let these problems
+live and say well i have a limited amount of time so uh i i just need to hack i can't go and fix this
+problem no spending time fixing a problem is not a waste of time okay when you have a problem you
+spending time fixing that is really really important it's very important to actually spend time
+fixing that problem that is part of optimizing and part of fixing that for every single time that you
+hack after that if you have a problem you fix it once never again it's very you know so make sure to
+spend the time to fix those things on on the other hand don't overdo it okay it's so easy to just
+say oh i could optimize this oh let me automate that keep it simple right keep it simple but if it's
+clunky if it's if it's a blocker if it's creating more problems than it's solving optimize it okay
+don't over complicate it but but don't let it you know be a blocker right so find your own problems fix
+fix those problems optimize your process next take notes i said this at least twice during this episode
+take notes take notes take notes take notes and and the most important part of taking notes is
+reviewing your notes my goodness i cannot tell you how many times i've taken notes and i i just don't
+even i don't even look at them i just i'm just writing stuff down not even looking at what i'm
+writing not weeks go by i'm like wow i've taken a lot of notes don't even read them read your notes you
+took the notes for a reason okay in your notes you should have a lot of very useful tips for yourself
+otherwise you're taking inefficient notes so your notes should be things that you in the future
+want to look back at so look back at it okay it's very important that's a very important part of
+taking notes is reading the notes okay record videos record audio for yourself doesn't have to be
+video you don't you go oh my face is ugly i can't don't i don't want to be on video great record a
+voice memo for yourself about what you were doing at the end of your hacking session brain dump into
+either a video or an audio you can do this for gadgets you can do it for your whole hacking session
+you can do it however you want loom is a great way to do this because it records your face and your
+screen you can use obs if you don't want to use some other software you can use freaking
+quick time on mac um you know there's tons of ways to record your screen um and your audio record
+to yourself you're just talking to yourself and brain dump because the next time that you go to hack
+you can open that video you got you know a three to five minute video that you could just listen get
+right back into that headspace that you're at at the end of your last hacking session you can jump
+right back into it without having to try and figure stuff out again um otherwise taking notes
+notion i use notion for my notes it's great it's like kind of markdown niche on steroids it's really
+really nice um it has a lot of awesome features like you know collapsible sections and tables and
+whatever there there's a lot of stuff you can do with notion i think there's another tool called obsidian
+i want to say and that's like more open source brain mapping type note taking stuff there's a ton of
+options out there you can use evernote if you want uh as we talked about earlier i don't know that's
+i'll leave that up to the bill lister um uh you can also use a whiteboard i just bought a whiteboard you
+can't see it it's off screen right now but i bought a massive whiteboard for my wall um so you can just
+you know write down some notes dump stuff on there you know map stuff out on there um sticky notes i love
+sticky notes i have a pad of sticky notes right here i keep them on my desk i have pencil on my desk
+and if uh sometimes even in the middle of the podcast justin will say something and i don't want
+to never interrupt him or i have a thought uh that i want to you know make a note of or an idea that i
+don't want to leak on the podcast and uh i'll take a sticky note and i'll write it down and i'll just put
+it on my desk or i'll put it on my monitor take notes very good sticky notes notion notes
+video notes whiteboard notes notes very good okay that is pretty much all i've got um
+there's obviously a lot more that you can do but i think sort of the best advice that i have is iterate
+take notes and identify the blockers in your process right streamline what you do when again when
+time is limited you have to optimize okay if you want to be the most efficient hacker that you can in the
+amount of time that you have as a part-time hacker you have to find the ways to make your process the
+best as possible you need to figure out the way that you want to hack whether that's high impact
+whether that's high volume whether that's focusing on one program whether that's changing all the time
+and you need to find the ways that work for you that are successful and figure out the goals and the
+things that you want to get out of this if you want to get a certain amount of money set that money as
+a goal track it in a spreadsheet track it in clockify track it on your phone track it in a notes app track
+it however you want to track it and hold yourself accountable right be honest with yourself and it's
+okay to take breaks to fix problems to let yourself recharge and to recognize that you are doing a lot
+and it's just a part-time thing so you you know you get out what you put in so you got this good luck
+part-time hackers i believe in you i'm with there i'm with you on there you got this good luck see you
+on the leaderboards peace and that's a wrap on this episode of critical thinking thanks so much for
+listening and if you want more critical thinking content head over to ctvb.show discord join the
+discord there's lots of great conversations and chats going on over there and if you want to support
+the show there's the discord subscriber tiers which give you access to master classes amas hack alongs
+exclusive scripts and an exclusive chat channel with us we'll see you there

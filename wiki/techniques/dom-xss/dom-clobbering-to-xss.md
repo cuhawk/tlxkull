@@ -2,7 +2,7 @@
 title: DOM clobbering to XSS
 slug: dom-clobbering-to-xss
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss, technique/dom-clobbering, sink/innerHTML]
 inbound: []
 ---
@@ -57,7 +57,8 @@ If code checks `if (isAdmin)` (truthy HTMLElement) instead of strict boolean com
 
 ## Seen-in-the-wild
 
-(none yet)
+- {date: 2023-07-06, source: CT Ep 26} -- PortSwigger Academy walk-through: two `<a>` with same id collapse to HTMLCollection, second-element `name` attribute clobbers sub-property, anchor `.toString()` returns href.
+- {date: 2025-08, source: CT Ep 149} — DEFCON 33 Jack-fromeast et al. shipped automated framework "Hulk" + GitHub `dom-clobbering-collection`: AST taint-analysis derives the HTML payload that satisfies the prototype-shape needed to reach the sink. ~500 zero-days across webpack/rspack/vite/google-api-client-library/astro runtime code.
 
 ## References
 

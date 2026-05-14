@@ -106,6 +106,46 @@ version <3.11.
   `js_examine_chain` first then route through the same advisor — there
   is no direct Opus-call skill at the surface).
 
+## Per-target DB isolation (REQUIRED)
+
+The TLX js_analyzer SQLite at `~/.tlx/js_analyzer.db` and the chroma store
+at `~/.tlx/chroma/` are *global* — without isolation, every target's
+nodes/edges/tags/chains pile up in the same tables and contaminate
+`js_get_chains`, `js_run_audit`, and `docs_query` for the active target.
+
+Required workflow on every target after `js-index` + `rag-ingest` complete:
+
+1. **Snapshot to per-target DB files.** Identify the in-scope host
+   prefix(es) for the target (e.g. `eu1.dev.ict.dematic.dev/`). Run:
+   ```
+   python3 bin/db-isolate.py snapshot targets/<name> <host-prefix-1> [<host-prefix-2> ...]
+   ```
+   This copies `~/.tlx/js_analyzer.db` → `targets/<name>/db/js_analyzer.db`
+   then deletes every row whose `nodes.file` does NOT start with one of the
+   given host prefixes. It also copies the chroma collection
+   `target_<name>` (segment dirs + filtered `chroma.sqlite3`) into
+   `targets/<name>/db/chroma/`. The global DBs are not modified.
+
+2. **Re-export the index from the snapshot:**
+   ```
+   python3 bin/export_index.py <name> targets/<name>/index \
+       --frameworks '[...]' --db targets/<name>/db/js_analyzer.db
+   ```
+   The default `--db` reads the global DB and will contain other targets'
+   data — always pass `--db <per-target-snapshot>`.
+
+3. **Run chain extraction against the snapshot, not via `js_get_chains`:**
+   ```
+   python3 bin/extract_chains.py targets/<name>
+   ```
+   `js_get_chains` is bound to the global MCP-loaded CallGraph and returns
+   chains from every target ever indexed. `bin/extract_chains.py`
+   instantiates a fresh CallGraph against the per-target snapshot.
+
+4. Never run `db-isolate.py wipe-foreign` or `wipe-target` against the
+   global `~/.tlx/js_analyzer.db` without explicit user confirmation —
+   those subcommands destroy other engagements' analysis data.
+
 ## Failure handling
 
 - Tool errors: log to `targets/<name>/status.json.errors[]`, surface to

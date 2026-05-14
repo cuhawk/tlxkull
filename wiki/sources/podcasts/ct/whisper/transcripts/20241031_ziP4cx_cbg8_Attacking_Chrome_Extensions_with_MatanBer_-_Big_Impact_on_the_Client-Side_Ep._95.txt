@@ -1,0 +1,4155 @@
+They could try to instead inject what's called the closed shadow dom.
+Oh, the shadow dom.
+Yeah.
+They did that from the isolated world, right?
+Yeah, they did it from the isolated world.
+What's up, y'all?
+If you've listened to Critical Thinking for any time at all, you know that we very often cover the AssetNode team's research that they put out on enterprise security and zero days that they've been popping left and right.
+And lucky for us, now the team no longer just has a blog, but they've got a podcast called Surfacing Security where they talk about everything enterprise security related.
+And attack surface management related.
+And I've been following each episode and just listen to these episode titles, okay?
+Internet wide recon, moving past IP centric approaches.
+Very interesting.
+Beyond shadow IT, understanding the true attack surface of your software.
+This one's focused on like third party softwares and how they can affect your enterprise security posture.
+And the unknown complexities of DNS resolution.
+Guys, these guys know DNS resolution like no one I've ever met.
+I've probably spent 10 plus hours just discussing DNS resolution and their DNS pipeline with the AssetNode team.
+And they know their shit inside, outside, upside down.
+So if any of those sound interesting to you, check out the new Surfacing Security podcast on the AssetNode YouTube channel or wherever you get your podcasts.
+All right, back to the show.
+All righty, dude, we're rolling.
+Matan, welcome back, man.
+Good to be back.
+Very excited for this one.
+We have a banger episode coming up.
+We really do, man.
+And we have not a lot of things on the docket, which means we can go deep into them.
+Only three topics.
+One of which is browser extensions, which I feel is a super...
+But somehow we got to six pages.
+We did get to six pages.
+So we'll see if we get through all of it.
+But I think browser extensions are kind of a really underserved attack surface in bug bounty.
+And I think that because you told me that.
+Yeah, I've been kind of capitalizing on it.
+But I think I'm going to have more competition after this episode, you know?
+Yeah, dude.
+Thanks for agreeing to do it.
+Because I know when we were talking about prepping for this episode, you were like, maybe we'll push this episode out a little bit.
+Maybe I should milk this a little bit more.
+I thought I stopped milking it, but then in preparation for this episode, I took another look at some of the extensions I tried to hack.
+And I still found some bugs in there.
+So definitely stuff to find.
+Okay.
+So I'm going to say that this one is a browser extension hacking version one.
+Because I know there are some things that you've discovered recently that you haven't fully had the time to talk.
+We're not going to drop them completely yet.
+But maybe we can get those someday.
+That would be cool.
+Yeah.
+All right.
+Let's get into it, man.
+Browser extensions.
+I guess the first thing that we need to understand is what is the structure of these browser extensions?
+And what is the threat model?
+Before we get into that, I just want to say that this episode might be a little hard to follow, especially in audio form.
+Yeah.
+Just because it's going to be unfamiliar to a lot of people.
+And the structure of a browser extension can be a little complicated.
+You really have to visualize it, which might be a little tough.
+So don't worry if you don't get it the first time.
+I think you can just learn from experience.
+Messing with an extension is going to teach you a lot about how extensions are built.
+Way more than I can sort of explain via audio.
+But anyways, the way extensions are built.
+First of all, just in general, we all know what extensions are.
+But their purpose can be either to extend the functionality of a set of sites.
+It can be one site, multiple sites, or all sites.
+Or of the browser itself.
+You can maybe change the theme of the browser or something like that.
+And in order to do that, if you sort of think about it, a lot of the time, extensions need to have sort of a way to run code in the site that they want to extend.
+Right?
+And on top of that, they need some sort of thing that coordinates all of this.
+You know, because you can have like many, many tabs of the same site.
+Say you're trying to extend youtube.com.
+And you have like multiple scripts and can get kind of messy.
+You need something to coordinate all of it.
+And so the browser developers sort of bid like an extension component for each one of these roles.
+So in order to execute code in the sites that you're trying to extend, say it's like all sites.
+One example that I had for like a simple extension that we can sort of keep in mind while we're talking about it is an extension that I will call like save my JPEGs.
+Okay?
+And it's just going to add a save button to every image on the page.
+So every image element in every page is just going to add a save button.
+That will save it to some site.
+So in order to do that, we will need to inject some JS code into every site that's open in the victim's browser.
+And then you're already thinking about it from the attacker's perspective.
+I think that's cold.
+It's funny you say that because that's literally how I talk all the time with this.
+Yeah, I'm autocorrecting constantly.
+So we're going to need to inject code into every page in the potential victim's browser.
+Now, the sort of component that does that in browser extensions, it's called the content script.
+So you can have many content scripts in the browser extension and they can be injected in a few different ways.
+It gets a little complicated.
+But basically what you'll see in most cases is the sort of config file of the extension, which is like a JSON file.
+It will just have the content scripts that will be injected and a list of which sites it will inject to.
+And actually, before we continue, it's important to note that the sort of structure and behavior is a bit different between the last version of extensions called Manifest V3.
+You might have heard of it because there was some noise about it.
+Yeah.
+And Manifest V2.
+Right.
+And because Chrome is going in the direction of Manifest V3 and all of the big companies have already updated, I chose to focus just on Manifest V3.
+So that's what we're going to talk about.
+So anyways, when we want to make like the Save My JPEGs extension, we're going to have all of the content scripts each injected into a different tab or iframe or whatever.
+Like every page that renders, we're going to have a content script in it.
+Now, we need like something to coordinate all of it.
+So sort of the brains of the extension, the like main script that runs and coordinates everything that has like the capability to inject content scripts and stuff like that.
+It used to be called the background script.
+Now it's called the service worker, which is very like confusing.
+That changed.
+Confusing.
+Okay.
+That makes sense now because I was like, I heard both of those terminologies and I was like, I don't see where this fits into the structure, but they're actually just the same thing.
+So it's very confusing calling it the service worker.
+Yeah.
+And it actually has some differences between it and like a regular service worker.
+Right.
+So I'm not sure why they picked that term.
+Anyways, it's called the service worker and it sort of runs in the background and coordinates everything.
+Right.
+So there's a little graphic here that you have.
+Yeah, I'll show it.
+Yeah.
+It's taken from Space Raccoon's blog actually about browser extension hacking, which was pretty great.
+You can read it after the episode.
+But actually the little diagram isn't totally complete because you can see if you're looking at the pod on YouTube, there's sort of like a section about the web page DOM, which is sort of the site that is getting extended, basically.
+And it has like a content script, in this case, a few content scripts that were injected by the extension.
+And it has like the original JS code that's running inside the site.
+And what Space Raccoon chose to highlight here is that those two can communicate via post message.
+I've got the Space Raccoon plushie right here, man.
+Ready to go.
+Let's go.
+Those two scripts can communicate via post message, but they can also communicate via other channels like custom events, stuff like that.
+We're going to get into it a bit further.
+Then that content script can communicate with the background script, the service worker, via a browser API called the message passing API.
+There's a bunch of functions that are pretty similar to post message, and that's just how they communicate.
+So that's the basic structure.
+You can add some stuff on top of that.
+And like some extensions will have like another script that runs inside the actual context of the web page.
+But we're going to get into that a little bit further.
+Yeah.
+So let me try to summarize this really quick, because there is a pretty complex structure here, okay?
+We have three main components, or really two main components that you've mentioned so far.
+Well, if we count manifest.json, it'll be three, right?
+So we've got the content script, right?
+Which is the script that the extension injects into the DOM of the actual page that the user is on.
+So depending on the configuration file, this could be, you know, any website.
+It could be a certain set of websites, maybe like star.ctbb.show or whatever.
+Or it could be just one, you know, specific website that it wants to modify.
+That's the content script.
+Yeah.
+And that is affecting, that is sharing the DOM with the actual JS.
+Yeah, so I'm actually...
+But not sharing the content, the actual JS environment, right?
+Well, I'm going to, I was just going to talk about it.
+Okay, all right, all right.
+Hit it, hit it, hit it.
+Yeah, so basically, if you sort of take the structure that we explained so far, injecting
+a content script straight into the page and implement it, there's a bit of a problem that
+comes up that the sort of Chrome developers or browser developers in general had to solve.
+So imagine you have like a site and say it's malicious, you know, and you inject that content
+script straight into the JS environment of that site, right?
+Now you have, you want to give the content script a certain level of privilege, right?
+It has to have the ability to say, communicate with the background script or read cookies from
+pages, stuff like that, whatever permissions the extension has.
+But you don't want the regular environment of the site that you're injecting into, which
+can be malicious, and to have that same level of privilege.
+So you need to have some way of separating the two.
+And once you do that, you also have to make sure that these sort of environments can't
+mess with each other.
+Mainly that the malicious site can't mess with the content script.
+And because then it could manipulate it and somehow take advantage of the privileges it has.
+And if you, if you share that JS environment at all, you're just kind of opening up a can of worms, right?
+Like, like you, you, you, because there's so much, so many things you have to think of from like prototype pollution and various variable hijacking or whatever.
+So they need to do something different.
+Yeah.
+Anyone who's tried to create a JavaScript sandbox.
+Yeah.
+Like the one that used to be in AngularJS before they give up.
+Yeah.
+Gave up.
+Yeah.
+
+Know that it's a tough, tough problem to solve.
+Right.
+Yeah.
+There's a whole bunch of stuff that can go wrong there.
+So what the Chrome developers specifically chose to do, I think it works a little bit differently on Firefox, but I haven't looked at that.
+And is they chose to make the code of the content script run in what's called an isolated world.
+So.
+Such a cool name, no?
+Yeah.
+Such a cool name.
+It is.
+It's a badass name.
+Yeah.
+Like I, I breached the isolated world.
+Oh my gosh, dude.
+That's like top tier hacker shit right there.
+If you breach the isolated world.
+Yeah.
+Yeah.
+Yeah.
+So.
+So what the isolated world sort of does is it makes the, the content script still kind
+of runs in the page because the extension has to have the ability to like modify the
+DOM, read the location, stuff like that.
+It has to sort of feel like it's in the page.
+But it sort of prevents the, the page from messing with the extension in the sense that if the
+page like sets a global global variable, say it overrides window.alert to be some bullshit
+function.
+Mm-hmm.
+Mm-hmm.
+Now, that will like reflect in the actual context of the page that over overrode it.
+But if you look at the isolated world, window.alert will remain the same.
+So you can't really influence that.
+Mm-hmm.
+There is a bit of a catch there, but.
+Yeah.
+I'm still milking it.
+Oh my.
+It's.
+I know what you're talking about.
+Sorry about that.
+It's, it's, it's a good one.
+I'm excited to release that in, in, in a little while.
+In a while.
+In a while.
+In a while.
+No, no rush.
+I'm not rushing you.
+I'm just saying.
+Yeah.
+It'll be a good one.
+At 19.
+Yeah.
+Anyways.
+Yeah.
+In two years.
+Yeah.
+In a few years.
+That's great.
+Yeah.
+Anyways, the isolated world is sort of there to prevent the, as we talked about, malicious
+page from messing with the content script.
+But in some cases, extensions will want or have to run JS in the actual context of the page,
+in the actual world of the page.
+Sure.
+So you need to make like a competitor extension to France Rosen's post message tracker.
+Okay.
+Right.
+Right.
+You need to override the sort of add event listener or, I don't know, window.on message
+setter, stuff like that.
+Sure.
+So that when a new post message listener gets added, you need to catch that.
+Mm-hmm.
+So in order to override it, if you try to override it in the content, in the isolated world, it
+won't affect the actual page.
+So you need to actually inject JS into the actual page and then override that sort of actual, like,
+add event listener.
+Yeah.
+I think this gets tricky a little bit too.
+I was talking to Kevin Mizu, the author of Dumb Logger++ about this is, you know, with that structure that the
+Chrome developers have put into place, you know, you're having to either, you know, append a script to the page or use, I think, one other route that there is to inject a script.
+Yeah.
+And that has a delay to it, right?
+It's not instantaneous.
+And so there are some events that won't get caught by Dumb Logger++ for, like, the first, like, 20 milliseconds or whatever it is until it runs its, you know, overwrite script because of that delay.
+The issue that Dumb Logger++ is trying to solve is hard to solve with an extension.
+Mm-hmm.
+It's, like, a lot simpler than forking Chrome, but it's hard to solve with an extension.
+Yeah.
+Yeah.
+Forking Chrome.
+Anyway.
+You're opening up a can of worms a little bit there if you do that.
+Yeah.
+I mean, it would be really cool.
+And I would love to see somebody approach the problem, right, where you fork Chrome and somehow you keep it up to date and consistent with Chrome and you have, you know, a good amount of, like, updates and that sort of thing.
+But take out some of these, you know, things that hinder us to have introspection further into security.
+Yeah.
+But it would be much easier if the Chrome devs just did this.
+So if anybody at Google is listening and you have an in at the Chrome team, let me know because it would be really nice if we could just get a couple flags put into place that would allow us to overwrite things like document location or window location href and, like, get introspection into those specific attributes.
+Yeah.
+There's that.
+And also, if a reason to fork home is right now you can't sort of have a DOM logger equivalent for testing browser extensions because DOM logger as a browser extension doesn't have the privileges to mess with the JS of other extensions.
+And so that would also be a reason.
+Yeah.
+Yeah.
+Yeah.
+Okay.
+All right.
+So we've got the manifest.json file.
+That's the configuration file for the extension.
+Right?
+Right.
+And that defines a bunch of different things.
+Two of them are the content scripts which get injected into the DOM of the page but not in the same JS environment.
+They're in an isolated world.
+Right?
+So if they want to...
+Not exactly into the DOM but, like, into the page but in a separate world.
+They get injected into the page in a separate JS world and have access to the DOM.
+Yeah.
+Is that accurate?
+Yeah.
+Okay.
+All right.
+Just glad we got that squared away there.
+Okay.
+So they're in the isolated world.
+Sorry for being a little scattered here.
+No, no, no, no.
+I need...
+This is exactly what we need to understand it thoroughly.
+And we can't hack it if we don't understand it thoroughly.
+So this is great.
+And actually the plus of that is that the content script can affect the DOM and affect the JS execution in the normal execution world.
+The non-isolated world.
+Right.
+So, basically, right now we're talking about sort of a separate component of the...
+Of what an extension could look like.
+Right.
+So we have like the two very standard components, the content script and the background script or service worker, whatever you want to call it.
+But some extensions will need to have a separate component.
+We can call it like the injected script.
+Yeah.
+That's just how I saw it referred to in one of the extensions I've looked at.
+So the injected script, it has to be like a script that runs in the actual world of the page that is getting extended.
+Right.
+So for the extensions that do need that functionality, which is not too many extensions, but it's pretty common.
+A few ways to do that would be either to add an actual script element to the DOM, which is what I think DOMlogger does and PostMessageTracker does.
+Mm-hmm.
+Or there are a bunch of native ways to do that in the actual Chrome, the Chrome APIs.
+So you have either you can set like...
+You can add another content script and set a special flag there to make sure that that script is injected into the actual world of the page.
+Or you could use some other function.
+I forgot what's it called.
+Yeah.
+Anyways, there are a few ways to do that.
+I think it's provide a certain option.
+Execution world.
+Is that it when injecting the content script?
+Yeah.
+Yeah.
+Execution world, the main, I think.
+Nice.
+Okay.
+Nice.
+Okay.
+So you can define the world that this thing is executing in.
+I like that.
+That's good.
+I don't know what it is about the world.
+The world, but it just sounds so like anime, right?
+Like, like it's like in this world we'll be executing anyway.
+Okay.
+Okay.
+So we've got that.
+Isolate our world from all the attack.
+Exactly.
+Exactly.
+So we've got the, we've got the content script.
+It's the thing that's injecting into the page.
+We can define scripts for the actual JS execution world.
+That's normal.
+Right?
+So that that's where a lot of the functionality is happening.
+But then also in the manifest JSON file, we also have the service worker also known as
+the background script that, that is not a part of, doesn't have access to the DOM.
+And is just sort of like a backend process for the extension that can communicate with
+the content script.
+Yeah.
+I'm not sure that it doesn't have, because I think there are a lot of weird ways to do
+stuff like directly from the background script.
+But usually what you'll see is like, it will communicate with the content script and the
+content script handles all of these tasks.
+Hmm.
+So we should probably think of the background script as like, or the, or the service worker
+as the, as like the backend code of sorts for, for the extension versus the front end code,
+which is the content script.
+It's actually where you're supposed to implement the most sensitive functionality because it's
+the part that is least exposed to, um, to the actual, like to a malicious attacker.
+Hmm.
+In the actual Chrome docs, they mentioned that you shouldn't trust any communication between
+the background script and the content script because they assume the content script is, um, compromised.
+Really?
+Even in the isolated world?
+Even in the isolated world?
+Yeah.
+Yeah.
+It's theoretically, I can understand where they come from, but you can't actually implement
+that if you have a complicated extension, you're always going to have some sensitive stuff
+in the content script.
+Yeah.
+Yeah.
+And I think, I think in Spacer Koon's, Spacer Koon's, uh, I write up, you know, he sort of mentions
+a scenario where, uh, essentially they're, they're just, they're using post message to communicate
+from the, the JS environment on the, on the page, the normal JS environment to the content
+script.
+And that content script is then passing that message straight through pretty much to the
+background script via the send message API.
+Right.
+Um, and in, in that scenario, it's like, okay, well sure.
+If you, if you code up the content script in such a way that you're just arbitrarily passing
+JSON messages through.
+Yeah.
+You're sort of breaking a boundary.
+Then you do sort of violate that trust boundary.
+I can see that.
+So anyways, I was going to talk about something a little similar to that.
+We mentioned the injected script component that an extension can have.
+Again, it's like not mandatory, it's optional.
+Um, so the interesting thing is if you look at the communication between that, um, that little
+component and the content script, because it can't, um, access the background script directly.
+If you look at that communication and think about it a little, whatever that communication
+is, however, they implemented it, it can be hijacked.
+Mm.
+
+And that's because the injected script, it's in the actual environment of the attacker and
+attacker has like full control over it.
+Mm.
+However, you're gonna try to, uh, interact with that content script, whether it's via,
+with that, sorry, injected script, whether it's via post message or custom events or something
+like that.
+An attacker can imitate that like very easily.
+Mm.
+And you can't do like an origin check because they're gonna have the same origin.
+Yeah.
+Yeah.
+Yeah.
+Cause it's the same JS and execution environment even.
+Yeah.
+Yeah.
+Wow.
+Okay.
+So, so we've got that, that attack surface as well.
+You've got the attack surface of any scripts injected by the content script.
+Right.
+You've got the content script attacking the content script itself.
+Um, and then I guess, uh, trying to attack the backend script via proxy of sorts through
+the content script.
+Yeah.
+As far as attack vectors go for these extensions.
+Do you want to start getting into attack vectors?
+Yeah.
+I mean, well, okay.
+Let me just, let me just try to repeat back to you and you can validate my understanding
+of the structure.
+Okay.
+So we've got the manifest Jason.
+I know, I know we've already done this a couple of times.
+I know, but it's very hard.
+That's why I had the disclaimer at the start.
+Yeah.
+It gets, it gets complicated.
+Actually, I'm going to go ahead and just share the, share the screen again, for those
+of you that are on YouTube.
+Um, so you can see the, the, um, the graph and then hopefully this will make a little bit
+more sense.
+Okay.
+So.
+So first we've got the manifest Jason file, which is not actually displayed in that graph.
+So let me scroll up here.
+Here's, here's something that, that kind of looks like the manifest Jason file, right?
+You're defining these content scripts.
+You define where they are.
+You describe, describe a, a regex of sorts.
+It's not really a regex, but it's like a pattern on what pages this, these content scripts
+should be injected.
+Um, and then now we've injected the content script.
+The content script is in the webpage, but in an isolated world.
+Right?
+So it doesn't share a JS execution environment with the original JS on that webpage.
+And the content script is able to inject scripts into the page and, and affect the, um, JS execution
+environment, um, of the, the, of the webpage.
+But the original JS does not have the ability to do the opposite of that.
+Right?
+And like affect the content script because of the isolated, the isolated world.
+Um, and then, and then the primary ways for these things to communicate is via post message.
+So the original JS can send a post message to the content script and vice versa.
+And then we also have this other component, which we consider sort of like the backend of the, um, of the extension,
+which is the background script or the service worker.
+And the content script can communicate with the background script via the send message API.
+So that's sort of, it's kind of like post message, but for that backend to front end communication for the extensions.
+However, the front end JS, the original JS cannot communicate to the backend, background script directly using the send message API.
+So if you're trying to attack the, the, the background script, you kind of have to do that via proxy through the, the content script.
+Exactly.
+Did I get all that right?
+Yeah.
+All right.
+Can I get a round of applause for that please?
+Just from you, my mom.
+Thank you.
+Thank you.
+All right.
+Hey guys, our sponsor project discovery has dropped a new tool in collaboration with Google's own Mandiant team called TLD Finder.
+Okay.
+Picture the sub finder, but for top level domains.
+Need I say any more?
+Check it out.
+And I, and I suppose I should probably give you a round of applause as well for actually like explaining the, the, the thing.
+So yeah, it's great, man.
+All right.
+So, so now let's talk about what, how we can attack these Chrome extensions.
+Now that we sort of understand what they are.
+That's the fun structure is.
+Okay.
+Yeah.
+Okay.
+So I want to like do a few distinctions here, um, between like different attack scenarios and attack surfaces.
+Um, so I think the best attack scenario or like attack surface is, um, the, the case where you have like, uh, the extension trying to extend the malicious page.
+So if it's like, um, I will save my JPEG extension.
+Um, it, it, it will try to extend every page and like buttons to it.
+Um, so when the victim navigates to a malicious space, that that's where you have that sort of attack scenario.
+Um, and is this, is this the extension extending the page with a content script or is it, it's injecting the script into it?
+Are we talking about the injected script or are we talking about the content?
+Just the content script.
+Just the content script.
+Okay.
+Okay.
+Okay.
+Sure.
+And the injector script is sort of like a sub case of that.
+Sure.
+Sure.
+So when you have that content script in there, um, even though they have like an isolated world, it still opens, it still opens a whole bunch of attack surface that isn't very standard.
+And you might not think about, um, for example, if you're going to have a new attack surface, you're going to have a new attack surface.
+Um, for example, because they share the DOM, the two worlds, they have like the bridge of the DOM, it's getting even more, even more dramatic.
+Um, if the, uh, extension injects something into the, into the DOM, like in our extent, in our example, uh, button, then from the attackers JS code in that page, you could just like do button.click.
+Right.
+Right.
+Right.
+Cause it's a part of that DOM.
+Yeah.
+They're sharing the DOM.
+Right.
+Or like if it injects a paragraph, you could just read the content of the paragraph.
+Ah, so, so, so let's say the, the extension makes a button on the page and then the extension itself registers an event handler.
+Right.
+Um, to that button event, like a click or something like that.
+Then, okay.
+So.
+Sorry, I had to sneeze there for a second, but, but you're, you're, so then you, they, you can actually simulate that by actually just on the JS side clicking that button.
+Yeah.
+Which is the equivalent of executing the function in the content script because of the event handler. Is that accurate?
+Yeah.
+Okay.
+There's a little caveat there because why wouldn't there be.
+Right.
+Of course.
+Events have, have like a weird, um, uh, property.
+Like the actual, um, event object that gets like a sent when, to the event listener, when an event happens, they have the is trusted property.
+Mm.
+And for click events is trusted is only, uh, set to true if the click was actually done by the user.
+Interesting.
+So that's, that's a, sort of a defense in depth technique that they could use is check whether that's a trusted click or not.
+But what you can do as an attacker, if you have just like the button there, you can mess with its style, make it full screen, stuff like that.
+Get creative basically.
+Sure.
+But it prevents you from just going click, click, click, click, click, and then.
+That, that makes sense.
+But I, I think also, man, one of the crazy things to me about situations like this, where, where you have control of CSS is how much we have programmed users to just click, accept cookies or define cookies, whatever you click.
+Right.
+Like, like when you come to a page, do you even think about it anymore?
+Like, do you, do you, do you, do you, I just click reject, but yeah.
+Do you, okay.
+Well, you know, maybe I, I, I, I'm the, the sheep here or whatever, but like, you know, you're going to harvest a click one way or the other.
+Right.
+With that every single time.
+And then like, maybe you make the button depress, you know, go down and then come back up and then it doesn't go away.
+What are you going to do?
+You're going to click it again.
+You know, it's a, I think we've, we've programmed users to mindlessly click on something as soon as they go to the page, which, you know, maybe it's a win for privacy because you have an opt-in or an opt-out for, for cookies.
+But, uh, it's definitely an L for user interaction required bugs.
+It's, it's not, it's not really an L because, um, you could always just make a victim click somewhere on your site.
+It's like not, it's not supposed to be.
+Yeah.
+But is it so frictionless though?
+Like maybe it's not, I don't know.
+Maybe that's my, my hot take, but I just think it's like, I, it's almost like opening it.
+Like I click a link and I don't even see that box and I still click it, you know?
+Yeah.
+So yeah.
+Anyways, um, yeah, I'm sorry.
+Go ahead.
+So when we talk about the, the case of a browser extension, specifically the content script injecting UI into a malicious page, there are a bunch of ways to do that.
+Right.
+Um, so we just talked about injecting the elements directly, but if they are sort of aware of this attack scenario, they could sort of go around that a little bit.
+Um, so they could try to.
+Um, instead inject what's called the closed shadow dom.
+Okay.
+Oh, the shadow dom.
+Yeah.
+
+They did that from the isolated world, right?
+Yeah.
+Um, they did that from the isolated world, right?
+Yeah.
+Oh my gosh.
+Um, sorry.
+I'm tripping today.
+I'm tripping.
+Okay.
+So they're going to, they're going to put it in a closed shadow.
+Closed shadow dom.
+Closed shadow dom.
+Um, luckily, uh, Masato Kinagawa, um, the goat, did some research on closed shadow domes.
+And I should explain what that is.
+Um, a shadow dome is sort of like another document inside the document.
+So the same way you have like an iframe, which is another document inside the document.
+Um, but, um, it's interesting because it sort of isolates, um, what JavaScript can access
+a certain element.
+Mm.
+Um, so say you have like JavaScript running in function a and JavaScript running in function
+b.
+Um, function a can like create a, an element, add a closed shadow dom to it, and then append
+that element, like add some, some content to that closed shadow dom.
+Mm.
+And then when it appends that element to the dom, attaches it, function b can't access the
+content of the closed shadow dom.
+Can, can function a though?
+Because I was under the impression that once, Oh really?
+Okay.
+That's interesting.
+I was under the impression that once the shadow dom hit the, the, the, the dom, so it
+was sort of untouchable.
+It's like the, I think the way it works and I haven't done a lot of testing with it, but
+I think the way it works is, um, the sort of fun, you have like a reference to the variable
+when you created that.
+Ah, okay.
+And kind of like when you're, yeah.
+Right.
+Right.
+Um, it's interesting that you mentioned a, a message board because, um, maybe there are
+some tricks where you can like override a bunch of prototypes to try to get a handle
+to that original, um, shadow dom variable.
+Anyways, um, very interesting.
+In this case we can do it because it's in the isolated world.
+I can see the wheels turning.
+Yeah.
+That's great.
+Okay.
+So they're putting it in a, in a shadow dom.
+Yeah.
+Theoretically.
+If they put it in a shadow dom, then, um, you can't like mess with any styles or maybe,
+I think you can actually, so you can mess with styles and, and you can like click jacket,
+you know, because you can overlay some UI on top of it.
+Um, now what Masato did is some research.
+Um, you actually covered it on the pod.
+Yeah, dude.
+I freaking love it.
+It's amazing.
+With the font ligatures.
+Yeah.
+So you can use that research to leak content from that closed shadow dom.
+Um, so we have like three level, three separate levels of vulnerability here.
+One is if they inject an element straight into the page, then you can do whatever you want
+with it.
+Um, the second case is when they inject a closed shadow dom, um, or a shadow root, then you
+can leak stuff from it, but it's sort of using a technique that I don't know how intended it
+is.
+Um, you can leak stuff from it and you can click jacket.
+And I think mess with the sides.
+Um, now the fourth level is if they inject it in an iframe.
+Okay.
+So they have an iframe, um, either to the extensions origin, which looks like chrome dash extension,
+colon slash slash the extensions ID, and then some, um, HTML page or to just some sites of the, uh, Chrome extension developer.
+Um, so if they inject that into the page, then you can't mess with any styles or something because it's in an iframe,
+but you can still click check it.
+Okay.
+So whatever way you go, there's no really running away from the problem that UI that gets injected into a malicious page will always be click checkable.
+Mm.
+Mm.
+And, and that has impact in these scenarios because it is tied directly to the functionality that is defined in the content script.
+Right.
+So, you know, click jacking a button that, that, you know, may not have any direct security impact isn't going to get you a bounty likely on these, on these scripts.
+But if, if you can.
+Yeah.
+Don't just go reporting it.
+Yeah.
+
+I always just feel like I have to disclose that scenario.
+Like click jacking gets a bad rap because people don't exploit it correctly.
+But if you like, I think you mentioned somewhere in the doc here, Matan, but like, like Meta mask had like a 120 K bug.
+Right.
+That was, that was pretty much click jacking.
+Right.
+Yeah.
+Yeah.
+So it's like, you, we got it.
+We gotta, you gotta outline the full threat model and then click jacking can be a really, really serious bug, especially in this extension environment.
+Right.
+Right.
+Right.
+Yeah.
+And, um, we're actually gonna talk about the Meta mask bug a little more.
+Yeah.
+And the technical details are very interesting.
+There's like a little caveat there that, um, the Meta mask developers missed.
+It's fun.
+Okay.
+Let me, let me repeat this back to you real quick.
+Okay.
+So we've got three levels of, of, uh, sort of attack ability here.
+You've got, um, if the content script injects some UI into the attacker control dom, uh, directly, then we can click it.
+We can modify it.
+We can do whatever.
+And then, um, when the thing actually gets clicked, then it will trigger something in the content script.
+Yeah.
+Um, and we can, uh, there is some, some caveat to that with the trusted sort of thing, right?
+Right.
+Whether the event is trusted or not.
+But, um, we, we got some workarounds with that with click jacking.
+And if we use the shadow dom, then, then you can, you can, um, it's sort of like read, but no write.
+Right.
+
+
+Like you can leak the contents of what is injected into the shadow dom.
+But then, but you can't actually like, uh, you, you can't actually, um, you know, click it or trigger any events because it's isolated away.
+Um, and then the third, the third layer is just using an iframe, right?
+Which is just, you know, I feel like you've got that meme with the galaxy brain, you know, that, that is just like, let's just use an iframe guys.
+Um, and, and that one is, it doesn't allow you to do, uh, like CSS styling or, or, or anything like that, but you can still, of course, click jacket.
+Yeah.
+Um, vanilla clickjacking basically.
+Yeah.
+And, and you mentioned that there are like these pages that, um, you can load up in the UI.
+These, this is another component of, of the, um, of the extension and those, those are extension pages, right?
+Um, Oh yeah.
+I forgot to mention it.
+Sorry.
+No, no, you're good.
+So, so extension pages are like the, the third component of, of the whole, um, uh, extension that we created.
+We've got the, we've got the, the background script, which is the service worker.
+You've got the, the content script, which gets injected into the page, uh, but is in an isolated world.
+And then you've got this third component, which is the, um, extension pages.
+And those can be HTML or just pretty much any attribute, like any like file that's attached to the extension.
+So an extension is just like a fancy bundle of files.
+It's a, yeah, a zip with a signature and there's just a bunch of files.
+Um, so those files can be HTML files, right?
+And there are a few uses for it.
+For example, when you click on an extension icon, there's a little pop-up that goes up there, right?
+That's just one of the HTML files that's in the extension source.
+Um, or if you like right click it and go to the options page and that's another HTML file.
+So those are like two standard, um, pages, but, um, and again,
+the extension page is just like an HTML file in that origin.
+Um, and because it's in the, that like an X, the extension can open normally,
+can put it in an iframe or something like that.
+There are a bit of caveats there, but we'll get to it.
+Um, foreshadowing this episode.
+Um, okay.
+Yeah.
+So those, uh, pages, because they're in the, um, extensions origin, they have like special privileges.
+They can connect to the, um, hive mind, the background script.
+Right.
+And, um, oh, sorry, the service worker and, um, communicate with it because they're in the, um, extensions origin.
+Um, and there's some very interesting attack surface there.
+Okay.
+Yeah.
+So we have one covering the UI stuff, um, which to be clear is the case where malicious UI is injected into, um, an attacker controlled page by a content script or whatever.
+Okay.
+So we're, we're, we're covering content script attack vectors right now.
+Yeah.
+And the, the segment of that was injecting into an attack controlled page.
+Yeah.
+So there's UI, a second attack scenario is, um, any communication between that page or like an injected script and the content script.
+And so that can be custom, uh, event listeners, um, which we look like at event listener and then some name that you don't recognize also name that you do recognize.
+You can still exploit those.
+Um, so just like events listeners in general, um, that the sort of content script ads.
+And because so in, in this scenario, like typically with, with post message exploitation, if we're going to, if they're going to add like an event listener for that, you, we need a window reference.
+So how do we get a window reference to these?
+Oh, it's the same window.
+So we just send it to ourselves.
+Um, yeah.
+So one, the, um, post messages specifically are interesting because you can either.
+Um, have the attack scenario where it's injected into the page and then you can send it to yourself.
+Or, um, you can have this scenario where it's injected into a, um, a sort of a legitimate page.
+And in that case you have like, um, you can send a malicious message.
+Um, so you have a bit less control over the input, right?
+Because that message will have like a malicious origin so they can verify that.
+And like, um, when you say legitimate page, this would be like, this would be like more, more like the traditional, um, uh, post message attack vector.
+Yeah.
+
+So you've got like two tabs open.
+One is the attacker page.
+One is the victim page with the extension loaded up.
+Yeah.
+And the content script injected into it.
+Yeah.
+And you're sending a message from the attacker page to the legitimate page or the victim page in this scenario.
+I'm getting a bit ahead of myself.
+Is that accurate though?
+Yeah.
+It is accurate.
+Okay.
+I'm getting a bit ahead of myself because I was gonna talk about it in a second.
+Okay.
+So the, the second attack scenario of, um, injecting into a malicious pages, as we mentioned, post message listeners or event, uh, listeners in general, because if the, um, if the, uh, content script listens for whatever event on document.body, you can do document.body.dspatch event.
+And so, uh, okay.
+Yeah.
+We have more flexibility there.
+Yeah.
+Mm-hmm.
+You just have some functions that you can reach.
+Um, and you can imagine if it's like, I don't know, a click event or, uh, another event that then the content script does something, does something with like send a message as a result of that to the background script that does something.
+You can just sort of hijack that logic basically.
+Mm-hmm.
+You can trigger that action.
+Yeah.
+With an event listener.
+Um, and I've seen in some cases even like taking some input from the event.
+So you have, um, like the event dot detail, uh, property, and which is attacker controllable and taking some input from that and doing stuff.
+Is that like, is that like, uh, like a data property or is it from post message or does details contain something else?
+Um, it's, it's very similar.
+Um, when you have like a custom event, you can initiate it with, um, something in its detail.
+Um, so, uh, you can have like, uh, a string in the details, an object, something like that.
+Ah, data passed when initializing the event.
+I see.
+Okay.
+Interesting.
+Um, so I've seen, and in that case, I actually had to manipulate the extension a bit to get it to listen to those events.
+Um, but I managed to set up some scenario where it listened to those events and then, um, I could do some interesting stuff because I.
+Triggered that event.
+Then the content script past that detail to the background script and it did something with it.
+Okay.
+So we are, we are, we're pivoting even here from, from the, the, your front end scenario, I guess.
+And then pivoting through the content script over to the background script.
+Um, that's the closest I'm going to get to hacking backends.
+Yeah, exactly.
+Well, I mean, that's all you can do, right?
+Um, yeah.
+Yeah.
+And, and I guess what is, what is the goal in these scenarios?
+Like, are we trying to get the content script to like.
+It's very hard to define.
+Yeah.
+Like, are, are we trying to get, can we pop XSS in the extension pages?
+Or are we trying to like.
+In the case.
+Malicious.
+Okay.
+Yeah.
+That's a great question.
+That's a great question.
+I forgot to mention that too.
+Um, so.
+In every scenario, every attack scenario, you can never get JS execution in the actual origin
+of the extension.
+Right?
+So you can't actually get it to execute some JS and then use all the APIs that it has.
+Because in manifest v3, there's a mandatory CSP that they have to implement that doesn't
+allow any scripts other than the scripts that came bundled with the extension.
+Okay.
+So no, no, no eval.
+No, no, no eval.
+Nothing.
+Yeah.
+Okay.
+In that.
+Yeah.
+That's bad.
+That's bad.
+Yeah.
+I'm sorry.
+I got a bit too late into extension.
+I can get a bit too late and I missed that, but it's fine.
+Yeah.
+How cool would it have been if you just.
+There's still plenty of stuff to exploit.
+To hijack the whole, the whole content script.
+Yeah.
+That arbitrary communication.
+Yeah.
+Yeah.
+So you can't do that, but it's very possible to say the extension adds, or I don't know,
+somehow does something insecure.
+You can maybe theoretically get it to execute attacker control scripts in legitimate pages.
+Right?
+Because there's nothing in the inherent structure that prevents that from happening.
+In the actual, in the pages of the website.
+Okay.
+I see.
+So legitimate page is the page of the victim website that you would be attacking.
+Right?
+Yeah.
+Okay.
+Yeah.
+If you're listening for a post message, they're not doing an origin check.
+Right.
+And then they're concatenating a script to the DOM or whatever with that data.
+Then that would be a scenario where we're attacking the legitimate page via the content script.
+Right.
+Nice.
+Nice.
+So that's, that's kind of not really what we're, oh, I guess it is possible to, in every
+one of the attack scenarios that we're gonna mention, I think it's theoretically possible
+to get that to happen somehow.
+Mm.
+Okay.
+And, and you can like in the best case scenario or worst case scenario, however you want to
+look at it, you can get universal XSS out of that.
+Yeah.
+Yeah.
+Which is very bad.
+That's very bad.
+That is not good.
+Yeah.
+If I have like an extension that millions of people installed and like people can just
+read their emails and yeah, that's bad.
+That is, that is very bad indeed.
+Okay.
+So, so the, the Holy Grail in this sort of scenario for extension hacking is sort of this universal
+XSS scenario.
+Yeah.
+Yeah.
+So we're done covering the, what happens when a content script is injected into a malicious
+page.
+Now let's talk about what happens when it's injected into a normal page, a legitimate page.
+Okay.
+And so that case is very interesting because you have like a bit less input as the attacker,
+but you have many more sinks or like much more potential for stuff to go wrong.
+If you get input somewhere.
+And because the content script is injected into a normal page and the content script has
+like access to all of the DOM APIs, like we mentioned.
+So if it does like document.write or something, you can just XSS the legitimate page.
+Right.
+Mm.
+Mm.
+Which if that page is every page, then a universal XSS, like we just mentioned.
+Boom.
+Yeah.
+So when you have a legitimate page, the things to look out for is one, are there any post message
+listeners?
+If not, can you get it to add the post message listener in some specific scenario?
+That's a great point, right?
+Like, like oftentimes what we'll do is we'll look at, you know, we'll load up a page and
+we'll look at whether the post message listeners are there.
+I do that way too much.
+Yeah.
+But, but I think there's a lot of scenarios where you need to click a button on that page
+for that listener to be registered and then something happens.
+And that's where I've been seeing a lot of post message.
+Right.
+Exactly.
+Mm.
+Yeah.
+So you can have that or sort of the attack surface here in the case of a content script
+injected into a regular page is very similar to just the normal attack surface that you
+would have when you try to act the legitimate page directly because the content script can
+like have, I don't know, take URL parameters, stuff like that, because it has access to the
+location.
+So it's pretty much the same.
+And you can have like, you have the same sort of what I call universal input sources, which
+is like location data and post message data, stuff like that.
+Hash.
+That sort of thing.
+Okay.
+Gotcha.
+You could of course have like a target specific input sources, depending on the functionality
+of the extension, but in general, that scenario is very similar to the scenario of just trying
+to hack a page directly.
+Yeah.
+And you can imagine that.
+Just normal hacking.
+Yeah.
+Okay.
+Gotcha.
+You can imagine that if an extension is very big, suddenly that adds a ton of attack surface
+to every page the victim has, like every page in existence, basically, that the victim
+can open, which is a little scary.
+Yeah.
+So if you have a lot of extensions installed, that's something to worry about.
+It's risky, man.
+A lot of stuff is getting injected into every single page.
+It's kind of, I guess it makes a lot of sense that they needed to do this isolated world
+thing too, because there's just going to be so much collision across extensions and stuff
+like that as well.
+They were sharing the same.
+That's also a reason they do that.
+Yeah.
+Yeah.
+Yeah.
+Okay.
+So that, that makes sense on the legitimate, when it's getting injected into the legitimate
+page, we're just mostly looking at the same sources and syncs and just considering these
+content scripts as like a JS file included on the page.
+Right.
+Yeah.
+You can, you can totally abstract that away.
+Yeah.
+Yeah.
+Yeah.
+So this is, this is a question that I had then.
+So the legitimate page one is, you know, less exciting.
+Like you said, it's more, more exciting when you can get the execution to actually trigger
+on an attacker controlled page.
+So the question then becomes, how do we get the X, the extension to trigger on an attacker
+controlled page?
+And I know that, that, um, this is defined in the manifest, uh, file.
+I'll, I'll go ahead and share my screen again.
+So you guys can see what I'm talking about from space raccoons, nice article where there's
+a graphic for this.
+But, um, you know, I know that there's a, an environment where you can define essentially
+the matches array, which defines a pattern of sorts that, uh, this extension will run
+on when it matches the, the, the current path, um, the current location.
+Um, and I was looking at this and I was like, please God, let it be a regex.
+Cause if it's a regex, you know what I'm thinking, right?
+It's on the dots, the dots would be amazing, but it's not a regex.
+Uh, it's an actual, it's like a, it's like a custom syntax, right?
+That makes it a little bit more difficult to, to, um, get it to execute in an environment
+where it wasn't intended to execute.
+Um, so have you, have you poked around on that at all?
+Like is there, is there, have you seen any weird tricks that might result in an attacker's
+page getting able to run the content scripts or interact with the content scripts?
+Yeah.
+When it comes to that, usually it's either like intended, um, and you'll see like all
+URLs in the matches pattern, um, like the literal string, all URLs.
+Um, okay.
+That's like a special case.
+Yeah.
+That's a special case with like brackets around it.
+Um, or, um, you will have like a paid, um, a site that they inject into and you can
+access that site.
+And now it basically becomes an attacker control site.
+Ah, interesting.
+Yeah.
+And then the chain just gets way too long, you know, um, when then you're trying to pivot
+and stuff like that.
+If you, because I know that there's like, wow.
+Oh, oh, interesting, interesting stuff.
+Because then I know that some of these extensions also have a way for you to access cookie storage
+that are associated with other entities.
+Right?
+So if there's, if there's a way that you can, um, that you can get an XSS on one of these
+trusted domains and then interact with the extension, do you know what I'm talking about?
+Or do you not know what I'm talking about?
+Yeah.
+You mean like getting an XSS there, then interacting with the extension to somehow leak data for
+other sites?
+Yes.
+You can do that.
+But actually I want to say that there's specifically, yeah.
+So scroll down to on the, on the space raccoon article, scroll down to, um, just go ahead and
+search for permissions as a string.
+Right?
+Yeah.
+And then in addition, the extension has permissions to access the cookies of multiple other origins.
+And then it shows like permissions cookies.
+Yeah.
+And then he, he describes in this scenario, how the application actually defines, uh, an on message
+listener that allows you to grab cookies for any specific origin.
+Um, and so let's say there was a similar functionality with that.
+You can take the XSS that you have in a, in a, you know, some obscure sub domain.
+Yeah.
+Or just like as intended functionality, having the extension inject into a legitimate page.
+Yeah.
+Yeah.
+Or an attacker control page.
+Sorry.
+Right.
+Right.
+And then the, the, yeah.
+Wow.
+That's, that is some very interesting, interesting attack scenarios then, because this becomes a
+really impactful way to escalate, uh, XSS is in obscure sub domains.
+If there, if there's like a star dot site.com or whatever in the, in the matches for the,
+for the manifest dot JSON.
+And now that's become an attacker controlled page via the XSS.
+And you can interact with the extension to do bad things.
+Mm-hmm.
+Am I, am I on, on, on track with that?
+Yeah.
+Um, so I'm looking at the, um, like different conditions for whether to,
+to inject the content script or not.
+Mm-hmm.
+Um, so actually it's important to know that currently we're talking just about the manifest
+file, right?
+Mm-hmm.
+But that's not actually not the only way you can inject content scripts.
+Um, you can have just the, the code in the service worker, just go like, um, Chrome tabs,
+tabs, um, just select a bunch of tabs and add the content script to them manually.
+Oh, yeah.
+So you've got to read the, the whole, um, service worker code base as well to make sure that
+they're not done.
+And I think it's, it's actually might be a bit of a common pattern because you can just
+go Chrome tabs query and then query for a certain thing.
+So say they have like query for a certain URL or something like that.
+And then.
+Is that a query selector?
+No, it's just a query.
+I wish it was a query selector.
+So Chrome tabs query.
+And then what are you passing into it?
+Are you searching for a URL?
+Some object with a bunch of options.
+I'm not sure what the syntax exactly is, but you can query by URL.
+Tabs query.
+Oh, you can query by URL.
+Yeah.
+Okay.
+Interesting.
+So that's just like another scenario where you can maybe get a content script injected
+into your page.
+Oh yeah.
+Active true last focus window.
+That's how you get access to the currently active tab.
+Interesting.
+Interesting.
+Okay.
+I'm getting a little nerd sniped here.
+Yeah.
+Wow.
+Okay.
+Sorry, sorry guys.
+All right.
+Let's get, let's get, let's get back to it.
+But I definitely want to look into that a little bit more.
+I didn't get a chance to fully investigate that before the show.
+Um, but that's definitely something that is very interesting because if it's dynamically
+injecting, injecting those content scripts, um, and the logic is a little bit less defined,
+because I think in S in this scenario, like the match patterns for the manifest.json file,
+make it pretty impossible for you to make a mistake.
+There's not like a lot of.
+Yeah.
+It's pretty, it's pretty well defined.
+Um, but if they're just using something like, you know, Chrome dot tabs query or whatever,
+then it can be defined user logic and they could be doing using regex.
+They could be, you know, checking the page for a specific class, the existence of a specific
+class and then injecting right into that.
+And so all you need to do is on your attacker controlled page, just build out that div, you
+know, that has a specific class and then boom.
+Now the extension is in your page and you, and you have the ability to mess with it.
+Like we talked about before.
+Yeah.
+And very cool.
+I mean, in some extensions I've seen like very long manifest files that have a whole bunch
+of, um, pages in there or also URLs in there.
+So I'm sure in those cases you can find like one, um, really old site and just access it easily.
+Um, but yeah, that's interesting in the case.
+You want to look at the attack surface of having the content script injected into a malicious
+page.
+Um, and we've covered that we've covered having the extension injected into a normal page.
+Um, and I should mention that the attack scenarios that we covered in both of these examples are only the sort of more general ones.
+Um, extensions are very flexible.
+You can have some dumb logic that they have there.
+Um, as you mentioned, like getting cookies, um, just like some post messages now that gets cookies or something like that.
+Yeah.
+It's possible.
+I love it.
+I love it.
+It's so good.
+So, okay.
+So that, that makes a lot of sense for these, for the content scripts attacks.
+And we've got two other sections here attacking extension pages and attaching, attacking service workers.
+Where do you want to go next?
+Yeah.
+Um, let's go with extension pages.
+Okay.
+Um, so.
+Well, hold on.
+Let me, let me, let me refresh my memory.
+So extension pages, those are the things that you define that are just kind of like static assets on the, on the page or on the extension.
+Right.
+And they use the Chrome dash extension colon slash slash extension ID, which is going to be the same for everyone.
+Right.
+The extension ID.
+Okay, cool.
+So, um, that we can, you know, craft, but there are some limitations on, um, how you can interact with those extension pages.
+I think there might be a bit of a mitigation there.
+I'm not sure.
+I mean, I haven't looked too deep into it and I'm not sure which context it's sort of implemented in, but there are some scenario where the, um, Chrome extension URL will have like a unique ID in it that you can't guess.
+Interesting.
+But I haven't actually encountered it.
+Um, just know that it's possible somehow.
+I'm not sure.
+Very cool.
+Yeah.
+So extension pages, um, you can, um, sort of look at them as regular pages with a very strict CSP that have a bunch of, um, like extra permissions or features.
+Um, because they can communicate with the background script.
+So that can be like another sort of way to pivot.
+You know, you can go either through the content script or through a, an extension page.
+Oh, interesting.
+Okay.
+Yeah.
+So I'm going to give the example.
+Oh, first of all, the extension pages by default, they're not going to be accessible from a regular website.
+And what I mean by that is you can't open them with window.open.
+You can't, I flame them.
+You can't do anything with them.
+Um, you can't even navigate to them.
+Like location equals.
+Like you can't even take your current page and kill your own reference and execution and no.
+Wow.
+Okay.
+No.
+Um, so.
+It's like coupon steroids.
+It's like never get a reference.
+They can't even open this page.
+Okay.
+Right.
+Solid.
+Solid.
+I see you Chrome developers.
+So the, if the, if that's a feature that the extension developers need, what they can do is sort of white list that specific, um, HTML file of a specific page, or they can have like a pattern.
+So what I'm talking about is there's a key in the manifest file, web accessible resources.
+Um, maybe there's also a dynamic way to define that.
+Um, I'm not sure.
+Um, just not like as a static thing, um, but you have the web accessible resources key and that has a bunch of patterns where you can define which files included in the zip file of the extension.
+Um, are gonna be accessible by regular, by regular websites.
+And you can also define which website that is.
+So it can be the all websites.
+So it can be like a specific origin that you trust.
+Um, and now that set of websites will be able to open those sites.
+I frame them if they don't have any extra restrictions and stuff like that.
+Now what's very interesting is, and now we're getting to the bug that was in the MetaMask extension.
+Hmm.
+Um, when you have one page that is web accessible and you sort of iframe it or open it or something like that.
+And so you have like page A that is web accessible and page B that isn't web accessible.
+If you can somehow open page A either in an iframe or in a new tab and make it redirect to page B, then you can access page B.
+Really? So you get a reference to it?
+Yeah.
+
+You can get the reference to it.
+You can put it in the iframe.
+Wow.
+Okay.
+So, so let's say we have an extension page that's like redirect dot HTML or whatever.
+And it, and it takes in that one is web accessible.
+And we don't even have to be theoretical.
+We can actually talk about the MetaMask bug.
+Oh, okay.
+Because the details are public.
+And there's a BBL video about it if you want to learn more.
+Nice.
+Um, so the MetaMask had a specific page.
+And that was, I think like a phishing warning and it displayed like a whole bunch of text and then a link.
+And the thing that it linked to was like the value of some URL parameter.
+So that's a page that they had that was actually web accessible by any origin.
+Oh, wow.
+So this is like perfectly the scenario that we were.
+Yeah.
+Okay.
+Solid.
+And they had another page that was like the notification page it was called, but basically it allowed you to click accept transaction.
+Right?
+The most sensitive click checking you can ever have.
+So the attack scenario was basically you open that in a attacker control page.
+You open that, um, that, uh, fishing notification.
+Yeah.
+Phishing notification.
+Phishing warning page with like, um, and you put in the URL parameter, the URL of the very sensitive page that we definitely don't want to get click checked.
+Yeah.
+Now you, um, make the victim click on the link that appears inside the, um, fishing warning page.
+And now that page redirects itself to the, um, to the page that isn't normally web accessible, but because it just got redirected from the page that is web accessible.
+You can now click check it.
+And that's what happens.
+Dude.
+And they got like 120 K.
+That's good for them.
+That's such a crazy, simple exploit too, man.
+Oh my gosh.
+I love how they weaponized the phishing notification.
+The phishing, uh, warning page.
+Like don't get phished.
+Okay, cool.
+Now click here, click the, click the big red button.
+That definitely isn't the accept transaction button.
+Thing is I've looked at that exact same page, but just like a different iteration of it.
+I think they changed it because of this bug.
+So yeah, it said that I was late to that too.
+Sad man.
+Sad.
+That's how, that's how the game works sometime though.
+So, um, yeah.
+So there's another trick, um, that I wasn't sure if I was gonna disclose.
+I can see you smiling there.
+Yes, I'm excited.
+I'm glad you decided to.
+Yeah.
+Yeah.
+Are you gonna disclose it or you're not gonna disclose it?
+Um, specifically because I don't think that's like very exploitable in the program that I like to act the extension of.
+I'm gonna keep it pretty vague.
+Um, so I, I don't mind sharing it.
+Um, but.
+Sweet.
+It's, I, I don't think it's intended.
+Maybe, um, I hope Chrome doesn't get mad at me, um, for disclosing this, but, um, you can get a reference.
+This isn't like an iframe reference, um, but just like a reference to a window, um, of a page that isn't normally web accessible.
+If you can somehow create a scenario where the victim navigates to that page, right?
+And then in the same tab, maybe after a few navigations, navigates to an attacker control page.
+The reason is because if you have an attacker control page and somewhere back in the history of the same tab, you have a non-accessible page.
+You can do, um, history.back and then just go a bunch of steps until you navigate, until you reach that page.
+And it will actually let you go back to it.
+I'm a little bit, I'm a little bit fuzzy on how history.back works.
+So, so if, if I run history.back, I don't maintain my, my JS execution.
+Yeah.
+So, um, yeah, I should clarify that a little bit.
+And actually it's, you can get a pretty good understanding of it because you interact with that concept all the time.
+Yeah.
+The little arrows that you have in the URL bar that just goes back one history step and forward one history step.
+Right.
+So you can imitate that with the JavaScript basically.
+And the attack scenario that I'm talking about here is you have a victim somehow, um, landing the non-accessible page.
+Okay.
+Whether they right-click the extensions and went to options or something like that, or copy-pasted the URL.
+Here's a, here's a scenario.
+Okay.
+So, so in our save my JPEGs or whatever extension that we're talking about, it's kind of like Pinterest where you like, you know, have a specific, uh, image you want to save.
+You click save or whatever, and it goes to maybe it's displayed.
+All of your saved, uh, pictures are displayed in an extension page.
+Right?
+So you click the URL at the top.
+You say, Oh, let's look at mine.
+Oh, and it links back to the, um, profile of the photographer or something like that.
+Exactly.
+And it links back to the page from which you yoinked the, the, the image.
+Right?
+So then you're on that extension page.
+You click the image.
+It takes you to the page where you saved it from.
+Right.
+Right.
+And now it's in the same history.
+Yeah.
+So, so then how do we, from there, how do we get a reference to that other page?
+From the, from the, um, page that you had.
+Okay.
+Yeah.
+This is where it gets a little tricky.
+Um, but I like those sorts of scenarios with opens and open and stuff like that.
+So from that page that has the non-accessible page in the history, you open an attacker controlled
+page.
+Okay.
+So, uh, or same origin page, like because it's in, it's in the origin of the attacker.
+So you open a malicious page and now, um, from that page.
+Um, so you have like the, um, page with the fancy history with the, um, non-accessible
+page and you open a malicious page.
+Right?
+Now, um, you have to have some way of making that page that you just opened the opener of
+the page with the history so that it has the ability to navigate it and stuff.
+Okay.
+So in order to do that, you can just have the first window have some name like a, and then
+from the second page, you go like window.open and empty string comma a, right?
+And that will just make it, um, it will both give you a window reference and it will make
+it, it will make you the opener of the page.
+Now what you do, we don't know how many steps back in the history, the, um, extension page
+was right.
+But what you can do, I think I haven't actually tested it, but it sounds like a valid
+attack.
+Um, extension pages are served locally, right?
+They're files on your computer, which means the response for them is going to be very fast.
+As opposed to any other page.
+So what you can do.
+Interesting.
+Yeah.
+What you can do is from the page that you, um, this sort of, you have the page with the
+history and you have this page where I have persistent JS execution because it doesn't get
+navigated or anything from that page.
+Um, you trigger like history.back in the, um, in the original page and you measure how long
+it takes to navigate.
+And by that, I mean how long it takes for that window to become cross origin.
+So, so can you, so obviously if it was directly in our scenario from the save JPEGs window, you can go ahead and just go one step.
+Go one, one step back.
+Right.
+But say there was a sequence of, of steps going, going backwards.
+Yeah.
+Which is a bit more general.
+Right.
+Right.
+But if it was same origin, you could just do check and see if you have access to the, the, the DOM, check and see if you have access to the DOM.
+Oh, I don't have access to the DOM.
+That's the extension page.
+
+So if it was direct attacker control website, attacker control website, attacker control website.
+Right.
+Right.
+Yeah.
+Chrome extension page.
+Right.
+Um, and, and so, but if there was some sort of middleman there, some sort of middleman, that's not your attacker controlled page, then can you still do history.back from that?
+Because it's your opener or.
+No, what, what, what I'm trying to do is like from the page where you have persistent execution.
+Mm-hmm.
+Um, you go history.back and measure the delay.
+Mm-hmm.
+If it's like over 30 milliseconds or something like that.
+Mm-hmm.
+Or 50, I don't know how, how long.
+Um, then you were like, oh, this isn't the page I wanted.
+So you navigate it with dot location, which you can do because, um, we made it the opener.
+That's why we did that.
+Ah, I see.
+You do dot location and navigate it to, um, an attacker control page.
+Yeah.
+And now you can do window.back, right, and specify two steps.
+You can specify how many steps you want to take.
+Yeah, with the offsets and everything.
+Yeah.
+And now you skip back.
+Right.
+And then you check that page again, see how long it takes to load.
+If it's not it, you navigate back and you go back two steps.
+Okay.
+You do that until you get to the, um, extension page.
+Yeah.
+Mm-hmm.
+So even if there's a middleman, even if there's like a, a page that is not same origin with the attacker's origin, that is in between the attacker's origin and the extension page, you can still have a, a methodical approach to stepping back through the history and getting a reference to that, to that other, uh, extension page.
+Yeah.
+Is that right?
+Yeah.
+So one way, yeah.
+One way to, um, verify if you landed on the extension page is to see like the, um, delay, as we mentioned.
+Mm-hmm.
+The way you measure the delays, you sort of loop trying to access some same origin attribute, like location dot href, sorry property.
+And, um, as soon as you get an error, you stop the, uh, counter, the timer.
+Mm-hmm.
+So now you know how long it took to become cross origin after you started the navigation, in this case, window dot back.
+Mm-hmm.
+Um, oh, history dot back.
+Mm-hmm.
+Yeah.
+I haven't tried this sort of combination of, um, cross origin timing with history dot back.
+I think it will work though.
+Yeah.
+It seems, it seems reasonable.
+Because it's a navigation.
+Yeah.
+Um, so you can identify it via timing or if you know, for example, that the extension page will have seven iframes, you can check frames dot length to see.
+Use traditional, traditional cross-site leak sort of techniques to do that.
+Okay.
+So now we have the window reference, either because it was accessible or because, um, we used the weird trick.
+Wait, we lost you.
+Move forward a little bit.
+The microphone, I can't hear you on the microphone anymore.
+Yeah.
+Yeah.
+Okay.
+There you go.
+We have, um, a reference to the non-accessible if you're not determined.
+Sure.
+Um.
+If you're not determined.
+Extension page.
+Extension page.
+Yeah.
+Right.
+Mm-hmm.
+Now that you have a reference, you can attack it sort of as a normal page that has a very strict CSP.
+Mm-hmm.
+And so the default CSP doesn't mention styles anywhere.
+So if you can make it somehow inject HTML, you can inject the style and, um, try to do stuff with that.
+Um, yeah, somehow, um, try to.
+Yeah, the CSP is going to be strict though, right?
+Yeah.
+So, so is that a strict CSP that's just for script execution?
+Just for scripts basically.
+Okay.
+So we can still include external style sheets and maybe do like.
+Yeah.
+Actually, let me get the actual one.
+Sequential import chaining.
+Yeah.
+I wonder let's, let's check into that really quick to see if we can do sequential import chaining.
+Cause then you could, um, well, yeah, I guess even without sequential import chaining now with some of the research that came out, um, uh, recently there's, there's ways to do, uh, to leak the actual.
+Yeah.
+Contents of the.
+Was that by, um, who was that by?
+I'm, I don't recall.
+I'm, I'm drawing a blank on it right now, but man, that research was stunning.
+Oh, it was like by, um, uh, the.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Great research.
+I liked his, um, like mutation XSS stuff too.
+It was interesting.
+This, this CSP, I'll, I'll link this.
+I'm just going to drop it into the doc now.
+So we don't forget, but, um, this, this research with just the scroll bar and just a super in-depth understanding of keyframes and, and, uh, animations and stuff like that.
+Just absolutely.
+It was insane.
+I still don't understand it.
+Honestly.
+I tried reading it like pretty late in the evening on my phone and I gave up, tried the next day.
+I have somewhat of an understanding of it, but man.
+Yeah.
+I consider CSS injection, like one of my things that I really enjoy and, and I, I like pretty decent at, and that just absolutely blew my mind.
+And I still don't have a full understanding of it.
+I think for me where the mismatch occurs is like, I don't understand these, these, uh, keyframes and transform, uh, and these animations, uh, well enough when combined with variables in, inside of CSS.
+They got like really deep into, um, a bunch of like, just tricks and hacks and yeah.
+Yeah.
+But it is amazing to see that it's, it's possible to leak techno text notes with CSS without sequential import chaining.
+That's, that's revolutionary.
+That is a, a massive dub.
+Yeah.
+For sure.
+Um, so anyways, um, the, uh, once you have the window reference, the rest is like up to you.
+It's not, there isn't like a very defined way to go about exploiting it because all of the like evals, uh, eval location, all of the normal things are not gonna be viable here because of the CSP that we mentioned.
+Um, so, so, so just talking about that CSP value again, the default value for that is script source self objects.
+Object source self.
+Object source self.
+So that, that is gonna be, yeah.
+Okay.
+Minute.
+And then there's a minimum, uh, the minimum, uh, content security policy for this is script source self, wasm unsafe eval and object source self.
+So that's, I mean, that's pretty intense, but it, it doesn't, like you said, it doesn't require that you have some restrictions around CSS.
+So we can still get read on these pages via CSS injection.
+Right.
+Yeah.
+And, um, I mean, if that page somehow, like if it's an options page, right.
+And it, I don't know, it gets a post message that changes the option or something like that.
+Mm-hmm.
+You can get creative there.
+Sure.
+You are the parameters.
+Though I'm not sure if you can specify URL parameters because unless it's web accessible though.
+Yeah.
+Yeah.
+I wonder if you can change the hash cause that doesn't trigger a refresh.
+Right.
+If you know the path, then you should be able to do, uh, but then.
+Yeah.
+Yeah.
+Maybe, maybe.
+I think you should be able to cause that doesn't count as a navigation.
+Yeah.
+Right.
+That's something we need, we need to test.
+And you're the opener of the page in this scenario that we described.
+Um, so the attack scenarios for the, um, uh, extension pages are like one communication with the, uh, service worker.
+Mm-hmm.
+Right.
+So that's the same thing that we had in the, um, content script.
+Mm-hmm.
+Two, when you're talking about the DOM stuff, HTML injection, exfiltration of stuff with CSS injection.
+Mm-hmm.
+And, um, click checking.
+Mm-hmm.
+If it's web accessible or if you can get it, a web accessible page to redirect, which.
+To redirect.
+Okay.
+That's possible.
+Yeah.
+That's, that's pretty great.
+So, so if it's, the thing that's gonna make, gonna make it really interesting is if it's web accessible, right?
+There are some weird scenarios where we can make it web accessible via this history.back thing that hopefully Chrome won't patch because you just closed it.
+Um, and, and, uh, and some other flows, right?
+If we can get a page to redirect to it.
+Um, but yeah.
+Yeah.
+And then there's also just sort of the traditional, um, HTML, you know, injection sinks in this scenario where like, for example, on our, on our, um, save the JPEGs, uh, extension, right?
+Save the JPEGs.
+It sounds like a, like a social justice cry.
+That's a good cause.
+Yeah.
+Save the JPEGs.
+They're getting too big.
+Yeah.
+Um, they're getting too big.
+That's good.
+Um, that's true, man.
+It's true.
+4k.
+Um, but yeah, if you can, if like, for example, in the name of the JPEGs or something like that, or the metadata, there's some attribute that contains HTML and the extension writes that to the DOM of the extension page, then you can trigger HTML injection there and CSS injection and do something with that.
+You just can't trigger CSS.
+That's a good example, actually.
+That's something that I forgot to mention.
+Yeah.
+
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+
+
+
+
+
+
+
+
+
+
+
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+
+Yeah.
+
+Yeah.
+Yeah.
+Yeah.
+Yeah.
+Okay.
+So Matan, dude, thanks for the masterclass on like browser extension hacking, dude.
+The structure, the attack vectors, this is exactly what we need to know to start poking
+at these.
+So great work, man.
+It was great being here.
+I always enjoy it as always.
+Sweet.
+Yeah.
+Thanks for having me.
+All right.
+Let's go get that cookie stuff.
+Let's go.
+That's a wrap on this episode of critical thinking.
+Thanks so much for listening.
+And if you want more critical thinking content, head over to ctbb.show slash discord.
+Join the discord.
+There's lots of great conversations and chats going on over there.
+And if you want to support the show, there's the discord subscriber tiers, which give you
+access to masterclasses, AMAs, hack alongs, exclusive scripts, and an exclusive chat channel
+with us.
+We'll see you there.
+We'll see you there.
+
+
+Bye.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,525 @@
+ also it's very important to mention he never stops like on sunday that event was over we
+ were like having breakfast he sits on the table and starts thinking about a bug that he believes
+ he just found with with one of the googlers sam and sam is like dude please chill everyone is like
+ chill man just best part of hacking when you can just you know critical thing right
+ all right hackers we all know the value of good misconfiguration right that's often how we're
+ popping bugs and bug bounties well unfortunately threat locker also knows about it which is why
+ they built dac defense against configurations dac scans all of the enterprise machines in your
+ network for misconfigurations ranks them by severity and then shows them in nice graphics in a portal
+ it even emails your team weekly with updates so nothing slip through the cracks and the best part
+ about dac in my opinion is that it actually maps all these misconfigurations onto security frameworks
+ and it also shows you how to fix them that way when you need ammo with leadership or with it you can
+ point to real specific compliance gaps and get actionable steps anyway check out that locker dac
+ it's an awesome way to stay ahead of these issues that we as attackers love all right let's go back to
+ the show hey what's up so this week in bug bounty we've only got one thing to highlight but i did want
+ to share because it's pretty awesome um you know my heart is near and dear to ai and my heart is near and
+ dear to our boy justin so you all will like this one basically there is a little uh talk slash webinar
+ from hacker one called securing the age of ai autonomy priorities for 2026 and it's kind of like
+ uh continuation of the really awesome report they put out called rise of the bionic hacker which you
+ have if you haven't seen it has some incredible stats around like how hackers are using ai how many
+ like what percentage of hackers are kind of like leveling up with it what percent of companies are paying out
+ bounties for ai it's a really awesome report but this specifically is for the webinar which when this
+ goes live might have already happened but if you register here you'll go ahead and get a link to
+ re-watch it and they're going to be interviewing people like justin luke even james kellell from port
+ swigger labs so it's going to be an incredible webinar and you should definitely tune into it
+ what's up guys welcome back to the critical thinking bug bounty podcast we've got some incredible guests
+ today kieran has been here before but this is our boys bus factors first time and so uh before i do
+ intros we'll have him tell us about a cool bug damn already that's how we started okay yeah you got to
+ jump straight into it straight into the deep end okay so um guys i have this very complex uh yeah quite
+ complex client side heavy exploit chain because yeah you know that's me so it's client side stuff
+ um so i have this huge company questions about that so we'll come back to that okay okay yeah we're
+ gonna do that but um yeah we got this huge company and they have this support chat and they they are not
+ using intercom or whatever they have it in-house built and i'm like okay that is not smart because that's
+ more expensive than building it but okay let's take a look at that and with some match and replaces rules
+ i find out that the agent he can access the customer not opposite like the customer cannot
+ access the agent and i'm like okay how can i leverage this without agent credentials and i'm very proud of
+ this one because it was like everything you learn on the client side world i'm gonna use it right now
+ because i start checking that and it has no origin checks on the post message it uses post message for
+ setting up the chat but it's also not vulnerable like at the first look i'm like digging through the
+ minify javascript which i love it's like it makes me good it's like jumping you guys though it pumps your
+ blood and i'm looking into it i'm digging through the javascript and i find nothing it's been like
+ four days i'm fighting oh my goodness there's no origin check i'm like i cannot believe it
+ that is like stupid but then one day i wake up i open the jazz on a random point and i see that
+ there is this very stupid thing they are doing which is a json.parse and object.assign one after
+ the other and if you don't know that that's like textbook prototype pollution it's one of the ways to get
+ that and i'm like okay how can i reach it and after i feel like hours doing a lot of tests i find out
+ that there is a very on one of the post messages there is a very very deep config property that you can
+ control and there is a if check a condition if it is a string it's going to do the json.parse and the
+ object that assign that's why no automation was finding it because that it was inside a branch of
+ the code and i'm like okay let's do it and i start doing a lot of tests i cannot do much i can do the
+ prototype pollution or prototype poison whatever you call it but i don't get anything and then i find this
+ weird location whatever that is version number in it in this config i change it and it actually changes
+ the host that it's using to connect the web socket the web socket of the of the chat so instead of going
+ to i don't know chat.company.com slash web socket i can control it to go to my server and then i can
+ control the messages all the response yeah everything i set up this crazy malicious server that was very hard
+ to do because i used i had to use everything they were using like i think it was like socket js and
+ like that a weird library and i get it working i do a lot of post messages stuff set up connected and i get
+ the xss and that's like almost the end that's like one week just on that one week and then i'm very close but
+ the xss has no impact yet because i do a window.open i open the support chat domain whatever that is
+ it's not inside an iframe just to pay just a page and i start testing it and i see there's no impact
+ because it actually needs to connect to the real host to get some real data like pii whatever the
+ authentication token so i have to use another technique which is the iframe sandwich and then i
+ like i complete the chain with post message to prototype pollution to iframe sandwich because i do
+ a window.open open the support chat pop the xss open the product page that has the support chat and
+ make them communicate on the same origin and i get a session takeover because i can get the authentication
+ token and that's like a bug i'm very proud of because they used it in every page they had on
+ every product so it was like yeah it was scope changed it became a critical and they gave me a 50
+ bonus because they were like that's that's crazy like they were like since you have no social life
+ and you've been doing that for like yeah exactly that's what i'm gonna ask is this like an anchor
+ program or a live hacking target like how are you able to devote so many hours to this
+ i don't know what happened it's like just normal hunting normal day i became like full-time bug about
+ hunter for three weeks now and it was like you know what i want to pop this and it was not the best um
+ risk management ever you're right because it's like you would have ran into a wall and not been
+ able to exploit it and it would have been so much sunk time right yeah but the bounty they paid was like
+ amazing that paid for a few months so that that's all right you know that's amazing dude sweet well
+ thank you for the incredible bug uh yeah that chain is absurd and i can't believe you had to set up your
+ own custom web socket poc server to even get it going but uh yeah this is the stuff i think that um
+ you know in the critical thinking discord you are now known for so yeah if anyone doesn't know vtor he
+ goes by bus factor and um he's been hanging out in the critical thinking bug bounty discord for a long
+ time i called him and some of the other guys the front end mafia so if you ever heard me say that the
+ bus factor is a part of the uh the front end mafia but he's been buck hunting for about a year and a half
+ is that right total before you went full-time yeah total that's it but your first bounty was almost
+ exactly a year ago a year and two months kind of yeah cool yeah and then as of three months ago vitor
+ went full-time uh which is absurd at how successful he's been in such a short amount of time but
+ um you know i think it's just goes to speak to his you know his quality he also leads hack alongs
+ in the discord and so you know if people are in the discord i'm sure they've seen him lead those
+ hack alongs and if not you got to get in there basically he and some of his buddies were jumping
+ in on justin's hack alongs and often converting tons of bugs and justin's like no you guys have
+ to do this you have to do it do it for us as well so anyways yeah so i just would love to hear more
+ about your background like why you know how did you hear about bug bounty what kind of got you
+ interested in initially i don't actually remember how i got into bug about it the first time i was
+ like oh this is bug bounty and then you start reading about it i don't remember like i have no
+ idea the only thing i know is that a few years like maybe five years ago the first time i i tried
+ it like i i created an account on hack one i just wanted money i was like i need some extra cash this
+ this is going to be easy um it turns turns out it is not and it was quite frustrating so i tried it
+ for like a week or two i was like okay no that that requires a decent amount on investment and then i was
+ like okay i'm gonna do it later and it took like four years to try it again but i have no idea how i
+ started it but i was like a developer and after being a developer i became sre which is a google thing
+ right software reliability engineer it's kind of i don't want to say that it was a mix of devops and sre
+ uh if i if google people hear me saying that sre is devops they're gonna kill me and i'm not gonna get
+ invited to another bug squad like never again but yeah that that's what i was doing that that's my
+ background cool yeah i was gonna say um it was very similar for me i actually made an account hacker one
+ and then didn't come back to it for years later um you know i've been doing it for more like five or six
+ years at this point but i made my account like eight years ago but it was the same as you right
+ like i got on there and then just hopped off and then came back to it later yeah um yeah well one one
+ thing i think that uh kieran wanted to ask you on this call which we'll get to the we'll get to uh
+ why kieran's on the call actually i'll mention it now basically kieran and buzz factor were
+ a dynamic duo in the most recent google life hacking event in mexico and did incredible
+ and so we've got them both on here to talk about that in a second but he uh kieran actually put in
+ the doc here why are you called buzz factor i'm also curious it's funny that he could have asked the
+ person so could you you know in vegas but you guys didn't you wait you waited for this moment that's
+ exactly right of course it's it's a bit of a disappointing answer you know because if you don't know the
+ buzz factor is actually a measurement of the risk you get from keeping information and internal knowledge
+ from being shared among members in the company so think about it if you report a bug right now
+ to i don't know let's say google and two months ago you're gonna test it it is fixed plus two months
+ you test again and it is there they have a regression so why most of the times is because
+ they are not sharing knowledge internally and they have no the developers have no idea why the security
+ team was like hey can you change that it's like critical they have no idea they do not share the
+ knowledge and that's one of the things that i think the buzz factor is very critical to companies
+ coming from the developer background i actually hated the silos that were created inside the companies
+ made a lot of issues with uh security bugs but yeah but also functional bugs like guys very stupid
+ stuff if you just turn your head to the guy that's by your side and say hey i'm doing this that already
+ avoids a lot of issues and they never do it but knowing that i was with my team in london and buses
+ there they come from the wrong way and i was very very very close to getting hit by one just because of
+ that i was looking to the right they were coming from the left and that was like very close and i was
+ the leader of the sra team and everyone was like if you die right now you know that's like a huge buzz
+ factor for us and they just started making fun of that and that's cool i was like and then when i
+ joined hack the box we actually use our hacker names in there like your email is not like vitor at
+ hack the box no it's sure it's factor at the hack the box they were like it's time for you to decide
+ a name i was like i can't change i can change this later right and then i put this factor you can
+ yeah i would change it today you know but it's too late yeah exactly once once you get a handle it
+ just sticks it stays with you yeah i was i started in software engineering as well and um well we never
+ called it the bus factor but we definitely always tried to mitigate that risk right like we would even
+ say things like for example if corey was hit by a bus you know you know you say things like that so
+ you know you can kind of like mitigate the downside of one of your like important team members getting
+ uh something happening to them oh some people also call it i think like a lottery something like
+ yeah with a lottery factor yeah that's a lottery factor yeah that's a bit more positive i think
+ exactly yeah um i'm going to circle back to kind of your interest in front end bugs um because i want
+ to jump straight to getting in kieran involved here but um yeah so uh kieran you know i think um
+ you have been to several google life hacking events you and i won mbh with justin and and lupin back in
+ the beginning part of this year and you know i think that probably led to these these uh extra invites and
+ everything else and you and you and bus factor did incredibly well at the google lifehacking event so
+ do you want to kind of i don't just talk about your all's invitation and how you all decided to collab
+ well i initially so i got the invite from mexico and i did like because i worked with you guys like
+ ronnie and justin and you before i was like okay let's see if any of the others are are uh invited and
+ none of you guys were going and i was like i guess i'm soloing this one and then in the like guild chat
+ in the critical thinking server or i think it was the guild chat or something i saw
+ victor saying like oh i'll be at bug swats i was like this is perfect because i know victor i've seen
+ him around i can just reach out to him and see if he wants to work with me thankfully he did and
+ it's worked out um yeah that was kind of how the collaboration came about but like i could already
+ trust him because i've seen him so often in the space in the critical thinking server especially so
+ you know from the get-go we were like working together really well i think yeah if you're not
+ uh familiar or if you aren't hanging out in the critical thinkers chat you got to hop in there
+ because vitor is like very active very willing to help and you know um you know come up with some
+ complex chains or even even hop on different programs or collaborate um i was gonna say
+ yeah so the tarts of the primary i guess kind of one of their main focuses for that event was their ai
+ features right
+ i would say yes and i also want to say no you were going to ask like things about front-end bugs right
+ and i was like you know what i'm going to bug swap and i'm going to do what i'm best at which is
+ client-side stuff and then i see kieran he's like nope that's not the best you can do if you want to
+ like get the bounces get the reports you got to focus on ai and i never ever touched ai before but
+ oh so this is like your like first foray into that thing yeah it was like first time ever and um
+ i saw one of the guys blacklist the french guy he's a legend right and he was like on live hacking
+ events you have to focus on what you know what you feel comfortable and that for me is client's side
+ right but kieran was like no you're not going to do that you're going to lose your time doing that
+ you're doing ai i was like okay he has the experience you know you're going to follow and see where it
+ leads us turns out it went great yeah yeah tell us how it went how many reports y'all get
+ so yeah we got four we actually got 16 reports 14 of them are valid the two that are not are actually
+ self dupes that i could have reported more and then i got to one of the googlers and i was like
+ do i dare that no no that's going to be a dupe and i'm like okay so yeah 14. nice that's insane and
+ then you all ended up winning uh second place overall and winning the you know most bugs or you
+ know best bugs for the ai set portion of the event correct yeah yeah we had um two show and tells
+ and we had the best ai vrp researchers and we had second place um so mvh was just out of reach this
+ time but you know we can try again well you gave me a little insider baseball there and if we need
+ to cut this out we can but yeah you said that you all are only really got second because someone found
+ just something insane right yeah yeah yeah i don't i don't think you need to cut that out as far as i
+ know someone did something crazy and um well a few crazy they just beat us to the to the stuff but yeah
+ i guess it's kind of interesting it's kind of interesting to talk about um i know you all haven't
+ been to a ton of um a hacker one events it does feel like um at hacker one events mvh uh well i guess
+ it's always whoever finds the most well no it's like the the mix of criticality collaboration and
+ something else but yeah it does feel like um at google events they tend to uh err on the side of
+ who has the most critical bug rather than has like the most reports or even the most you know um payouts
+ for example because i'd say across the last five or six bucks watts um it has felt like there's only been
+ one or two where they paid out someone who had higher volume and all the rest went to whoever had
+ like the most critical single bug yeah so i think um google probably operates similarly if i had to
+ guess that it is probably the three c's but you know but they weighed it a little differently
+ when they're actually thinking about it i would say right or do you think that's just a byproduct of
+ just like how it played out i i don't know um yeah yeah but yeah we're pretty
+ happy anyway with the results so yeah yeah yeah yeah cool did you all have any other uh anecdotes
+ or thoughts about that google live hacking event well you know whether you all recommend google or just
+ like cool stuff that happened or if you wanted to share a bug you could or anything yeah no like we
+ became we both became friends with adnan adnan khan who's uh very active on like uh he does github
+ action stuff uh great guy um so we went to like the on-site day in uh i i can't pronounce the name of
+ the place it's like the mexican aztec temple and we were like wandering around the uh the area because
+ the tour guides were like okay you can like wander around or whatever and we're we were just talking
+ with some of the other hackers and i realized one of them was adnan um and i'd read his research before
+ so we were like we were chatting um and then we just started comparing all of our notes and all the
+ the stuff we found so fair and you know where where it could go and all of this uh ideation uh and we
+ and we decided like okay you know let's like think about this on the way back and we're like we'll go
+ and get back to the bus and uh we went to the wrong meeting point oh no and so eventually so bus factor
+ missed the bus bus yeah so the three of us did this like walk of shame back to the actual meeting point
+ and just got like applauded the minute we because they were all waiting for you guys everyone's already
+ there oh no but after that you know we had a great time with adnan just figuring out more bugs and stuff
+ we reported um a bunch of stuff on site with adnan as part of our collaboration as well
+ so it was really interesting to have that difference in approach and and the gadgets and
+ stuff he piled up as well yeah yeah yeah also it's very important to mention he never stops
+ like on sunday that event was over we were like having breakfast he sits on the table and starts
+ thinking about a bug that he believes he just found with with one of the googlers sam and sam
+ is like dude please chill everyone's like chill man just stress and he keeps going the guy the guy is a
+ beast honestly that's not that's not surprising i feel like there's so many bug hunters that are that
+ way uh several people come to mind from other events that do the same thing honestly i feel like ronnie's
+ a little bit that way kieran a little bit yeah yeah yeah yeah cool sweet um well so yeah let's just jump
+ right back to the front end thing right i mean i'm sure that your front end expertise did play you know a factor
+ into some of the bugs that you found there but yeah what what drew you in i mean having only been in
+ bug bounty you know a year and a half and only being full-time three months like what what do you
+ like about front end bugs why that kind of pulled you in so for a whole year i was only hunting for
+ server-side stuff to be honest yeah and i quite like it i got like good criticals in there but uh at some
+ point i started hacking on which is an amazing program and seeing what justin was doing at the
+ critical thinking uh community that's very client-side heavy most of them at least the people that are
+ are quite active in there i started trying it more and more and then in my blog you can see that i've
+ found one of uh amazing bugs that was on a program but was client site and i was like oh my god that's
+ amazing like i found a cspt to exercise and exercise to this one didn't become account takeover and i was like
+ that's kind of things they find all the time that's crazy like now i understand why people don't find it
+ you need to lock in you need to put a huge chain and i'm like you know what i'm gonna do that on epic
+ games on amazon everything i started doing it and my development background comes in because it's just
+ basically reading minify js you know and yeah it's minified but it doesn't make it a gray box review it
+ makes it white box you can set debugger breakpoints and things like that and i feel like i feel home when
+ doing that it's just easy for me and it's very hard to hunt for server-side stuff right now when i start
+ trying i immediately like my head starts pointing me towards javascript and stuff i'm like oh my god
+ i i feel like i'm stuck in here with this or is it stuck in here with me i don't know but that that's
+ it i just think the white box reveal part of it is nice i love it i like to understand what is happening
+ there yeah it feels like i think a lot of like server-side stuff is almost like um painting for
+ gold you know you're like you're trying to like you're you're kind of like punching in the dark you
+ know you're you're fuzzing you're trying a whole bunch of like weird payloads that might or might not
+ work you don't know you don't always get verbose errors from like looking for um like path reversals or
+ secondary context you know you don't know that they're there you're just like looking for them
+ whereas yeah i think with client side like you said it's more code review you have a lot of like
+ breadcrumbs you have a whole bunch of clues and a whole bunch of gadgets and you're kind of like
+ assembling a puzzle rather than like you know you know kind of like uh shooting in the dark
+ yeah like from a problem-solving standpoint i think client-side is a lot more satisfying when you
+ you pop a big chain um which isn't you know financially server-side is probably better on average
+ but client-side is more fun i have to say yeah i do think client-side often has slightly more user
+ interaction doesn't it like you know you often need like one click or you need like um some sort
+ of water yeah it's kind of hard to affect many users at once like even with good post message chains
+ you're usually still hitting like a single user even for ato so yeah you're like a step down in
+ severity it's hard to get crits you get highs most of the time yeah yeah luckily i think a lot of
+ programs kind of respect the hustle these days right you know they uh they understand the difficulty
+ with it and they're willing to kind of bump it up especially the mature ones that people like you
+ will kind of target or hack on specifically yeah yeah like there are definitely programs that treat
+ them as good as server-side which is really really nice but yeah during the event um vitor was like
+ getting distracted with some of the non-ai stuff and i was like like do you remember in uh i think it
+ was vegas where we got we went down this rabbit hole of something and
+ then justin kind of turned around and he was oh yeah guys there is bonuses it is like 100 bonus or
+ something that can wait till after the event focus on the task yes so i you heard you heard the
+ ghost of justin the the ghost of obi-worn justin in your ear saying focus on the event
+ so i like channeled this ghost of justin into getting vitor away from like the rabbit hole and
+ on to like like dude we've got bonuses to go for let's keep on track um and it was the right move
+ in retrospect like it paid off really well to do that yeah he did that for us in tokyo too if you
+ remember at the table he basically like always helped us like re-prioritize and that probably is a
+ really underrated perspective of full-time hunting you know it was like just that ability to prioritize
+ no absolutely um it's a it's a core skill for bug bounty really that no one really talks about
+ yeah we've mentioned it a few times but it's like there's not a lot of resources out there and it's
+ honestly hard to build it's like um it's a mental model that you have to build for yourself because
+ it really does vary depending on your skill set and some people have a lot of success jumping around and
+ some people have a lot of success going really deep you know and so even though i think there are often
+ optimal decisions like the ones you're talking about if you all had focused on the ass stuff and
+ found no bugs maybe it'd been better for vitor to have like found two client side mediums or something
+ you know like you can never you can never know what the counterfactual is but obviously it clearly
+ paid off for you guys because you did really well and i think knowing the target knowing from before
+ what google accept and what they look for that helps to educate that decision as well yeah
+ sweet dude yeah vitor what do you think has been kind of like the biggest challenge of going full-time
+ over these last couple well one let me just reflect on the fact that it's absolutely ridiculous that he's
+ been the success this successful in only three months of of doing bug hunting he like he literally was
+ teaching the class in the critical thinking server within like a month of being a full-time hunter but
+ anyways yeah what's what's been the hard part or what's been difficult for you
+ so before becoming full-time i actually did plan for that for like six months i had like an a b c d e f you
+ know i was like i'm fine i have the savings i have everything i need and then i jump into it and you may
+ know that i have justin as my mentor right and justin is like man you have to lock in in one program
+ only one program do at least a hundred hours in it before jumping around and that's dude that's very
+ hard because it's so easy to get frustrated and i have this thing that i get frustrated even easier
+ because of adhd which is something that a lot of people has and i was not medicated by that time now
+ i am again like uh which is way better but at the same time you have to be careful and now i can lock
+ in more but not jumping around like program to program and getting that dopamine rush every time
+ you start a new program and start finding low hanging fruits and things like that that is so hard so
+ locking in one program like not not one program to be honest one app sometimes one feature for hours is
+ very hard but at the same time it pays off so well like that's amazing the other things that were like
+ unexpected they were not really unexpected like you report the bounty the company sometimes takes
+ like three months to pay things happen on the program side on the hunter side that's like
+ it is unexpected you now it is expected plans but you don't want it and you get frustrated it's not
+ nice you need to handle that somehow but that's on the plans that's big bouncy yeah that's so that's one
+ thing i was going to break up bring up is i think a lot of people right now with ai and also just the
+ fact that bug bounty is now like you know eight or ten years old are probably scared to jump in i think
+ a lot of people have that fear that it's like they're going to try to do bug bounty and then there's going
+ to be no bugs left or no money left or anything like that what would you say to people who are like
+ you know considering it like do you still think it's a good decision that sort of thing
+ well uh it's like people saying the world will end tomorrow next year whatever you're going to have
+ it every year every like people love it people people love the chaos guys that's the news that spread
+ if you say no bug bounty will be good we're gonna get some good money for years and what i want to hear
+ about it they want they want the the chaotic news you know which is it's a lie come on the thing is you
+ need to adapt ai is coming you need to adapt to that maybe find ai bugs uh put ai into your workflow
+ it doesn't need to be fully automated it's kind of thing but it's going to be there now if i do recommend
+ it or not there are a lot of things you need to think about before doing that right like where do you
+ live is that in the us or is that like me living in brazil which if you make like two two thousand
+ dollars a month you have a good salary for brazil you know if you do like two a month in the us dude
+ that's not good i'm sorry for you you know so there are a lot of things to consider i would say like
+ do some research critical thinking justin made that uh full-time guide right yeah yeah it's been
+ huge right it's helped a lot of people i think um and i think kind of like that whole like 100k in a
+ year if i had to do it all again thread he posted that just keeps doing rounds when people reshare it
+ i think that's motivated a lot of people too but i have one thing to say about it guys
+ jesting has the superpower he can lock in for hours and hours and do it over and over again be realistic
+ with yourself yeah okay yeah no i'm the same way i think that i'm actually uh undiagnosed adhd and i
+ you know i'm actually i'll maybe i'll talk to you offline about like what your experience was like
+ kind of pre-medication and and having been medicated because yeah i've never taken any medicine
+ um and clearly i do fine but i do wonder what it's like to lock in like that because it's a huge struggle
+ for me as well um cool sweet uh well i'm glad we got the chance to talk about that i know we had
+ that listed um yeah let's go ahead and jump straight over to the full-time bug bounty section
+ here i think one we were already talking about it but two it's something that you know i jumped
+ in full-time in january and kieran you did at the same time it was about last year
+ um last april or something last april cool yeah so i think you know i think there are lots of
+ thoughts around that um just listening to what vtor said what kind of jumped out to you kieran about
+ like you know what are your thoughts on full-time bug bounty uh i i think i almost always recommend
+ keeping bug bounty as a hobby for most people because it is so many ups and downs like if you don't get
+ paid well in a particular month because you focused on the wrong program like it's it's mentally very
+ difficult um so i think keeping it as a hobby for as long as possible is wise but for the people who
+ want that extra bit of freedom in their life to do like whatever they want um it is just amazing and i
+ wouldn't trade the freedom for anything like there's no way i'll ever go back if i can help it um yeah
+ that's my two cents on that yeah yeah i agree i do think like um i will say the people that listen to
+ this pod probably are in that like upper 10 or 5 of you know hackers because they're like consuming all
+ the bug bounty content that is across every platform um so for them it might make more sense
+ but i think yeah you're right for the vast majority of people it's like a perfect side hustle because you
+ can do as little or as much as you want all the time and it's just like extra money if it works out
+ and if it doesn't work out you just learn some skills and build your resume and who cares right
+ like there's kind of like no downside to doing it when you have a full-time job as like hobby time
+ but the downside to doing it when you don't have a job is that if you don't make any money you don't
+ get it you know you aren't you aren't providing so um yeah and yeah like i have friends who call it
+ like um beer money but it's like they're quite successful bug bounty hunters it's like what kind
+ of beer are you drinking to call it beer money right it's more like champagne money or something
+ yeah i always hear that phrase champagne problems for people who complain about something that like
+ is like actually good or whatever um cool let's do a round let's do a round robin of all three of us
+ with like what your hacking routine is because i think we're in three very different parts of the
+ world um you know being the the us and the eu and then brazil um i'm curious what your all's kind
+ of like hacking routines are like and and specifically maybe mention like how much you hack per week
+ and then you know maybe if you want to mention hours or whatever i just think that'd be interesting
+ for the audience all right uh i can start with that that i try to keep as much as possible of a fixed
+ routine not change it a lot because i think your body gets used to like think well the same amount same
+ time every day so i usually do that start like 9 a.m sometimes 10 it depends like there is a non-negotiable
+ i need some kind of exercise every day like either hitting the gym or i fight bgj which is amazing
+ get your body your body very tired and then you go do some mental stuff you know like working so like
+ 9 10 i started and i try to do pomodoro sessions because they are amazing for just keeping you focused
+ and sometimes you want to like distract yourself thinking about something else and then you look at
+ the timer and you're like nah i can't do that in 10 minutes in 10 minutes i'm gonna have a break let's
+ let's lock in so that's what i've been doing and also setting micro tasks like things that i need to
+ do all the time things that i need to find out so i just do that every day from like 9 10 to 4 5 at most
+ some days let's be honest some days i do it for like 30 minutes i get tired and i go watch netflix
+ and but that's that's why i do it full-time that's why i do bug about full-time that's the freedom i'm
+ talking about if i need to go take my dog on a walk on any time of the day i can things like that
+ but my routine is it's basically that cool maybe like you go ahead kieran yeah i have a question for
+ victor actually which is like how often do you really stick to that routine like you know i also
+ try and kind of keep keep a i don't do pomodoros but i do have i have like a morning session until
+ lunchtime and so on but i find it really hard to stick to it if that makes sense like that's the ideal
+ for me but do you succeed in sticking to that routine yeah during the morning and on mondays
+ it's a bit harder but the thing that i found out is that if on mondays instead of hacking i do something
+ like for example today we uh defcon dropped a lot of talks and videos on youtube that's what i'm going
+ to do for the monday because that's inspiration reading blog posts that people have been releasing
+ during the weekend or last week things like that so on mondays i do that since it's a hard day instead
+ of fighting back against it i kind of accept and adapt i think that's way better for someone that
+ has like adhd stuff and if if it is not working i'm like i need to work and it's not working dude
+ go i don't know go to the gym do something go for a walk whatever but don't keep fighting the only
+ thing you're going to get is next day you're going to wake up frustrated tired you're not going to be
+ able to hack and that's something that is not very possible if you are working for huge companies and
+ things like that so if we can do that being full-time hunters why not you know why not use the freedom
+ why not use the idea of working less if that's what we really want so that that's basically what i do
+ nice yeah kieran what about you uh yeah i have like at the moment i'm jet lagged because of the
+ mexico like i'm still jet lagged i have not recovered from from the the jet lag yet but mostly i have like
+ a morning session if i'm awake in the morning i work to lunch work into the afternoon and then
+ i work from the we work in edinburgh so i'll get home before dinner and make my dinner or whatever
+ but i i don't use um i keep a checklist of like my top priorities for the day
+ and i try and knock them out in order of there it's in order of priority so i knock them out one by one
+ uh sometimes i get none of them done sometimes i get all of them done i also really go with the flow
+ most of the time um sometimes there's stuff i really don't want to do and you can't just go with
+ the flow to ignore it so you have to kind of force yourself but yeah i definitely echo vitor's sentiments
+ that you need to use the freedom you have when you're doing full-time bug bounty because like
+ otherwise why would you do it you're just doing a nine-to-five makes no sense um so yeah pretty similar
+ sweet yeah and in fact isn't there a series called day in the life of a hacker or something that you're
+ working with getting published or something well yeah um but crowd should have that out this month
+ sometime okay sweet blog posts on that yes so we'll have more on that from you and also for me but um
+ yeah for me it's like i definitely am like kind of treating it more like a full-time job this first
+ year to make sure that it's like ironed out and i'm providing enough for my family of five over here
+ but it is really nice like you said to be able to just be interrupted and not care right if i have
+ like kids appointments or kids that run in here or you know need to need to get out or like like you
+ said vtor go on a run or go lift weights in the gym um it's really nice to not have to care or think or
+ tell anyone that you're going to go do that right um yeah for my schedule i try to work like 8 to 4 30.
+ um but you know lots and lots of interruptions with kids lots of appointments lots of sports lots of
+ taking off early to go take care of them so sweet um and then yeah so the last section that we really
+ wanted to cover here was um well actually any any closing thoughts on full-time bug bounty
+ yeah go ahead go ahead yeah okay so go ahead kieran then i go okay sure i think anyone on the fence about
+ it should just go for it like if it's eating away at your mind like oh should i go full-time you brought
+ that won't go away that thought's always going to be there so just jump into it dive off the deep end
+ give it a shot yeah i will say for the people that are considering it they probably know they're good
+ enough to do it and and they might struggle to take that leap at least it was for me every time i would
+ go to leave my employer would like give me a raise or give me a promotion or whatever and so i do think
+ if you're going to do it set yourself a hard date like assuming you have the money saved up for the
+ runway and all that set yourself a hard day and like don't let anyone talk you out of it because
+ it's so easy to be talked out of it just out of fear or out of like another opportunity yeah and
+ i'm meeting uh you know green jam he's at the google events sometimes yeah he's coming to edinburgh
+ tomorrow so i'll be getting dinner or whatever with him i want to ask him about his full-time
+ experience because he's just gone full-time very well he did when when did he start so
+ oh uh i mean i think it's been like a month or something since he's gone full-time but
+ you know it's been a few years since he's doing part-time bug bounty so yeah really looking
+ forward to hearing what he's what his experience is so far yeah that's awesome
+ yeah i was going to say that doing full-time hunting or doing any kind of remote kind of work
+ guys be careful if uh social connections you know do not like isolate yourself and forget to keep making
+ friends and things like that because we are all humans don't run away from that and when thinking
+ about making bug bounty a full-time thing or not you're gonna slowly stop treating it as a hobby
+ to be honest if you're making money is it really a hobby like you're making money that's paying the
+ beers or the bills so i was already picking the bills instead of the beers you know it was not a hobby
+ anymore by the end that was a lie i was telling myself to i don't know why so be careful with that
+ yeah that last thing is super true i definitely when i was working a full-time job and doing bug
+ bounty on the side i kind of like felt like it was like a game and so i would like justify doing it all
+ the time in the evenings and my wife is like no it's work you're just doing work i'm like yeah i
+ know but i love it she's like yeah but you're just working two jobs like you're working all day and
+ then you're working all night like you know like uh as far as like impact on family impact on your life
+ like you're just doing two jobs and i was like yeah but it's so fun so anyways i made it the main
+ thing so that i didn't have to work two jobs you know i think that a lot of people probably that
+ probably resonates with a lot of people i think i've gone full circle there i'm doing pen tests to pay the
+ bills at the base level now it's back to being a hobby for me especially with the life hacking events
+ at this point listen you've doubled what you expected this year kieran so just everyone can
+ root on kieran and celebrate him as well you've doubled your goal this year as a full-time hunter
+ you've definitely given yourself the leeway to not have to like do pen tests for your your bills
+ especially after this google event come on before that i understand but after the google event no
+ complaining all right yeah so um one thing you know i think that's interesting i think uh kieran you may
+ have put put this in the document but um actually let's just ask vitor this is your first time ever
+ doing google uh sorry first time doing ai related bugs um you probably had a lot of the thoughts that
+ me and kieran have had over the last year or two with like hey these bugs are kind of weird they're
+ sometimes like higher user interaction they're either usually targeting one user so they're kind of similar to
+ client side bugs but they're often a little bit social engineering e and they're also kind of weird
+ because they're non-deterministic sometimes you're like trial multiple times that did like just give
+ me your thoughts on like ai kind of vr like ai hacking in general um having really kind of dove in so
+ recently for your first time okay um it was a weird feeling when i popped the first bug ai bug by myself
+ because we and monkey we were like covering each other like he was burning out and i was like okay so
+ you chill now today's your day off he had i don't know anything to do and i was like i'm going to do some
+ hacking and today i popped it by myself after learning a lot from kieran i was like okay that is weird
+ it feels like if i report this to the company i'm scamming then i don't know right it doesn't feel like that
+ yeah it doesn't feel like a real bug that's gonna happen 100 of the time sometimes the prompt injection
+ fails things happen i don't know i still wrapping my head around it yes but i i got this very
+ interesting question on twitter a guy asked like should i learn ai hacking or web hacking and i'm like
+ dude it's a mix of both there's they do not exist without each other most of the exfiltrations
+ we did used a lot of decent good old client-side hacking like images things like that to exfiltrate
+ information if you don't learn that you're not going to get there delivery also use the same things
+ a lot of times before the event i was like what is ai hacking i don't know making ai on a company page
+ say something racist or anything like that like prompt injection i had no idea it could be actually so
+ impactful like leaking someone a company's data or someone's emails and things like that and at least
+ google cares a lot about that i don't know how other companies uh deal with all this this kind of
+ stuff i've seen a few reports on mostly on the hacker one and the companies are like we don't care that
+ much you're gonna pay as a medium at most high google no google is like critical critical don't if you
+ can actually excretrate anything that's a critical and it's crazy you know i don't know how i'm gonna deal
+ with ai hacks on other programs we have another live hacking events in like two weeks three weeks and i'm
+ going to focus on ai stuff because because whatever that's what i want to do and i want to see what's
+ going to happen like i want to see how the company is going to deal with that so yeah that's the point
+ i am right now yeah yeah that's why i wanted to ask you because i think it does feel kind of weird it feels a
+ little bit different like you said uh partially because of the yeah it feels like it's not that
+ likely to be exploited but it is really nice that there are companies at least like google that do take
+ it seriously especially when it can control your iot devices you know like uh when there are really
+ weird things like that going on and so uh and so yeah yes we yeah nice yeah this is the uh google cam
+ that i bought to do some testing but yeah it's uh we may have made a run for a smart lock in tokyo
+ like there's all kinds of things you could potentially imagine
+ man i think we're still like a i think we're at a very simple level of complexity for a lot of
+ these systems like we'll begin to see a lot more like server-side issues maybe mcp specific issues
+ or maybe it won't be mcp whatever it'll be and similarly client-side issues coming out of the
+ the systems built on llms um in the next like year or two as things get a lot more you know the
+ infrastructure and all the libraries get a lot more complex as well um so right now it feels kind
+ of scammy because it's like oh what's the exploitability but the minute you can do some
+ real like pass traversal stuff through tool calls i think it'll get really interesting yeah and i mean
+ in that episode where me and justin interviewed um one of the google staff you know they were talking
+ just about how at their scale when there's billions of users it's like this is probably going
+ to get exploited at some point right and so it makes sense for them to take it seriously i think
+ yeah yeah it does cool yeah did you all have a or you go ahead vitor yeah i just want to say that
+ you also have to think about the non-ai related stuff that is happening around ai like think about
+ i don't know let's put it gemini gemini is getting huge and they have to build features around it
+ like non-ai related like having gems sharing gems creating chats sharing chats things like that so
+ we have this ai gold rush everyone want to become the best most sold ai product guys that's amazing
+ that means developers making mistakes for a bug bounty hunter like that is not amazing but it is amazing
+ you guys get right it's good for hackers yeah yeah you're right they do have to move fast right they
+ feel this really strong pressure to move fast and so not only do they want to incentivize bug hunters to look
+ at them i think that's why google's paying well i think there's that's why there's like really good ai
+ safety payouts like i mentioned on a previous podcast with both anthropic and open ai willing to pay you
+ know 25 or 35 000 for jail breaks and i think it's because they really want our they want our expertise and
+ our attention and they want it right now because they have to release next week so they can't wait and so
+ they have to put a really heavy incentive on our time and so i think that you're right vitor i think
+ that's like very um very cool for us right yeah like google have updated their ai vrp very recently
+ so that's just a sign that things are moving forward um and they're restructuring they restructured some
+ of like what a p1 is and what a p2 is and stuff in the new the new system yeah exactly so if anyone
+ yeah so if anyone's been confused about why um when vitor was saying like it was like critical
+ critical critical it's because of the the um attributes of their report and with their new
+ reporting framework it's like very clear so if people are confused or curious about how that's
+ all set up you can go to google's we might drop it in the show notes but google basically has a new
+ like ai vrp table on their rewards and it explains exactly what would make it an s1 or what would make it
+ a p1 or a p2 etc and so you can just go in there and see exactly what the impact and would be and what
+ the payout would be depending on what bug you're looking for so um sweet did we have any other thoughts
+ on ai vrps that you all did not get to say yet
+ cool um sweet sweet sweet i think the only other thing that i had for
+ um the pod was this is more of a little bit of just like fun it's actually you know we'll save that
+ we'll save that for um we'll do like a news episode we'll make this just like a full blown
+ guest episode and we'll do news next time um where can people follow you or find you i know you
+ mentioned your blog vitor go ahead and tell us spell that out for them so they can find your blog
+ yeah so it's uh okay that's gonna be hard because it's my my name is vitor falcon dot com that's where
+ i've been posting more and more stuff uh because it was i bet i i i forgot about my blog sometimes i
+ forget about it guys you have to do the hunting and actually if you do the hunting you find yeah
+ that's the point like it does but it's very uh it's a hidden it's indirect money you know the self
+ marketing stuff yes but uh the thing is you have to do the hunting and find cool stuff that you can
+ actually write about because there's no point on writing i don't know i don't know what i would write
+ about if i had nothing to talk about anything nice that i found during hunting or whatever i know
+ kieran does that he just like shares his accountability stuff every week i know you do
+ that jazz but but that's not my style you know so it's a bit harder for me yeah sweet yeah i'll
+ spell that out so his blog is at vitor v-i-t-o-r falcal f-a-l-c-a-o dot com and yeah he mentioned
+ his like uh full-time hunting journey from the last three months it's a really great read
+ sorry go ahead kieran now i was just gonna also shout out his uh first three months as a full-time
+ hunter blog post that he's done recently so worth checking out for sure yeah yeah and as far as uh
+ kieran you can find him at monkey hack on on on x but he also has monkey hacks the really nice um
+ newsletter so you should go subscribe to that and that's uh that's monkey dot i e m-o-n-k-e dot i e
+ sweet cool well thank you guys and we'll call that the pod and that's a wrap on this episode of
+ critical thinking thanks so much for watching to the end y'all if you want more critical thinking
+ content uh or if you want to support the show head over to ctbb.show discord you can hop in the
+ community there's lots of great high level hacking discussion happening there on top of master classes
+ hack alongs exclusive content and a full-time hunters guild if you're a full-time hunter it's a
+ great time trust me i'll see you there

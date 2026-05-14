@@ -1,0 +1,1283 @@
+ and when i read the white paper i copy pasted an exact like payload from that pdf and it
+ exploited everything on akamai
+ best part of hacking when you can just you know critical thing right
+ all right what's up hackers we got the twib for this week the this week in bug bounty
+ for this week there we go uh just two articles that i wanted to kind of bring to y'all's attention
+ first up is yes we hack has released a monster of a guide on setting up your android bug bounty lab
+ essentially and they cover a bunch of stuff in here obviously they cover the basics but
+ i just wanted to highlight a couple things for you one they break down what kind of mobile device
+ uh you know to like emulator that you should be using and as i was kind of reading through this i
+ i did not know this but um let's see if i can find the portion of it uh apparently yeah there's arm
+ translation in android emulator and it's just for the apps okay so here's what it says the new android
+ 11 system images are capable of translating arm instructions to x86 without impacting the entire
+ system this allows execution of arm binaries for testing without the performance overhead of full
+ arm emulation so you can still run your system image in x86 but run arm uh apps by this arm translation
+ for android emulator so uh that is massive uh and really helps with the performance issues that you'll
+ see in a lot of android emulators um was really cool to see that and then they give a really in-depth
+ um summary of how to set up you know all of these various emulators which one you should be using how
+ to root a physical device if you need to actually do that with um uh magisk and um and then they also
+ talk about proxying um the the traffic through uh burp and they also talk about uh bypassing uh ssl
+ pinning with frida so it's a very like comprehensive write-up here um definitely worth checking out i think
+ this is probably like the go-to article on like getting your uh bug bounty mobile lab set up which
+ not enough of you have done apparently because we did a promotion with adobe um where we were
+ highlighting mobile apps and very few submissions came through from the critical thinkers um so guys if
+ you are tired of getting dupes and you want to build a unique skill set then you really should go
+ read this set up your mobile testing environment and just be to do basic api testing on mobile apps and
+ you'll find a lot of bugs um really cool stuff the only thing i wanted to add to this uh was that they
+ are pushing where's the like proxy section here it is right here they push the proxy configuration
+ like this which is totally fine um but i i also really like to use adb to create a um to open up
+ a sort of a pipe from the actual device itself to my local host uh on on my host machine right
+ in these emulators so then you can just point uh the adb um proxy at localhost on the mobile device and
+ it'll just proxy through to burp or kaido or whatever you're using on the outside so um yeah look into
+ that technique as well i think joel mentioned it on one of the episodes a while back um and apparently
+ today is mobile day because we also have a uh a write-up here from bug crowd uh mobile hacking resource
+ kit your one stop shop for ios and android um pen testing so inside of this kit they have a pdf that
+ kind of talks about all of the valuable resources that you'll need um videos courses blog posts tools
+ that sort of thing um and kind of has them all on a nice list so if you're ready to take the the mobile
+ deep dive you know check out this list right here check out the yes we hack right up from before
+ um and then here's the pdf that sort of comes along with that it just kind of has like a a quick resource
+ kit um for mobile hacking um and deep dive these two resources and then you'll be really well set
+ for for mobile hacking um all right that's what we had on this week in bug bounty segment let's get
+ into the show all right cool well james this is uh this is the moment i've been waiting for since
+ i started this podcast uh that i finally get to have the god of research the legendary james kettle so
+ thank you so much for joining today man thanks it's a honor to be here i've been looking forward to
+ this for a while yeah i'm sorry about the cancellations and stuff too i feel so bad because i was telling
+ james before the episode uh you know affair we never cancel like on our side we are very consistent
+ you know with critical thinking podcast and i just got so sick the day that he was supposed to come
+ on and i was like oh i can't i can't do it and i had to had to cancel on him so thanks for being
+ flexible about the timing too james um all right so let's let's i can't believe i'm saying this but
+ you know rules are rules james so uh you know whenever we have a researcher or a technical person
+ on the podcast we have them sort of give us a bug right to the audience to prove their their stuff so
+ james kettle head of research at port swigger research please prove your worth to the community
+ by sharing a bug please okay absolutely so i found this quite a tricky question there's a lot of uh
+ there's a lot of bugs that i'd love to share but uh i'm gonna share one that was a personal favorite for
+ me and it's maybe a bit possibly underrated maybe um so this is where's the cv i wrote this down somewhere
+ here we are cve 2022 22720 this is a pause based man in the middle powered
+ client side desync affecting apache httpd oh my gosh this thing this thing is is super cool uh
+ it's got all the great elements of a of a research grade finding so i found the issue
+ the like i found the attack technique of pause based esyncs by accident i tried to enforce a like
+ a two second timeout when i was scanning thousands of bug bounty sites and there was a bug so the time
+ out was actually like 15 seconds and of those 30 000 different websites there was one website that
+ was vulnerable to a pause based desync and had a custom 10 second timeout uh as an aside this is a
+ great example of why scanning vdps can be super valuable because that site didn't actually pay bounties
+ but i would have never have discovered the entire attack class if it wasn't for that one website um but
+ anyway having found that that was on varnish but then when i realized this was a thing i went scanning
+ with an even higher timeout and found that the pause based desync technique which is where you start
+ to send a request and you send the headers and then you just wait and you wait and wait and wait and
+ eventually you get a server timeout response and then what you send after that is interpreted by the server
+ as the next request even though technically speaking you haven't finished the first request so i found if
+ you waited for 60 seconds that technique worked on apache now exploiting exploiting this is super
+ difficult in practice because if you want to use it for a classic server side desync apache needs to be
+ behind a front end server which has a timeout of over 60 seconds which is relatively rare and then there's
+ this horrendous race condition as well which makes it really nasty uh but i had another thought which was
+ well how can you make this work as a client site desync so when there's no intermediary server
+ and it got me thinking about man in the middle attacks so this is something i i think bug bounty
+ tons probably don't look at think about man in the middle stuff very frequently uh i haven't heard of
+ anyone like making a great living in bug bounty by specializing in attacks that require a man in the
+ middle but but my experience has shown that some companies actually do care about this a lot it basically
+ depends on their threat model for example ages ago like maybe 2009 or something uh i found a bug in
+ firefox where they accidentally whitelisted a development url and i said you've got a vulnerability
+ you've whitelisted some random mozilla devs personal server and i can probably pwn the server and then get
+ code execution and they were like no no no we don't believe you can pwn the server but because it
+ it's a http url and you could do a man in the middle we'll pay you for it and they pay me the
+ same amount as finding like a sequel injection you know websites wow mozilla firefox like their threat
+ model is governments right there are governments that will pwn their users using man in the middle
+ attacks um or monster in the middle or whatever they're called these days um so so that made me think
+ hang on apache probably actually do care about a man in the middle attack and in theory if an attacker
+ just pauses a request at the right moment they should be able to do this on the encrypted connection
+ in theory like i remember some research from about 15 years ago where someone was
+ some academic research showed that if you looked at the tls packet sizes that someone was was seeing you
+ could fingerprint them and basically work out which page on a website they were loading just by guesswork
+ basically wow uh and so to investigate that i basically had two weeks spare and i knew the theory
+ could work and then i had to like set up boxes set up a man in the middle like this is way outside my
+ comfort zone i had no idea what i was doing it took me ages just to set up and uh set up a box to proxy
+ the traffic through a different box like with ip tables and then i thought i could use like laggy
+ network simulation software to cause the delay necessary for the desync but it didn't work at the right
+ level so i had to look up this stuff called q disk which i still don't understand and this was before ai
+ so i couldn't get chat gpt to do it for me uh and it was like it was just mega outside my comfort zone
+ i set the firewall wrong and i cut and i blocked off my own i ended up delaying my own ssh connection
+ traffic so whenever i type something it took over 60 seconds to actually to actually get to the server
+ uh it was a massive mess but i got it working in the end and it was it was super cool just to go
+ from that concept and spend two weeks on this one thing and prove yeah this is actually possible i i
+ broke i briefly broke tls on on apache it was super cool and even set me up uh the other valuable thing
+ was it set me up for understanding that kind of lower level network level stuff and i think it's part of
+ what led to the development of the single packet attack which uses hb2 to find race conditions and
+ timing attacks better and i i think that's right one of the nicest features that we've got in burp speed
+ right now i'm super happy with that yeah dude i think the single packet attack like you obviously
+ like we were saying before your your research list that i had to go through for this episode was just
+ massive the single packet attack is like one of the most amazing like just principles that i think
+ has come out of your research it's just very nice it is super cool yeah i know what i loved about
+ that is like a lot of my research you have to kind of understand and be very deliberate to actually use
+ it successfully it was the single packet attack we were able to ship it like you press a button and
+ it does it and you don't even need to know how it works yeah it would just it will adjust as well
+ even with that i i think i was really surprised as well how simple that attack was you know like it just
+ there's lots of beautiful pieces of that and and just going back to your the thing you just
+ discussed there there's so many uh places that i want to go there one you know talking about how
+ you know you you moved outside of your comfort zone and utilized um man in the middle which shows a
+ you know a more thorough um understanding of the threat model of some of these of some of these um
+ targets um but also i just want to harp on the vote for a moment you said oh well i had two weeks to
+ spare and i was like when was the last time i'd like i want that life james where you like i have two weeks to
+ spare might as well just like jump down this chain to find an apache uh cve so i guess like in in your
+ your flow of research and you're deciding you know what do you do you know what kind of stuff do you go
+ after um it seems like you have a schedule where you're like okay in two weeks i need to be either
+ start working on this or i need to do this presentation or whatever yeah pretty much yeah and so you know
+ were you at the end of like a flow of research and you're like okay i got two weeks until i present this
+ let me see if i can pull the cve out of this with you know client-side based men in the middle
+ uh dc yeah how is that i i kind of i give myself a schedule because if i don't have a schedule things
+ are fuzzy and then i get more stressed if i know what i'm doing when and whether i'm on track or not
+ that really helps so basically my job a significant part of my job is to present at blackout usa every year
+ and the deadline for the cfp for blackout usa is at the start of april and i presented them a lot of
+ times over the years now i have a fairly good feeling for whether whether i have enough good
+ material for a successful submission to black hat or not so how i found myself there was basically it was
+ the middle of march and yeah i think yeah i think it was the middle of march and it's like i've written
+ my cfp i i'm happy with it um and there's no other kind of loose ends that i need to tie up and then
+ there's just two weeks before the deadline and i'm like right let's get down to this that that is freaking
+ awesome and and i i actually added another note to our section here i want to swing back around
+ to that because i think um one of the you know security aside i think one of the biggest things
+ that correlates to happiness in your career and in your life is having you know control over your
+ schedule having a little bit of freedom right absolutely yeah yeah yeah you know i've been amazed
+ that you've been able to do this for so for so long like you did 10 presentations i think at black cat or
+ something like that that was number 10 just a few weeks ago yeah congratulations you've been doing
+ this for a long time yeah and and you've been able to avoid burnout you've been able to you know work
+ through it consistently so um i definitely want to swing back around to that because it seems like
+ you've got a really good setup there um but before we do that i we did say that at the beginning of
+ this episode we were going to go ahead and acknowledge the whole kaido versus burp thing
+ uh and and say you know that um we're not going to cover this too much on this episode but obviously
+ you know uh both of us are our players in the hp proxy wars or whatever um and uh we just wanted to
+ say at the beginning that what we've kind of discussed off air was that we're both really happy that
+ there is um you know competition in the space and that we are all working together you know to kind
+ of push the space forward as far as getting functional tools for for hackers to use promoting
+ research um you know education right with with uh the academy and everything um so i think there's a
+ lot of there's some heated aspects to it all but i think you know from this side uh you know for for us
+ at least i think we're both happy to see you know that competition in the space did you have anything
+ else you wanted to add to that james that's absolutely it uh we've got we've got a shared
+ objective uh of empowering hackers uh and well yeah the software that we use to get there is different
+ uh but a space in which there's zero competition is not overly not overly healthy really so i see competition
+ as a good thing uh we'll see uh we'll see where it takes us yeah absolutely man totally agree and and
+ with that i did want to hop into a couple questions i had for you about burp suite um and you know these
+ are these are applicable to hp proxies in general um obviously some of the research that a lot of the
+ research you've done has just been very um focused pinpoint on http and in you know http1 http2 all of
+ the https really you know um but specifically uh one of the things that i kind of wanted to get your
+ thoughts on is repeater's implementation of http2 is essentially a downgrade right is like you display to the
+ the user a http1 like representation of http2 um which is a binary uh protocol and uh you know as i
+ started to understand http2 a little bit better and i and i largely through your research ironically
+ um uh you know i was realizing hey this isn't really like a an accurate picture of what http2 looks like
+ under the hood right um and and so i i want to get your thoughts on um one whether you agree with that
+ uh or in and two whether you think that there's room for improvement in http2 representation to
+ hackers inside of a sort of a repeater replay like environment um that that promotes a deeper
+ understanding of the protocol or gives more flexibility absolutely sure so uh when i started to
+ do research on hp2 which involved sending requests with hp2 that could not be represented using hp1 uh it
+ quickly became apparent that there's a lot of uh there's some complexity here so we tried a few different
+ things what we ended up going with is basically uh our view is most of the time when you're looking at a
+ http request the protocol isn't isn't super relevant to the attack that you're doing right you're just like
+ i want to tamper with the parameter called blah or edit the header with this name or whatever so so for
+ for that scenario which we think is most of the time uh that's why we've got this like hp1 style
+ representation of a hp2 request uh it's just the easiest way of uh like like it's a comfortable
+ familiar way of doing your normal work because most of the time what the protocol is is not really relevant
+ to you as an end hacker uh but obviously there's exceptions to that and so the the way we handle that
+ inside purpose suite is if you pop out the inspector and go to the headers uh then what you can see there
+ is like a bind is is an accurate representation of what is actually going to be sent so if if you do that
+ on a hp2 request you can see the pseudo headers uh you can inject duplicate pseudo headers you can
+ inject oh i didn't know that space and the names that's cool all that kind of stuff yeah it's a bit
+ hidden to be honest uh so you could easily miss it but basically using that you can do a whole lot of
+ crazy crazy crazy stuff with hp2 uh it's just hidden there in the inspector for when you want to do that
+ if you use it you you'll find sometimes uh if you do something like inject a duplicate pseudo header
+ uh then you'll lose the main raw view because it can no longer be represented faithfully
+ using http one style syntax uh which is yeah we were like well this is just accurate representation
+ right at the end of the day we're we're building power tools for hackers we don't want to be lying to
+ people about what's actually happening under the hood uh we want to be picking basically like even
+ presenting a hp1 request in a tool it's an abstraction right because hp is actually a stream of bytes uh
+ that's why like pipelining confuses people so much because they're reading too much into the abstraction
+ uh and with hp2 what we found is basically you there's two different abstraction layers that people
+ want to work at so we surface both of them in repeater uh to be honest we put a huge
+ amount of work into building that and then i haven't actually seen that many people finding
+ cool hp2 issues where it's looked like they've been using it but i would view it as it was probably
+ still a good investment for the long term because there's definitely more of these cool issues out
+ there with hp2 and they're just going to surface over time dude i i wish the audio listeners could see
+ the love with which i'm looking at james right now like that was such a beautifully nuanced answer
+ that that considers the hacker in so many ways right like you give us what we we need most of the time
+ you know thinking at the application level right um and then you also give us the tool to go a little
+ bit deeper and tweak the protocol stuff through inspector and is that i mean is that the whole concept behind
+ inspector like you know i guess i've seen inspector mostly as a as like you know i often you know when
+ i was using burp i would have the you know decoding sequences or whatever that were on the right hand
+ side that was really cool but then there's also this component of inspector where it allows you to
+ dive a little bit deeper into the protocol um you know so is that is that the kind of concept
+ behind inspector giving tools to go a little bit deeper or yeah that's pretty much it it's a bit of
+ a power tool uh for for when you want to yeah for when you want to maybe decode stuff encode stuff
+ yeah we're looking at putting other things in there maybe in the near future we'll see how it goes yeah
+ another example just a tiny more other thing on on hp2 right in hp2 as you well as you probably know
+ uh all the header names are actually lowercase right so for our initial internal build uh when we
+ represented hp2 uh as a hp1 request we had lowercase header names and oh my goodness is it ugly it's oh my
+ gosh dude yeah it's really jarring uh so i think that was one of the things that pushed us really
+ early on is like we hate lying to the user and about what case something is because that can matter but
+ on the flip side it's so ugly that it made us realize really early we need two systems here there's a
+ lot of there's a lot of nuance here for sure because like you said most of the time we don't need protocol
+ level control we need we need to be thinking at the application yeah i mean it's still application
+ layer right but it's like like you know on top of the application yeah and and um i think that's a
+ really beautiful and nuanced approach um and and and i think when i wrote this question down i was kind
+ of thinking about http 2 as like a totally different protocol than http 1 because it is so different in so
+ many ways but it's actually still http you know like the the whole concept is as like okay there
+ there's you know there's get there's post there's parameters right and these are all similar it's
+ supposed to be the same thing from the application's point of view even if that doesn't really hold
+ up in reality right so it's kind of like a yeah it's like a pseudo protocol you know it's like i mean
+ it is it's a v2 of the protocol um very interesting excellent answer there james thank you so much for
+ that i think that was really nuanced um the next thing that i wanted to talk to you about specifically
+ relating to to burp suite and and that whole flow is um how how are you as a researcher using ai you
+ know with burp suite or without burp suite um to sort of progress your your research um and you mentioned
+ before you know this was before i had ai so i had to you know raw dog it or whatever uh before um how is that
+ integrating into your workflow nowadays uh in a few different ways so uh some of them you know i'm
+ exploring at the moment so i can't really talk about stuff i'm going to be publishing in the future
+ uh dang it james give us give us give us i can't help teasing things uh i would say uh it's it's really
+ useful for learning and getting up to speed with topics really really fast uh like i used it to
+ learn about uh unicode encoding attacks and such like which was always a blind spot for me because
+ there's a crazy amount of complexity there uh and i was able to basically get to a much better level of
+ understanding really really fast using it uh also in some cases it will just kind of just drop novel
+ techniques on you uh i experienced that this year with i'm trying to remember the exact sequence of
+ events but this wasn't even with deep research uh i said i'm trying to remember the details so
+ i remember you tweeted something out you were like ai just dropped something crazy on me and i'm like oh
+ jeez yeah it should i found two cool things with it i can share one of them uh it's it's in my hp one
+ must die research as like a random technique right near the end uh if you send if you combine the trace
+ method i remember that with the max forwards header it works on twice as many targets dude right it's
+ crazy and i would have never thought of doing that and if you look in the rfc which is the classic read
+ the rfc i don't think it mentions combining those two headers but i think chat gpt had seen and you
+ know maybe in some forum post from 20 years ago people talking about using the trace method in
+ conjunction with max forwards to like debug what was happening on a server and so it just spat this
+ technique out and i tried it and it worked it was like thanks that's the craziest thing ever i remember
+ seeing that i think in your presentation you know where you were like it was spinning out these sort
+ of intermediary headers which is massive like understanding what's happening useful oh my gosh
+ at that at that like you know especially when there's off happening at like the reverse proxy stage
+ where and then it's like adding you know a sign jwt or something like that in a specific header
+ and you're like oh if you know i just know what that header is or whatever then you can try to send
+ a version of it or do some sort of header smuggling which we'll talk about later um yeah the trace plus
+ max forwards dude i did not know that was an ai find yeah oh my god i shouldn't really get the credit
+ for that one that's chat gpt but dang the thing is crazy yeah if you use deep research it gives you like
+ a hundred ideas and 99 of them are just so bad yeah and let you know you still need the knowledge
+ because you need to look at you you can't try out those hundred ideas and it can't try them out for
+ you yet so you need to find that one you need to recognize it so you still need the knowledge to
+ get the value out of it i think i think another piece that's really big on that though and i think
+ you alluded to this in the uh you know apache man in the middle thing was that it does help validate
+ ideas too you know like i i think more than ever uh now i i can use ai to just very quickly like all
+ right spin up this can you know configuration or i was hacking on an sdk the other day and i was like
+ uh you know i gotta like set up all this stuff for the sdk and i just handed it to ai and it just built
+ this beautiful like poc script that just set up everything in the sdk and like handed all the objects
+ off to each other and then got me to my sink you know and uh that has just got to be you know i know
+ that that's big for bug bounty hunters but it's even got to be you know massive for researchers that are
+ constantly having to deal with the burden of like let me set up this whole architecture to get to test
+ this on asp and django and like oh my gosh to be honest that's why i always work black box because
+ i can't be bothered setting stuff up and test on live websites uh but it's redefining uh what's
+ possible there wow dude i think james let me just pause you there for a second so you're saying you
+ don't do a lot of that setup no i basically never set up targets oh my god james the frick how are you
+ one of the most successful security researchers in the world and don't do any like sandbox setup
+ it's too much work that's crazy dude that's crazy because i feel like that's such a pivotal
+ piece that is such a different take from so many of the other researchers that we've had on this podcast
+ you know most of them are really like hey dude put in the time you know get a debugger hooked up
+ you know like get you know and and and i mean to be fair i guess a lot of your stuff is like
+ you know uh not necessarily finding zero days in like enterprise software or anything like that you
+ know but but uh you know it's more protocol level you know architectural zero days but still that's
+ amazing to me that you don't you just test on websites i would definitely say put in the time but
+ personally i put in the time where i want to put in the time and that's not installing and configuring
+ enterprise software that's amazing dude james you are living you are so you let's let's jump into the
+ conversation we were going to have before then which is like you've been doing this for a long time
+ security is notorious for burnout especially you know when you're doing research and you're just kind
+ of banging your head up against stuff and and you've um done 10 black hat talks now you know very
+ consistently been pushing out new research on a regular basis how do you how do you structure your
+ life how do you live your day-to-day how do you avoid the burnout of security research
+ this is a good question so i think one key thing here uh is autonomy uh you need to make your own
+ decisions and kind of find what works for you uh and that's like like uh i'm the leader of the
+ research team at port swigger and that's how i lead it everyone on the team has a lot of autonomy
+ to decide kind of what they're researching what they'll prioritize what leads they'll chase down
+ and what their day-to-day looks like because i don't think research research is a creative process
+ it's like trying to yeah it is so i don't think you can just kind of grind it out uh by forcing everyone
+ to to like work in the same way because i don't think you'll get the same results doing that so having
+ that autonomy and that choice is really important uh for avoiding burnout uh yeah so do you do you like
+ just pose to your researchers like a question like like is it just do research like you know what what
+ what is you how do you prompt them how do you how do you because everybody else is going to have uh you
+ know their own method for how to do research right you know they're everybody's unique right some people
+ need more structure some people need less structure you know um and everybody on on the freak everybody
+ on the freaking port swagger research team is cranking out research you know so so um i guess you know all
+ of that could be from excellent hiring decisions and surely that's a component right um but you know what
+ what's part of the meta strategy you know do you think helps people i get produce good results
+ i guess there's a bunch of things one things is one of those things is we give people a lot of time
+ right yeah like we're basically doing research full-time virtually like yeah we spend maybe we spend some
+ of our time you know like helping improve burps we and so on the product the majority of our time is
+ spent on research uh that helps a lot uh the main thing that i do i don't really try to say i i don't
+ tell people how to approach their research or what their topic should be really uh they would suggest
+ a topic and i'll just ask some questions to kind of quickly see is this promising is this going to go
+ in the right direction if this goes if this fail like how much time do we have to in invest before we
+ know if this research is going to work or not if we invest loads of time and the research fails do we
+ at least learn something useful in the process that we can apply later uh it's that kind of stuff it's
+ just like like such things that mostly come from a lot of time spent researching myself and a lot of
+ lessons learned along the way dude yes those are such that's such good those are such good questions to
+ ask you know and and uh yeah that's definitely a part of the reason that that guides because sometimes
+ you're like you know you get a it's very easy to get nerd sniped or whatever by like you know some
+ very weird quirky functionality but you're like okay is the result of this going to actually be something
+ impactful you know it is yeah exactly like different personalities have different kind of
+ long long turns that they'll be prone to make them to uh to making uh yeah yeah and it's about kind of
+ spotting those recognizing them in yourself that's the best place to start recognizing them right and
+ just going like oh wait i'm not going to fall for that one for the third time well it's about improving
+ yeah like you're saying you know it's about you know knowing yourself as well as a researcher i think
+ that's that's that's pivotal um sort of building on that i think earlier in your career as a research
+ as i was going through like the freaking mountain of research on your website um you you were focusing
+ a little bit more on client side stuff in the beginning and then as you've it seems to me a little
+ bit as you've matured as a researcher you've been focusing more on on on server side stuff and not not
+ to say that that is you know the you know one thing or the other right there's a lot of mature researchers
+ that focus more on on client side stuff but i'm wondering why you whether that intention or that
+ decision was intentional or whether that was something that just sort of happened uh i definitely
+ i i would say i drifted into it to an extent uh i think part of it is you know gareth hayes has been
+ on my team for 10 years now and he's really good at client side stuff freaking gareth man oh my god he
+ joined shortly after me and we immediately got this dynamic where it's like well if it's a client side
+ thing i can just give it to get with an idea so to be honest that's probably a core part of the reason
+ that i've been looking at server side more uh also as like i find this stuff where you've got multiple
+ components and issues that only appear in production super valuable uh as someone working for burp suite
+ we have a dast scanner right and we are competing with sast scanners that look at the code so
+ when i'm finding novel classes of like desync stuff like that that stuff that sast basically can't find
+ so it's it's like extra valuable for us because because our competitors in the sas space aren't
+ going to be able to be like oh we can find stuff better than burp suite so it's an area where i can
+ deliver more value to port swigger more easily too uh also i think over time i just love the black box i
+ love the mystery it's like why i don't even like setting things up like i love these systems like
+ akamai where it's like you don't even know how many proxies they've got in a chain all you know is
+ it's more than you would possibly imagine oh my god it's like that um i think this is part of avoiding
+ burnout right you've got to be having fun and curious you know yeah and for me when you're testing
+ something like proper black box it's like at any time you could be like one bite away from the server
+ going insane and have no idea and it's that like that mystique that kind of keeps me hooked and and
+ motivated on on research dude that's so funny man you you and the black box thing man i yeah i see it
+ now i see it now and i think that that is also something that's really relevant to bug bounty hunters
+ right you know a lot of the time we don't have the luxury of being able to just spin up a local copy of
+ all this right um so i think that a lot of a lot of research stuff you know research and bug bounty are
+ adjacent and i think um but not not the same and i think one of the things i read somewhere in that
+ mountain of write-ups you have um was you saying something like security research a lot of people
+ will say oh you know bug bounty hunter security researchers same thing or whatever right i really
+ do agree with you that that there is a a difference here you know bug bounty hunters they're all out
+ there they're they're finding zero days they're doing their thing you know hacking on stuff but research
+ i think is more of a a protocol level an architectural level sort of endeavor in a lot of ways um uh and
+ so i mean well i don't want to put words in your mouth do you do is that how you represented it yeah
+ pretty much i would define a researcher as someone who is trying to find novel classes of attack or novel
+ techniques kind of trying to improve the state of the art uh rather than applying like existing knowledge
+ to find bugs uh yeah i do think a lot of bounty hunters do do bits and bobs of research here and
+ there but i think part part of the issue is as a bug bounty hunter you don't always have a
+ good financial incentive to share just to share your research right yeah especially if it's like you
+ know in this cloud environment thing right if you see a lot of like reoccurring cloud misconfigurations
+ or something like that you know or or something that affects um where things can get in a misconfigured
+ state and at that of you know makes them more vulnerable to these sort of architectural problems
+ then that's really big and i think that i think a lot of hunters have done a really good job of taking
+ your request modeling thing and just like beating the out of everything with it you know like it's great
+ i love it that's exactly what i want to have yeah yeah so that's that's really awesome i know the
+ book bounty community loves you james for that reason i've even seen it with tools like with
+ yeah parameter that was the first parameter discovery tool like the concept i think it basically didn't
+ exist until i made that and i just released it and the number of people that have come up to me and be
+ like oh i found remote code execution using this tool i'm like if i was a bounty hunter i'd be killing
+ myself if i published that tool instead of keeping it for myself exactly man i mean the amount of money
+ that has been generated from freaking parameter is insane dude uh yeah beautiful but going back to
+ the black box thing yeah i think i think there's some researchers you know or some hackers like you like
+ fronds um they're just a lot of a lot of they just have a big amount of intuition and curiosity about
+ how these systems are are structured and for me i think that's that's really difficult you know just
+ sort of talking about myself as a researcher i think one of the reasons i i really like client side stuff
+ is it's so tangible and there and i i i can very easily identify exactly what's happening and and you
+ know take these gadgets and train them together you know and chain them together and like you know produce
+ a result um whereas you know you're saying the opposite of that is is what's inspiring to you where
+ you're you know you're banging your head against something you can't figure out why it's doing the
+ thing and that is what fuels you yes it's the challenge it's the chaos i love it like my basically
+ all of my favorite bugs i found by accident right like my research if i had to summarize my approach to
+ research in three words it's like make accidents happen yeah right like that's it yeah two two two
+ thoughts you know from what you said that sort of chain together with that is like um i think one of
+ the quotes from uh one of your i'll read it here um let me see if i can find it um this is from one
+ of your many presentations i didn't grab the exact spot but it says when building automation make it
+ really easy to ask questions of your data set when you do this you'll start asking a lot of questions
+ even the stupid ones and then the results from the stupid ones will surprise you which gives you
+ interesting research topics and when i heard that i was like dang that's amazing right and that's kind
+ of what you're talking about here where it's like you know you ask questions of your data set you you
+ you you eat and even stupid ones right and then when the results surprise you that's where you should
+ you know dive in a little bit deeper absolutely yeah like that's where the intersection of of like
+ automation and research also like automation and human human power works works so works so well and kind of
+ that's what's driving my approach to to ai stuff too like personally i kind of i see like a bunch of
+ people have this really strong and emotional reaction to ai that kind of then dictates how they engage with
+ it and personally like like i do too i love it for its power and i hate it for the stress and anxiety
+ that it's causing people but ultimately my emotions are not relevant to it it's there it exists and
+ why not just make the most of it that's my view on it and and it's a step up in automation but you can
+ compare it with automated scanning like like i saw someone uh on your channel mention a while ago uh if
+ we've kept burps scanner to ourselves we never published it and then we run it on all the bug bounty
+ targets we'd be number one of the hacker one yeah oh by far yeah not expo yeah it's really good at
+ xss and so on um so you know so my advice with ai is like don't don't panic about this like it's just
+ a new kind of automation and you kind of automation but also don't ignore it either because it's a
+ seriously powerful tool and like classic automation i think it works better with human in the loop too
+ uh i've always like if you look at all of my research it's about combining human testing with
+ automation to achieve results that are much better than what either can get on their own uh and that's
+ why i work at portzvigor and not you know like there's loads of dast vendors that that make scanners
+ uh but portzvigor is the is the one that has a tool that really combines human humans and scanning
+ effectively and i don't think ai changes that uh you've got a lot of companies you've got a lot of
+ companies that basically aren't in the they they're like building ai enhanced scanning but they're
+ not in a position to offer human in the loop because they don't have access to
+ at all like like burp suite or kaido to build on so they're forced to build a scanner that's fully
+ standalone right and then they're going to market that as a pen test really heavily and they're going
+ to tell you over and over this is better than a pen test it's going to put all the pen testers
+ out of business because they're not able to build a human in the loop thing right they probably know
+ human in the loop is better like that that's my view on on the whole topic i agree i mean it makes
+ sense right like why would we not have a human in the loop just give the ai you know let the ai do their
+ thing and then let the human be like no no you're screwing that up hold on you know go this way you
+ know like it and you're absolutely right strengths isn't it yeah yeah you know as a as a you know like
+ you said with with http proxies with burp or kaido you know we have a platform on which researchers
+ are you know using looking at the hp protocol they're familiar with all this they're they're analyzing
+ applications and then we have an opportunity to integrate ai into that to enhance it right uh versus
+ just doing you know an ai scanner or whatever it is that is definitely the most powerful approach you
+ know to all of this uh and i did want to grab another quote out of here i like to cherry pick
+ your your your quotes a little bit james it says there's an old cliche that automation is about
+ finding low hanging fruit but this is dangerous because when used correctly it gives us a platform
+ to stand on to reach high hanging fruit and that applies perfectly to what you're saying right ai
+ burp suite kaido whatever these are platforms on which we elevate researchers and allow them to
+ function at a higher level to reach those things that are not you know easily accessible right exactly yeah
+ there's the strengths of ai and skilled human testers are just not the same so you've you've got to
+ combine them if you want to get the best result possible uh obviously like i think ai power scanning
+ is super cool i think ai combined with dast is great and you know we're working on releasing that
+ of course we are uh because it's more scalable and so on but if you want to find those top quality bugs
+ using both is that is the easiest way to get there absolutely um let me go ahead and jump back into a
+ little bit the the resource research meta we kind of i feel so bad for like my team that has to go through
+ the chapter stamp all of this stuff in the video because like i'll follow these little rabbit holes
+ down but anyway team we're going back to the research stuff so put that in the in the in the chapter notes
+ um so you know one of the things that i think is important uh for bug bounty hunters to understand
+ about research uh and i think there is a pipeline there right of bug bounty hunters sort of moving
+ into security research and a lot of the skill set you know is is intercompatible and it's a good way to
+ fund your security research in the end so there's lots of compatibilities there um but i think one of the
+ notes you have here is understanding your true objective with research as a researcher um can you
+ talk a little bit about how one might find that true objective and why it's important to know it
+ absolutely yeah basically do research is is a really vague kind of concept and and my question would be
+ what is your actual specific goal because depending on your goal uh you will be wanting to approach it
+ in very different ways uh so for example i would say like early on in my research part of my goal was
+ basically just to make a name for myself uh to be honest uh but and i used to think that the and then
+ my job well then it was my job deliver a presentation at black cat right and you can check that box but
+ it might be a bad presentation right so that's actually not a good outcome it's probably better not
+ to deliver a presentation than to deliver a bad one but then what makes a good presentation so for example
+ uh a lot of people go to presentations because they want to they want to be inspired right so
+ think about what the end goal is like do you want to inspire people to take the techniques in your
+ presentation and apply them for themselves uh that's a pretty cool goal like i would say seeing people
+ using a tool you've made or using a technique that you've shared is really rewarding uh or maybe you
+ want them to build on your techniques for me that feels even better when someone takes my research and
+ does their own research on top of it that's creating this like feedback loop which is super super cool
+ uh but those two objectives kind of can be in tension quite a lot uh that for example yeah that that
+ makes sense and i think one of the ways you promote that as well is you very clearly at the end of your
+ presentations and in some of the other people in the research uh ports of your research team do this as well
+ where you say hey these are future research topics you know that i was like yeah that i think are really
+ cool you serve it up on a golden platter to the community i try to a lot of people still don't pursue
+ it but yeah like like and it's in right you know i'm glad you say that here on the podcast because
+ i i would like i would like to challenge the community a little bit especially if you think
+ you're if you're doing okay like a lot a lot of our listeners are full-time bug body hunters right
+ um and so i would say you know if if you do see yourself progressing into research at some point
+ uh as a as a either as your progression in a bug bounty hunter and you know using um your research
+ to fund bug bounty or maybe you just want to move in that in that way there are very few people taking
+ up james on his on his you know offer in the presentation hey do you do research here do research
+ here and those are very high value leads right like these this this is this is something james is saying yeah
+ this is what you should go after like you know as a professional that's done this for for 10 years 10
+ black hat presentations take these and go um i think it's a really worthwhile investment and we've seen
+ especially in the um uh you know http desync or in smuggling rot you know how many people have done
+ this built upon it and found really really cool stuff yeah we've seen some awesome some awesome stuff
+ happening in the field and i think what i would also say to bounty hunters is i can't tell you if you
+ publish your cool technique or your cool innovation or your cool tool that that that you know people
+ are going to shower money on you directly for doing that but writing things up to publish them will make you
+ all the way that you have new ideas it's that when you try and frame something and explain it to make
+ it accessible to a broader audience uh you will have your own breakthroughs as a result of the kind
+ of the cleaner thinking and articulating it better and then also when you share it other people will
+ build on it and share it back which can be super valuable like in the last year's research you know that
+ we made over 350 000 in bounty insane right sweetly in them yeah that was a hundred percent because
+ of the collaborations that i i did and the thing that made the collaborations possible was the fact
+ that i've published research on those topics in the past so i think publishing research is a is a super
+ valuable it's it's a you are sacrificing value in the short term but you're gaining it in the long term
+ yeah and and you know when you release these things to the community you're also putting yourself at
+ jeopardy for um research collisions right uh but that's a risk you're taking because yeah i hate research
+ i say the word research collisions and james eyes go like
+ but but you do you put yourself at risk for that right and and um that's a part of the the the game
+ you know just like dupes are part of the game in bug bounty research collision will happen in in
+ security research um so i i i thank you on behalf of the community for still pointing us in in
+ various directions after these presentations i think that's extremely valuable i have one tip
+ actually how to avoid research collisions i love this very painfully because we lost a blackout usa
+ presentation on samuel due to a research collision with github oh really oh with github oh
+ oh yeah i have some rude words about that but the pain i can see the pain in your eyes dude james i
+ just want to pause and say i love how passionate you are about all this right like i you you were
+ almost tearing up a little bit in the black hop presentation when you talked about using the
+ slash uh con uh slash con you know to exploit the zero cl d syncs and and i was like you could see
+ the passion when you're like for years i've known about this quirk and then i finally used it you know
+ um thank you for the for your passion for all that but yeah i'm sorry what's the what's the tip on on
+ avoiding the tip right the tip is basically if you see sometimes you'll see someone publish a new post
+ on on on on a technique and you'll be like that is super cool it's really valuable and i've got some
+ ideas for how to take this further okay it's like an amazing research lead and my tip is it is a good
+ research lead if you're going to publish to investigate it immediately and publish what you've
+ found straight away but if you're aiming at a conference you know you've got to submit to the
+ cfp months and months before and if it looks that promising there's a significant risk that someone
+ else has seen the same thing and is also working on it they're going to snipe it if we i wish i thought
+ of that when we read that we read this awesome research on a saml technique and we were like this
+ is great we can build on this and we built on it at the same time as github and positive technologies
+ as well so they published theirs when we were about to submit to blackout so we published ours we like
+ wrote up really fast published it like two days later because they left out a proof of concept and we
+ were like no you guys have proof of concept uh and then like three days later positive technologies had
+ to publish this as well oh my gosh dude it's like freaking research race here it's horrendous so
+ mind-wise is if you see someone something like that do it fast or do what i usually do kind of by
+ accident which is say that sounds cool and then forget about it for two years and then pick it up
+ and do it because if it's been a couple of years probably no one else is looking at it yeah set yourself
+ a calendar reminder for two years and yeah and be like yeah swing it back around to that saml thing
+ um man i did see that post the saml post i did not get to that in my prep for this episode so i'm
+ gonna have to circle back around to that and and um yeah re refresh my brain because saml is like saml is
+ whack dude and there's yeah there's this guy that research setting up several environments like right
+ exactly like and and uh and yeah man it's just so much weird stuff in xml um yeah and and as well so
+ yeah it's crazy um let's let's go ahead and swing back around to uh you know you've done a lot of
+ right write-ups on the meta game of of researching um and you have some tips about how to do research
+ here um hunt forgotten wisdom uh forgotten knowledge collect diversity no idea is too stupid abandon
+ comfort and comfort and i kind of want to just jump through each one of these because i really think
+ that these are high value principles and just kind of get your thoughts on each one of them
+ and then ask a couple questions so tell us a little bit about hunt forgotten knowledge why that
+ really helps um sort of fuel your research absolutely so uh basically people have short memories
+ people you know like social media drive stuff that was published in like the last what 72 hours yeah and
+ then and then stuff just kind of disappears and everyone forgets about it uh so what that means is
+ there's this like hyper-focused lens of attention on the latest thing and people kind of think that you
+ know in general a post published a week ago is just going to be more valuable than something published
+ six years ago but it is often not true uh obviously the best example of this that i have is request
+ smuggling it was literally explained really nicely in a white paper in 2004 no way and when i read the
+ white paper i copy pasted an exact like payload from that pdf and it exploited everything on akamai
+ and i literally picked that that that payload because they gave you like 12 attacks like i just
+ picked the easiest looking one the only one i could understand at that oh my gosh
+ it was ridiculous that's crazy and you still see that there's still this super old
+ there's really old valuable stuff but people kind of pp and there's there's this like hidden knowledge
+ like there's all these people that understand like they've read old stuff and they remember it but
+ they're not going to re-share it because you know it's someone else's tech technique and they're not
+ going to talk about it so the knowledge is kind of there buried in the industry and weird niches and
+ crannies right but uh it's not surfaced and if you want to get that knowledge
+ you either need to find like an old-time hacker and interrogate them
+ or you need to read old stuff wow yeah that's awesome man and i do think it would be really cool
+ to have i don't know how they do this maybe with ai or something like that but like have some twitter
+ bot or something like that that just cherry picks all the research from from like you know whatever
+ whatever sources and then just retweets it at random you know intervals you know just says boom
+ what about this one what about this one does this trigger anything with you know for you yeah
+ that would be a really cool thing it's all like link rot is making it harder and harder but
+ obviously there's there's archive.org yeah for that god for archive.org we we all need to go
+ support archive.org man because if that if that's like i know they're constantly like give us a dollar
+ i'm like here like take money because if that ever goes away we're screwed you know we lose so much
+ if that ever goes away we do preserve portsmuir preserves all the uh do we uh we preserve all the
+ nominations for all the top 10. yeah so we do have copies of those but everything else is toast and a
+ lot of people don't know a lot of good stuff doesn't get doesn't get nominated as well yeah man the
+ nomination list each year too it is it's terrific i have to read all of those it's like oh my god yeah
+ dude i can't imagine for you because i complain i complain every year whenever you guys release the
+ top 10 i'm like oh my god like there's like the prep for this episode is like like a full week of
+ reading and researching right like 40 hours uh where normally i put like you know maybe four hours into
+ four or five hours into prepping an episode you know this is like 10x you know really um
+ and and man i can't imagine how much of a thing that must be for you and the in the team that's
+ you know auditing each one of those you know going through each one reading it yeah yeah that is uh
+ that is that is but what a fun thing you know that is your job dude your job is to go there and read
+ security research yeah it's a good job i freaking love that for you man that's amazing i i did want to
+ ask on this specific um you know bullet point hunt forgotten knowledge one of the things that i advocate
+ a lot in the bug bounty world for mostly for beginner and intermediate hackers is you know really trying
+ to spend time with your hands on the stuff you know like really get in the http request tweak stuff figure
+ out what's happening you know really spend time experimenting um as a researcher i'm as a high
+ performing researcher i'm wondering what your perceived ratio of like knowledge gathering or reading
+ versus experimentation is uh that's a good question i would say this has changed a lot over the years for me
+ uh when i started out for i would say maybe i don't know five years i basically read everything i could
+ get my hands on i was just always reading uh i would just read everything even if it was not even super
+ super related to like web security i'd like read all the project zeros blog posts even though i didn't really
+ understand a lot of that stuff like yeah that makes two of us yeah yeah but over time kind of as i'm uh as
+ i've got more experience and i'm more like if i'm building on my own research uh the need to read other
+ people's stuff kind of drops a bit but i enjoy i still spend it like every day i look at what's been
+ published and i read the bullet stuff so i still do it daily because people still publish stuff that i
+ find super super valuable and it gives me really nice ideas uh but i would say the these days i definitely
+ spend a lot more time experimenting with things yeah it's good to know good to know um next item on the
+ list here is collect diversity um can you talk a little bit about that principle from a researcher's
+ perspective yeah it's it's often basically when you're doing research you're trying to find things
+ that other people haven't thought of uh or tried maybe they have thought of them but they haven't tried
+ them but there's got to be a reason for that and often it comes down to making connections between
+ quite different fields or between different perspectives like that browser powered
+ browser the browser the pause based man in the middle client side dc that is like a tongue twister
+ man you can't it's like there's like 15 modifiers on that dc it's like client side man in the middle
+ like oh my gosh yeah like that's combining like a server-side d-sync attack with client-side exploitation
+ with a with a man in the middle kind of concept based on something that from ages ago so
+ it's that kind of being able to to make those links will often surface really valuable stuff
+ uh it will often let you take something that looks like it has very little impact and turn it into
+ something significant uh yeah i i'm a firm believer that combining black box and white box testing is
+ really valuable even though i don't follow my own advice in this regard uh but i'm definitely going
+ to be looking at some point i'm going to crack and actually actually start doing that uh kind of every
+ yeah you gotta outsource that james you you know like you've got you've got you've got a you've got
+ a whole port swinger team just be like hire somebody who's like the setup guy and he just
+ i think that's called a system or a system admin who would apply for that job yeah dude i mean that's
+ pretty much what a sys admin job is right like like uh yeah i don't know man that does sound like
+ the worst thing ever though like set up all of these enterprise software set up this whole stack
+ yeah oh my god you couldn't pay a hacker enough to do that i don't think no i i actually i have a great
+ example uh there's someone whose twitter handle is something like zed hero and they've been doing
+ really really nice cash poisoning research by looking at the source code like in depth of of of various
+ frameworks they've been doing really really nice work and it's it's like server-side exploitation that's
+ only possible by combining these kind of two different approaches yeah going going after the i think we've
+ covered a lot of those on the pod like going after a lot of the js frameworks and stuff like that going
+ for the cash poisoning very very good stuff there yeah i did want to ask relating to collect diversity
+ obviously you know before the onset of ai there was a lot of like oh i really i think it was a lot more
+ it was a lot easier for us to have to to how do i say this to justify spending a lot of time getting a
+ bunch of different perspectives right because like you mentioned before now with ai we can say hey give
+ me the the you know tldr of this whole concept you know or it does this specific thing exist right and
+ and it'll you know do its magic and and try to pull something out of thin air um with with ai how has
+ collect diversity changed in do you think it is still as relevant to do um versus asking pointed
+ questions to the ai i think it's kind of just a means to end of achieving the same thing uh one thing to
+ watch out for with deep research is it basically does loads of googling and a lot of the time the
+ good stuff it doesn't show up on google because google services google really likes things that were
+ posted in the last year and then it's like they just disappear after that uh which is ludicrous
+ and it's not very helpful for research at all so if what you're doing is a load of google searches under the hood
+ that's not it's i mean it's better than nothing but it's not ideal whereas what ai has that's really
+ valuable is it's like that tracing where it's like it probably read read a stack overflow post from 20
+ years ago or something like that yeah stack overflow you know i found some amazing techniques by reading and
+ on stack overflow and it's like a developer asking a question and they if you have the security knowledge
+ and you read the question you're like oh my goodness you just exactly and they have no idea
+ oh they have no idea and none of the replies have any idea either yeah i think that's so funny it's
+ also when doing like white white box stuff i'm just scrolling through the code and sometimes there'll
+ be a comment in there and you and you read it as a security and you're like yep there they they knew
+ what was happening here you know if only they had the hacker's lens you know they're like some for
+ some reason this feels off and i'm like um yeah secure definitely stack overflow is is a a gold a gold
+ mind man it really is um next thing you had no idea is too stupid man this is this is massive in
+ security right uh you you kind of shout out in your write-up never underestimate the security bystander
+ effect because it's freaking everywhere um and and i think oh just hit my mic there but um you know
+ kind of goes back to what you were saying before is you know you're serving up these research uh
+ ideas at the end of your presentation and not a lot of people are are taking up uh you know on them so
+ diving a little bit deeper getting that extra you know validation even on things that you're like oh
+ that that that couldn't work that couldn't work is is super important is that kind of the concept behind
+ this one yeah definitely i think the number one people think that the number one mistake that that
+ you make is picking the wrong research topic yeah and i think that's a complete misconception i think
+ the number one mistake is not trying is not attempting the topic telling yourself it's not going to work
+ and then just not having that shot uh you always you always learn something if it's cheap to try it out
+ you should try it out and if it's really expensive to try it out try and figure out a way of doing it
+ that's not expensive and then do it anyway that's really good man i think one of your no con talks no
+ con hunting evasive volumes uh one of the quotes there is that will never work unless and then dot dot
+ right and you kind of build the presentation a little bit around that um i think that's such a good
+ powerful question for researchers to ask themselves it's like what what you know first our brains sort
+ of write this concept off and what edge cases could i really be missing here that would make this really
+ simple seeming thing actually actually happen it's really good um i did the the last uh item here
+ that i i had from your you know how to be a web security researcher talk was abandoned comfort um and
+ i i watched the recent interview you did with uh tiberius and you said in the beginning you weren't too
+ hopeful about http request smuggling as a as a whole concept and then but you ended up going deeper into
+ that is this sort of an example of you sort of abandoning comfort or is is this you know i guess
+ the the like what what made you a little bit unsure about that topic in the first place so when i did
+ uh my webcash poisoning research i developed this research philosophy of what you should research is what
+ you're afraid of that's a great sign of a really valuable research topic and that works super well
+ for webcash poisoning and so after the research and and and i explained that in the in the intro to the
+ presentation so then after delivering that presentation when i was thinking of my next research
+ topic i was like you know what what am i most scared of and the thing i was the most scared of was
+ request smuggling because i watched this presentation from virgilero where he it made absolutely no sense
+ and he said you definitely won't get paid from anyone because it's too dangerous oh my god and
+ of the first time that i read that i was like okay i'm just gonna stay away from this and then when i
+ was thinking what am i scared of i was like it has to be that that's what i'm most scared of wow dude
+ that's amazing it you know and i think it i think that's a really good balance though right because
+ i think on one hand you were really scared of that you were scared of the impact it would have on
+ on you know the targets your approach these black box you know ran testing random sites that sort of
+ thing um obviously it's a pretty technically depthful vulnerability but i think it also aligns a bit with
+ your skills prior to the the whole um the whole hp request smuggling thing right like you had already
+ done some research on cash poisoning and also host header related attacks right so you know that sort
+ of uh reverse proxy architecture um attacking that whole flow right which we mostly only see in
+ production goes back to that whole dast thing we were talking about earlier um and so there's there's
+ been a lot of pieces i wanted to sort of challenge you a little bit on this on this point um as far as
+ your research methodology goes because it seems like reverse reverse proxy architecture has become
+ like a a really um sort of a safe spot for you as from from like a a research perspective right we've
+ seen that with your host header based attacks you know back way back in like i don't know 2017 or
+ something like that um we've seen that with cash poisoning we've seen that with http request smuggling
+ um do you how do you know when is the time to abandon that that comfort zone of reverse proxy based
+ architecture uh and move to something else versus continuing to push it if if it still gives you know do
+ you understand what i'm asking there yeah yeah definitely this is an excellent question uh so
+ you're right like researching request smuggling or cash poisoning is not scary for me at all right
+ it's like the one topic where i have the most confidence that my research there will find some crazy stuff
+ uh and so and when i delivered uh browser-powered desync attacks where i introduced client-side desync attacks so
+ that presence crazy crazy by the way i just i so good continue that that's probably my favorite like
+ personal favorite piece of research because of uh how technical it got i'm sorry i'm gonna interject here as
+ well i i would have thought that would have never worked right that's a perfect example of that will
+ never work because i don't have any control i'm sending across site you know uh freaking you know
+ browser controlled i'm working within the constraints of what the browser allows me to do with a fetch
+ request and somehow you are able to induce dc unbelievable james i'm sorry continue it was crazy and a whole
+ bunch of that stuff was exploiting client-side like browser connection reuse behavior i had no idea how
+ any of that worked and the chrome source code didn't help at all yeah right uh uh so i like i love doing
+ that piece of research it was super satisfying for me as a researcher but then when i presented it
+ it didn't land as well as some of my previous talks and i think there was a couple of issues one was uh
+ you needed a lot of prior knowledge in order for it to make any sense so the kind of the audience that
+ it was valuable to or accessible to was smaller but also like in terms of the bounties it wasn't that
+ great so it didn't get people hyped for it in the same level and after that i was like you know what
+ i'm kind of getting bored of researching request smuggling and or no it's like i'm still enjoying
+ it but i don't want to just become this person just the request smuggling guy yeah right yeah like
+ any more than i already am so that's why the year after i did race conditions and then the year after
+ that i did timing attacks and a single packet attack and so on but then most recently why did i go back
+ to request smuggling well basically uh i had alice so i was like i've got no sleep i'm barely functional
+ i need something yeah that is i need something that's i'm going to find relatively easy so that was
+ what pushed me to to be like like when i started it my goal i already knew that the title was going to be
+ the decent end game i was like there's i i know there's stuff that needs to be wrapped up there's
+ there's still people missing loads of findings uh we need to kind of we need to wrap this up
+ that was my goal with that piece of research dude unbelievable i really love that because it also
+ combines you know research methodology with knowing yourself knowing where you are in life knowing what your
+ capabilities are you know you push yourself outside of your comfort zone and you return to your comfort
+ zone when you need to and i think that's such a beautiful example of how to win the long game
+ because so much of all of these all of these things are you know that people run into burnout
+ with bug bounty people run into burnout with you know all sorts of things but you need to know what
+ you're you need to know your own limits know what you're capable of not constantly be push push push push
+ grind grind grind grind when it's time for you to focus on family stuff then you fall back to what's
+ easier for you and what's functional but you still stay in the game you know like yeah i think that's
+ something i really struggle with because i feel like for a long time i i really wanted to just constantly
+ be you know at the top of the live hacking event leaderboard and constantly be like you know pushing out
+ s tier content on critical thinking and like just constantly be just crushing it but then i realized
+ like there's times in life where you know you've got other things going on you know you've got new
+ kids in the in the in the house right you know you've got um priorities and you're not going to be able
+ to to function at your at your top level so you make the adjustments and you still produce something
+ excellent i love that james that's really great thank you thank you yeah yeah yeah it's people also
+ keep asking me on the same topic like when are you going to do more research on hp2 like when you're
+ going to do some like hp2 end-to-end attacks right and it's it's this is this the problem is right
+ i can hack hp1 and compromise like 20 million websites 40 million websites right relatively easily
+ yeah or i can research http2 and put in way more effort and probably compromise like 10 websites or
+ maybe i'll like pop one cdn if it goes really really well right but it will still be one target and it'll
+ be patched and then you won't be as you know so it's this challenge of like what's my objective do
+ i want to deliver something that you can then use yourselves or do i want to deliver something that
+ you look at and go wow that's some really hot stuff but i didn't understand half of it i can't build
+ anything on it excellent either so for me it doesn't make sense to research i can't justify researching
+ hb2 until hb1 is like pretty dead and that is why i so want to die and it's dead it's dead now post
+ this presentation james has killed it um that's awesome man uh good good i think i think the last
+ place i want to go with this whole research thing um well okay actually two things i gotta get gotta gotta
+ pause for a second here um i did want to ask you you know as as a person that is running the research
+ team you know at port swigger uh if you have any advice for for me because i um you know we're spinning
+ up the critical research lab uh here under critical thinking and all of this is just kind of like me
+ taking this podcast and trying to do what i think is cool you know and one of the things i think is
+ cool is port swigger research you know and and um and i think it'd be really cool to have more people
+ have the opportunity to be financially incentivized to do research and obviously we're not at a point in
+ with the podcast where um we can hire full-time researchers you know we just don't have that that budget
+ but i do want to like the the concept behind the research lab is to to you know grab people from the community
+ that are doing quality research give them additional distribution by covering it on the podcast and
+ hosting it on the podcast website highlight the researcher celebrate the researcher and then provide
+ some you know token of appreciation you know and as far as like a stipend or something like that goes
+ um you know to say thank you for contributing this research you know to the community and um you know so
+ we we've got the team together i'm setting the stage for all this so you can understand the situation um
+ we've got the team you know together we've we've got some cool pieces but it's kind of scattered and
+ it's not something that uh you know we've been really diving super deep into or asking for a lot of
+ uh time investment on um i guess i was wondering if you have any advice for that for that structure of research lab
+ uh or how how you think we should move forward with with that like how can i help that researcher facilitate
+ what they are are researching themselves uh good question so research is tricky because yeah it
+ doesn't it doesn't make make money the same way as like exploitation focused stuff does uh and if you
+ don't have buckets of time to throw at things then landing you know like landing things like conference
+ presentations at top tech conferences is quite hard uh i wouldn't one piece of advice i'd have is most
+ researchers that i've spoken to have a excessively high bar for what they think is worth publishing
+ right my view is just publish it publish everything every tiny little cool thing publish it and
+ please publish it in like a blog post or like not just in a post on x where it's like lost to history
+ after 24 hours like just just get it written down somewhere and over time that that will accumulate
+ and become really valuable um yeah that's such a good answer and that's exactly what i was trying
+ to tell the research team you know and and and we've just now sort of got a an environment set up where
+ we can really make like really quick github you know markdown blog posts and just shoot it up right
+ and i i'm even you know as far as like the stipends go for research um really incentivizing small quick
+ dirty here's a quick you know sweet little trick that i figured out you know sort of post because i
+ think those are so valuable and those really help close the gap for a lot of exploits and a lot of um
+ you know even chunks of research um so that is definitely the hope for the critical research lab is is
+ like you know let's let's create a platform where we can be putting out you know i really i think gareth
+ does a really good job with this you know it's just like i've seen some of his posts you know on
+ on his on his website and it's like two paragraphs isn't this cool the end you know and i just i think
+ i want to try to push the community in that direction as well that's really good that's it that's where
+ everything goes i hate writing like 6 000 word white papers i i know how many people read that end to
+ end it's not it's not very many uh small small valuable things other other people will look at it
+ and then they'll like like they'll like like it and then like use it for their own technique and then
+ cite you for it and cool things will happen it's worth it beautiful beautiful if anybody has um you
+ know we our vision for the the critical research lab is is expanding a little bit here and um we're
+ gonna accept essentially submissions from the community if you have a cool piece of research
+ that you want to have uh you know covered on the podcast on the on the crit um research lab website
+ then feel free to reach out to us on the discord um and we'll definitely take those submissions and we
+ will soon be uh bubble sizing you know what the stipend amounts for that are and that sort of thing as
+ well to give a little bit a little token of appreciation back to the community um but
+ definitely i want to see a bunch of little small here's a cool quirk use it you know sort of post yeah
+ it's super cool to see more people paying for research it's so hard to get paid to do research
+ there's so few opportunities uh so yeah i hope more bug hunters to do that thanks man appreciate that
+ um last question on research who are some up-and-coming researchers that you respect their work
+ good question so i'm going to answer this with two people uh both of whom have been researching request
+ smuggling because obviously that's the topic uh that i'm the most focused on hang on i write their names
+ down over here okay here we go i'm very good with names like i recognize handles but not dude it's so hard man
+ it's so hard in this security world so there have been you know but hang off first i have to caveat
+ this because there's so many people doing awesome research that they then publish in some blog that
+ doesn't get discovered or amplified as much as it deserves by the community like that's why the top
+ 10 exists is to try and surface this stuff but stuff still gets missed out so i'm missing a million people
+ but this is two people i've seen uh one is thomas stacy uh whose twitter handle is toxidile he did some
+ super cool research on using he found the single packet attack which was basically developed to find
+ timing attacks and race conditions he found it actually also helps find desync attacks and request
+ tunneling uh which is super cool there's clearly some kind of race condition involved in there uh i love
+ this stuff where it's like you're only even half understand how it works uh and i believe he's working
+ on some new research which is sounds quite promising although i haven't managed to get him to give me
+ the full details of it just yet uh yeah and the other guy is uh yepy cop uh and he does some super cool
+ request modeling research on exploiting chunk extensions which is this is one of those things i've heard
+ people saying are you exploiting chunk extensions or for ages but no one was successfully doing it and he's
+ just come out there and uh like basically popped a cdn using it uh it's insane yeah collaboration with
+ him briefly on a target and i spent days on this thing and it was it was absolutely mental and it
+ didn't work but i still had a great time with it dude it's awesome that that was such a great write-up
+ on the chunk extensions like and and i love what he says you know in that post he's like you know nobody
+ sends this but all of them support it right like that's such a good area for research is if the http
+ server or you know try to more broadly apply this any anything processing data if there's you know a
+ very uncommonly used feature that is still implemented you know in that it's very likely everyone
+ implements it so what you're looking for is look at the ofc and find stuff where you're like i didn't
+ know that feature existed that's gold right there and that's the beauty of being a little bit more of
+ an experienced researcher as well you know he's like you know or at least an experienced hacker right
+ you know you're looking through all this stuff you you kind of know mostly the most of the ins and
+ outs of of you know the system how the web works that sort of thing and then you're like oh wait
+ i didn't know that that exists well probably most other people didn't know that exists either and
+ probably nobody's using it and probably that's where you should double click right and try to get a
+ little bit deeper um i did want to get your your take on this uh quote from uh yepy why cops wake i
+ guess is his handle um right up he put he um sort of quotes this law of robust computing uh postels law
+ it says be conservative in what you send in liberal and what you accept uh it's a disaster dude i was like
+ that's exactly what i thought you would say i was like this is like uh this is where james lives right
+ is that exactly where you live yeah i nearly when i was designing my slides for hb1 must die this year
+ i nearly titled a slide something like postals up but then i was like this is a bit mean
+ that's what i was going to do and i'm probably going to upset too many people by saying this so i didn't do
+ it but that's that's brilliant man yeah i i think when it when i see that quote it makes me so happy
+ i'm like yes so that's what we want beautiful um so we spent the most of the time already on this
+ podcast talking about just research methodology you know understanding how how to do research um now let's
+ get into some of the research itself i did want to oh geez i said earlier on the podcast it was 2017
+ the host header attack stuff you did was 2013 dude oh my gosh um that's amazing so i i guess i was going
+ back through some of this stuff and i think one in my personal experience of your research one of the
+ first things that i you know where you came on my radar was when you were doing a lot of these htp um
+ host header based attacks where you were using these as ssrfs you know sort of hit different backend servers
+ yes cracking the lens that was it um i thought that was an amazing technique and i know that you
+ uh it seemed to me like that was a little bit of um the first time that the community at large sort of
+ understood the dangers of reverse proxy based attack so is that sort of the same for you as well yeah
+ definitely basically at the time everyone preferred to pretend reverse proxies didn't exist right because
+ it was like oh cash poisoning this weird alien thing like no one understood anything in that regard
+ uh and it was yeah everyone was just scared of it basically yeah dude i think it's uh i think it's a
+ really cool attack type and as i was going through i um i pulled one of the payloads out and i just put it
+ in my notes here from your 2013 talk um it was host colon site.com colon at attacker.com and i just love
+ those that at syntax with the username and the password is just the gift that keeps on giving man like
+ like it's really really nice and i think that a lot of um parsers out there will you know see that
+ semicolon or i'm sorry the colon and think okay this is the beginning of the port segment
+ but really what and you would kind of think about parsing it that way but then as soon as you see the
+ at sign you're like okay wait wait go back you know this is this is actually the username and password
+ you know portion of the url so i just wanted to pull that out and and readdress it for the listeners um
+ um because i think that is some really that is a really cool technique that you brought to light there
+ thanks yeah it was good fun that research on is on doing password reset poisoning with with host header
+ attacks is probably is is the first major piece of research that i ever did uh and it it was actually
+ quite eye-opening for a super depressing uh reason which is so prior to this research i sort of looked
+ down on people that published at conferences because i was like the stuff's not that good they're just
+ promoting themselves like they should be spending that time doing research right i didn't have that much
+ respect for them and then i published that research and someone working at a company that i'm not gonna
+ name because i'm nice uh basically copy pasted that post like rephrased a teeny tiny bit and posted it on
+ their site and didn't link to that didn't link to my blog and now their website this is a big company they have
+ way better page rank than my site so they ranked higher on google like the next day and then
+ for a period of maybe like eight years basically everyone that talks about password reset poisoning
+ sites their post no dude and it was only when i made the host header attacks academy topic
+ uh that we finally got got actually decent decent ranking again for this technique so basically my
+ advice is if you're gonna do some research promote it as much as you can and if anyone tells you not to
+ do that say stuff you i'm gonna promote it anyway exactly you know the more eyes that get on it the
+ better and uh and it's better for the security community in general and well i mean obviously you
+ know we're here at the podcast is essentially doing that right helping helping people promote research
+ and helping the research get disseminated to the community absolutely like we had people getting
+ annoyed this year for publishing hp1 must die.com and if you read it they're mad at like like the curl the
+ curl guy yeah yeah post the angry tweet and they're annoyed because we're marketing the research but the
+ thing is if you look at their posts they're not understanding it because they don't understand the
+ context of the previous research on the topic and the reason they don't understand the previous
+ research on the topic is because we didn't market it so they didn't read it the only reason that
+ they're able to criticize us yeah is because they've actually seen this research for the first time so
+ to my mind well at least this time around they saw the research yeah that's a good lesson learned
+ there for the researchers definitely push it distribute it get it out to various sources because yeah
+ basically you will get flack for it but just ignore it yeah that's good hey take it from james right here
+ we we heard it here on the critical thinking podcast there's your uh there's your certificate of approval
+ to go and and register your domain name for your new uh vulnerability type um did did you have i i know
+ i'm just kind of throwing this question uh out of the blue so totally you know no i don't have anything
+ else on this is a perfectly valid answer but i was wondering if you had any any thoughts on you know
+ additional research in the host header realm i know that you did you utilize it in htv 1.1 this year
+ um you know with the hv sort of fingerprinting thing do you have any other leads or things you want
+ to sort of shout out to the community on that front uh i think if you told me to do cash poisoning
+ research right now uh i would look at using header smuggling to smuggle the host header
+ i do cash poisoning that way because you know with the with the dc we're going to talk about this later
+ but with the dc end game basically header smuggling doesn't always result in a in a dc so then you've got
+ to look at alternatives so it used to be if you could smuggle a header just cause a dc job done but
+ now yeah i think other approaches are are valuable and the host header like it's it's used everywhere
+ it's it's it's it's like the the it's the source that goes into like the most syncs yeah anywhere
+ right like there was a exploit for wordpress where you like do a password reset with the payload in the
+ host header and get code execution or something along those lines like it ends up every ends up absolutely
+ everywhere wow yeah and and i think a lot of the difficulty too with the reverse proxy architecture is
+ is obviously there's some you know foot guns with the whole host header thing and v hosting and that
+ sort of thing but i think you get a you lose a little bit of flexibility you know when this reverse
+ proxy is like very specifically looking for a specific host header but if you're if you're dealing with
+ direct access to the http server right and there's no intermediary then there's also a lot of weird
+ things you can do with that with the host header um that that will end up at very weird places
+ uh absolutely um let's sort of building on that i think we should talk about the the hvvh thing which
+ we'll we'll get to in a second so let's let's dive into http 1.1 must die the decent game the talk that
+ you gave at blackout this year i was there in the audience clapping screaming whistling um you know so
+ excellent excellent work man um can you give us a little bit of a recap well first let's set the stage
+ talk to us for you know 30 seconds a minute on what http request muggling is whole concept and then we'll
+ we'll dive into um specifically the research that you did this year on like 0.cl
+ um uh exploitation absolutely so hey http1 uh as you see it represented in a tool with like an isolated
+ request and response is basically a lie like it's an abstraction underneath the hood you've got a stream
+ of bytes and multiple hp requests are sent over a single stream and they just kind of wax one after
+ the other directly as a sequence of bytes and this is a problem because uh hp1 is a plaintext protocol
+ and as an attacker there's like maybe five different ways of specifying the length of a message which
+ means servers can get confused about where each message starts and stops so that means when you've
+ got a reverse proxy uh what reverse proxy generally do is they take requests from loads of different users
+ and they funnel them over a small shared pool of connections to the back end so if you can confuse
+ if you can get the front end and the back end to disagree about where each request stops and starts
+ basically you can append stuff to the start of other people's messages and generally cause
+ everything to go horrifically wrong uh for example the flagship technique uh is that hp1 has no built-in
+ way of matching requests to responses which means if you send a request that triggers two responses
+ the front end thinks it loses track of which response goes to who and it sends random responses
+ to all the users of the website which is absolute carnage and a very beautiful site every time yeah dude
+ uh frank what a beautiful attack and and how crazy is it to think about just from like a dataflow perspective
+ that when you're thinking about this reverse proxy architecture you know your request is right next to
+ you know somebody else's request on that on that in that tcp stream you know between the between the
+ the reverse proxy and the back end server you know and it's like that data is right there that's it is
+ is it's there and it's not well understood like when i originally did the request smuggling research
+ one of the people that i reported a vulnerability to responded by saying that's impossible
+ like then how did i give you a proof of concept like yeah we've recently published a tool called
+ http hacker uh like a burp suite extension which actually shows the underlying stream so if you want
+ to kind of get to grips with this uh that's quite useful because it will help you kind of understand
+ what is happening under the hood yeah i was looking into that a little bit uh beforehand and i was like
+ yeah this is good because i think that there's definitely you know like you said a lot of us are
+ using the sort of abstracted http like almost pseudo http layer that that we're using to just kind of hack
+ the applications right um so getting that lower level access where we're actually thinking about it as
+ a protocol built on top of tcp yeah i think is really really helpful stream like that's the cool concept
+ is hp1 is a stream um yeah um okay so that's the general you know concepts behind uh http desync request
+ muggling that sort of thing talk to us a little bit about uh hp 1.1 must die uh what kind of research
+ came out of that that talk this year absolutely so i decided to research request muggling because i was
+ like i can still see people finding these issues and i haven't had much sleep so i'll pick something
+ easy and uh i quickly realized that although kind of off the shelf tools like hp request smuggler at the
+ time weren't finding very much on like decently hardened bug bounty targets this was just because
+ loads of web application firewalls were doing things like blocking using regexes to block things with
+ transfer and coding headers and such like so and they were also fingerprinting the detection probes
+ that hp request muggle was sending so i thought okay what we need is a different approach like a
+ completely different approach to finding these vulnerabilities uh and i took a cool tech uh
+ technique pied by daniel thatcher uh in a presentation i can't remember the name of called hp header
+ smuggling or something like that practical hp header smuggling that's the one and i adapted it like
+ built a more powerful version which used more headers for fingerprinting and so on and basically what
+ it does is it detects the ability to hide a header from the front end or back end server which is the
+ kind of underlying primitive of maybe like 80 percent of request smuggling attacks and you can do that
+ reliably that's and that i think is when i was sitting in your talk this this year i was thinking you know
+ and i'll be real with you james like i'm not a huge um you know request smuggling exploitation guy
+ obviously i'm using kaido so you know there's not a lot i could do there with that but um you know
+ it's just not a big part of my my methodology and i totally respect the hackers at every live hacking
+ event you know that that show up with the request crazy request smuggling bug and pop these crazy crits
+ um but it's not something that's super duper on my radar and as i was listening to your talk i was
+ thinking you know wow um so much of request smuggling is it hinges on this whole concept of header smuggling
+ and the the thing that you you know showed with this is extremely applicable to things that are not
+ request smuggling as well the this whole header smuggling concept and there because there's so much
+ um you know data that is being stored in headers and sort of abstracted away uh in modern day
+ architectures so um i love i just wanted to highlight for the for the listener like this is very valuable
+ beyond request smuggling as well just understanding how this specifically works uh so that you can smuggle
+ you know headers that have authentication based values um you know all sorts of stuff into these
+ environments okay so that was my little my little thing there that can you talk a little bit
+ more about how you did that sort of um that tool to to delimit uh whether request can or headers can be
+ snuggled or not absolutely so it just sends a few probes uh it basically says i like to think of
+ research in terms of asking questions so i ask a question to myself and then i write a tool that asks the
+ question to the question to the target so what it does is it says it asks the question if i use a given
+ technique to hide a header when sending a request to a specific target do i see a unique response that i
+ cannot achieve uh simply by sending that header without hiding it or by hiding it like a different
+ unrelated header uh and by doing that basically it shows okay by hiding this header with this technique
+ you've hit a unique code path and then it uses a massive range of techniques and it uses a massive
+ range of detection headers too because for example some sites will give you a different response depending
+ on what the host header value is but some of them basically ignore it completely uh so it's good to
+ use a range of different headers uh but it's it's just for fingerprinting that's the point is like the
+ host header isn't being used for an attack it's just being used as a kind of a gadget to understand
+ what the target server is doing because you know a lot of stuff is and there are situations where
+ the host header is not relied upon very rare though you know um and so i think this is a really good way
+ that you demonstrated this you know essentially what you're doing is trying to smuggle the host header
+ most of the time right you're like adding a space you know you know adding these characters to it that
+ sort of thing um and then detecting how the various servers along the chain respond is that an accurate
+ part of the picture that's it i guess the key thing to understand like why the host header might not
+ work is i consistently make this mistake where i basically i underestimate how complex the target
+ is like however many proxies you think the target has there's always one or two more right wow and any
+ and there's special cases for everything right so if you smuggle the content length header oh they've
+ probably got a special case for that so or if you smuggle the host header actually like one of those
+ servers will be parsing the host header in a slightly different way because they want to get that data
+ earlier to work out which upstream back end that they're going to root it to or something like that
+ right so what the overall concept is you can't you're kind of trying to dial it back as much as possible to the absolute
+ foundation and then approach it from as many angles as possible to get this data about can i hide a header
+ or not yeah and i think in your presentation you represent it as hidden visible or visible hidden
+ right yeah that's how i classify it like is it the front end that sees this header or is it the back
+ end yeah now this is an abstraction there's probably 20 20 proxies in practice but yeah that's what i was
+ going to say it's like hidden hidden hidden hidden hidden hidden hidden visible you know like you know
+ why like when you write zero cl you know it's it's a lie it's like cl h2 zero zero cl right right right
+ you just gotta go what matters right and what matters is is the server in front or the server behind that
+ sees this header because that affects how you can exploit it yeah dude i frick i love your presentations
+ because it you know i'm learning about this very technical vulnerability but i'm also just how it's
+ helping me visualize and understand these architectures so much better and think about these from a threat
+ model perspective like okay front end hidden back end visible there's the mismatch right what can i what
+ can i do here and and i think um i was i messaged you recently because i was working on um a a product
+ and uh like one of the core principles of this software is like okay there are certain headers that
+ cannot be you know specified by the client right and they get cut out at the at the way you know at the
+ intermediary and they get resupplied because they contain authentication information right and i was like
+ this is and it was right after i saw your talk and i was like oh man this is exactly where i need to
+ apply this whole you know uh hidden visible thing because if i can get the front end to not perceive
+ this as the thing they need to strip out and then you know and that's where the the software is that i'm
+ attacking and then get the back end you know however many back ends there are back there because there's a
+ ton of different you know um softwares that were running on the back side of this this software to
+ perceive it then boom i've just got an auth bypass right absolutely it's it's super valuable uh if
+ you're interested in that area uh check out my research on timing attacks because basically the
+ single most valuable thing i found with that is a way to spot that you can use a reverse proxy to access
+ unintended internal systems and that's another way of avoiding the same thing because it's like the
+ intended front end will be stripping the author the auth header but if you go in via a different front
+ end you can dodge that header stripping and it's smuggle headers to that back end yeah a different
+ front end yeah header based authentication is uh like without proper secret keys is really quite scary
+ stuff yeah dude wow lots of cool applicable stuff there okay so hv um vh there's that component uh talk to
+ us a little bit more about the other pieces in http 1.1 must die specifically 0 cl and expect would be
+ great absolutely uh so when i run into a hv scenario where transfer and coding was blocked i was like
+ well how do i exploit this because if i smuggle a content length the front end doesn't see the content
+ length so it doesn't for the body so it never gets to the back end and the back end is waiting for this
+ body and the whole thing times out and the attack fails and that you can see well if it works that
+ will be called a zero cl desync and this is a situation that i previously kind of seen him in
+ like oh that's impossible that's that's never gonna work uh but while researching timing attacks i realize
+ that actually sometimes servers respond without waiting for the body and that breaks this deadlock it makes the attack
+ viable so basically if you find this you need to find a way to make this back end server respond early
+ on the target that i found this on this was a vdp and it wasn't even a vdp that lets you
+ like disclose reports to them so it was like super super low valuable in that respect
+ but it was what showed me this this scenario and the target was running iis and i found that on iis if you
+ hit a file name that corresponds to a windows device driver uh it gives you a response it says
+ the response code is 200 but the body says 404 not found and it responds early without waiting for the
+ body to arrive which breaks the deadlock and means you can exploit it
+ via a double d sync which took me a very long time yeah dude that's where you lost me in the in the
+ presentation like and and i went back and i you know listened to it again and i was like you
+ shit okay because i don't that it does get very very complicated there but essentially what what
+ you're doing there is using this exit this early exit sort of code path right with connection to make
+ it not wait for the remaining bytes that it's perceiving from the content length right yeah and then
+ and then that those extra bytes like that's where you lose me how does the d sync solve that the
+ double d sync solve that okay so basically zero cl by itself it lets you chop bytes off the start
+ of the next request because it's perceiving it as the body of the previous of the previous request
+ because it's specified by the content length which was not perceived by the front end server
+ right okay so it lets you chop data off and obviously chopping data off by itself
+ isn't great for an exploit because you need to add your exploit to the request so
+ what you this is where the double d sync comes in right so you ex you use the fact that you can chop
+ bytes off to send uh to chop data off the next request uh such that you like you chop the content length
+ off the next request and that way the next request is it but causes a zero of course there's a cl zero
+ d sync and you can inject the body basically something like that james what the frick dude how
+ do you i mean it's got to be i think you mentioned this in your talk but it's got to be really hard to
+ get those requests to align properly right so well uh the way i did it for the whole research was
+ yeah the servers are injecting headers which means the offsets are wrong and you have to brute force the
+ offsets and the offsets change when you give the attack to someone else like a triage or to replicate
+ oh no but i found a better way where by injecting in the headers uh the offset you don't need to
+ worry about the offsets so if you look at all my proof of concepts they've got like weird offsets and
+ stuff but that's because it was only later that i discovered there was a better much much easier way of
+ doing it uh so make sure you do it that way and don't just copy the approach i took in the proof of
+ concepts gotcha wow that's crazy dude i i just and you know while we're on the on the zero cl
+ you know topic i just wanted to say again like i just i gained so much respect for you as a researcher
+ man in that moment when you said and then i found slash con you know and and it and it it was always
+ there and i loved it and it i think you said it was an emotional moment for me i think it's what you
+ said in the presentation it it absolutely was because basically i used to be a pen tester and every time
+ i did a directory brute force on a target running is this slash con would show up and i'd be like
+ but i couldn't do anything with it by itself it's harmless and now you have caused lots of harm with
+ it james yeah over a decade later i was like it was literally the first thing that i tried dude that's
+ amazing um last topic on on uh http 1.1 must die expect header that that was crazy dude what what the
+ heck is going on with the expect header this one took me this one took me by surprise uh i started
+ using the expect header because i was trying to to detect what i wanted to do was detect that you could
+ do a zero cld sync with automation without having to successfully guess uh early response gadget
+ because uh you know that's like work i'd rather do manually because i might be finding novel gadgets
+ and stuff right and so i figured out you could use expect to do this but then when i started using
+ expect weird things started happening and then i got this message from uh from some other bounty hunters
+ like like sweetly medusa and bsyshop and they were they'd also noticed that expected made weird things
+ happen and then i realized that i actually published a payload using expect a few years ago in request
+ smuggler but for some reason either i just didn't bother testing it out myself and i just published it
+ or when i did test it for some reason it didn't find anything um but actually the expect header is
+ bonkers it's it's this thing of it's a thing it's in the rfc everyone supports it uh it adds a ton of
+ complexity if you try and implement it yourself in a proxy you'll discover how horrific it is yeah what
+ what does it even do what it does is it breaks sending a request into a two-part process in order to
+ save bandwidth so this so as a client you're meant to go i want to send a really big request and the server
+ goes oh that request is too big don't send it and then you stop before sending the body
+ okay or the or the server goes yeah that's fine and then you send the body
+ so it's absolutely bonkers because it like gets right into the heart of the hb1
+ state machine and the content length parsing and all of that stuff
+ and as you can see from the number of vulnerabilities found using it it basically breaks everything and no
+ no browsers support this curl is the only tool that supports this freaking curl our enemy you know
+ that uh that says you know oh this this is overhype that's hilarious that curl is the one that supports
+ it um indeed yeah i i love that you just kind of in your presentation you're like yeah just kind of
+ throwing spectator in there and sometimes it'll do stuff like i thought that was great yeah you know
+ it came out of nowhere this is a great area for further research yeah uh i didn't put much effort
+ into doing more research with it because just sending it by itself we just got absolutely flooded with
+ findings that's amazing dude what a what a crazy thing um all right that it should be 1.1 should be
+ dead we killed it it should be we need to kill it that's the message it's not dead but the community
+ working together we could kill it it really does need to die and it doesn't need to die on the front
+ end it needs to die in the back end between the reverse proxy and the you know origin server correct
+ yes right yeah um very cool so i guess did you have anything else you wanted to to comment on or
+ that you thought the community might might find um interesting from that talk obviously you know they
+ should go watch the talk themselves but as far as like tldrs go yeah i think well one other thing that
+ might be useful that i didn't really talk about in the talk because there was time uh is it surfaced
+ this uh it surfaced this interesting kind of difference in approaches when i work with these
+ other bounty hunters which is that i discovered the zero cl desic concept in a like a very kind of
+ methodological like theoretical manner like i always like okay i i can see what's happening
+ front end doesn't see the header back end sees the header how can i exploit this i'll do xyz right
+ so then i started working with these bounty hunters right on the expect thing but i'm not
+ telling them about zero cl desyncs right because i i don't really know these guys super well at this
+ point the trust isn't fully established i don't want it to leak right or my blackout goes in the bin
+ like the sample one um but then i could see the expect header was causing zero cl desyncs and they were
+ like we can't exploit this for any more than a dos and i'm kind of telling them like let's look at those
+ ones later dig a little deeper right like like like i can help you with these ones in a little bit
+ right and then eventually they find the one on i think it was git lab and the server happens to when it
+ instead of giving like a normal bad request response it actually tells you why it was a bad request so
+ it will say something like invalid header name and then print out like a fragment of the body or a
+ fragment of the status line so because they saw that they were able to figure out the same attack concept
+ but from a completely different angle basically if you throw crazy stuff basically servers will
+ actually give you the answer you don't always have to approach stuff from this theoretical understanding
+ like that's one way of finding things it's a valuable way but you could also find it the opposite
+ way and you'll find different things like both approaches are super super valuable that was something
+ that this research like really taught me that that definitely is yeah a very james like approach
+ to research here you know like as well you know like i i know that you like i was thinking through
+ this whole like slash con thing and apparently you thought of that and sprayed it out there um you
+ know and got the ais service to respond with it um but yeah i think trying to rely on on on getting
+ those hitting a lot of targets with the ideas and seeing which ones will actually give
+ you more information back um i i think that does i mean there's definitely pros and cons to that though
+ as i'm thinking through it i'm like you do have to parse through a lot of stuff you know i know you've
+ got your your data set of like you know 30 000 servers or whatever you normally throw stuff at
+ um but but i think you do need to sort of go through each one of those results very
+ granularly versus like setting up a specific environment but you do get such vast amount of uh you know you
+ you could never set up all of the things that they that these production servers have in place
+ no no like all those cdn issues you can't set up those cds like those these things are happening
+ inside their own systems yeah uh wow and they're like writing posts saying like well i don't understand
+ what's happening inside their systems and it's like but i'm still hacking them yeah so both approaches
+ like having the theoretical knowledge is really valuable but don't don't not try something just
+ because it's theoretically impossible basically you've got to be open open-minded to like you never
+ fully understand everything and you never will it's it's it's too complex you kind of got to be humble really
+ yeah absolutely so moving moving to like some more general request smuggling based questions you know
+ you say hdp 1.1 it's got to die and we should be using hdp2 for all you know um intermediary to
+ back-end communications and i'm wondering is hdp2 really the solution um because there's different
+ layers of abstraction to hdp request smuggling you know maybe the first layer is is you know getting
+ a header smuggling and then a disagreeing in you know where the where the hdp request ends or not
+ because of the you know smuggling of the the header um but sort of at the end of the day the bigger
+ principle is a mismatch and expectations between multiple servers in the chain and and i think that
+ my theory is that that will always exist no matter what protocol we're using because no um you know
+ hdp servers are going to completely agree on on how hdp2 even should be implemented so do you do you
+ anticipate that we'll see you know a good amount of of request smuggling-esque vulnerabilities in the
+ hdp2 realm as well once we switch to that on the back end so i think hp2 uh
+ virtually cures request smuggling and that's defining that's defining request smuggling
+ as i can send a request that influences the next request or a request from somebody else but that's
+ defining it as something that breaks request isolation right it basically fixes that because
+ there it removes all the ambiguity about where a request starts and stops because of length like because
+ like it's like tcp like i don't know what the last time that that like as like a massive like someone was
+ able to compromise 20 million websites because a tcp library yeah got confused about the length of a tcp
+ packet yeah i mean don't get me wrong i'm sure that how you that used to happen uh back in the day but
+ basically it is like you know the length of the message is from like the fourth byte to the eighth byte
+ that's it it's just those bytes how do you send two two lengths it's not possible to send two lengths how do you send an ambiguous message when it's just these bytes to these bytes like it's not possible to send two lengths how do you send an ambiguous message when it's just these bytes to these bytes
+ like you know maybe you can do an integer overflow or something if you're super lucky uh but you're talking about like basically memory corruption kind of bugs virtually like they're going to be rarer they're going to get spotted and patched out and as soon as stuff's reasonably hardened it's going to become really rare uh but as your point it's not going to fix things like header smuggling so ambiguous requests are still going to be
+ you know maybe you can do an integer overflow or something if you're super lucky uh but you're talking uh about like basically memory corruption kind of bugs virtually like they're going to be rarer they're going to get spotted and patched out and as soon as stuff's reasonably hardened
+ it's going to become really rare uh but as your point it's not going to fix things like header smuggling so ambiguous requests are still going to be useful for exploits
+ maybe you can do header smuggling maybe you can do cash poisoning those attack classes i think are
+ here to stay and will survive widespread use of hp of upstream hp2 and also hp2 is super complex and it's got crazy things like
+ hpack so the compression used in hp2 is stateful depending on the previous messages which is like why
+ yeah they've gone too far in the name of performance uh when doing that and the end and the end result is
+ some absolutely crazy bugs like there's a cv i don't think the actual full details are public but cv 2023
+ three two seven three one uh you can cause something almost like a desync using hpack
+ um oh my gosh dude so that's kind of not pretty uh so i definitely believe there are super cool bugs
+ in hp2 oh yeah yeah absolutely and i look forward to the time when i can actually justify doing a good
+ amount of research on it yeah i was i was um you know i asked you this question because i was i was at this
+ google live hacking event recently and um ben callus was there uh the guy that built http garden
+ and has been doing a bunch of like request smuggling you know stuff and i i love this guy this guy is
+ hilarious to me because like the first time i met him i was like oh this guy is interesting because he's
+ at this google live hacking event hacking something with print f and netcat you know like and i'm like
+ you're not going to use you know like burp or kaito or whatever and he's like gotta gotta control the
+ you know gotta control the bites and i'm like okay all right dude um so i was talking to him and he was
+ and i i asked him like some off question about uh the you know sort of similar concept header smuggling
+ he's like starts telling me about http2 and he's like do you mind if i like tell you a little bit
+ about http2 actually no he's he actually he let me know in advance he's like all right i'm gonna take
+ you down the rabbit hole you sure you want to do this right now and i was like it was close to the
+ end of the event sure and so the man whips out a presentation on http2 that he's like i'm gonna give
+ this talk at work next week and then he goes through the whole thing explaining to me like
+ all of the weird in http2 like you know there's like this this uh i'm gonna have on the pot so i'm not
+ even gonna try to explain it all but it is it is extremely nuanced and very weird how like you know
+ this this cache of like headers exists and like it's super weird um so i imagine there will be a good
+ amount of ambiguity you know in in various implementations across http2 as well yes yeah i think
+ ambiguity will be there uh crazy implementation bugs will be there uh well basically there's lots of cool
+ stuff for hackers there still it's just not it's just not like the absolute gold mine of compromise
+ of millions of websites with very little effort that is hdp 1.1 i i guess also i you know this um
+ i forget the technical term for this but you know http2 does the the you know message length thing
+ right where it's got these different cells and it says okay you know this is the length of the message
+ bloody bloody blah you see this a lot with binary protocols yeah um and i mean just kind of thinking
+ through it obviously i think this is a one of the things request modeling brought to light is that
+ the delimiter based system is broken and really you do you do need to move to this like sort of message
+ length yeah based thing would you say that that's true in general because so many i've seen so many
+ things pop up where protocols are are being exploited taking the principles of request smuggling and bring
+ it into sql into like all these other things yeah the delimiter like text-based protocols delimit is
+ definitely not good uh as that as that sql research that you you mentioned i believe it was called sql isn't
+ dead it was at defcon last yeah it was like 20 24 defcon yeah so it's super cool research and that that's
+ like for me that that's like the future of request smuggling basically that kind of thing uh it's
+ going to be that level of effort and it's going to be that kind of like relatively constrained in impact
+ compared to what we're doing right now but it's like yeah hell no you you can still achieve high
+ impact wait because if i remember correctly i think that that was integer based overflows right
+ affecting the message length right and then you know if you have some and then you know the message
+ gets kind of cut off and then the next part is perceived yeah it's chaos it's chaos it gets a lot more
+ with that research was like how much more difficult it was to get to an exploit right like with requests
+ with request monthly with h1 you get your d-sync and then it's just like easy rolling
+ whereas the amount of effort like there were some targets where he was able to
+ cause like the equivalent of a d-sync but still couldn't achieve much impact just because of
+ quirks about how the server was yeah and how the binary protocol is yeah the binary protocol is
+ built out you know yeah there's a lot it becomes a lot more like binary exploitation where you've
+ got to like spray and stuff like that it was yeah it was it was a beautiful talk but it man it gets
+ a lot more complex research yeah yeah um i guess you already you know you kind of shouted out hpack
+ is there anything else that that comes to mind as far as http2 goes of like that's sketchy that's
+ weird you know what and i don't want to make you give away your you know areas of research that you're
+ going to go after next time you you know deep dive http2 but is there anything else that kind of comes
+ to mind there uh there was one thing i saw was uh i didn't post a while ago on hb2 connection can
+ contamination where web browsers will if i remember correctly send requests intended for different
+ websites over a single connection because they think the front-end server can support all those different
+ websites uh which like uh like a v hosting thing yeah exactly so there's yeah there's definitely some
+ kind of broken and scary stuff in that area basically that's super why i wonder if they do it off of like
+ tls certificate or something yeah yeah exactly oh my gosh so if the site presents tls certs for two sites
+ and you try to connect to both sites they'll both get sent to that website and i think it will like
+ skip it won't even bother doing a dns lookup for the second website it doesn't care where that website
+ is because it knows it can talk to it here again it's this like they care so much about performance
+ that they're putting in things that uh from the security perspective just sound absolutely insane oh my
+ gosh yeah man i do we might have to cut this or whatever but i i think it that is super interesting
+ because you could like i'm thinking like uh like how can you get it routed to your site versus the the
+ other side if you're in like a v hosting environment and i was thinking yeah there's a lot of ambiguity
+ about the dot at the end of a domain name right you know like if you everything is like you know
+ www.google.com.really you know and so there's if you could register there's chaos oh my gosh dude i'm
+ sorry yeah that's that is crazy that's a very good shout out um okay marathon podcast episode i appreciate
+ it i do have one one last little section i wanted to hit which is um i would like to understand more
+ about http pipelining um and and where that's helpful and you did just release an episode or like
+ an article on uh http pipelining and i saw it uh this morning somehow i missed it when i was prepping
+ for this episode i was sitting in the hot tub this morning reading through our doc and i was like oh
+ shit look at this this is exactly what i was gonna ask um but can you give us maybe a little bit of
+ like a tldr on this on this article and help us understand you know what kind of scenarios http
+ pipelining can actually be be helpful to result in request smuggling or other types of vulnerabilities
+ absolutely uh this is a little bit tricky because it's a ridiculously nuanced topic so oh sorry sorry
+ james to put you on the spot there as we've already established hp 1.1 reuses connection by just putting
+ the requests back to back on a single stream right uh and that's called keep alive or connection reuse and
+ one kind of thing that's sort of a feature and sort of accidental sometimes not accidental sometimes is
+ what this means is you can send like three requests in one go or two requests in one go back to back
+ without waiting for the replies right and generally as you just interpret the replies in the order that
+ that they come back and it will work and that's called pipelining okay so it's not usually a
+ deliberate feature it's more like just because we use sockets and like underlying operating system
+ socket libraries just buffer things so the application layer might not even know that you're pipelining or
+ the server might not know that you're pipelining um but what that means so when you're doing request
+ modeling you're off you're often sending two requests in one go right you're kind of trying to do that
+ deliberately and if you do that if you take like burp repeater and put two requests
+ back to back and send them to a server that's like fast like send them to a static file on an nginx server
+ you will see two responses come back in the single repeater tab and it looks like oh my goodness i've
+ completely broken the server i must have found request smuggling but it's actually that's how http works
+ it doesn't actually indicate a vulnerability right so i guess what i would say is
+ most of this like that behavior is really common it's on nginx on static files by default so
+ most of the time that you see two responses in one i wouldn't say there's any evidence that there's
+ a vulnerability there right um and if you want to find request smuggling basically and have it
+ guaranteed make sure you're sending your requests over separate connections because if a request over one
+ connection is influencing one over a separate connection that proves completely this is like
+ proper request smuggling the problem is that that's not the end of the story which is that's not that
+ simple some front ends only reuse the connection to the back end if the connection to them was reused
+ so this means you have to reuse the connection to the front end in order to like find the vulnerability
+ okay oh geez and that's where that's why i called the post
+ beware the false false positive because it looks like a false positive but it might actually not be a false
+ positive right uh so in the post i share some strategies for how to identify this kind of request
+ smuggling vulnerability which i refer to as connection locked vulnerabilities and you can do
+ some funky stuff with timing and i made a custom action for burp suite that you can run and it will
+ try and tell you if it's pipelining or if it's a real vulnerability but it's still kind of guessing
+ so it won't be right a hundred percent of the time basically if you want to prove that you've got a
+ connection locked request smuggling you need to elicit a response from the server with the smuggle second
+ request that you cannot elicit directly that's that's the that's the truth because the power of the attack
+ is it lets you do things like like cash poisoning it lets you bypass front end header rewrites it lets
+ you send you know malformed host headers that might get blocked by the front end and so on so that's what
+ to start looking for if you see this behavior yeah yeah it's quite advanced that's kind of that's kind of
+ what i was thinking with this is like you know just thinking outside of request smuggling like can we use http
+ pipelining to bypass if things like getting headers stripped out or something like that you know is
+ something going to be looking at that tcp stream and be like oh yeah this is an http request that that's
+ allowed let the whole tcp stream through and then but that actually contains two http requests okay
+ so this is it's even more yes there's kind of two different things here uh what i was just talking about you
+ you you need a desync for that to work right like there is a desync it's just not a desync that's
+ exploitable to affect other connections but and yeah if you can do that you can bypass front end
+ security spoof headers do cool stuff but the attack that like if you just do pipelining like with like
+ normal hp requests on a server that doesn't have a desync well some servers do in fact treat the first
+ request on a given connection differently uh so i call this a connection state attack uh and one common one
+ like the the most common one that i've seen in the wild is called first request routing and basically
+ they look at your first request host header to see where which back end to send the request to and
+ then they send all the subsequent requests on that connection to the same packet so that's amazing for
+ doing host header that's a really good yeah it's nice smart james that's a good i'm going to release
+ the custom action that supports this in about a month's time but we have to add a feature to burp
+ suite to make it possible but it's on the way wow dude that's really cool um yeah i think that is a
+ really interesting way to approach this because the i knew that pipelining pipeline was just giving me
+ weird vibes like i'm sure that there's something that's just looking at a portion of the this the data
+ and then just sort of yeeting it all down into the same you know tcp connection and stream um so there
+ is what you're saying is that there definitely are servers that are looking at the first request in a
+ in a stream and making decisions based off of that yes yes generally if you want that attack that any
+ kind of weird attack to have the best chance of success put it on the second request on the
+ connection uh in practice that's super clunky right now but we're shipping an update just going
+ to fix that wow there's going to be button and you press the button and it sends your repeater request
+ but it smuggles it behind like a nice looking request that's that's pretty cool that is pretty sweet
+ um james this has been amazing man this has been a lot of really awesome information thank you so
+ much for coming on the pod did you have anything else you wanted to sort of shout out or mention
+ before we close uh no thanks it's been great to be on here yeah dude frick one of my favorite
+ episodes ever that gg dude gg good pod and that's a wrap on this episode of critical thinking thanks so
+ much for watching to the end y'all if you want more critical thinking content uh or if you want to
+ support the show head over to ctbb.show discord you can hop in the community there's lots of great
+ high-level hacking discussion happening there on top of master classes hack alongs exclusive content
+ and a full-time hunters guild if you're a full-time hunter it's a great time trust me i'll see you there

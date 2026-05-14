@@ -2,7 +2,7 @@
 title: DOMPurify processing-instruction bypass
 slug: dompurify-pi-bypass
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss, technique/sanitizer-bypass]
 inbound: []
 ---
@@ -51,6 +51,7 @@ Plus combination with permissive `data-*` (DOMPurify default):
 ## Seen in the wild
 - {date: 2024-03-28, target: undisclosed} — Ep 64.
 - {date: 2024-04-25, target: HTMX combo} — Ep 68.
+- {date: 2025-02-20, source: CT Ep 111} — Kevin Mizu deep-dive episode: PI bypass remains the canonical "mutation-via-attribute-context-break" primitive; the regex DOMPurify uses to block `<style>`, `<title>`, comment tags inside attribute values is the single load-bearing security control — "DOMPurify security solely relies on one regex being executed correctly."
 
 ## References
 - Critical Thinking Podcast Eps 64, 68

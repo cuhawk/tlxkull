@@ -1,0 +1,1075 @@
+Oh my gosh,
+France.
+Alright.
+Um.
+People are doing janky stuff.
+Yeah, I know.
+I love it.
+Are you kidding me?
+What?
+No.
+Yo, yo, yo, subcritical thinkers.
+We have a little bit of a different type of episode for you guys today.
+Okay.
+Um, and it all starts with a story.
+I was in Las Vegas and Mr. Franz Rosen himself comes up to me and says, Justin, I wish I could
+do a Swedish accent right now.
+I can't do a Swedish accent, but he says, Justin, I've got some amazing research that I want
+to share with you and I want you to put out on the pod.
+Um, and when Franz says that you say, absolutely.
+Let's go record an episode right now.
+And, uh, and so we did, and it was awesome and it totally blew my mind.
+I think you're really going to enjoy it, but it is a presentation.
+Um, and it's typically, typically on this pod, we try to keep things audio medium friendly,
+but this one might be the exception.
+You might want to head over to YouTube for this one so that you can see what's going on.
+Not to say that you won't be able to get the general concept from audio.
+And I think the general concept is also very valuable.
+Um, but if you're looking to see a little bit more of the details of the exploitation that he had,
+um, then you might see that better on YouTube.
+So, um, you can go to the YouTube channel at ctpb.show slash yt.
+It'll redirect you to the YouTube channel.
+Um, and then you should be able to see all of that there.
+Really great research.
+Um, definitely recommend it's those, uh, it's about those request IDs like X request ID headers, um, or X correlation ID headers that you see in the HTTP requests.
+Um, pretty much with every HTTP request to any major application.
+Um, and how those can allow you to inject way deep into all the pipelines, uh, of an application, because that request ID is used everywhere to correlate requests and actions that are being taken.
+Um, so very interesting research, kind of like a, like a dumb moment.
+Like why didn't I test for this?
+Um, so definitely, definitely some great content there.
+Um, I'm trying to think if there's any other announcements for today.
+Oh, um, we did launch the swag store this past week.
+
+So if you're, if you're watching this, which you should be, cause I already told you to be watching this, then you can see my CTBB t-shirt.
+Um, got some CTBB stuff on the back too.
+Um, there's a bunch of different designs on there.
+So if you want to get your hands on some of that, head over to CTBB.show, CTBB.show slash swag.
+I know that's a little hard to say CTBB.show slash swag.
+There we go.
+And, uh, you can check out that swag store that we got set up for you guys.
+Um, all right.
+I think that's it.
+Enjoy the episode with Franz.
+Uh, and yeah, it's crazy research.
+So get ready for your, your mind to be blown.
+All right.
+Peace.
+Cool.
+We're here in Vegas.
+Uh, Franz, Franz told me yesterday that there's going to be some research that was going to blow my mind.
+So we're going to cover that.
+And I also want to cover a little bit of this, uh, crazy bug bash event that we are, uh, that we've witnessed.
+Awesome.
+So, all right.
+So, so this camera, this might not blow your mind, but rather like, Oh shit.
+Why did I not think of that?
+Okay.
+Okay.
+So it's not like, I think when I present the title, so I did, I did a talk, uh, back in June on Midnight Sun, which is like a CTF in Stockholm.
+And when I presented there, I mean, it wasn't that many people.
+It was mostly the CTF people that was just busy.
+But so I presented this, uh, I hadn't presented it anywhere else and I haven't released the slides.
+So I wanted to do it with you and see your reaction.
+Just because I think I enjoy it so much.
+And the impact is, is quite nice as well.
+All right.
+Let's see it.
+So the title will be given away.
+Are you ready?
+I'm ready.
+I'm ready.
+I'm ready.
+Boom, boom.
+Boom.
+X correlation.
+Okay.
+Do you, what the heck is this?
+Do you, do you know what that is?
+I don't.
+Oh, whoa, whoa, whoa, whoa, whoa.
+Okay.
+Let's do it.
+This is fun.
+This is fun.
+So, so the talk is called X correlation injections.
+Okay.
+And the whole idea is to how to break service side contexts.
+Um, and what does that mean?
+Probably some form of injection injection.
+Okay.
+So we, the discussion here is going to be struggles, of course, request correlation.
+Now maybe it's.
+Oh, shh.
+And then service side Jason injections and out of band RCEs and blind doses.
+Okay.
+You ready?
+Oh my gosh, dude.
+Okay.
+First impression.
+What are you?
+The mind is spinning.
+Okay.
+No, no, no.
+Hit with it.
+Hit with it.
+Okay.
+Okay.
+This sounds super easy.
+It's going to sound super easy.
+It's going to sound super obvious.
+And this is, I'm going to talk about the happy path.
+Like we struggled with this for, for a long time.
+Uh, but, but this is like straight onto the, to the actual, you know, vulnerabilities.
+Um, and yeah, how to service side bugs, how to reach them deep.
+Okay.
+I mean, like, how do I, you know, look at the front end as a, as a, as a border or like
+the API that you're hitting, how can I reach deeper into your, into your infrastructure?
+Um, and one of those are expert.
+Okay.
+Dude, I've seen these so many freaking times, dude.
+I know.
+Okay.
+I, you know, X request ID, X correlation ID.
+They're everywhere.
+They're everywhere.
+They're customized.
+Some of them are, you know, named by the company that has them, et cetera.
+The whole idea with them is to correlate every single action happening down to sometimes queries
+to the database.
+Yeah.
+And the, the idea is to follow one thing.
+So you can get like a trace map.
+Right.
+You can get everything to, to say that, okay, this request failed in our microservice world.
+What type of things happen going down?
+So this is a, so how I understood this was originally a, essentially a introspection tool for the blue teams, right?
+Where it's like, okay, uh, here's this weird error that I'm seeing at the HTTP layer.
+Yes.
+Got the correlation ID and that correlation ID is, is attached to everything.
+Yes.
+Along that full stack.
+Yes.
+That occurs.
+Absolutely.
+Okay.
+The funny thing is when you say everything that includes the front end, which means that the front end.
+You mean the front end of the client client side.
+Oh really?
+Yeah.
+So the client side team.
+It's generated on the client side.
+Most of the time.
+But what this means is, what it means is that it, it is controllable by the, by the, by the,
+the client.
+Okay.
+Let's see.
+And there's no standard.
+So there's like a shit ton of, of, you know, requests, different, like different type of formats.
+Jeez.
+That's a lot of them.
+Is that, is that across all the different.
+Yeah.
+So this is just examples, right?
+So company name, like they will have, you know, whatever.
+Yeah.
+Whatever company.
+So, but yeah, these are just some of them that I, that I've witnessed.
+And looking at them from a, you know, blank perspective, not knowing the company that you're
+targeting, you need to like figure out what type of, like header it's actually being used
+for the correlation.
+Okay.
+And one, one way to look at it is looking at the responses.
+And they might serve you a unique correlation ID just because you made a request.
+And another one is like, you can see it in the, in the access control headers.
+So you can see like, okay, we allow these certain headers and one of them being the, the,
+or in this case transaction ID, but they could be named.
+And that's typically in those scenarios where you're dealing with a cross-ordinary API.
+Oh yeah, absolutely.
+Yeah.
+And so, so these access allow headers are perfect for like understanding what type of headers
+do they actually need to work from the front end side or client side.
+That's solid.
+Yeah.
+Yeah.
+And another one is like, this is the perfect thing.
+Like as soon as you see reflection, especially with, when you don't have like a validated format,
+in this case, like whatever, this is like gold.
+Okay.
+Uh, and it doesn't necessarily mean that you will hit gold on every single request.
+Mm-hmm.
+It means that this will follow at some, you know, if you find some obscure, you're, you're doing a lot of payment things.
+Yeah.
+Yeah.
+Oh yeah.
+This is, this is the place, uh, because there will be SSH keys, signing credit cards and there it's, it's kind of.
+I've definitely seen this sort of thing before.
+And I'm not sure if we're going to release this on audio, whether we're just going to do it on YouTube,
+if there's visual component.
+Yeah.
+Yeah.
+But, um, the service transaction ID, uh, that he has included here on the request side, right?
+As a, as an HTTP header is also being reflected in the response with the exact text.
+So there's no UID validation.
+There's nothing like that.
+Exactly.
+And this gives you a lot of flexibility.
+Absolutely.
+Yeah.
+Absolutely.
+And this, this, this tells me that this has gone, you know, in the backend and behaved as this is our request ID.
+And we will keep this request ID and we will also reflect it back to you.
+Um, yeah.
+I know.
+Shit.
+I've seen this.
+I've seen this many times.
+Of course.
+Yeah.
+Now what?
+So what I did is I start fast.
+I removed the existing one and then I just put in, you know, a lot of shit characters, but we don't know where we're going to end up.
+Right.
+We don't know what context.
+We could be in SQL.
+We could be in file system.
+We could be in, uh, you know, a command.
+We could be in, you know, whatever.
+We don't know, uh, event, uh, Jason, whatever.
+So we need multiple tactics.
+We need to figure out, be smart when the fussy, in the fussy, so we can figure out some parts at least.
+And one, one way is trigger errors.
+Basically like you put in a lot of, you know, crazy characters all over the place.
+Uh, and then, uh, are you just doing like an ASCII fuzz list?
+Like I have like all of the ASCII characters URL encoded and then I'll apply like a URL decoder.
+Or, or I do, I, I basically do these.
+Do you literally just type this for us?
+No, no, no.
+I do, I do like a single quote, double quote, percentage sign, like all of these things where if that one, like a percentage sign, for example, if that one triggers an error, it could be two things.
+It could be like screen def or it could be a URL.
+Yeah.
+Yeah.
+Those, those are basically, and for example, if a person breaks, it could be an XML context.
+Uh, there could be, uh, also URL, um, and similar things with like the dollar sign, parentheses or, or curly braces.
+Then, then, then you're, you know, but yeah.
+Dude, this is, this is one of the takeaways for me from this event, just from some of the life hacking stuff in Vegas was like, I need to do more fuzzing like this.
+Yeah.
+An, an, an identification of what data is being passed through web context.
+Yes.
+Because there were a couple of freaking bugs.
+Like this is time where they were just literally straight up back to command injection.
+Jesus.
+And I was like, oh, no, but figure out the context is like, what's it?
+It's like struggling or true.
+Yeah.
+So what I tend to do is I tend to put this in the request.
+And then I go on and do manual testing about, you know, API paths.
+I always make sure that we're passive inside, you know, keeping it there.
+That's why you had it in the match and replace.
+Yes.
+So then, then I can, this can happen.
+So I can, I can work for an hour or two hours or whatever.
+And then I go back and like, I had a 500.
+What, what, what is the 500?
+Why did that happen?
+Why are you doing this to me, man?
+This is, this is, of course, this is what you guys do.
+Of course.
+And then this is the fun part.
+Because there might be additional, like logging specific to some of these endpoints.
+Yeah.
+I mean, I get excited about this because like, I have not, you know, made this at all.
+Like this is, this is, this is, this is the, the, the, we talked about before, about like, I'm talking about things that I got bored with.
+Yeah.
+So then I present it.
+Yeah.
+But the funny part is that like, you can talk about, I'm leaving the crumbs.
+But this is like fucking huge.
+Oh my gosh.
+This is a fucking pie.
+I'm leaving.
+This is.
+Yeah.
+So it would actually be interesting.
+I'm sorry, I'm going to let you continue.
+But it would be interesting also to have sort of like an, I'm thinking like an authorized sort of approach here.
+Absolutely.
+Where you have it auto repeating every one of the requests.
+Yes.
+You differentiate them.
+A differential between the status codes.
+Then you know that that was caused by.
+Absolutely.
+I agree.
+Absolutely.
+And like, of course there's going to be false positives.
+One of them like GCP, for example, not all over the place, I guess, but most of the time on Google platform or cloud platform, they actually validate what you send in.
+And just, just the pattern and making sure that it's like a UUID.
+Strong regex matching, man.
+It solves a lot of problems.
+Yeah.
+For sure.
+Another one is like, I've seen this a lot, like they actually made a border.
+So the request ID is created on the first, you know, load balancer or whatever.
+And then internally you can, it can be, you know, sent over and stuff, but on the first kind of, you know, entry points, no.
+So that is also common.
+And those are kind of false positives.
+Well, but that's the interesting part.
+So let's say you have, as I showed you here, like you have a bunch and then that one says no.
+Right.
+And then that is still interesting because then you know that there's another system not allowing that thing to be happening.
+So it's still, it's still, these are still like super interesting.
+Yeah.
+Okay.
+We had no idea what we were doing at first.
+It was just breaking and we were like, where are we?
+We're probably in a path or whatever.
+Hmm.
+But then we kind of, you know, let's, let's, let's just go through what we found.
+Okay.
+Because these are the fun part.
+Let's get to it.
+Okay.
+First, Path Traverse Orbiter's Fire.
+Oh no.
+And this one, I love this one.
+So yeah.
+Yeah.
+Continue.
+Go ahead.
+So the whole idea here, there was, if you sent request ID, one, two, three, four, four, blah, blah, blah.
+It would write it to trace data in the temp file.
+Important part, it would contain itself.
+So the request ID was also the file path also inside the JSON that was written.
+Okay.
+That's great.
+So you've got, you've got control of the path and some of the content.
+Exactly.
+It was the same.
+It was the same.
+Yeah.
+Or like it was a bunch of metrics in it, but the request ID that you sent in also.
+But Path Traverse basically wrote, if you did dot dot, like temp data dot dot slash and then
+back to temp data, it would, it would write the path traverse obviously.
+It just took the value and wrote it.
+And did you just reinforce this or, or did you have access to some errors?
+Errors.
+We had access to errors.
+Okay.
+So what we could do is like, we could go down outside of the temp folder into the web folder,
+put the PHP code as the file name.
+100% file.
+It would then write to trace data in TMP, do the path traverse, which basically meant that
+if you had this PHP file, you would have the path traverse, but you would have the PHP code.
+Meaning when you went to this actual URL with the tags, you actually got it.
+No way.
+You've got to be kidding me.
+It's amazing.
+I can't believe they're dumping everything into temp like that.
+Like, are they going to leave it afterwards?
+Is it like a race condition or something?
+Yeah.
+They, they have like workers that dump this data into the temp and then they have something
+picking it up from the temp folder and then sending it as soon as it.
+Okay.
+So they, so the, the script itself doesn't need to connect to a logging thing.
+They just need to dump a file in the tree.
+Yeah.
+So that's why.
+So, uh, you have to use this.
+I love that it's that it's piled in too.
+Yeah, yeah, yeah, yeah.
+Exactly.
+It's like, it's perfect.
+Another thing we found was a header injection.
+Okay.
+Which is basically you, we provide, they will URL decode the header when they actually did
+something with it.
+So we had like a client side request, added our request ID.
+It went into an API proxy.
+We injected a header there because the URL decoded the header and then the backend service basically.
+So in this case, we're supposed to see account one, two, three, and just because the request
+ID was above, uh, it will always take the first header with that name to get two of them.
+So then you can inject another account and then you're getting their data instead.
+That's nuts.
+Um, did you try like, uh, request splitting there?
+I guess, uh, it's kind of like response splitting, but.
+Yeah.
+Did you try like smuggling in another request?
+Cause I feel like you could almost do DC.
+Absolutely.
+Um, you can absolutely do this, uh, but no.
+You just got, I mean, you got, I mean, yeah, exactly.
+But you're a hundred percent right.
+Yeah.
+The, the thing we could add, yeah, we could probably repose.
+Go for it.
+Seriously.
+Get that target afterwards.
+Absolutely.
+Yeah.
+Another one was, uh, Java.
+So, uh, Suresh Dalili made, uh, one, yeah, Suresh made a per awesome tweet back in like, like four years ago.
+And basically he says that like, if you have 010d, uh, in Java sometimes that will actually turn into, you know, 0000d, 0000a.
+Um, and, or, or 010d turns into 0000d.
+Uh, which basically means that you can send in C4 8b, C4 8a and it will be a new line.
+And parsed by Java.
+Dude.
+I, I've seen this also, this came in handy really recently with, um, with a JavaScript attack that I was doing.
+Cause there's a similar weird, uh, Unicode sequence in, in JavaScript.
+It's a percent or it's a Unicode code point 2028.
+Yeah.
+We'll just drop a new line.
+So I love or something.
+What is it?
+Is it paragraph separator?
+Yeah.
+Something like that.
+Yeah.
+I love that.
+These work in all these various languages.
+We need to create like a list of these.
+Absolutely.
+Depending on the context.
+There's a lot of words.
+There's a lot of them.
+Yeah.
+And he, he gives some other examples.
+I told Eric.
+Oh, look.
+Yeah.
+That was right there.
+Yeah.
+Oh yeah.
+Sarish jumps in as well.
+Yeah.
+It's awesome.
+Um, another thing is playing with a simple poet.
+Dude, where did you, where, where are you finding all these?
+Oh, my gosh.
+Frauds.
+Um.
+People are doing janky stuff with.
+Yeah.
+I know.
+I love it.
+Are you kidding me?
+What?
+No.
+Dude.
+This is like.
+It's amazing.
+Oh my gosh.
+This is like.
+It's amazing.
+Oh my gosh.
+This is like that, that, uh, Ruby thing that happened a couple of years ago with the user
+agent where you could just literally put a command injection payload in the user agent.
+This was, this was Matthias by the way.
+So I'm not taking press points.
+Freaking Matthias.
+Because I'm like, who, no, no, no, no freaking way.
+Dude.
+That's insane.
+Yeah.
+Another one really interesting.
+Yeah.
+This one I'm interested in.
+Yeah.
+No.
+And, and this is a subject by itself.
+Yeah.
+And this is like, as the JSON injection is under appreciated, under explained, and it's
+freaking everywhere.
+Yeah.
+And for some reason I've started to assume that like Java apps or platforms, they have
+a really hard time, you know, creating JSON properly without, you know, modeling.
+Like if you just want to do a plain JSON, it's actually pretty tricky in Java to do.
+Like the easiest way to do it is to have like a, an object that you have like a serialized
+version of being the JSON.
+Yeah.
+It's like go where they have to have like the, the actual JSON object model.
+Yeah.
+The structure.
+Yeah.
+So if you just want to make like a simple JSON, it's actually like the easiest way is
+to stream concatenate that shit.
+No.
+Yeah.
+Absolutely.
+Like that it's, it's like, it's a, you need to do so much things.
+Like if you just want to add a property, you need to add it to the model.
+You need to make sure it's, you know, getting, but instead of like, oh, it's so easy.
+So specifically for job applications.
+I've just seen it more.
+I've seen it more.
+But Jason injection, the whole concept of this is that we're actually sending in, being
+a part of the JSON, escaping the property you're in, adding our own property and then
+coming back.
+So in this thing, we're actually going down a level and then adding a new property and going
+up a level again.
+And every time you do that and you don't know the same property here, you might get
+like this property doesn't exist.
+So then you're getting an Oracle of what property you were in from the start.
+So, so, and I mean, I, I, this is, I, I've been doing a lot with Jason and I'm, I'm, I'm,
+we're, we're coming to it.
+I'm so excited about it.
+It's so much fun.
+So the whole idea is basically client, client request may add the request ID.
+Sometimes in the proxy in between or whatever, it inserts the request ID into a stream concatenation.
+Yeah.
+I bet that would also be really common in the scenario where they're, they're passing that
+as a JSON blob from like the proxy on the front.
+Okay.
+Wow.
+So, and then back into the backend server.
+So from, for example, one, one example here is that we, the regular is sending a payload
+with the account and then having a side, side property called context.
+But we then go out of context, put our own payload and then tries to figure out that it's
+an account in there.
+And then, you know, in JSON, the last one is the one that's going to, unless you're having,
+you know, a property check, you're making sure there's a bunch of libraries that actually
+like, oh, you have double property.
+But, but in this sense, they will just overwrite it and payload will now be four, five, six,
+instead of one, two, three.
+Yeah.
+You will see there as well.
+JQ is just writing it over.
+And yeah.
+So a quick how to on this is super easy.
+Like difference between double quotes, backslash double quotes is a very good indicator just
+because in JSON, the backslash will always be like an escaper.
+And, and you also need to figure out where you are in the context and the context could
+be literally like, this is just one of my example lists of figuring out, like, are you,
+can you go two levels?
+Can you go one level up?
+Can you go like, where can you go?
+Are properties allowed?
+Are properties not allowed?
+So in, in my fuzzing, this is not all of them, but it's a, it's a concept.
+So here you can see like, okay, now I mean, a property name that is, oh, that one should
+never work.
+Whatever.
+And so here I'm in the property name.
+Right.
+And I can add new properties and I can have shine properties.
+But yeah.
+And then, and then you're also in, in, so it's here, here you're in a list.
+Yeah.
+Here you're in a list.
+Exactly.
+Exactly.
+And you can apply the property.
+And then you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+you can, you can, you can, you can, you can, you can, you can, you can, you can, you can,
+okay, okay, I see, yeah, because I, in this scenario, I would think, okay, we want to try to comment out the rest of it, which,
+no, you can't, you will, sometimes, sometimes, you can garbage after, yeah, but then it's super easy, so then you have, you have some of them that is just closing it, you know, curly braces, square braces, multiple of them, but because then, then you can do, and, remember, remember Flash XSS back in the day?
+Dude, barely, that was before my brain.
+Externally interface call?
+Yes, yes, I remember that, yes.
+So, do you remember how to exploit external interface call?
+Yeah, it was, it was, you're breaking out of an object.
+Yes, yeah, yeah, yeah.
+And this is, this is like bringing back some, some very fond memories of like, is it a curly brace now? Or a square? You know, I really need to figure it out.
+And then it ends with like, sometimes you've been so deep, and you are allowed to have garbage, so we escape, like curly, curly, curly, square, square, curly, square, curly, square, and then you're like, ta-da, ta-da!
+And then you're getting an error, like missing property XYZ, and then you're trying to understand what level you want to.
+Yeah, I really, the, this scenario is really, it's important to have proposed errors in these scenarios, because otherwise you're really just.
+But we've seen, we've been, you know, completely black boxing this.
+Having read it.
+And word listed.
+And then, then context.
+Okay, but just because you think.
+No, no, no, but context aware word list, like curating it based on, you know, documentation, their API, their JavaScript files, all of these, like creating this word, and also the casing of the words.
+So, everything is, you know, the regular parameters, keep it as casing or snake case or whatever.
+So, so like, I've been, I've been creating curated word list that could be, you know, 200,000 rows.
+Oh my gosh.
+And then, if you're doing it with like alternative options and spaces, or is it account underscore ID or account ID or account hyphen ID.
+Like there's, it's possible.
+And you can do it step by step.
+That's the beautiful thing.
+Because you might, you know, see that one property is behaving differently.
+And then, you know, that property is there.
+It still won't work, but that error doesn't show up anymore.
+Like, dude, this is, this is one of those, this is one of those things that I can see you get so energized about.
+Yes.
+And I, and it's super exciting for me too.
+But this is definitely the area where I need to grow as a hacker in this like black box.
+Oh yes.
+Like really, really, really deep.
+Yeah.
+Sort of.
+Yeah.
+And I know Sam Curry also has just sort of this sort of like sixth sense.
+And I know.
+Yeah.
+I remember collabing together at the, at the event in Portugal.
+Yeah.
+Just seeing you guess, freaking paths.
+Like just from intuition, it was like, what is going on?
+But it's similar.
+This is really cool.
+Yeah.
+And you need to understand like, what, what, what are they doing?
+Like, okay, we're setting a request ID.
+And we're probably, you know, on the sides of the, it's never going to be, you know, in the middle of the context.
+Request ID is either something that you think is really important from the start, or something that we need to have just because of logging in the app.
+So it's like, you're always on the sides and you need to figure out, can I, I cannot believe that I didn't think to look into this earlier.
+Because of course logging is going to have a bunch of weird pipelines.
+Absolutely.
+Right.
+Yeah.
+Yeah.
+And deep, deep, deep, deep.
+And yeah, here's some examples.
+There you can look at premature ending, what you're talking about.
+And if you know that premature ending works, then you're able to like, to fuzz a lot easier.
+And also, but you know, because it's, you know, JavaScript object notation, right?
+Yeah.
+It also sometimes, according to that research, I want to say it was Bishop Fox that released a while back.
+Yeah.
+You're able to actually use a JSON or a JavaScript comment in some scenarios.
+Oh, yeah, yeah, yeah.
+In JSON injection.
+Java has, they have like loose parsing.
+Yeah.
+But some, yeah, you're right.
+Some of that is also loose parsing.
+There's that large condition and then there's also the large condition of, I need to be able to not end that comment.
+I need to be able to leave it undone to try to get the end.
+Yeah, exactly.
+I think that's probably a pretty rare scenario, but definitely worth adding to the word list.
+Absolutely.
+Absolutely.
+And also duplicate properties.
+That could be one of the hardest.
+Some of them freak out about that.
+Yeah, absolutely.
+And you can see, so, but one example is like, if you have multiple injection points, you can shuffle the first property.
+Depending on where you are, you can shuffle it one level down and then you can come back on the level that you were.
+Ah.
+Because it's in here that you want to override it.
+Gotcha.
+So you can go, instead of going down and up, you can go up and down.
+If they have a strict schema, you're screwed anyway.
+Yes.
+So this should always work pretty much.
+Yeah.
+And if they have a strict schema, you need to find a property putting in there that you can actually, you know.
+But sometimes you're in a property object where you are loose with whatever properties.
+And then this is a perfect thing because then you can like shuffle something depending on where you are in the injection.
+So yeah, if you have request ID and the ID's there and you have an injection number two, you can literally push ID into its own object and then override the ID afterwards.
+Yeah.
+That's the concept.
+Have you seen multiple injections into the same objects like that?
+Absolutely.
+Yeah, 100%.
+Oh my gosh.
+So that is not a rare occurrence.
+This is another, man, I'm glad you mentioned this now because I'm going to do, at the talk I'm doing for Defcon, I'm going to mention some uses of match and replace.
+And this is a great one to like start essentially fuzz across all the functionality, different uses of these sort of headers.
+Absolutely.
+Wow.
+And then we have S3 uploads policies.
+Of course, we're going back to S3 uploads policies.
+The funny thing was, I talked with Matthias about this like S3 uploads, I did, you know, did you do the conditions with largely?
+And he was like, I've done a talk about it.
+I did it on Airbnb 10 years.
+Yeah.
+And I'm like, what?
+So, and he like sent me a link.
+Like, yeah, we talked exactly about the same thing.
+So small, small here, but here's a regular upload policy.
+Yeah.
+We have expiration conditions and yeah, that's basically what you have.
+Conditions is like an array with properties.
+Yeah.
+And we basically injected in one of these, they were constructing this JSON as a string combination.
+So we injected our own object in there and added our own properties.
+The funny thing with S3 is that you can't add anything else than expiration conditions.
+But if you add another conditions with capital C, it will allow it, but ignore it.
+So you can, you can push, if you can inject into an S3 policy, you can push everything into capital C conditions properties or array and they will ignore them.
+So it's like, so you can write your own policy.
+So it's like, so you can write your own policy.
+So it's like, Temi's strongly typed, but it's, it's taking this, wow.
+Yeah.
+That's a crazy find in front.
+Yes.
+It's, I love that both me and my first found it.
+Yeah.
+It was like, we both tested it and it is, I love that.
+And JWT.
+Team Sweden for you.
+JWT.
+This is, this is the fun.
+I love this one.
+Basically, if you're able to get the, so now I'm not talking about Request ID only.
+I'm talking about ways of like, this opens up so many other options.
+Custom centers.
+Absolutely.
+Yeah.
+Yeah.
+Or like you're using it.
+I'm not kidding.
+It could be so, there's so many things with Jason injection that is still out there waiting
+to be found.
+So this is, this sounds like, you know, going to OWASP kind of, but this actually works like
+this happens for sure.
+And, and yeah.
+Okay.
+That, that is JWT.
+I feel like, I feel like I haven't seen as many, well, maybe I just haven't, haven't
+run across them, but, uh, scenarios where Jason is being generated by a streaming cat
+nation.
+You, you, you, you, you're telling me that this is everywhere.
+Yeah.
+You will not believe how much, and think about it.
+You have a JWT, you have like, ISS, blah, blah, blah.
+Some people just want to, you know, sign their properties because there's another, there's
+another system in their micro architecture that wants these specific specified, but you're
+maybe writing in Java and it's validated by no.
+Compatibility.
+So they're like, okay, I just want to write these properties.
+Especially in microservice.
+Yeah, exactly.
+So it happens more than you think.
+Wow.
+And, and also like systems where XML is like more common, but they're moved over to JSON.
+They, like, you can see all those sorts of scenarios.
+What's the read on the age of system that this is occurring in?
+Like, is it, is it like.
+I wouldn't say it's like the newest systems.
+Right.
+So, but that doesn't necessarily mean that new systems are still touched by the authorization
+system.
+That's even worse almost.
+Mm-hmm.
+Some of the times you can have like, I've had like, if I sent backslash you in the request
+ID and it had showed up in the JWT, that one has been like de-escaped again because it's
+like, that's parsed by something.
+And so that is one scenario where.
+Interesting.
+That's a good idea.
+Where you just passed it multiple levels.
+And at some point.
+There's some sort of decoding.
+The backslash you will still be decoding.
+Yeah.
+So in those scenarios I've seen it more.
+Yeah.
+And actually, this is interesting.
+One of the things that I always do is I often end my payloads in backslash just in case somewhere
+along the thing.
+Yeah.
+Perfect.
+It's not, you know, escaped specifically and will cause an escape.
+Yeah.
+So that could also be a play for you.
+You can absolutely show.
+And that's a perfect thing.
+Like SQL injection, for example.
+Sure.
+You will get an error just because you didn't escape the rest or you sent escape and it was
+not.
+And that doesn't always necessarily mean it's vulnerable because at the end of the day,
+you know.
+No.
+You might not be able to actually do anything with it.
+Yeah.
+You might actually escape, you know, the single quote might turn into, you know, getting
+Those scenarios are super frustrating.
+Yeah.
+Yeah.
+Because you can trigger an error, an escaping error, but then you can't actually do anything.
+You can't do anything.
+Yeah.
+Yeah.
+So, basically, I have, I can't see the errors.
+It's happening, you know, way down the line.
+So I won't see if the error is going to get triggered or not.
+And it's out of bound triggers.
+We need out of bound triggers.
+Oh my gosh.
+What do we have for out of bound triggers?
+You're clapping right in front of the mic.
+Yeah.
+I'm so sorry.
+Sorry.
+Sorry.
+So we have, we have blind XSS, obviously, right?
+We have out of bound RC, blind RC.
+What is blind RC?
+Did you say?
+I don't know.
+Yeah.
+We have a sequence.
+And we have log4shell or make up.
+Log4shell.
+Yeah.
+That's probably.
+Last year.
+With this.
+Like, just on a payment flow.
+Just because the old payment system was, you know, nobody wants to touch it.
+Yeah.
+Exactly.
+Make your own adventure as well.
+So what we found.
+Log4shell.
+Yeah.
+That's what I'm saying.
+Like literally, you know, request ID.
+Here's the payload.
+And so on this one, you probably just injected a, this dollar sign opened Chrome braces.
+Yes.
+And then it aired out in some way?
+Or did you actually just put this payload in there?
+Yeah, just put it.
+No, I mean, the payment went through, but it still tried to do that.
+It was some logging of the.
+I guess, I guess in log4shell, it wouldn't actually trigger any error.
+Exactly.
+Just.
+You gotta try this.
+Yeah.
+Okay.
+And out of NRC.
+And that was basically like, this was a case similar to what we showed before, but it
+would never trigger, you know, it didn't trigger an error or whatever.
+And you actually.
+I see these sort of things, man, and it just tilts me.
+Yeah, yeah, yeah.
+It's scary.
+It's scary that you have like, you have 25 characters that you can type on a request and
+you will have a shell on a, you know, large company.
+That's fucking, that scares the shit out.
+That's terrifying.
+Yeah, I don't know.
+And you said this is 240 minutes later.
+Yeah.
+So there's like a, like there's some sort of additional processing.
+It's probably a logging, logging mechanism that is, or a pipeline or whatever that just
+like takes all these and has the request ID as a part of the.
+Yeah, man.
+And blind access is going to be huge here too, because of course that is going to be the thing
+that is showing up in these.
+Trace logs.
+Yeah, exactly.
+And they might have, you know, built their own kind of trace logs, etc.
+That's nuts.
+And of course, but here's the fun one.
+This is fun.
+Okay.
+So we need to optimize the blind RC because it needs to support multiple contexts.
+And we still want the request.
+We still want, you know, we want to know where it happens and why, etc.
+So we want as few special characters as possible.
+We don't want, you know, very common things.
+Like for example, we still want to support all these different, like, can we inject inside
+these, you know, what do you call them?
+The backticks.
+Backticks.
+Yeah.
+And then you have single quote, double quote, and also claim, you know, being inside the
+regular bash or whatever, inside the shell.
+And we need to collect data so we know where we are, like the context.
+So same, same as BlindXSS, we need to figure out where, why did it happen?
+Where are we?
+What can we do here?
+And here's a perfect example of a WAF block.
+One WAF block is literally IFS, you know, the field separator.
+And you have curly braces around it.
+That will be blocked as hell.
+But without curly braces involved.
+I don't, this is always how you see it with the curly braces.
+I don't even know that you could do it that way.
+No, no, no.
+That makes sense.
+Absolutely.
+But the problem is you can't put, the reason why you want curly braces is because that's
+a separate the same.
+This is the variable.
+So you can't, you can't do the domain after because then it will be concatenated.
+But I'm coming to it.
+You need to avoid spaces as well.
+Here's one of my, one of the, one of the payload that works best.
+Oh, the add sign.
+Oh my God.
+The add sign basically becomes a separator for the, the file, the field separator, but then
+just sends it to your, is it just an empty?
+Yeah.
+The empty user, um, Oh my gosh.
+Uh, and this, this is just two examples.
+Like I tend to come, come, come catenate these two because then you can escape single quote.
+You can be inside double quote.
+The, the back text will work.
+Uh, if, if, uh, you're, you know, straight into curl, this one, our state is straight into,
+uh, into the shell, this one, this one will work.
+So they, they compliment each other and then you, you get like a really good coverage of
+Wow.
+That's, that's a good payload.
+That's a really good payload.
+Uh, so it's so good that I wanted to have like unique payloads.
+Uh, every time I send them collaborator, collaborator, everywhere.
+So I made a performance generator where it's like, it saves payloads.
+Uh, and just so you can have a prefix and they will just like increment the numbers, save
+a date for that one.
+So you can literally like, I will pay load for a wallet and it will wallet one and two
+and payload wallet and then three or four.
+And you can just like have this and it puts it into your, um, uh, clipboard.
+Yeah.
+Wow.
+So you can just like payload bound, insert that, payload bound.
+That's solid.
+Um, and then, uh, yeah, this was what it's just perfect.
+So then you can go back to your burp and correlate the dates and stuff.
+Wow.
+So you're using Kylo.
+Yeah.
+Yeah.
+There you go.
+Um, and then I, I'm wearing the shirt today.
+Yeah.
+Yeah.
+So what you saw here also, I'm packing it to, to shop.
+Yeah.
+So I need to have something on the site.
+So I'm doing a collection script.
+Uh, so basically I look if the user agent is curl and then I provide like a very nice,
+like who am I, where am I, uh, trying to see if like, uh, what's the ETC password?
+What's the environment?
+And then it just posts.
+You're dumping in.
+Yeah.
+Yeah.
+That's, uh, that's, uh, that's, that's a little scary.
+If they trigger my code internally, they, it's like, we're beyond, it's scary.
+Yeah.
+Because we fucking made them run the hard code.
+That's true.
+That's true at this point.
+Yeah.
+At this point it's just, it's not, it's not, and also like, I'm making sure that, you know,
+if, if you, if you say this card, basically the curl, they've used my payload to trigger
+this.
+Yeah.
+And then I'm using curl and piping my output themselves for some other, like, come on,
+it has never happened yet.
+Um, and then, uh, I connected to Sapir and I get like an email like, oh, this is not the
+share on this IP.
+You want to, you know, you know, and do you think it worked?
+I think it worked.
+I think it worked.
+I think it worked.
+I think it worked.
+Yes.
+Oh my God.
+It was extremely, it was so effective.
+They like, they like, don't stop.
+Franz, please stop all testing on this issue immediately.
+It worked.
+Dude, this is better than the bounty right now.
+I know.
+I know.
+100%.
+So, so it's like, okay, this is a, this is a very nice pipeline of being able to,
+it's almost like, you know, exercise hunter kind of idea, but you're looking for a bug
+that has quite high severity.
+Yeah.
+And, or always.
+Yeah.
+And I just, I literally cannot believe that I haven't thought of attacking this flow before
+because I've, I've spent, especially after one for shell came out, right?
+Yes.
+Clearly.
+Yeah.
+Everything that is being logged, that whole pipeline needs to be addressed.
+And so forth, it's, the request ID is so important.
+And actually, I've seen some scenarios actually where companies really care about the integrity
+of their, of their logging pipeline as well.
+Absolutely.
+So if you, if you have the ability to affect the integrity, you mentioned before, like
+the correlation ID, being attached at the proxy level, some, some don't care when they
+generate on the client side, obviously that's trusted input.
+Yeah.
+But when the request correlation ID is generated at the proxy level, and you can find some way
+to smuggle it in and override it.
+Yeah.
+Some companies care about that.
+Yeah.
+Yeah.
+That screws their whole incident response well.
+I've gotten messages like, hey, France, we saw your request coming in.
+Our tracing pipeline is completely broken.
+You have the same payload for every single request.
+And you've been, you know, I've been brute forcing or running like, like breath cal map
+or whatever, running it on them.
+And, and they're like, we can't open your trace files because everything is there.
+So they're like, it's useless for us.
+Can you please have it, you know, run into this stuff.
+Can you please change it?
+And then like, isn't that a problem?
+Yeah.
+That you should get a, you should get none of that.
+Yeah, exactly.
+
+internally all over the place.
+And also like blind and error, there's going to be multiple of them, uh, JSON injection.
+This, we need to talk about this more.
+Yeah, dude.
+We need to talk about JSON injection and, um, yeah, and I would love to know if there
+are multiple contexts.
+I missed some context, right?
+SQL injection, XML injection.
+There's going to be, it's going to be way many that I haven't thought of.
+I would love to hear about, you know, injections happening in context that I, that I haven't
+talked about.
+Uh, that's it.
+Yeah.
+Dude.
+What do you mean?
+That is so freaking funny.
+I love that you're writing.
+I love that.
+You are telling me about this right now.
+Yeah, yeah, yeah.
+Dude.
+After lighting.
+Exactly.
+Thank you for waiting until after the live.
+I'm sorry.
+I could have been running this on the target.
+You weren't even in the same event.
+I had to see my hands.
+I, you should, you should look at that target.
+Oh my gosh.
+For sure.
+Yeah.
+Wow.
+Uh, that is super awesome.
+I think, um, I think we'll go ahead and probably cut here and then we'll go do a,
+some, some, uh, pod stuff related to Vegas and stuff like that.
+Yeah.
+Dude.
+Thank you for sharing this.
+Yeah.
+No worries.
+Yeah.
+Thank you.
+Bye.
+That's a wrap on this episode of critical thinking.
+Thanks so much for listening.
+And if you want more critical thinking content, head over to ctvb.show slash discord.
+Join the discord.
+There's lots of great conversations and chats going on over there.
+And if you want to support the show, there's the discord subscriber tiers, which give you
+access to masterclasses, AMAs, hack alongs, exclusive scripts, and an exclusive chat channel
+with us.
+We'll see you there.

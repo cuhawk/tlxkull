@@ -1,0 +1,1714 @@
+The pop under is another great trick for scammers who are listening.
+Yeah, sorry guys.
+We should rename this episode, Tricks for Scammers.
+New browser tricks for scammers.
+Best part of hacking when you can just, you know, critical thing.
+Right.
+Yeah.
+Dude.
+Sup, hackers.
+So Zero Trust World just happened and ThreatLocker dropped some pretty cool stuff.
+My favorite of the bunch was ThreatLocker Cloud Control and I'll tell you why, okay?
+So when you're trying to hack an organization nowadays, what's kind of like the go-to approach?
+Well, for most, it's going to be set up Evil Engine X and send out a bunch of phishing emails, right?
+That way you don't have to worry about two-factor authentication or anything like that because
+Evil Engine X is just going to let them put in their password, their 2FA, and then just
+hand you back a session token to interact with Microsoft 365.
+So ThreatLocker realized this was a problem.
+And so what they decided to do was build Cloud Control, which uses the ThreatLocker agent to
+sync into Microsoft Cloud Conditional Access, a list of approved IP addresses from which
+a user can connect, right?
+So then an attacker gets that token that they stole by Evil Engine X.
+They try to use it to interact with Microsoft 365 and boom, they're burned because they're
+not coming from a permitted network and they lose access.
+It's pretty sick.
+It's a great solution to the problem.
+So definitely check it out.
+ThreatLocker Cloud Control.
+All right, back to the show.
+We haven't squatted in a long time.
+And we did for the first time in a while.
+And I just can't even move.
+I'm just stuck in this chair.
+By we, are you lifting with Mariah or did you go, you made the gym?
+No, I'm actually lifting with So.
+Okay, cool.
+So he's in town right now.
+We're going to do an episode with him like next week, hopefully.
+But yeah, he's been pushing me to get back in the gym and stay consistent with it.
+Cause like sometimes he used to drag me out of bed in the morning, like 615.
+I'm not wanting to get up.
+Yeah.
+It happens.
+And it does feel good.
+It does feel good to get back lifting heavy stuff.
+Yeah, that's fair.
+I've been off the train for the last week or two.
+So slap me back into action.
+Nice man.
+All right.
+Well, we have quite a list of news today.
+Let's kind of, let's kind of go through it.
+I guess I'll take the first one.
+This write-up really, dude, this write-up is just like my jam right here, right now.
+Like Bus Factor, a member of the CTPB community, you know, part of the bug bounty community in
+general becoming a big name, did a great write-up with XSS Doctor on a series of vulnerability
+they found in, and I don't know if they named the target.
+I know the target.
+So I guess I can't say what target is, but I looked at this environment pretty extensively
+in the past, and I was not able to exploit this.
+So I'm impressed that they actually found the full exploitation path.
+And how far deep down this rabbit hole did you go?
+Oh, dude, I was far.
+I was far.
+You know, I had all but one of the components that they had to make it work.
+Well, actually, I'm sorry, two.
+There were two of the components that they had to make it work.
+So let me kind of double click into those real quick.
+So this is an excellent write-up on client-side path traversal, which, of course, if you listen
+to the pod, you've heard me talk about.
+I love client-side path traversal.
+And Bus Factor does some really great graphs in this write-up that show how this whole thing
+works.
+So definitely check those out if you're a little fuzzy on how CSPT works.
+You want to share your screen?
+Yeah.
+For the viewers?
+Yeah.
+I will go ahead and share my screen.
+They're mermaid diagrams.
+Yeah.
+The diagrams are great.
+So it starts off with, you know, a client-side path traversal, and he is able to figure out
+a way to manipulate the path.
+Right?
+Excellent.
+That's what we want with a client-side path traversal.
+And the problem is we need one of two things, really, to exploit a client-side path traversal.
+Maybe three.
+Let's call it three things.
+One, you need an open redirect, right?
+So if you can get it to then send the fetch request to your domain, right?
+Then you can respond to stuff, and that typically has impact.
+Two, if you have the ability to upload a JSON file or something like that that the code that
+is doing the CSPT will parse and then do something with, that's one way to go.
+And then the third way is actually just to hit an endpoint with it if you're dealing with
+a post request or a patch request that does something.
+Like I recently had one that just deletes the user's account, right?
+So they would click a link, and it would just delete their whole account.
+Nice.
+And the one they opted for here was number two, where they uploaded a file onto the server.
+And that is how far I got, too, Joseph.
+That is where I went.
+I was literally at this exact same point.
+But the only thing that I missed here was that when you go to this URL to download the file,
+right here, you can see they have it as API marketplace files and then file number.
+It would just return a JSON blob saying, here's the link to the URL.
+Or here's the link to the file, right?
+And it wouldn't actually return the file.
+But what they found was that if you add the...
+To redirect.
+Redirect.
+Yeah, dude.
+Or no, just the redirect.
+Is there a typo?
+Yeah, there's a typo in the screenshot.
+Okay.
+Sorry.
+Add...
+Yeah, I said this doctor's like, do TED Direct.
+And BuzzFactor somehow still figures it out within the same minute?
+Yeah.
+Oh, yeah.
+Because he changed the T to the R. Okay, got it.
+That's funny.
+Yeah, yeah, yeah.
+So, so, so he, anyway, he figured it out.
+But this redirect true parameter was the thing that I missed, right?
+And essentially what that would do was make the file actually, you know,
+make the server respond with a redirect to where the file was stored.
+Nice.
+Which is awesome.
+And, you know, they popped it.
+I was a little bit, a little bit salty.
+A little salty.
+A little salty.
+But then what I sort of also wouldn't have probably found or maybe would have had a difficult time exploiting
+is this next section, dude, with the cores issues.
+Because what happens here is, okay, now they're redirecting to their file stored in like an S3 bucket, right?
+But now they've got issues with cores because cores wasn't returning an access control allow origin star header.
+So the fetch request couldn't read the JSON from that cross site origin.
+Right.
+And so what they actually ended up doing was manipulating a caching issue on Cloudflare.
+Wow.
+I'm sorry, CloudFront.
+That would allow them to get the access control allow origin star header cached in the response.
+And then trigger the full flow reading the JS file and then causing the XSS.
+That's insane.
+Pretty beautiful exploit chain here from BuzzFactor and XSS doctor.
+And then they proceeded, of course, to explain how they fully exploited it.
+Well, that last gadget, just to be clear for our listeners who are trying to exploit something similar.
+Yeah.
+Is this a misconfig in the CloudFront that the customer set up?
+You know, that's a good question, man.
+Okay.
+To be honest, I think, I mean, it has to be, right?
+Because otherwise, if it was caching it that way, then you, it would be causing problems anytime you tried to access it.
+But I guess the signatures would be different.
+So, I'm not sure.
+It says right here, when we click it, the request doesn't include an origin header.
+So maybe that's the fix.
+It says this causes CloudFront to cache the response.
+Yeah.
+Yeah.
+Yeah.
+So, so, so what it says to solve this, we needed to avoid clicking the download button and instead CS, let the CSP execute naturally, which would add the origin header automatically.
+When this happened, CloudFront would respond with a access control allow origin header.
+Okay.
+So because they did a top, so I got it.
+So what they were doing before is they would upload the file and they'd click the file, you know, the button to like grab the file link or whatever.
+And that would open it up as a top level navigation in their browser, which would cache not having the origin header in place.
+Right.
+But instead of doing that, they fed it directly into the CSPT and the CSPT would set the origin header that it was sending from, you know, whatever site.
+And then, then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+And then it would work seamlessly.
+So, you know, accessing this file.
+You know, accessing this file.
+Just for their account on that endpoint.
+Which is something we talk about with Matan.
+We've talked about plenty of times on the podcast.
+If you don't fully get it, this is a good article for you to fully get it.
+But this technique is absolutely essential to exploiting self-XSS in modern environments.
+So good to see someone taking it, using it and landing, I think, a 22K bounty for this one.
+That's awesome.
+So this is all one finding or was there a multiple in here?
+Yeah, this is all one finding.
+Okay.
+And look at this dude.
+We even get a little shout out here at the end.
+That's exactly right.
+So, yeah.
+Also, it says awarded 7,500 at the bottom.
+Yeah, I guess it says 7,500.
+But then while, oh, okay.
+This approach worked on another target in the same program.
+Earning me and my collab.
+Got it.
+I see it.
+This target was much better protected.
+Okay.
+Got it.
+Cool dude.
+So this one's 7,500.
+Yeah.
+Yeah.
+I will say most of my news is AI related, but we'll start with one that is not.
+I'm sure you saw this and everyone else did because it kind of blew up on X, but Truffle
+Security used their, you know, their very famous secret scanner to scan all of Common Crawl.
+So if you're not familiar with what Common Crawl is, it's a massive download of basically the entire
+web browser, it's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+It's a massive download of the web browser.
+And I actually, I want to go through Common Crawl and look for stuff, but it's huge.
+I think it's, it's like a hundred terabytes.
+Yeah.
+Oh my gosh.
+I'm sure someone has an index of it out there.
+That's like easier to look through on like elastic or Kibana or something.
+But basically this is like the, the main training set for a lot, a lot of AI models because
+it has so much internet data on it and they do, they do a lot of cleaning it up, cleaning
+it up and removing special characters.
+And I'm sure they drop out HTML tags and all kinds of stuff.
+Like they do a lot of really unique things.
+Um, the kind of nuance here with this post is when they tweeted it, they basically said
+in deep seeks training data, I think they were doing that just to like get a clickbaity
+and kind of go to go a little bit viral because common crawl is used for many more things than
+just deep seek.
+Like every, every company uses it as a base and a little bit of their findings kind of
+imply that this is like dangerous because you can tease out these secrets that they found
+from the training data.
+And you, you can't do that with current models unless it's like really over fit.
+And what over fit means is just that when you're talking to the model, it'll output the training
+data and just spit out the training.
+
+And like no models really do that today.
+Um, unless I'm, I guess it's possible that common crawl is used so frequently that there
+are some companies that are really poorly training their models and then releasing them
+open source.
+Cause there's like, there's tens of thousands of maybe hundreds of thousands of models now
+on hugging face.
+Anyways, all that to say, I thought that the idea of going through common call for secrets
+was genius.
+Maybe people didn't do this because it was like, um, because it was so much data to go through, but
+they found like 12,000 live API keys and passwords.
+And I'm sure a lot of those were for bug bounty targets.
+Yeah, man.
+I mean, definitely if I was a, an attacker, this would be easy mode, you know, if you were
+a malicious actor, that, that would be like, okay, just grab the whole internet and just
+grab the whole internet.
+Like it wouldn't surprise me if nation states have already done that.
+Common crawl has been out there and accessible for a ton of people for a long time and being
+able to just write a singular, regular expression.
+You know, I think they were struggling with the scale as well.
+And they're, they're like the forefront people in, in secret scanning, but they were probably
+scanning for a lot of different secrets.
+Like if you were a nation state actor looking for a specific type of API key for a specific
+service, you could just grab for that one thing and it would probably be pretty easy.
+And obviously, you know, nation states have the, um, computing power to, to pull something
+like this off.
+I just thought it was a really genius idea and a really cool post.
+We'll put the link in the, in the, um, show notes.
+Yeah, dude.
+Yeah.
+I mean, to be honest, common call we've been using common call, um, you know, for a while
+as like, just, uh, I think it hooks into gal gal uses common crawl.
+And, uh, I think way more does too, if I'm not mistaken.
+Um, you know, so we, we use it for like, uh, path enumeration and that sort of thing.
+Um, but yeah, I hadn't really thought of like doing the wide scale security research, um, for
+that, uh, with, with, with regards to, you know, scanning for, for secrets and stuff
+
+Also, I'm really glad that I didn't have to set up the modules for verifying if those
+keys are working.
+I feels like verifying if a bunch of keys that you're, that you're pulling are working
+for hundreds of different services is like a pretty big project, but it's also really
+cool to have going forward.
+Like if you could just drop a key in there and it would just check it for all the services
+and do whatever the off checks are there to verify them is a really cool piece of
+technology to have that it sounds like they now have.
+It's like key hacks, but like automated.
+Yeah, but automated.
+Exactly.
+Yeah.
+I took a little bit of a tangent, but I was hacking on Google earlier this week and, and
+so, and I, my buddy were looking at, um, Google's Chrome web store and I had this crazy idea
+for, um, security research and, and like, I kind of went down the path for it and it kind
+of dead ended a little bit because of the way that it, that it, um, is implemented.
+But, uh, all of the organizations with it or all of the like extensions in the Chrome web
+store, if you're not a single developer.
+So if it's not tied to a single, um, uh, Google account, right?
+Like imagine if Grammarly or something like that was tied to a single Google account.
+Right.
+Um, uh, it's tied to a Google group.
+Mm-hmm.
+And so you actually go into groups.google.com and you create a Google group and then you
+like sort of slurp that Google group into Chrome web store.
+As like an owner.
+Yeah.
+Interesting.
+And then that Google group owns the extension.
+Right.
+So, and here's the thing in the documentation, like 15 times, they say, do not leave this
+Google group open.
+Right.
+Do not, do not leave it open.
+Don't do it.
+You know, like, and I was like, so there's something that I have done that.
+Yeah.
+And so I was like, oh my gosh, I gotta go and, uh, and like check and see if there's
+any way for me to find the Google group associated with a given extension.
+Yes.
+And I was like, surely this is possible.
+Oh, it feels totally possible.
+Dude.
+I know.
+And I, I spend so much time looking through the Chrome web store and like, maybe it gets
+put inside the CRX files and like, but I couldn't find it anywhere.
+So if anybody wants to go after that, that'd be really cool.
+Because if you could take a, um, if you could take a Chrome extension, identify what Google
+group is associated with it, then you can check the permissions on that Google group.
+And some of these Google groups are just anyone can join.
+Yeah.
+We need, we need a channel on the discord.
+That's called like close the loop.
+Cause we say this all the time.
+It's like, if you, if you use what we said here for this thing, come back and close the
+loop on it.
+Yeah.
+And I want to have a close the loop section on episodes where if anybody found something
+that we mentioned, then we close the loop on it.
+And so, yeah, if someone does this, please go close the loop.
+Oh, Oh, speaking of that, let me, dude, I don't even know if I put it in the notes,
+
+I'm sorry.
+Our new section is going to be super long.
+It's going to be long today.
+Yeah.
+So here, here's what we'll do y'all.
+Well, just, you know, if you're interested in the actual topic of this episode, which
+was single page application hacking, just jump to the timestamp because this is going to
+take a second.
+Okay.
+Yeah.
+So, um, somebody messaged me and said, what is it called?
+Hackadvisor.io.
+That's what it's called.
+Um, cause we talked about essentially providing ratings for bug bounty platforms.
+Right.
+Yeah.
+And we said, Hey, we don't want to do that.
+That's going to be tricky.
+Yeah.
+Like managing all the data, private programs, blah, blah, blah.
+Um, and somebody beside us did it.
+So I'm like, great.
+You know, like I don't have to do that shit.
+That's wonderful.
+Um, and it's hackadvisor.io.
+Um, so yeah, I mean, I don't know how it's going to go.
+They have, uh, they have integrity.
+Yes.
+We hack standoff 365, which is the first time I've heard of that, uh, bug crowd and hacker
+one on there as platforms.
+And they've got like, looks like quite a decent amount of, um, of actual.
+It's not, it's not overly intuitive.
+So if you scroll down on the main page, I thought they would like have it all sorted.
+You have to scroll down to see the platforms and then in each table is the program.
+Yeah.
+Yeah.
+So, so the, the UI could definitely use some work, but you click on each individual.
+Oh, it's a pretty UI though.
+I like that.
+Yeah.
+Yeah.
+The UI looks great.
+It's just not super intuitive.
+And then it says, you know, you, you can leave feedback.
+If you've logged in, they load in some of the metadata about the program.
+Um, but yeah, I mean, to be honest, the community really needed.
+So, um, yeah, I'm glad somebody did it.
+So there's ratings.
+It looks like.
+Mm-hmm.
+Yeah.
+So if you click into one, let me see what the rating looks like.
+Oh yeah.
+So no, no, no comments.
+I wonder how you rate.
+The rating is like between one to 10.
+So right now, Grafana Labs is the top one on Integrity.
+No, it's not.
+Well, if you click more, oh, maybe.
+Okay.
+I gotcha.
+It goes beyond 10, but you're saying, yeah, yeah.
+It's like an order.
+So it's like the best program on that platform.
+That's cool.
+
+So according to this right now, Integrity's best program is Grafana Labs.
+It shows hacker one's best program is AT&T.
+Yeah.
+I don't know about that.
+I think it needs data.
+
+Sorry.
+The bounty average here is $350 on AT&T.
+So it shouldn't be rated number one, but I think it might be ranking it by reports
+or reports times rewards or something.
+Um, yeah, but it's cool that they have like a, it looks like green and red bubbles.
+Like you're going to be able to upvote and downvote.
+Yeah.
+It's kind of like rate my professor, but for a program, did you ever use rate my professor
+in college?
+I did.
+Yeah.
+I mean, it was so helpful to know who you, cause like whenever you're trying to make a,
+um, when you're trying to make your schedule for the next year, knowing which, which one's
+good and which one's bad is huge.
+Oh my gosh.
+Yeah.
+And you know, what's crazy too, is like my schedule was kind of tight in college.
+So I had to like, um, sometimes I had to take a professor that wasn't great.
+When you get into that class and it's like totally accurate, right?
+It's like, ah, this is right.
+This guy sucks.
+You know?
+Yes.
+So it's wonderful.
+Hopefully this will turn into that for programs.
+Uh, okay, cool.
+So I set up an account.
+I'm just going to see if I can now upvote.
+All right.
+Well, let me, and I'm going to go ahead and go ahead and add this, uh, to the links for
+the episode, Richard.
+I'm going to put it under news.
+I love how we just do.
+We're finding news, this news discovery.
+Yeah.
+Logistics stuff in the, in the middle of the podcast.
+Um, all right.
+Let me know how you go.
+Let me, let me cover this next one really.
+Oh, this is cool.
+Before you can actually feedback.
+You have to verify.
+You have to, you have to log into your profile and complete the verification process for your,
+um, for like your, what's it called?
+Your platform account.
+Yeah.
+Your platform account.
+Oh, dude.
+That's really what we wanted to do.
+What, what, what's the, what's the process like?
+Do you have to put like a hash in your bio or something?
+To verify the profile and gain ability, click the add button and select what you're listed.
+Yeah.
+Let's see what happens.
+Uh, integrity, Rezo.
+Maybe, maybe it might just trust you.
+Anyways, you, you take a second, figure that out and then come back and deliver it to the
+people.
+Let me tell them about this next thing really quick.
+Okay.
+Um, not a big, not, not a big thing.
+It's not going to take very long.
+Um, there's a tweet, uh, from somebody I follow, uh, uh, uh, Yosuke Zan.
+Um, and it was in Japanese, uh, but the tweet was a POC for a CVE 2025, 2475.
+Um, I'm sorry, uh, 24752.
+Um, and it, that was a, uh, an XSS, uh, as on the admin of a WordPress site for a plugin
+that has 2 million installs.
+Wow.
+Um, and I think this kind of just slid under the, the recon radar.
+Um, here's a little freebie for those of you guys that do recon, um, fingerprint this shit.
+And, and, you know, at least try to submit it to bug bounty.
+I know that sometimes it's a little bit difficult to get, um, admin facing XSS in, in WordPress,
+um, accepted, but this one has 2 million installs.
+So I imagine there'd be quite a few.
+Uh, and, uh, I definitely think that they could walk away with some bounties if they, if they went ahead and sprayed this.
+So, um, give it a shot.
+Let me know how it goes.
+Uh, and, and this is a little tidbit for the listeners that do it early enough.
+Listen to critical thinking podcast as soon as it comes out and then take action right away.
+Um, so, okay.
+What'd you find Rezo?
+Well, I'm actually, well, I'm so sorry.
+I've got two things and neither one of these are on the news.
+The first, the first on our news list.
+The first one is, uh, they manually review it.
+It looks like when I submitted my username, it said like, it said, we'll review this.
+So I kind of liked that at first, you know, integration with the platform can come later, but the manual review stuff.
+Um, and then the second thing is I'm circling back to your Chrome extension thing really quickly.
+So I'm sure you noticed this.
+If you didn't listeners, I'm sure I've noticed my you block origin got removed.
+Um, and that is one of like, uh, let me actually look up how many extended it is.
+I think hundreds of thousands of extensions did not update their manifest file.
+And, um, so they're getting, um, yep.
+Sorry.
+Eighty four thousand five hundred four Chrome extensions are disabled in the next few months.
+Wow.
+That was posted in August of last year.
+They just got disabled.
+What this means is there is a huge market for builders.
+Like if you have an extension that you love that went away, go use AI to rebuild it and just put it on the store and you can, you can easily make some money.
+You can make it easily blow up.
+You could do that for hackers specifically.
+Like, I don't know if like,
+The thing is Chrome extensions are kind of hard to monetize, man.
+Really?
+Like they are a little bit difficult.
+I mean, Grammarly does it successfully.
+So there's a nice, you know, use case for you.
+But from what I've seen, they're pretty hard to monetize per install and they're like pretty cheap to buy.
+Yeah.
+That's what I was gonna say.
+I feel like I've seen people exit for 50 or a hundred K on Chrome extensions though, which I mean, if you can get one going and just drop it off, kind of neat.
+Um, but I did want to mention that cause it's kind of cool.
+It probably affects all of our listeners cause we all have a bunch of Chrome extensions we use.
+If anyone has like a really recommended view block origin alternative, it's probably just a way to reinstall it if I wanted to.
+But yeah, I just forced reinstalled all the ones.
+I said, no, just ignore the manifest V3.
+Just install again.
+Yeah.
+Dude, manifest V3 is such a shit show too.
+Like I've been creating a, a, a, um, extension recently and it doesn't allow you to like mess with, grab the data from the response of an HTTP request.
+And I'm like, what?
+Like that's so pivotal, you know, to, to doing a, an extension.
+So what I ended up having to do, and I, you have this extension, I don't know if you've installed it yet, but, um, what it, what it's supposed to do or what I had to do was hook into dev tools with the extension, because there's like a, um, debugger, um, permission that you can give the extension and then it can hook into dev tools protocol.
+You're, you know, you're telling, you're telling all of the scammers and, uh, malicious, malicious, uh, Chrome extension developers who listen to our podcast, how to recap, get back, get the functionality back they want.
+No, but, but the thing is with that is like the functionality is there, but what happens then is whenever it attaches the debugger to any tab, it pops up a w like a little bar underneath your bookmark bar.
+This is this plugin is debugging your shit.
+Like, that's good.
+Like, you know, so it, it, it is very like, you know, in your face about it.
+Yeah.
+Um, yeah, but then what, what I don't want that.
+And I use this thing all the time.
+So what did I do?
+I disable it at the flags level.
+Right.
+And so now I just think of like, wow, they just really shot themselves in the foot here with this.
+Cause now I've just disabled Chrome extensions hooking into my, you know, my tabs by a debugger because I don't want to be bothered by this little bar every time.
+Right.
+So I don't know, man, maybe it's a good security posture decision for Chrome in general, but it's, it's a pain in my ass as a hacker.
+Yeah.
+Yeah.
+Um, sweet.
+Which is probably what they want.
+Exactly.
+Exactly.
+Exactly.
+Uh, was that, that even was on your list, right?
+That was just your, uh, your, that was just me ranting.
+We're, we're just doing our thing today, man.
+Okay.
+Sweet.
+Um, I think it's my turn.
+No.
+Yeah.
+Yeah, it is.
+Um, I think it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it's, it
+If you clone it and then open cursor and then ask questions about the code base about things that might be insecure, it might actually flag things for you that are pretty cool because it's good at code base search.
+But anyways, the, the thing that I want to actually bring up is that notebook LM is still underrated.
+I know people we've mentioned it or people have probably seen notebook LM for like the podcasting stuff you can do where you can make a podcast and it sounds very natural.
+Oh yeah, I love that.
+But like the whole purpose of notebook LM, the way it was originally designed was basically you put a bunch of notes in there and then you can chat with your notes.
+And so you can do that with entire code bases.
+You can do that with all of your bug bounty notes and it like will contextually pull in the right data.
+And Google deep mind is really good at what they're building.
+So I would imagine it's quite good.
+I don't have like significantly strong notes.
+I was also thinking about what would you think about basically using Enkaido or burp, like exporting a bunch of requests and then throwing it in there and then just seeing if you could ask it about the request.
+It'd be kind of neat.
+That, that would be pretty neat.
+So yeah, people should do that.
+I know that recently there's a hacker that I really respect.
+Definitely like top three hacker that I know as far as source code review goes.
+And they recently said that they're a little bit, you know, thinking that Cloud 3.7 is going to like really be a lot, you know, like.
+Yeah, yeah.
+And so I think that that is pretty sick and that hackers really need to be leaning into using LLM stuff, which is also just one of the reasons I'm so grateful that that you decided to come onto the pod as a as a co-host, because I think you do have a lot of that AI angle that's really necessary to the growth of our industry.
+And I'm definitely like within the past week or two, I've become a little bit more convinced that I need to be leaning into this a little bit more than I am because there is I mean, the game is about to change for sure.
+Yeah, I think so.
+And, you know, my advice to your buddy would be like, if 3.7 is going to eat everything like you, you be the person that's holding 3.7 as it eats all the bounties.
+Like you be the hand that it's feeding.
+Right.
+Like, I mean, yeah, lean into it and use that.
+I'm sure that, you know, eventually some tools will come out that company or that companies will, especially enterprises will deploy that will find vulnerabilities on the way out the door via code review.
+But in the short term, it's like for all of the code review bug bounty programs like use 3.7 to go through that code and find vulnerabilities for you.
+Right.
+Yeah.
+Grafana.
+I mean, according to Hack Advisor, Grafana is a top program and they are open source.
+Oh, that's cool.
+So you can go and grab that whole thing.
+Dude, I will say, though, that I've been like pretty blown away with Cursor's ability to consume code recently and give like a contextual thing.
+Like, I don't know what they did with between the past couple updates, but I'll ask it about something and it'll be like, OK, first I need to like identify how this piece of code works.
+And then I need to like grab for this and I see all the uses of X, Y, Z here.
+Yeah.
+And then in like and then it very systematically goes through the whole code base and can apply mass changes, you know, very consistently across the whole code base.
+So, yeah, I am.
+Yeah.
+So that was like my next thing.
+So I can just roll into it real quick and then we can go back to.
+Yeah.
+It was basically the fact that within the last few weeks, we haven't had a lot of time to do news.
+Grok 3 has come out.
+Sonnet 3.7 has come out and GPT 4.5 has come out.
+And with all the people that I follow, like there are people using each of those in unique and cool ways that are totally state of the art.
+Like I've been using Grok 3.
+It's definitely the smartest at like, like I was asking about the content for this week's show notes.
+And it's like, yeah, like, you know, make sure you're using link finder and like, like stuff like, like it's like referencing.
+And it was saying, like, you know, make sure you use match replace rules in burps, match and replace section.
+And other models didn't get like in the weeds or as technical.
+And, you know, I'm holding that masterclass on Tuesday where I'm talking about how to hack agents.
+When I put the context of my of my huge blog post, like, you know, 5,500 words in there about AI security.
+I did that for all the top models because I just wanted advice for like, hey, what am I missing here?
+What what things have I not talked about?
+What examples did I not have?
+What scenarios was I not thinking about?
+None of them gave me anything useful besides Grok 3.
+And it gave me two things that I added immediately.
+So I think that Grok 3, even though it doesn't do well with long context, it's not going to do well if you incorporate a cursor, in my opinion.
+Because it's not as like excellent on tool calling.
+But I think that it has a deeper technical understanding of AppSec and AI security than any other model.
+So if you're using it.
+Yeah.
+And it's free if you have like a premium thing to use.
+I think you get limited per day.
+But like some of the other ones are like 20 bucks a month or 40 or whatever.
+And I think Grok Super is 40.
+But if you just have like the $8 a month, you know, Twitter premium or X premium, you can still use it a bunch in the UI.
+And that's what I've been using.
+And it, you know, I haven't run out of requests.
+Wow.
+That's pretty sick, dude.
+Yeah.
+I heard Grok 3 was doing really well.
+And what surprises me, and I've heard a ruckus about Sonnet 3.7 as well.
+I haven't heard much about GPT 4.5.
+Yeah.
+Well, let me tell you real quick.
+One, to circle back what you said about 3.7, it's definitely the best at coding.
+And now cursor defaults to that agent mode.
+That's why you're able to see that stuff it's doing.
+And then it does more pulling of like, it does more pulling of code that's not full files.
+You probably saw that like when it searches for like a function name and it goes and looks it up, then it'll say like, oh, getting file or lines like 100 to 150, like around that function name.
+So that's probably what you saw.
+And Sonnet 3.7 is fantastic.
+Much better at coding.
+It, you know, beat the scores from software engineering benchmarks.
+As far as 4.5, initially when it launched, it did not have great benchmarks, but everyone who used it said it had like the big model smell more than any other model.
+And so like it's much more human-like when you interact with it.
+It's not as prone to give you like these gigantic pair, like Wikipedia articles for your questions.
+It's going to give you a much more contextualized, shorter, smaller, better answer.
+And I have heard from some people that even though it's not as good at coding as like Sonic 3.7,
+if you're trying to one-shot like an entire application, that it can sometimes solve one-shot requests for like a big app, complex app that Grok or 3.7 failed to do.
+So I think it's basically on par with them.
+Maybe not as good as 3.7 if you're like having it interact with your entire code base.
+Like I think clearly 3.7 is the best thing in Cursor and in Windsurf and all of these things.
+But I think as far as like if you just have like one big app and you just wanted to generate your initial POC, 4.5 might be the thing to go to.
+So yeah.
+Interesting.
+Yeah.
+And I think that's often what we do as hackers is, you know, there are some, you know, some moments where we are trying to just write a whole application.
+But most of the time we're just writing a little POC script and it's like, just write this thing that does this thing just like this.
+It can be a little slower than the other.
+So that might be frustrating for that.
+But if you have the time to wait for it.
+Yeah.
+And the denials are kind of a pain too.
+So I would like to see, you know, less of those moving forward.
+And I know that's going to be a pain for some of the stuff that we're trying to integrate into Kaido to shift in this upcoming section.
+So development cycle.
+So I think that'll be a challenge moving forward for security researchers.
+Grok will deny nothing.
+Oh, really?
+Grok is basically a jailbroke.
+Yeah.
+That's awesome, dude.
+Yeah.
+I have seen that it's pretty unhinged.
+It is.
+Yeah.
+There's like an NSFW like voice mode and stuff on the app.
+It's like, it's kind of crazy.
+Yeah.
+That's hilarious.
+All right.
+So moving into the next one, there was a write-up by Jorian, another valued member of the CTBB community.
+And this one was sort of building upon the work that we covered, I guess, when this launches probably two weeks back.
+Yeah.
+With Paulos on the double-click hijacking and some of the pop-under stuff that he's done.
+Yeah.
+And so I read through this article and there's some very interesting things in here with hijacking, essentially using another frame and hijacking the details about how our clicks and our spacing or hitting our space bar works.
+Very interesting stuff.
+But the two main takeaways that I'd like to distill it down to for you guys, for me, were these two sections right here.
+The pop-under is what he mentions.
+Oh, yeah.
+Another great trick for scammers who are listening.
+Yeah.
+Sorry, guys.
+We should rename this episode Tricks for Scammers.
+New browser tricks for scammers.
+New browser tricks for scammers.
+We'll probably do the rounds on YouTube if we did.
+Oh, my gosh, dude.
+That's hilarious.
+Well, you know, now I got to deliver.
+So here's how you do the pop-under, guys.
+One of the things that's been tricky with window.focus, and I love that somebody else said this because this sums up my experience with window.focus completely.
+Quote, there is the intuitive window.focus method that should allow you to focus any window reference.
+In reality, this method very rarely works, and you should definitely not rely on it, from my experience.
+I totally agree.
+It's just very weird how that, I don't know why that just so rarely works.
+But he said there's another more obscure way of focusing a window, and that's using the target argument of window.open.
+And I use the target argument of window.open all the time.
+And for some reason, I never considered this as a possibility for focusing windows as well.
+So definitely a cool approach here is that you can perform a window.open and set just the hash on that page, and it will not reload the page, but it will focus that window.
+If you provide the correct target, which is the name of that window, and it's in the shared browsing context.
+So that will be really helpful for causing pop-unders.
+Is that something that they could remove for security purposes down the line?
+Not really.
+It's useful.
+There's too much legacy.
+There's going to be too much stuff that's depending on that functionality to work.
+So I think that's one really cool takeaway is using that for a pop-under, which can be really helpful for these sort of attacks.
+Did that remind you of anything that you could have potentially exploited in the past that you weren't able to?
+Yeah, you know, it's a useful piece of functionality for crafting some really obscure out there exploits.
+But to be honest, if my exploits are getting to the point where I'm needing a pop-under and stuff, I start to question, like, is this exactly what I should be doing with my hacking time?
+I'm not sure.
+So it's cool.
+It's something to have in your pocket.
+You know, there's a scenario in which, you know, it could be helpful for an exploit, especially if you're in a live hacking event or something and you just really want to make something work.
+But, you know, it's probably not going to land you a crate.
+Sure.
+Cool.
+So, all right, and this other one was this right here, which is using the window.moveTo function.
+I'm a big fan of, like, knowing what functions you can call on a cross-origin window.
+And there is this moveTo method that you can call on a pop-up window.
+And that will move the window to a specific spot.
+And I've seen people do really funny stuff with this sometimes, like, you'll try to go close a tab and it'll, like, move out of the way.
+Oh, I hate that so much.
+And stuff like that.
+So there's some weird stuff you can do with that.
+That's the scammer trick number three.
+Yeah.
+There you go, guys.
+But all of these can be useful, you know, and in this scenario, he just provides an improvement to the double-click jacking techniques where, you know, you needed to align the button with the, you know, button on the window.
+That you're trying to click jack on.
+And this moveTo functionality makes it much more simple.
+Yep.
+Sweet, dude.
+Yep.
+All right.
+So that's that one.
+Let's see.
+Where are we at?
+Okay.
+I'm sorry.
+Let me just, let me take the next one.
+This one is going to be real quick, but it's in the same vein since we're talking about pop-unders.
+There was a tweet that was responding to the article that we just covered by Renoir.
+And he drops a POC right here.
+I'm just going to show it on my screen.
+He said, I reported this to Chrome, but they're not going to patch it.
+And so he drops like this POC.
+And it's so interesting.
+Let me see.
+Let me see if I can actually get it to get it to share what the POC actually does.
+But essentially the TLDR of it is you click on the screen and it pops up a new window.
+I'm not sure it's going to show in my environment.
+No, it's not.
+The pop-up didn't show.
+The pop-up didn't show, but it pops up a window and then it triggers like this sign in with Google Auth, which has some connection to Chrome.
+And it will pop up this little side panel, which you also can't see on my screen share.
+So sorry about that.
+But it pops up another little screen at the top right that says sign in with Google, you know, and it's like a part of Chrome.
+But when that piece pops up, it triggers a DOM event on the page and it moves that window that you just opened back and brings your window forward.
+So it's effectively a pop-under.
+You can pop up a window and then move it under your current window by utilizing this focusing mechanism that comes along with the sign in with Chrome functionality.
+Sorry I started laughing so hard when you started saying that.
+It just feels like the same exact vein.
+It is, dude.
+I mean, there's lots of ways to accomplish it.
+But this one I think is particularly creative because it utilizes Chrome's own, you know, their own sign in with Google features to cause the pop-under.
+Yeah.
+Very cool.
+I don't know how much of this we want to keep going through or if we want to pivot.
+We'll tell you what.
+Let me at least cover this last thing just real quick.
+The very last link here in our notes, and I'll share my screen to show everyone.
+Is a person named Devanch or Devanch.
+Their hacker handle looks like it's Asmodeus and Leatspeak.
+Let me share.
+Share.
+Screen.
+There we go.
+Also, the name's great, right?
+Like, I love the everything I learned or everything I'll forget type post.
+But they tweeted this, everything I learned about prompt injection attacks in the last two years in this guide.
+This should be your stepping stone into the field of AI red teaming.
+So I'm going to switch to that tab.
+Basically, it is an extremely comprehensive guide for a bunch of ways to do prompt injection and jawbreaking.
+Like, extremely comprehensive.
+I actually, it's so comprehensive that I was scared I would lose it.
+And so I just saved it off to a different place in case they take it down because I want access to this.
+And I think it is similar to my mega post I just released on how to hack agents.
+This is something I think you can copy and paste into a model.
+And as long as it doesn't get derailed by all of the prompt injection payloads in here,
+it would be extremely beneficial for generating more prompt injection payloads or more jailbreaking payloads.
+Yeah, I was just really excited to see this.
+So this is like a source for what you would feed into AI to generate AI jailbreaking.
+Well, I'm saying you could do it for that.
+In general, this should just be a reference for when you're looking at jailbreaking and prompt injection.
+It's like similar to my mega post.
+I think you weren't looking here for both ideas and for payloads that you can copy and paste and then just adapt to your usage.
+Dude, I don't know, man.
+I just don't love jailbreaking models.
+It's just so like annoyingly non-deterministic.
+Okay, well, I'm going to have to jump my other news note then because I think you're going to love this.
+Oh, my God.
+Okay, fine.
+Haddix, as a part of his attacking AI course he just did, built a tool that allows you to just give it the thing you're trying to do,
+like a tactical technique and then a bunch of obfuscation things and it just generates all the payloads for you.
+Wow.
+And then you just need to try them over and over until you get the result?
+Yeah, yeah.
+I assume you just use them in Automate or in FFUF or whatever.
+And just get the outcome you want.
+But, you know, like you could imagine that, like, you want to do data exfiltration by image markdown rendering with every obfuscation technique.
+Then you would just generate all those payloads.
+Like, you would choose, you know, chat history or system prompt exfiltration.
+Then you would choose, you know, image markdown rendering.
+Then you would choose select all.
+Then you click download.
+And then all of a sudden it gives you a text file or whatever of all of the payloads to do that.
+I hope that there's a feature where you can give it an abstract goal and then it uses an LLM to generate the payloads for you on the back end.
+I think that that would probably be a product he could even sell.
+So, anyways, yeah.
+Free shout out there.
+Very interesting.
+Yeah.
+I agree with you.
+It's tough.
+Like, the non-determinism makes it, like, less fun to hack than just, like, traditional vulnerabilities.
+Yeah.
+And I don't know.
+I guess I'm just so used to that moment where I'm like, yes, I exploited it, you know?
+And then, like, when I'm jailbreaking something, I, like, press enter again and it's like, no.
+And I'm like, shit.
+You know, like, it's so frustrating.
+Yeah.
+I was speaking to all of HackerOne staff in Dallas this last week.
+And Shlomi mentioned that same frustration and how that affects him whenever he's hacking.
+And I think that, you know, one thing that I brought up that was really interesting is it can determine,
+it can be kind of affected by whether the model is quantized in that moment.
+And another really frustrating thing is that a lot of times these apps on HackerOne,
+you've probably hacked on some of them, like the AI challenges,
+will have, like, built-in history and no way to clear that history.
+So, once they're in, like, this mode of rejecting you, then they just keep rejecting you.
+And so, it's really frustrating as a tester because you don't know what to do, right?
+It's like, do I just send a million messages to kind of clear that out of the context or whatever?
+And so, yeah, you're right.
+It can be really frustrating to hack these applications.
+And if there's program managers listening, like, that's, like, really good advice,
+like, that you should set up some mechanism by which,
+because a lot of these are, like, alpha features, right?
+Because companies want them tested before they, like, put them all the way to prod.
+You still want to give a way to kind of reset the context or the chat history
+in such a way that each attack can be fresh.
+Yeah, absolutely.
+I think good insights there.
+Moving to the last news topic, we do have to cover Shadow Repeater.
+I think that is a really cool project that Burp released.
+And I'm looking at, you know, I looked at the video that Gareth posted,
+and I love the concept of having sort of, like, an AI watch your testing technique
+and then try to implement it, you know, itself.
+And I wanted to get your thoughts on how that feels to you.
+The repeater?
+Yeah, Shadow Repeater.
+Oh, so, I mean, in general, like, my very first thoughts were,
+this is exactly what I talked about on the pod, like, three weeks ago.
+You know, like, we said that this would be, like, really cool to say,
+you know, to, like, right-click or click somewhere in Shift
+and basically be able to send a diff of all the things you've been trying
+and all the responses you've been trying and then output, you know,
+the next few payloads or let it continue to hack on your behalf.
+Yeah, that's my honest thoughts.
+I think what you were just implying that having it happen automatically is kind of interesting.
+You know, so I thought about that.
+You know, when we first discussed this, my first thought was, like,
+I don't love that it is automatically trying stuff without me giving it a goal.
+Right?
+And, like, that just feels a little bit like, you know,
+it might get a little carried away and be like,
+oh, okay, you know, now I've got SQLI.
+Let's drop the database, you know, like, you know, like, ah, no, you know.
+And hopefully, the port server has put in some smart guardrails there, you know,
+saying, hey, let's just make sure we're doing non-destructive testing in any way,
+you know, that sort of thing.
+But then, you know, my honest thoughts on it is I think it's super cool.
+I think it's awesome that it exists.
+And I think that I would be more comfortable using AI when I give it a direct goal,
+and it is very goal-oriented on it.
+Rather than it looks at my actions, tries to extract a goal,
+and then implements it, right?
+Because it could misinterpret what I want.
+Does that make sense?
+I think they have a model where you pay for token usage, too.
+So it would be maybe a little bit annoying to, like, always toggle it on and off.
+Because, like, we're sometimes testing a repeater,
+and we would not want Shadow Repeater to, like, go spend my tokens.
+You know what I mean?
+Yeah.
+And then sometimes you would want it to do it, like you said.
+So I think maybe, like, a manual kickoff would be better.
+But, dude, how sick would it be if you're, like, testing something,
+and then all of a sudden Shadow Repeater's like,
+yo, sup, figured it out.
+Here's the crit.
+I figured it out for you.
+Yeah, it'd be so sick.
+Dude, that would be so sick.
+So I love the vision.
+I love where it's going.
+You know, here's something that I think could maybe even make it awesome.
+Would be just, like, let me give it some guardrails,
+or maybe give it some limit of requests.
+That's the other thing.
+It's, like, maybe I don't want you to spend, you know,
+200 requests brute forcing through all of the ASCII characters one by one.
+You know?
+Like, that seems like it's going to consume a lot of tokens.
+It's going to consume a lot of bandwidth, a lot of time.
+If I could just provide some extra insight into it, like, maybe there's just a box next to each request,
+and it doesn't start hacking on stuff until I say, hey, I'm trying to figure out XSS here, or something like that.
+Then it kind of takes that, my testing methodology.
+Actually, you know, the clippy methodology.
+You might be trying to exploit Patchversal here.
+Would you like me to do it?
+That's a great idea.
+I love that.
+It really is.
+Yeah.
+Because then it's, like, guessing what you're trying to do, too, which is kind of neat.
+Yeah.
+And do you want help with that?
+Or, like, am I right?
+Yes or no?
+You know, like, that sort of thing.
+That would be really helpful.
+Also, this is just, like, something that maybe everyone should be aware of with both Shift and Burp AI.
+Like, your requests are being sent to a third party, two third parties, right?
+It's, like, it's going to Portswigger or to us, and then also to the model provider and also back, right?
+It's, like, I don't think there's an issue there.
+I don't really, like, I trust, like, we use mostly Gemini or Sonic.
+I trust Anthropic and Google on our side.
+I don't know what Burp is using, but I also trust me and you.
+We're not going to do anything with anyone's data, but it's just, like, you should definitely be aware of this.
+Like, if you're hacking a government agency or you've signed to, like, a super strict NDA,
+you should probably be careful where you submit that, so.
+Yeah.
+Yeah, for sure.
+But, yeah, overall, I'm excited to see AI features getting integrated more into the proxies.
+I'm excited to continue devving on Shift.
+I think this next iteration, what we've got coming up, is going to be sick.
+And we definitely are going to have base improvements to the product as well,
+just the core functionality of it.
+So, thanks for all the listeners out there that are supporting that product.
+Yeah, it's definitely, so basically supporting an alpha or beta product,
+and we're very appreciative, so.
+Yeah, definitely appreciate that.
+All right, so I think that's the end of the news section.
+45 minutes in.
+Let's move to attacking SPAs.
+So, the thought here was that a while back, I want to say it was like episode 30-something,
+maybe 39, Joel and I did an episode on, like, various application architectures.
+And I was going to sort of make that, this episode, a follow-up to that one,
+but I decided to focus more on single-page applications because almost everything we see nowadays
+is a single-page application.
+That's so common.
+And I just want to make sure that we're sort of comparing notes with listeners on what the sort of best practices are for going after single-page applications,
+and, you know, what kind of stuff is not actually going to help very much.
+Mm-hmm.
+So, okay.
+When I see a single-page application, first thing that sort of comes to mind is I have everything that I need, right?
+Like, everything, actually, nowadays, inversely, when I go up against something that's not a single-page application,
+I'm like, shit, like, there's some JavaScript file that's on some, like, weird page deep in this thing that I'm not seeing.
+Right.
+And I'm worried about that, you know?
+But with a single-page application, you've got everything in the files.
+Mm-hmm.
+You may have to web, you know, un-webpack it and get all the data out,
+but it's such a great place to start having all of the JS files for the whole application in one spot.
+Yeah, yeah, absolutely.
+I think, for me, it almost always screams, and we'll talk about this a little bit later,
+but it just always screams, like, the ability to view all the features and know all the endpoints,
+which is, like you said, very beneficial and makes it much more fun to hack, I think.
+Yeah, that's a great point.
+The features is a big thing, right?
+Because we've talked about in the past, like, how feature flags get integrated into these environments, too.
+With a single-page application, those are much more likely to be just, like, a JavaScript blob, you know,
+on the front end, you can just say, turn on advanced feature, you know, true.
+Or, yeah, I'm in this A-B test group, you know, that sort of thing.
+Yeah.
+And I think that's a part of the initial recon.
+And recon sort of has...
+The term recon sort of makes you think about, like, asset enumeration, that sort of thing.
+I really think about a recon as well in this sort of more application recon sense,
+where you're going through, you're downloading all the JS files, you're beautifying all the JS files,
+you're grepping for endpoints, you're identifying feature flags you can turn on and turn off.
+Doing that recon pays massive dividends and is a much more relevant skill to hackers that are in the weeds,
+hacking on an application than, you know, running subdomain enumeration or something like that
+and trying to find some asset if you're trying to go for core impact on the main application.
+Yeah.
+Yeah.
+So, all right, let's see what else we got on the list here.
+Yeah, I mean, you mentioned it there.
+I want to...
+Whenever Justin says, like, turn on feature flags, what he means is either something in local storage
+or something that's like a client-side match replace.
+You know, it's very frequently a client-side match replace, which is really great.
+Almost all these single-page apps just is, like, very technical or a very practical way to look at this
+for any testers who aren't super familiar with it.
+Almost all single-page apps will have, like, a slash me or a slash config or a slash features,
+like, requests that happens when you load the page.
+Like, with single-page apps, I find myself doing, like, a command shift R kind of frequently
+because I want to see those requests, right?
+I want to see what are those initial requests it makes.
+And then what's in those responses is often the feature flags, the privileges, the roles of your account,
+your username, your user ID.
+And so doing match replace on those can be super beneficial.
+You can either do it in Intercept, you know, at runtime just to, like, kind of mess with, like, a single thing.
+Like, let's say you wanted to see what would happen.
+Like, what all requests does it make for IDs and can I load Justin's ID?
+Just I'll go into Intercept and change it real quick once, right?
+But if you're actually trying to view all the features in the app, maybe you do, like, a true to false,
+but it'll be, like, is admin equals true or false, or it'll be, like, a list of roles or features,
+and you'll match replace those for the ones you want, which you found in Recon when you went through the JavaScript.
+And then, you know, sometimes they actually, I don't know if you've noticed this, Justin,
+I bet some people are missing this.
+Sometimes it'll, like, they'll have negative-based features.
+Like, it'll be, like, is, you know, they'll be, like, enabled for this feature or disabled for the feature.
+And if you put both those in there, you're not going to see the feature.
+You've got to be smart about it.
+Yeah.
+You have to go through each one.
+And I think that's where we could also use an AI component of this, too.
+Like, here, here are some feature flags.
+Turn them on correctly.
+You know, like, because you see that all the freaking time, you know, is not disabled or something like that.
+It's really crazy what people write in these applications.
+So you can't just do, like, you know, flag, double quote, colon, double quote, you know, false or to true.
+It won't work.
+You have to individually read each one of them for a lot of the cases out there.
+And I really liked what you said regarding the groups as well.
+That is one of the most common implementations that I see for these feature flags is, like, the API endpoint kicks back, like, a role, a list of roles.
+It'll say developer.
+Yeah.
+And then deep in the code, it'll say, okay, if they have the developer role, show them this.
+Yes.
+You know?
+And so what you've got to do in those scenarios is you've got to either match and replace the JavaScript file to just always, if they have one function that they always do, I always, like, match and replace that function.
+Just say, you know, yeah, just turn it on, you know, for this specific role.
+You know, has role or something like that.
+Just always set it to true.
+But the other thing is you can do exactly what you said and just, like, match and replace all of the roles that you can find in the JS files into that array.
+And then you're off to the races.
+And I think that's something I kind of talked about this a little bit before in the past, but it's something you don't want to do too early on in your process, I think.
+I think it's something you want to do after you're, like, moderately familiar with the application.
+And the reason for that is because you want to be able to spot the difference.
+Yep.
+I find this.
+I have this issue all the time.
+I love the SBA.
+And I'm like, oh, yeah, I can match and replace this.
+I set it up.
+And then I'm like, oh, but what's new?
+And so I'm, like, trying to refresh and swap it back and look and figure it out.
+Yeah.
+Yeah.
+That's huge.
+Is, you know, let yourself get used to the application.
+Let your hacker eyes be like, okay, that's feature, this feature, that feature.
+And then when you turn on the match and replace, you'll be like, wait a second, that feature wasn't there before.
+That option wasn't like that.
+And then that's where you drill down because that's where the competition is going to be the least.
+Right.
+And, you know, most users are not going to have access to those features, so they're going to be less tested.
+Yeah.
+Yeah.
+That's a great point.
+And as an aside there, this is, like, also a great way to test for, like, whenever there are, like, not only privilege escalation, but also, like, free features, which I know isn't always the most impactful thing.
+But a lot of times, if you match or place for, like, a higher subscription level, like, you know, a business or a pro subscription, and then you're able to use some of those features or functionality, if the API calls work under the hood with it.
+Actually, yeah, we should clarify this.
+We have a lot of new listeners, too.
+Not all of our listeners are, like, super OP.
+Just because you can match or place and see more features in single-page apps is not a vulnerability.
+I'm sure a million people have fallen for this.
+I've fallen for this.
+Just because it, like, looks different and it says that you're an admin.
+And if the API calls are 403ing, you know, if they're showing forbidden, if you aren't getting more actual real functionality that affects other users or that finds more vulnerabilities, it's not a bug.
+So that's worth clarifying.
+Oh, come on, Joseph.
+Our boys know that.
+Yeah.
+I'm sure 90% of listeners know, maybe, but there are new people who listen.
+For that 10%, there you go.
+Yeah.
+All right.
+Yeah.
+The other thing that I was going to shout out here is something that we covered recently in the DevTools Masterclass that we did in the Critical Thinkers Discord.
+Is that recorded?
+Are they able to go back and listen if they signed up?
+It's up.
+Yeah.
+It's up in there.
+We did get it uploaded.
+But one of the things with that was with regards to Webpack files, you know, it's really nice when you are looking at application and the Webpack map files are there.
+Mm-hmm.
+And you can just kind of be like, oh, okay, you know, now I'm clicking through the actual, like, source code and looking at TypeScript rather than all this minified garbage, right?
+Mm-hmm.
+And sometimes these map files are there, but they're not linked to the JS files.
+Mm-hmm.
+So whenever you see these JS files loaded up, and actually this would be a great thing for somebody to embed into an extension, is just try that same JS file, .map.
+Yep.
+And if it does work, then you can match and replace that or do a local override or whatever, that map file into place and force the browser to, you know, unpack the Webpack.
+And now you've got a beautiful, you know, breakout of JS files and you're reading TypeScript rather than minified garbage.
+Does the browser look at the last line of the file to know?
+It does, yeah.
+Okay, yeah.
+So if you look at any site.
+That's where I always see it, but I didn't know that was actual spec for how it worked.
+Yeah.
+That's the assumption I've made.
+So, yeah, I think that that is the origins for it.
+Okay.
+And it's worked in the past when I've done it.
+Cool.
+Yeah.
+That's a great idea.
+That's a pretty sick one.
+I wanted to just mention, I know you probably mentioned it on the podcast a hundred times, but if anyone doesn't know about Pprettier, that's definitely the best, the best, like, command line tool and just best tool in general for,
+cleaning up prettified or, I'm sorry, minified JavaScript.
+Yeah.
+Dude, and it's crazy.
+Like, if you search Pprettier, like, it will not come up.
+Does it still not come up?
+Yeah.
+Yeah.
+So, search Pprettier Mixer or Pprettier or Parallel Prettier is actually, I think, what it got renamed to after Mixer, like, gave it to Microsoft.
+But, yeah, dude, I mean, it's performant.
+It's multi-threaded.
+So, it will, like, it will very, very quickly beautify these files.
+Definitely the best one to use out there.
+Definitely underrated.
+Let me actually, hold on, let me grab that link and I'll just drop it.
+I dropped it in there.
+Did you?
+Okay.
+Yeah, man.
+You're the man.
+You're the man.
+All right.
+So, what do we not want to do with an SPI application?
+Brute forcing on the main domain is not going to get you anywhere.
+It's likely just an S3 bucket.
+That should be pretty clear.
+You're going to be getting essentially wildcard responses to some S3 bucket if you try to hit a random path.
+So, that's definitely not what you're looking for.
+Typically, these apps are built off of a static HTML frontend on the S3 bucket and then an API on the backend.
+So, you may want to spend time, you know, brute forcing on that API or attacking that API.
+But to be honest, brute forcing APIs is a little bit tricky because the whole premise of, like, traditional brute forcing is you manipulate the fact that if you hit a certain path, that folder does exist.
+You see a 301 to that name and then a slash most of the time.
+Sure.
+And that allows you to know that you've hit a folder.
+That's correct.
+And you're not going to find that on APIs.
+Yeah. So, typically, you know, when you're attacking these APIs, you want to be using something a little bit more complex like Kite Rider from the Asset Node team.
+I have had mixed experiences with Kite Rider.
+Definitely, the concept is great and it's there.
+And I think it's one of those things that you kind of just need to deep dive and understand how it works.
+And to be perfectly honest, I haven't done that yet.
+But the concept of doing a little bit more smart, a little bit more intelligent, a little bit more oriented towards API based brute forcing is essential if you actually want to go the full distance on these APIs.
+Yeah, they're not. It's not overly fruitful, but I definitely have found some stuff with just if there are sometimes JavaScript or sorry, some API endpoints that are not in the JavaScript.
+But you definitely have to fuzz at the existing or known path that like you're already observing in the app.
+So you have to like be in the app, be manually hacking it.
+You notice that all the requests are to slash management slash API slash V1.
+I'll just fuzz right at that V1.
+I don't do like any kind of like deep recursive fuzzing because like you said, it's completely fruitless.
+Right. But at that path, it's still worth doing some fuzzing just because, you know, if users user slash user ID of user slash whatever, just because those exist doesn't mean there might not be some hidden paths like slash groups or slash admin or whatever.
+Also, some sometimes find that stuff.
+So, yeah, yeah, absolutely.
+And I think this is a good area for just kind of using your brain or maybe even using AI to like look at these paths.
+This would be a cool one, dude.
+This is what shadow repeater should do is like look at the paths.
+Look at, OK, you know, there's a get here.
+There's a post here with this structure.
+Let me guess other other paths.
+Right.
+And that would be so easy to implement, too, because you could just all you have to do is have the LLM take a look at it and then just don't send a body.
+I mean, unless unless it's like a delete request, I might like delete your resources or whatever.
+But like, you know, don't have it use that verb.
+Yeah.
+Yeah.
+Yeah.
+Or or just be like, OK, if I'm deleting it like and it's a UUID, just rotate the number by like one or something like that.
+And then if it's a 404, then it's a 404.
+And if it's like an application level 404, like couldn't find this thing that you want me to delete.
+Right.
+Then you know that there's actually some functionality there.
+Mm hmm.
+That's that's pretty cool.
+That's calling it an application level 404 is like a really neat word.
+I'm glad you just picked that.
+I've never thought about that before, but I see those and I've never known what to call them.
+And I feel like that's like a useful sometimes having a word for a gadget or a functionality enables you to talk about it with other people in a way where and it's a way if you don't have a name for something, I feel like it's hard to hold in your in your mind.
+So like when you're showering and have a shower thoughts, you don't think about it.
+So an application level 404, an application level 200 or whatever, I like the application level status codes or response codes is a concept that you just brought up because now it's in my head and I'm going to think about it more.
+Yeah, because it's like, OK, there's like an HTTP server level 404, right?
+Where it's like, I don't know where to route this.
+Right.
+You know, but then there's also a 404 like, hey, I couldn't find something when I was looking through the database, you know, sort of situation, which is very different.
+Those are very different outcomes.
+Yep.
+That's right.
+So, yeah, I think understanding that is that sort of concept is really is really essential.
+What else do we have on APIs that I think one of the things that Franz does well here is just like just uses that hacker brain and says like, OK, all of these things are structured in a specific way.
+I think that there is an endpoint here and just kind of guesses these endpoints just from his brain.
+And I think that's very few people have that skill, but some people do.
+And it's really impressive.
+Yeah, it's awesome.
+And man, it's like if you can just get good at that and it's hard.
+It's a hard thing to get good at because you don't get a lot of feedback.
+Like, yes, that could have been a good guess, but the endpoint just doesn't exist.
+Right.
+You know, like so I think it takes a lot of experience and a lot of time messing around with web apps, but definitely worth trying when you're on one of those cash cow applications.
+Right.
+Where you're like, if I find another API endpoint, there's going to be another three doors there, you know, like, you know, like it.
+And so I think in those applications where it's cash cow, this going this extra level of like API level forcing, you know, trying to just use your brain to guess, maybe even utilizing an LLM with the paths that are currently there can lend you a couple extra bounties for sure.
+Yeah.
+Yeah.
+So, yeah, you were mentioning what other things do we know about for single page apps.
+I think you put this in the doc, but yeah, you definitely don't see, I think just because they're newer and it's like a newer architecture, you don't see as much simple XSS.
+So, like, yeah, I feel like you might see more like AngularJS or something like that, like kind of those.
+Dom based XSS.
+Yeah, the Dom based XSS or like kind of store XSS, or you might be able to like submit something in the back end that renders in a different application later.
+But in general, just like simple XSS on the page, you don't see very often.
+Yeah, because, you know, the front end is all static and those APIs are not often returning HTML content.
+Right.
+It's almost all JSON stuff.
+Yeah.
+And so it becomes a lot more of a Dom XSS game.
+But the trade off for that is if you get good at exploiting Dom XSS in single page applications by looking for your traditional syncs, you know, your window.location, your, you know, inner HTML, your document.write.
+Actually, somebody, I think it was the PDF.js one from before.
+I was so impressed with the function constructor one.
+I love that.
+That's so fun.
+But if you get familiar with trying to hit those Dom XSS based XSSes, then the trade off in the single page application is almost all of them use authorization bearer based off.
+Yep.
+Which means that if you do get an XSS and gain control of local storage or session storage, you're golden.
+Oh, yeah.
+That's nice.
+You've got ATL.
+I was actually going to bring up that as like a way to know when something is potentially more vulnerable.
+If you see these single page apps and they're not using bearer off, they're using like just cookies only.
+Then I feel like it's such a ripe target for C-Surf.
+And specifically what I would do is like, you know, use shift or something else to modify those JSON API calls into URL form encoded.
+And a lot of them just work by default.
+If they haven't disabled it, a lot of the back ends that are that people write APIs in these days will just like support either form.
+And so it'll just work.
+That's a great tip.
+Or the other thing is also like sending like text JSON or like it's not just plain text.
+Sometimes text JSON thing works, I think.
+But if you send just text plain with JSON in the body and it parses the JSON, then you're good.
+I don't look for that much.
+I need to look for that more.
+Yeah.
+That's something that I built a Kaido workflow that just automatically just checks like, oh, just swap that out.
+And will let me know if it accepts that, which is cool.
+Yeah.
+The other thing I was going to say is I feel like when these single page apps are using bearer auth, it's often good to check for gadgets for manipulating the components of the JWT.
+And specifically, I'm thinking about like some of like Joe Hash's findings, you know, where you can generate it for another user.
+Or like basically go look at how the JWT is generated and it may be possible to generate for another user or play with the JWT and see if you can do if you can resign it with like no, no key and those sort of things.
+Yeah.
+
+
+Yeah.
+So JWT level attacks.
+Yep.
+Great point.
+But also just like understanding what the JWT is looking at as an authentication mechanism.
+So breaking apart the JWT saying, okay, there's a subject field, but there's also an email field.
+Like I wonder if it is using my subject field or my email field, you know, as authentication here and try to trying to sort of piece that apart.
+Right.
+Change your email and then don't confirm it and then try to make some calls.
+Right.
+And stuff like that.
+Yeah.
+Oh, dude, that's such a good idea.
+Rezo, dude.
+Yes.
+That's a great idea.
+Yeah.
+That's a great simple attack that you can pull off in so many apps.
+I was just thinking here.
+I mean, it doesn't land you a bounty, but it does probably let you understand what is happening with regards to what.
+Which one it's using.
+Dude, what item it's using.
+Brilliant.
+Okay.
+Thank you.
+Thank you.
+I need to.
+When you start looking for that a lot of places, right?
+That's great.
+Now, it's just helpful because, you know, if you do know that the app is choosing something like email as the delimiter for what is the authentication piece of information, then it becomes a lot more doable to trick it.
+Yeah.
+If you have any control over the JWT.
+Yeah.
+And that could be a small gadget to control that component of the JWT.
+Totally different topic.
+But one of my favorite vulnerabilities that I've ever found to this day is injecting into a JWT like authbearer that was semicolon delimited.
+And, you know, I had control over one of the fields and I was able to inject a semicolon and then add other fields into that authbearer.
+It's the best, man.
+So it wasn't a JWT, but it was like, like it, it was like roll your own.
+Yeah.
+It was, it was base 64 encoded and it was semicolon delimited.
+Yeah.
+And so if you could, you know, if you could just put in a semicolon, you could create a new field.
+That's cool.
+You know, it'd be value equals key semicolon.
+Right.
+It was almost like, like XWD formula encoded.
+Yeah.
+Sort of format in there.
+And I was able to break out of those and add duplicate entries, which overrode the auth mechanisms on certain endpoints.
+I don't know if there's a single page app specific.
+Maybe you tell me if it is or isn't.
+But I feel like something to check for just in general is whether or not the apps like that, especially some older apps are using.
+So probably not single page, but are using certain cookie values that are not auth related for determining either things to draw on the page or even for auth when they shouldn't be.
+Like, I'm sure you've seen, I mean, it's like a class example.
+Most everyone's probably seen like username equals your name as like a cookie, which obviously you can just change your own cookies.
+And then it uses that at some point on the server side to determine auth when it really shouldn't.
+Yeah, dude, that's, that is some area that I haven't seen hackers really like, like major in.
+You know, there are some hackers that are like, you know, yeah, I'm really good with APIs.
+You know, I know the JSON in and out, you know, like everybody's kind of got their thing.
+Maybe JWT, right?
+What could be somebody's?
+But I haven't seen a really amazing web hacker that's like, yeah, cookies are my shit.
+Like I know everything about every single cookie in this application.
+And I think there's some really good opportunities for the, the HTTP proxy plugins to, to do something really cool here where you can add notes for a specific cookie on a specific domain.
+Right.
+So you can say, okay, you know, this cookie is cloudflare cookie, you know, and this cookie is, you know, used for auth in this scenario or that scenario.
+Right.
+That's a good point.
+You just filter these cookies out when you're doing requests and say, okay, you know, this one, this one, this one, this one's gone and then have something that automatically reissues the request, maybe non state changing requests or whatever.
+It says, okay, well, you know, this cookie and this cookie and this cookie isn't necessary in this request, but one of those is necessary in this other request.
+Right.
+So something weird to happen.
+Yeah.
+That's two different systems, right?
+Like there's two different secondary contexts there.
+And so now you can kind of, you know, start to figure that out.
+That's cool.
+Yeah.
+Or just like you said, the application logic is saying, oh, I'm going to just use the shortcut because this cookie is always there as like a relic of the auth mechanism or something like that.
+And I'm going to rely on that as a, as a, a piece of authentication information or, or, you know, application level or information where you're accessing user data, even though that's not a, an, an auth related cookie.
+Yeah.
+I mean, someone should do that.
+Right.
+I mean, people who become an expert in a specific thing, whether it's Chapman with headless browsers or whether it's, you know, people bringing me AI bugs, or I know that like I would always reach out to HXO one with a OAuth bugs.
+Um, I'm sure people reach out to you for class, that stuff.
+If somebody wants to be the, to be the cookie monster, they can, uh, they can, uh, figure that out.
+Dude.
+I just, we just popped a, um, man, me and, and one of the, the members of the critical thinking community just popped like a super sick bug.
+Um, I'm going to talk about it in the, uh, the full-time hunters guild meet and greet later today.
+Um, but I, I hope I'm going to talk to him and, and see, you know, Hey, can we present it on the pod sometime?
+Because it's so simple, you know, and the functionality is so the functionality that this XSS had was like, Oh my God, please.
+Like, like this has to be vulnerable.
+Like, but it was just very accurate, aggravatingly not vulnerable.
+And like the three or four ways that you would think that, Oh, I can just, just put it like this.
+And then finally there's like a workaround at the end that we can, which is just like, that's sick.
+You love it.
+Um, okay.
+Uh, so two things here, uh, caching attacks and then client side path enumeration.
+So, um, let me, let me talk for a second about caching attacks.
+Um, caching attacks definitely do happen in both, uh, traditional applications and single page applications.
+But, uh, my experience has been that it is a little bit harder to get these caching based attacks on single page applications because, uh, they're, the user level logic is sort of segmented out into these APIs.
+And these APIs probably don't have any caching on them.
+Right.
+Um, that's fair.
+And, and so, uh, I, I spend a little bit less time looking for caching related issues on these APIs.
+That being said, I think the vulnerability, um, so let me say this when there isn't a different API host, right.
+And there's, there's just like a slash API that is being rerouted away from the S3 bucket or whatever for the single page application and being routed to a backend API.
+Mm-hmm .
+Then you're serving static assets and API assets on the same host.
+
+
+There you go.
+
+
+And that is where you start seeing that, those caching attacks.
+I love, that's such a great tip.
+Like if you see that, start looking deeper.
+Yeah.
+Yeah.
+Those little, um, what are those called?
+It's like whenever, um, obviously we've, you know, we say like develop your sniffer and that sort of thing, but, um, man, there's a word for that that I can't think of.
+But anyway, it's like an indicator that you should look deeper.
+An indicator.
+There you go.
+
+It's an indicator.
+Yeah.
+Yeah.
+It, it, that, that there could be something interesting here.
+
+It's a trigger for you to sort of investigate more.
+Yeah.
+And that's, that's kind of what I meant by, I, we just need a word for that.
+Cause we're going to use it on the pod all the time.
+Speaking of it hit me earlier.
+We need the audience to help us come with a, come up with an Acme Corp name to use when we're talking about bugs for companies that we can't disclose.
+Right.
+Oh my gosh.
+Yeah.
+That's a great idea.
+We need to come up with this, right?
+This is actually on our to do.
+We need to.
+Okay.
+Let me ask you this.
+Do you think we should, it is on our to do.
+Okay.
+But what I, what I told Richard, our producer is, you know, what we want to do is we want
+to use a consistent name for a given target.
+So, so we can talk about it, multiple anonymous targets and not complete the two.
+Okay.
+Right.
+So we got to come up.
+Like, I think when UG recommended was like George Foreman grill or something like, you
+know, like, and just have some like over dramatized voice instead of just bleep, everything's bleep.
+Right.
+Yeah.
+
+So if you have any recommendations chat, drop them in the, the pod talk channel on discord
+and we'll we'll, we'll take a look at those when we're trying to bleep out things in the
+future.
+Yeah.
+But the circle back.
+So when I was saying earlier, if you see an, like a, an API that's using cookie based
+off, you should look for URL form encoded or text JSON instead of the regular application
+JSON content type.
+Right.
+So that's like indicator and then thing to check for.
+And so like, you're talking about that with indicator and thing to check for.
+So if someone has a specific word for that also reach out to us, or if you think of one
+right now, Justin, I would love like a word for like, that's your key to look for something
+else.
+Yeah.
+It's like a trigger, but the, the, the, um, analogy that I used in my DEFCON 2020 or,
+um, the hum con 2020 talk, whenever I was talking about source code review was smelling
+blood.
+You know, when, when you see that you're like, Hmm, something, something's funky over there.
+Like, let me, let me go check that out.
+You know, like, um, and so I think that is a good way to think about it is you should have
+these triggers or these, you should, you should be smelling something funky.
+You know, when you see these, um, various pieces of functionality.
+Yeah.
+Perfect.
+So anyways, yeah, go on.
+So I think you were mostly talking about how with the, when the API points are shared, did you,
+did you have more to say there?
+Yeah.
+So, um, API endpoints definitely.
+Um, but one of the other, going back to the APIs, um, there was another one that I wanted
+to highlight here, which is sometimes with these single page applications, you can swap
+out the API backend and you can just, sometimes it's as simple as like naming your page dev or
+something like that.
+Window.name is now dev, you know, or something like that.
+Yeah.
+Um, trigger the backend to switch to a different, uh, backend API.
+And then, you know, there's lots of attacks that, that actually can be triggered from that
+environment.
+You can, um, one of the ones that Sam Erb, uh, does well and, and has exploited many times
+is the, the token swap.
+Um, and you just, you go to that, that, um, staging environment, you generate a JWT or session
+token that's using the same signing secret.
+So you put it in the main application and even if it's like user ID equals, you know,
+256, then now you're, you, whoever you user ID 256 is in the main application.
+Oh wow.
+Yeah.
+I need to look for that so much more.
+That's genius.
+Yeah.
+Yeah.
+So, so that's, that's something that you can definitely go after there.
+Um, but swapping out the API backend can not only do that, but also give you access to
+staging features that aren't released on prod yet.
+And, um, I've had a good hit rate with reporting, um, vulnerabilities in staging features
+before they get to prod and saying like, Hey, might, might want to fix this before prod.
+And even if staging isn't in scope, that typically gets accepted because it was going to
+It would have been in prod soon.
+Right.
+Yeah.
+I think that, um, that also is just like something that's kind of cool about being a hacker.
+It's like when you see a single page app and you can see like, oh, if it's.
+You know, dev it's in, it's on localhost.
+If it's on staging, it's on this host, if it's on this, on this host.
+So it can also give you an indicator of like their naming schemes for things like their
+naming schemes for subdomates and stuff too.
+So it's like a kind of a nice little recon technique to go look and find, you know, staging
+domains when you're looking at single page apps.
+Yeah, absolutely.
+Okay.
+Um, two more things here.
+One that I can't believe we pushed off until the very end, um, which is client side paths.
+This is such an, a essential part of attacking single page applications.
+And I feel like a lot of hackers that I know that are really talented, even ones that are
+are quite good at client side, um, don't understand this concept of like client side
+paths and server side paths.
+So in a single page application based architecture, um, your path doesn't really matter most of
+the time in the browser, it's going to be a static 200 that they're going to be sending
+back that says, okay, here's the single page application.
+Here you go.
+What does happen though, is that in the JavaScript code, they are utilizing the path and the,
+you know, the state, sometimes it's in, in the hash, sometimes it's in the actual path itself
+to determine what page you're on in the application and show you different parts of the UI, um,
+dynamically without refreshing the page, right.
+Without causing a bunch of bandwidth.
+Yeah.
+I'm going to sound like a super new here.
+So if I'm a single page app, I click like a new tab and I, in the URL bar, I get a slash to that tab
+name.
+Mm-hmm.
+Mm-hmm.
+I often won't get a request, I guess.
+Right.
+Right.
+Because it was actually, what's happening there is when you click that, you know, navbar link
+or whatever, it's just simulating that you're navigating, right.
+It's just pushing, it's using history.pushstate typically, I think, um, to change the path name
+in the URL.
+Mm-hmm.
+Um, I want to say it's pushstate.
+I have to double check on that, but, um, it's changing the path in the URL without issuing another
+request.
+Right.
+Um, and, and with that, it's, then it's going to go into a client-side router and that router
+you have access to, it's in the code.
+Right.
+And one of the things I always search for with client-side applications is I search for,
+um, excuse me, single page applications is a path colon.
+Path colon.
+Because almost all of the, um, uh, client-side, uh, environments define the routers that way.
+So you do path colon and then a double quote, and then they'll say like, okay, slash users,
+slash star.
+
+Right.
+And when you see that star, you know, okay, that's an ID there.
+Right.
+And, and, um, and then you, you can kind of build out these pieces of client-side, uh,
+functionality.
+And this is how you land C-Surf in these applications is, or, or client-side path traversals is you
+say, okay, wow, there's a, um, client-side endpoint called like, uh, callback after verification,
+you know, to change my email or whatever.
+Right.
+You know, sometimes it's really long like that too, on the callbacks.
+And, um, you can just force a user to hit that endpoint directly.
+And it doesn't expect that you're navigating directly to that endpoint and it will cause
+the C-Surfs.
+Hmm.
+Um, does that make sense?
+
+
+Yeah.
+
+Yeah.
+
+No, it's cool.
+Okay.
+Solid.
+Yeah.
+So enumerating those client-side paths, um, really big.
+And then obviously that's also where, um, client-side path traversal comes in, right?
+Where a piece of that URL is being parsed or a query parameter.
+And then it is then getting embedded in the, into a fetch request on the backend, in the
+path portion, you can path traverse, you can truncate with a hashtag or a query, um, a question
+mark.
+Um, and that's sort of how we landed on this amazing, uh, technique called client-side
+path traversal.
+Um, sorry.
+I think the, the place you were going was that there are paths that are parsed both client-side
+and server-side.
+Yeah, exactly.
+So, you know, you find those paths, you enumerate the functionality.
+Sometimes you can, uh, trigger C-Surf.
+Sometimes you can trigger CSPT, but at the very least you understand all of the attack surface
+you're dealing with in a client-side application and you know, all of the pages.
+And if you see a page that you haven't been to, or you don't know how to navigate to with
+the UI, it's something that you can sort of make sure that you're getting full coverage
+on this client-side application because we have access to all the routes, which is awesome.
+Right.
+Yeah.
+Yeah.
+Sweet.
+That's interesting.
+So a lot of times I will go pull all the paths and then I'll kind of like fuzz for them, but
+that's also kind of silly to do sometimes.
+Mm.
+Yeah.
+Yeah.
+I mean, I, you don't fuzz really in the, in the, I mean, you can, you know, manually put
+them in your browser, but you're not, you're not going to get any response back if you hit
+it, hit with like fuff or something.
+Right.
+Yeah.
+So that's interesting.
+Do you have any way that you like to like, let's say it's a pretty large SPA.
+Do you have anything that like outputs you a list of links that you just, you just like
+click them all in order to go to all the pages to see if there's any that you
+went to directly that you couldn't find in the app.
+Yeah.
+I mean, what I typically do is I'll, I'll just jump, dump all the JS, beautify it, grep
+for all those endpoints and then just sub in the IDs.
+So oftentimes I'll have like, you know, there'll be a placeholder like user ID or whatever.
+Well, I just say user ID is my user ID.
+Right.
+And then it like populates it across all of those plugins.
+And then I just manually, you know, one by one go through them because you can't throw it
+into automate or, or, um, intruder or anything because it's like, um, it's not a server side
+
+
+So you just manually got to put them in the browser and you either, you know, click to open
+them or you just, you know, typically I don't like to open them all at once because sometimes
+they'll redirect and stuff happens.
+
+So I typically, one by one click and see what happens, trace the code, you know, and that's
+how you really become intimate.
+That's how you get intimate with the application, you know?
+
+Um, and that's what we talk about here on the pod is, is how important it is to be very intimate
+with the application.
+And you can do that by looking at these client side paths, enumerating each one, and then
+one by one going through and trying to exploit functionality associated with each.
+Yep.
+Sweet.
+Yep.
+Okay.
+Dude, um, we're coming up on time.
+We're going to call it a wrap here.
+Let me just shoot this last, um, this last tip out there.
+Um, obviously client side applications,
+or single page applications, uh, JavaScript files are super important.
+Um, luckily way back URLs, uh, caches JS files.
+So, uh, if you really, really, really, really trying to do your due diligence, um, you can,
+hit those way back URLs, see, see what kind of, I mean, the client side paths are going to be gone,
+right?
+But see what kind of API endpoints were still in those, um, and see what functionality used to
+be there and where they might've integrated it somewhere else.
+Um, and with that diff, it can inform you more on, on how to attack the application.
+Yep.
+Yeah.
+Um, I guess maybe they tune in next week to see if they, uh, we'll hear more browser-based scam tactics.
+No, browser-based scam.
+Oh, please, Joseph.
+All right.
+Whatever.
+That's the pod.
+Thanks guys.
+And that's a wrap on this episode of critical thinking.
+Thanks so much for watching to the end, y'all.
+If you want more critical thinking content, uh, or if you want to support the show, head
+over to ctbb.show slash discord.
+You can hop in the community.
+There's lots of great high level hacking discussion happening there on top of masterclasses,
+hack alongs, exclusive content, and a full-time hunters guild.
+If you're a full-time hunter, it's a great time.
+Trust me.
+All right.
+I'll see you there.
+Bye.

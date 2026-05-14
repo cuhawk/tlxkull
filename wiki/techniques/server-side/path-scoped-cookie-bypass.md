@@ -2,7 +2,7 @@
 title: Path-Scoped Cookie Bypass via Uppercase Path Variant
 slug: path-scoped-cookie-bypass
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/server-side, technique/cookie, technique/bypass]
 inbound: []
 ---
@@ -86,6 +86,8 @@ to `/`) are still sent normally.
 | date | target | notes |
 |---|---|---|
 | 2026 | (undisclosed program) | Justin Gardner (CT Ep. 171): found multiple bypasses using uppercase letters in paths over two months; uppercase path variant suppressed a path-scoped protection cookie, enabling vulnerability that required the cookie's absence. |
+
+- {date: 2026-04-23, source: CT Ep 171} — Justin Gardner: "capital letters are really overpowered" — at least three vulns found via uppercase path variants in the past two months; primary case used to suppress a path-scoped protection cookie and trigger a vuln that required its absence.
 
 ## References
 

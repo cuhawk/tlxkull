@@ -1,0 +1,913 @@
+so something that's really funny uh every time i talk with you with supply chain is that i show
+you all those researchers and then i see your name in the research and like every time but
+every time like uh i think we were talking about uh the travis uh research from head of
+us yeah travis ci yeah and i was talking to you about that you were like you know that
+i'm on the paper and i was like you're dead justin okay
+hey everyone this is techno geek here just wanted to give a quick shout out to our latest sponsor
+project discovery now project discovery makes a lot of tools that you probably know of or have even
+used one of them is nuclei and the latest release of nuclei is version 3.2 now 3.2 comes with a lot
+of really awesome new features um two that i really wanted to highlight here for you are the
+authenticated scanning and the advanced fuzzing support now for authenticated scanning it used to
+be that you would have to do all your nuclei scanning against unauthenticated endpoints or you'd have to
+add your cookies manually all that kind of messy no more it's all automatic you can use existing
+login templates to automatically log in to your application and then you can run all your
+existing nuclei templates against an authenticated part of the application now to really increase your
+coverage the other that i mentioned is advanced fuzzing support now nuclei had added way back in
+version 2.8 the ability to fuzz different things but now they've expanded this comprehensively across
+the board so not only can you fuzz in the normal spots but you can fuzz within headers you can fuzz
+within cookies you can fuzz within specific parts of the body whether that's in json or xml or form
+data and so many more things so if you want to learn more about what came in nuclei 3.2 go ahead and check
+out the the release blog post over at nux.gg podcast that's n-u-x.gg podcast thanks every time every time
+before i start a podcast i just i start you know by jumping i just get some get some jumps out right before
+we go so it's hilarious to see it maybe i need to do it on on camera um all right lupin welcome back
+to the pod man you're a second time guest we also had you here on episode 37 that one was live from
+japan yeah it's pretty freaking cool um now we're live from france so that's also great there we go it's
+it's another location um but yeah man i excited excited to have you back on and um i think it's
+very timely with all the stuff you've been releasing lately um just as right before we're recording this
+episode you just released a blog post um outlining a vulnerability in uh npm yeah uh which was crazy
+and we'll talk about that uh but today the focus of today's episode is going to be on um supply chain
+attacks and dependency confusion which you are an expert on um so maybe we could just go ahead and
+start off with give me a little bit about how you got into that space and uh tell me about depi the the
+tool the amazing tool you've made uh to secure supply chain stuff yeah definitely um so how i get into
+that space i think like everybody else um it's when alex burson released the his book post on dependency
+confusion and uh this was amazing at the time i think i really love this vulnerability because it
+was uh disrupting right it was another way of seeing scopes and we removed the domain component component
+of a scope and we are more talking about packages supply chains and all those buzzwords that no one
+really understands and i wanted to understand them uh so in 2021 uh i i started like creating this small
+small bash uh script uh 50 lines of bash and i was pulling javascript and then exfiltrating all the
+the packages from the javascript and trying to see if we could take over uh in the public registry so the
+goal of dependency confusion is that uh you have two ways of uh of putting a package you have the
+private that's factory and the public uh registry right and so what berson like thought was what if
+i just put the same package like the same name but just a higher version on the public registry which
+one the artifactory will pick and uh that's where the entire mess uh started yeah and and now you know
+supply chain stuff has become a whole i mean it was really an underserved attack surface i think uh
+you know prior to that whole blog post and i i was rereading that blog post in in preparation for this
+podcast and it has 20 000 claps yeah on medium and i'm like whoa not 20 000 views not 20 20 000 people
+that have a freaking medium account yeah you know clapping um and i was like wow okay this is a really
+big thing and and i i um uh i was i was working with him on the original um you know vulnerability
+that occurred uh that sort of uh spurred this whole thought and so i was cited in the paper and i remember
+when it came out and it got really big a whole bunch of people that like i knew from college were reaching
+out to me just like wait a second are you are you that justin garter and i'm like yeah and i just i was
+really impressed by the the reach of it but now i'm starting to understand you know supply chain is a whole
+whole massive attack um you know attack surface um and there's lots of different attacks that can go
+along in in supply chain stuff i'm not just dependency confusion so um something that's really funny uh
+every time i talk with you with supply chain is that i show you all those researchers and then i see
+your name in the research and like every time but every time like uh i think we were talking about
+uh the travis uh research from head of yeah travis ci yeah and i was talking to you about that you
+were like you know that i'm on the paper and i was like you're that justin okay yeah man you know it's
+i i think that's just two really good examples of being at the right place at the right time and
+knowing the right people because um you know the travis ci stuff that was a really interesting period
+in my in my bug bounty development and and um you know the work with ed overflow and and uh corbin leo
+and or lorban ceo as i like to call him uh and and you know that whole that whole uh era was really
+was really fun and then the you know i just kind of got pulled into that by the that crew and then the
+same thing happened you know with with alex i was like okay uh let's hack on this this you know
+paypal target for a live acumen and i just shared some code to alex and he was like oh wait a second
+what if i totally hijacked that code and i'm like whoa um but but but i think i think there's
+before we get into like all of the technical details of um supply chain attacks and dependency
+confusion and that sort of thing i think there is a um i think there's some groundwork we need to set
+here because most of the time when bug bounty hunters are are you know hacking we're focusing on
+the web scope and this is really not um you know in some ways it's tangential to the web scope
+but um this is really before all of this in the software development life cycle um so so could
+you give us an overview um and i and we do have a little little graphic here we'll put up at the
+screen uh um you know uh for those people walking watching on youtube about sort of the the flow of
+supply chain but um could you talk a little bit about how applications are built and how they're
+deployed and how what kind of attack surface we have within that environment um so the graph that you
+are mentioning is coming from the salsa standard that is being constructed with the open ssf foundation
+primarily founded by google and by the linux foundation so uh those are like really interesting
+people uh to work with yeah yeah and um and so basically on the graph uh you see that there is
+like three main uh attacked threats or attack surface uh there is the source the build and the package
+so let's say that the source is everything related to the artifactories and the registries right so for
+instance your jfrog is your factory and your registry will be npm pipy everything where you can set up a
+uh public package right then you have the build attack surface it's everything where you are pulling
+from a source and then you are building your artifact so basically all your code your dependencies uh at the
+moment where you are set before deploying it right and then there is the package uh that you produce
+uh so once everything is built uh you are publishing the package again and the package can come back as a
+dependency for another build so that's basically how um the salsa standard is defining the the attack
+surface of the entire supply chain okay so so let me let me repeat this back to you make sure i've got
+it um you know we've got the devs they're writing the code you know they're in their vs code doing their
+magic right and then um they're committing that into a github repo right which is also i imagine you know
+a part of the source piece and um and you've also got that source um stored in in an internal environment
+when we're talking about these bigger you know tech companies are stored um you know it can be in the
+local version of of github it can be in a github enterprise uh you know organization or whatever it
+could be on the actual um github cloud in just a private organization um and then you've also got these
+sort of um artifactory well okay let me let me ask you this can you define artifactory and registry for
+us because i kind of get those two terms um mixed up in my head a little bit sometimes so uh for me
+an artifactory is uh where you are going to publish all your private artifacts or private uh dependencies
+and it's where you are basically pulling all the packages for your internal organization okay
+um so artifactory can be jfrog google has their own artifactory called the google artifacts registry
+there is a code artifacts for aws um basically it's often pulled from cloud providers or there is
+like jfrog their own providers right um so those packages are here to instrument and help uh create a
+standard across your organization for where you are pulling the packages and then uh there is the
+registries so basically an artifactory will pull all the packages from the public registries if it doesn't
+exist uh on the internal artifactory so it's like a hub that factor is like a hub for all the different
+uh registries and it creates like some kind of bottleneck for when you want to pull dependencies and that's
+uh where it becomes interesting because once you have a central centralized piece of your supply chain you can
+uh really log monitor and uh and deploy application more easily for your developers
+okay okay so we've got the the artifactory that's sort of like your local version of the registry that's all for
+your private packages and artifacts that are um internal to your organization like maybe your helper tools or some of the other stuff
+um that are that are often used within your organization maybe your like ui components that sort of thing
+um could go in there and then and then you've got the registry which is like public packages that are
+um being reused by lots of different organizations and are being shared um across the whole sort of uh software development
+um industry um okay and that's all all of that's a part of source and then um we go into the build area
+and then um from from there we're building you know our packages bundling everything together and then
+we've got um the the pack so that's where like our continuous integration stuff comes in that's like
+travis ci that's um you know uh what is the uh secure ci uh get up action get up back lines yeah exactly so
+that's all that um lots of attack vectors there as we know we'll cover those later and then finally we've got
+the package that gets produced and that package um can be reused by other um components and that sort
+of brings us back around to the beginning of the of the lifestyle or life cycle again or at least over
+to the build step where those packages are being used in other in other um artifacts and and being um
+sort of nested like that is that accurate yeah yeah exactly and um this attack surface is one of
+the most interesting uh because we've seen in the past uh few months is a lot of vulnerability in the
+ci builds like um public repositories have been here for years audited many many times uh that yeah from
+one day to another you manage to pull out all the credentials because there is cash on github like
+somehow uh you you can do something like that and it's crazy it's it's crazy and um basically this
+attack surface why it's interesting because you can uh run remote code uh execution as a service
+so here you have a bit more privileges and also depending on who can run pipelines uh you are going
+to be exposed to different kind of vulnerabilities for instance um there is a lot of configuration
+where every time you do a pull request to contribute to a code base there is pipelines to check
+your code and so there is a remote code execution as a service here yeah which is super interesting
+already yeah and and the testing infrastructure i think for all of these as well as can be sort of
+built in as well so that's another piece of this that that um there could be uh vulnerabilities
+introduced into and then um so then taking this the full the full step um you know after you you do
+your build and you're in your um uh continuous deployment continuous integration flow yeah that's
+when that code is actually hitting that prod yeah exactly and it's getting pushed out into um into the
+web apps that we uh normally think about as we're hacking uh these these targets yeah um exactly okay
+and and so what we want to try to attack here is any piece of that flow and um as a part of the prep for
+this episode we've kind of gone through here let me see one two three four five six seven roughly seven
+um sort of ways that you can attack this whole flow that we had and i'm sure we'll come up with more
+as we start talking definitely um well i think i think this this podcast would be brainstorming more
+than anything yeah yeah well as it always ends up to be you know whenever we chat with you so um
+i'm looking forward to that um so the first thing that i kind of want to talk about uh where we can sort
+of attack in this in this flow is getting us our our scope what what kind of things can we attack in
+this flow and how do we identify the entities that we can attack um and and for me i think that looked
+a lot like identifying these packages um uh and in repos um so so what are the most i mean obviously
+you know we can look at an organization's github repo but i imagine there's more more ways to enumerate
+scope for that uh can you give us a couple of those there is so many so many ways uh so uh we have
+all the traditional uh wasteful uh package i call that um artifactories file i don't know if it's the
+literal term for that but i i call it uh that so it's everything like package.json a jm file a yam.log
+uh requirements.txt uh you can find it on the all the open source repositories of your target but um
+here uh all the packages tend to be uh public in general uh you can find some private packages because
+there is developers uh sometimes pushing their the internal source code and it's always really funny
+and we're going to talk a bit more about those kind of techniques and how to find those internal
+source code exposed uh but um there is this traditional where you put like open source right
+and then uh you can go try uh to uh do some fuzzing on uh on your target so there is a lot of people
+exposing their uh web route and this is where a package.json lives in general and so you can enumerate
+them and uh try to to fuzz them get them back and start your dependency analysis from here that's
+interesting but the most interesting techniques is when a package.json file ends up in the front end
+uh directly and that's something that uh we talked a lot uh with uh the people that are doing js weasel
+and they actually implemented uh a detection for that inside js result wow cool yeah uh where basically
+uh there is um in the javascript somehow some libraries are just taking the package.json file
+and uploading that in the front end as a string or as an object um and so you can just basically go in
+the javascript pull all the strings uh in a st way and then just see the package.json no way it's so
+funny and um and so that you can do on minified uh javascript actually so you don't need the dot map
+file but if you want to go a little bit further you can pull the dot map file of the javascript so
+basically um everything that will help you to reconstruct uh the source code and there is two
+ways of checking packages here uh there is um the sources like a dot map file is a json file so there is
+the source key and there there is the source code right and so in the source key you can see all the
+names of uh the packages so you just pull node modules and you'll see uh some names and also webpack
+for instance and you'll see then some dependencies and so here you already have all the dependencies
+that are shipped in the the front end and that you can also start analysis on wow okay so so we've
+got obviously we're going to be looking at um the uh open source uh repos you know on github or on
+gitlab or whatever and we're going to be um assessing those thoroughly but also any any web app that is
+out there you know so many of these web apps are using like webpack and that sort of structure nowadays
+um and so also inside of those the the package.json file might be included um and uh you know it could
+just be living in the web root as well so we always want to hit those endpoints and i've seen that time
+and time again you know that that's one of the things that i think is on my quick hits list uh for
+directory brute forcing is like making sure that package checking that package.json file um and
+there's like a lock i think package dash lock.json file as well um that we can hit there one thing that
+i wanted to add here that i think would also be a um a helpful piece is um this whole concept of
+dumping the git history and this was such an amazing um i remember the moment that i learned
+about this technique and this and this technique was solidified in my head i was at a live hacking
+event in london with um tom nom nom and he found just a absolute mega crit on the target uh because
+he he downloaded all the open source repositories and he ran this tool that he built called git dump
+on it and you can find it in his um i believe it's in his actual in his dot files uh repo uh but
+essentially what it does is it takes a a repository and it uses git you know git is a version uh history
+to go through and dump every file that's ever existed into this massive txt file um for that
+github repo right okay so um one of the things that i i thought would be pretty cool here is like
+uh if they were using um certain packages in the past or uh looking at the changes to those package.json
+file over time um and then maybe grabbing some of those um packages that they're no longer using
+but were using in the past might give you an in into some of the dev machines or machines that
+haven't been fully updated to the latest version of that open source repository um uh you know it might
+be able to give you access to those if they're still pulling from that same from that same package.json
+file yeah i think it's a super interesting idea because uh we had some of our clients that asked
+us hey uh on your analysis we are going to talk about the tool later but it's really interesting
+just to say that uh some people are like maintaining um a repository with different versions at the same
+time like they're just branching all those versions and so looking at one repository on always the latest
+version of course you will find some stuff but when you know that some repositories are maintained across
+like many different versions from one dot x to four dot x here you can see all the different teams and
+developers doing like working on some different stuff and so they asked us like to scan like every
+commit ever uh on all the different branches because uh they they know that from one version to another
+than it's not the same libraries that's a great point you know and they they've got to go back
+and say there's a bug found in an earlier you know still supported version and if somebody's relying
+on that they've got to go back and patch that version and rebuild it and reship it right and so
+um you know if you're able to inject into that point whenever they need to redo that again re re
+push it uh re-release that version um then there's going to be a problem something interesting is that
+uh a lot of registries do not allow you to delete a version you can have like up to 24 hours to delete
+it but once it's live it's live it means that if you find like a dependency issue or a supply chain issue
+you need to rebuild the package and update the version so the minor version and you will just update
+it but if someone outcoded the version to say i just want this specific version they will still be
+vulnerable and there is a bug that we are going to talk about it later here yes where there is this
+exact same problem yeah no that that's that's really pivotal and and it really speaks to the
+the depth and breadth of the supply chain problem because um there there are so many people that are
+like all right listen i don't want to deal with dependency hell you know i don't want to deal with
+like all of this garbage that that uh you know i gotta reinstall this version and this version becomes
+you know incompatible with that version i don't want to deal with all that so i just lock my my um
+you know script or my program or whatever to the specific version so it always functions exactly how
+i i anticipate that it will um but the problem with that is that dependencies can change over time as well
+you know and and some of the pieces that have have um you know that that version might have been built
+upon uh could introduce vulnerabilities or um another place we're thinking about going with this or
+we're definitely going to go with with this chat as well is like what happens when static resources get
+deleted um out of these packages and uh what kind of havoc that can bring um so definitely want to go
+there we'll definitely get there um but i do want to take a second uh and talk about depi um so you
+mentioned you know scanning across all of these different versions of the of the um of the packages uh
+can you talk a little bit about how you've architected depi because i keep on wanting to ask you about tools for this
+because i'm like am i going to go do this manually but then yeah but then i but then i'm like oh wait
+he is the author of the tool for this so yeah um i i need to tell you a bit more about the story of depi
+because i think uh like this really understand more about the architecture uh so basically as i said in
+2021 i did this uh small bash script and i was collaborating a lot uh with snorlax at the time and
+we were like always targeting the same uh company and our goal was to find like every kind of vulnerabilities
+on that company like every bug type we wanted it right uh so that was like a that's a great goal
+let's just pause for a second and appreciate that goal all right go ahead no that was a fun game
+um and so uh we were on the dependency confusion route i did this uh bash script and i was just
+pulling javascript file checking the the packages and on the first run of my 59 bash script we managed
+to find the dependency confusion reclaim the package and at the time there wasn't any banning of the packages
+and so uh it lived for one week and then we got hit and we managed to to have a remote code execution
+trigger so that was like the first ever uh hit of uh debbie uh which was uh really fun at the time
+it wasn't called debbie it was just called like hey dependency confusion dot sh scripts ronnie's little
+script yeah exactly that's great and um and you know uh my my brother is a back-end developer and
+one day uh after months of using that kind of script i i i went to him and i was like hey uh do you want
+to help me like build uh the script but better because at one point i i you know i'm not a software
+developer and uh he told me no he told me no classic i don't care and i'm like let's just do a proof
+concept really quickly and then uh i came back uh with uh some bounties and i just uh paypal'd him
+uh some bounties and he was like okay now we're talking what the heck is happening you know he's not
+like in the security field so it was interesting to see like developers versus security um and so
+i tricked him into building that oh my gosh that's great yeah uh at the time it was like a small
+project and then we moved into a company and we don't really understand how that happened uh but it
+it still did and i can just see you with like wads of cash just come here write the code you can do it
+like in la i i think it was more like the technical challenge of a lot of stuff that that we were
+doing but uh yeah bounties really helped too in the comments at least to get his attention yeah exactly
+yeah um but but yeah we walked a lot and we had like so many different architectures at the time
+we weren't weren't even saving packages in our database uh because we wanted it to be the most
+lightweight possible we had like this script uh architecture in mind but then it moved to a full
+back end and now to an entire uh ecosystem architecture with many microservices uh to optimize
+everything um so yeah we have a lot of different uh modules and our methodology is simple we have like a
+crazy idea and we're like we need to confirm this idea so we are going to build a module that we uh go in
+development mode research mode of depi and just spread uh this theory across all the scopes uh that
+we have right and here we are going to collect all the information of all the odd and agnostic results
+that we have like stuff that aren't uh in the scope of our hipa hypothesis right we do an hypothesis we
+will find that and everything that is not inside the scope we are going to dig it and that's where we find a
+lot of zero days and new dependency confusion and more than the physical for your supply chain issues
+so wow that's how that's an amazing structure man i love that
+yeah definitely and that's how uh we we had it in mind uh depi is really a tool to help for research uh on
+on like the first thing it was built for was for research and then it became a tool for companies uh
+to just take the modules that they are interested in and uh scan them internally um so basically we are
+going to pull all the the artifactories uh file uh all the build files and then we are going to to
+scan for any supply chain uh issues in depth really okay gotcha and just before uh i know we're going
+to get inundated with comments if i don't say this um depi is not an open source tool it is a software as
+a service and it is enterprise focused um and so there's no way where you can go download this tool
+right now this is a uh this is a uh a startup that that runny's running um so i'm just gonna put that
+out there yeah um that being said uh you know you have a ton of experience architecting and developing
+this tool for um detecting supply chain uh attacks and i i'm i'm curious where the 80 20 is in this in
+this arena i i'm curious where um what what are the what are the 20 thing 20 of things you know of
+the whole that we can do as bug bounty hunters uh to to get 80 of the results 80 of the bugs um where's
+where's most of that meat living in this environment and how can we code our own scripts surrounding this
+yeah essentially what i'm asking is give away your secret sauce but you knew that before you came onto
+the pod you knew that i knew i knew yeah um one thing that is really interesting is that um supply
+chain detection make more sense to do it internally inside the companies and that's why we built uh the
+this tool to be uh for like startup company focused right because it makes more sense to go to scan from
+the inside and to have the entire list of dependencies and from here start our research right uh now that
+being said uh there is a lot of exposure of uh of dependencies and that the the supply chain scope
+is interesting because it's not like traditional web app scope like it's not tied to a domain uh and
+that's something that is really bothering uh a lot in the bug bounty when you find probabilities that are
+not tied to a domain but supply chain is not tied to a domain and so one package that can exist at the scope
+on an auto scope domain can still be impacting an in scope domain because there is this entire supply chain
+build so uh once that you manage to detect uh any dependency there is so many stuff uh that you can
+look for as we said uh you have uh the sources uh you have uh the cicd build that you want to try to
+exploit and then uh there is um what's happening in the package but also how the package is being pulled
+so all those areas is where i i guess the 20 percent uh okay okay we're gonna we're gonna need to build
+that we're gonna need to cut that down a little bit um but i guess it makes more sense for us to go
+through the list of what kind of attacks there are possible first and then sort of come back to that 80 20
+questions so yeah you'd be like continue noodling i'm letting i'm letting my southern uh southern
+vocabulary come out here keep thinking on that while we're um while we're going through these
+which ones give you the most bang for your buck and then you know we'll we'll um talk about that
+again after we've gone through the whole list um so first one obviously we've already discussed this
+a little bit but it's dependency confusion and essentially my my tldr of this one is um there are ways
+to make uh to make organizations download the incorrect package from a registry right that that's
+the kind of that's the kind of way i i see it and uh that could be because of um there being a uh a
+confusion between the the version and the name and it or like um being able to to claim a package that
+has been um uh i guess abandoned or something like that or maybe one that doesn't even exist and and
+it's trying to download it and it's failing um uh and so that that's the one where we sort of think
+about um that was really popular with alex pearson um and the whole concept of that is pulling a package
+down from um from a registry now i had a couple questions surrounding this one um obviously there's
+this whole confusion of like will will it pull from the local artifactory or will it pull from the
+registry right and the best way to do that i imagine would be to just try it but in order for you to try
+it you have to get these payloads hosted on the registry so you've got to go to npm or whatever
+you've got to sign up for a package you've got to put some package out there and here's the kicker
+that package has to contain some code that will somehow let you know that it's being downloaded and
+run exactly and recently if i recall correctly from our conversations uh these various registries have
+been making that very difficult um could you talk a little bit about how we can host these packages
+nowadays in such a way that we can test responsibly and also um test effectually uh to be able to
+figure out whether this code is being run or not yeah definitely um we we've done a lot of research uh
+on that uh because um like the way that we are building depi is that uh we are actually finding
+vulnerabilities on bug winters and everything that is being paid will be implemented inside depi everything
+that is not being paid is not implemented right wow very high signal yeah exactly and that's we want
+to reduce false positives and like bs vulnerability right uh but we had a lot of pushback from programs
+because uh we we couldn't host a backdoor and not only uh because registries are banning you but also
+because there is a lot of legal and ethical uh problems uh with it because uh legally you don't know if
+the your target is um an employee of uh the the bug bounty program that you are hacking right and so if
+someone uh like call you and like hey you're backdoored my pc i and i don't know you what's happening
+it's going to be really problematic so we had a lot of pushback from traders and programs just telling us
+hey break the law and uh and then we'll see and i'm like i can't like in france i can't i know in
+other countries you can in france i can't so we did a lot of research on how you can host uh packages
+publicly and i'm i'm seeing like a um like right now you know how like uh truffle trufflesec does their
+like very like dramatized videos that are just super engaging i just see but i can't do that here in
+france and now it cuts to like you on a plane you know flying over to like out of the turkey or
+something like that you know i love that videos oh man it's so good so good okay so yeah france has
+some some rules surrounding that and i think even in the us i think there's a little bit more of a
+um you know we've got sort of a blanket which is like if you're performing ethical security research then
+you know there's there's sort of a caveat there and that's not really strictly defined so that makes a
+lot of people uncomfortable but over the over the past couple years i've seen a lot of people push
+the boundaries of what i wouldn't go for and not sort of experience any consequences so i am starting
+to think that the us is a little bit more liberal with this um so but yeah we are trying to to do the
+right thing and also because we are not just you know bug bounty hunters we are also a company and so
+we need to to to stay ethical uh and do things correctly and so we did a lot of research and we
+managed to find a technique in order to host a backdoor on the public registries without um scanners
+or uh or people that are not from the organization to download the the package how we did that is uh
+actually really easy uh we created our own registry and uh we we published a package a normal uh package
+and then uh on the public registry uh one of the dependency is the url of our registry
+oh okay all right all right so what we do is that we send like dummy packages uh like stuff just to
+to to to check and uh we say to in our back end those packages if they are being pulled this is a
+scanner so we can serve them a benign package but if it's not a scanner that is at our blacklist we can
+just swap uh the the package on the fly and so they download a malicious version where we exfiltrate
+content and that's how we did it we basically have like this uh url that is you know normal regular to
+have another registry and then we check on the registry if this is a scanner or if it is not and
+so we are swapping on the fly when you download uh the package very cool very cool okay so but that
+requires a lot of infrastructure i'd imagine to set up a registry have all that in place so all right
+well there there are some barriers to entry there for that one um if you were a bug bounty hunter
+you know going after this didn't have all of this setup in place any any tips or tricks for them or
+is pretty much at this point they've kind of nailed it down to the point where it's like okay well if
+you're not doing this whole um independent registry with the hot swapping of the packages thing then
+you're kind of in trouble yeah you're in trouble because um it has become a cat and mouse uh game
+uh why registries do not have any ways to discriminate if you're a malicious actor or a bug hunter and so
+it they don't they don't care about your bounty right they don't care about you succeeding your
+attack and helping your people what else is new yeah they just don't want any backdoor inside the
+registry which is totally normal right yeah that makes sense and so uh yeah this is a cat and mouse game
+and you need to do this kind of uh hot swap um but us because we wanted to do the ethical thing we went
+a bit further and now we are actually asking companies to provide their ip ranges and so we can just
+do an allow list and we are sure that no one that is not from this allow list uh will uh will run
+our back door um and that's how we manage to stay ethical uh while still managing to exploit dependency
+confusion properly wow man i don't know that i would have gone to that the that length that's uh
+that's pretty thorough but i guess i mean you got to have all of your bases covered when you're when
+you're a startup um so you know that makes a lot of sense and it seems like you guys have i mean just
+thinking about it from a technical perspective you've taken it really seriously and taken it about as
+far as you possibly can um you know to ensure that you're that no other um parties are being
+affected and it's also not like it's also not like you're dropping malware on the you know on the target
+as soon as as soon as they download it so i think even just you know maybe exfiltrating the path and
+the host name and you know some stuff like that it's not even that malicious for a normal user um but on
+top of that you you have built in all these protections so um i think that's a really a really
+responsible way of going after it and i'm a little i'm a little sad to say though that uh that that the
+um there's not a really an easy way to address this from a bug bounty hunter's perspective i i've seen
+a research from a company called supply shark where what they did is that um they did something very
+similar with a github repo and where basically for the first week uh there will be a lot of scanners and
+then they swap uh in the github repo after the first week so you need to wait for a week where you
+don't know if you are going to actually uh maybe do a denial of service on your target because we are
+swapping packages so maybe there are some pipelines that will just crash and you will have no way to
+know that but at the same time we will avoid the scanners and you can make a backdoor leave on the
+public registry uh i do not prefer this technique i think also i think is better for because for all
+the ethical implications that we are behind but if really someone wants to park dependency confusion
+really easily uh doing that trick with the github from supply shark we will do the trick yeah definitely
+that that that's a good a good caveat maybe a good workaround for that yeah um good to know and and
+so now i guess when you're actually doing your exfiltration um when you've hot swapped your
+package in now you're running your quote unquote malicious very very benign malicious code um uh how
+are you exfiltrating are you doing it over http or are you doing it over dns like the original
+dependency confusion post outline yeah for now we are doing uh over http uh but it can be done to dns
+without any problem and i think it's better to do it uh to dns because there will be a lot of um egress
+and firewalls that will block you uh from uh expirating to http but the truth is uh if you manage to pull
+our registry uh you can also uh ping it back so i sure sure so i i i don't that's why we didn't do the dns uh
+path because once you you pull from the the public registry uh that that's it but this is interesting
+when the factory is actually pulling your package and so the factory has the right to go through the
+internet but not uh your uh your machine your end your end level machine okay that makes sense so it's
+also sort of like a okay you've got this um artifactory server that's reaching out and then dropping it back
+down to the user so it's sort of like that same you know it's one of the things i like about dns as an
+exfiltration method is like the whole recursive nature of it right like you know i'll just send
+out my payload and that's going to get you know bumped from one dns server to another dns server to
+another dns server to another dns and then it's going to land on my on my machine and it allows you
+to exfiltrate out of really you know wonky scenarios but you do at least have one layer of that with these
+sort of artifactory based things because you've got that artifactory in between you and the end user
+um and the artifactory of course is going to have much more uh liberal egress rules um so and so
+that's that that's cool i'm wondering if there's any room for a combination of the both where it's
+like okay um we can do a sort of benign dns callback just like ah this popped and then also you know have the
+registry run yeah i i think i think definitely there is a lot of exfiltration uh techniques are
+possible um i don't think that in a bug bounty situation or even us as a company we we need those
+uh because if you manage to pull one package uh like the the chances are really slim that you went
+through an artifactory that has the rights but your computer do not have the the the right so it's possible
+that a lot of companies are setting up like that but i haven't have that issue that that often but
+also yeah but also you wouldn't see that issue if you did have it that's that's true so there is some
+truth here but uh again on the ethical thing uh if if you actually try to dns there is a lot of as you
+said dns servers that can see what you are exfiltrating yeah and and so i do it over https uh
+uh just to have this kind of layer encryption because you know i'm paranoid with that kind of
+stuff nah nah i couldn't tell um that's great man that's awesome you get you're really checking all
+your boxes and um dotting all your i's and crossing your t's there so i think that's that's really good
+um so let's so that's the basic sort of um dependency confusion stuff and i'm sure that there's a lot of
+nuance to that you know in various systems you know for uh nuances for for uh pip for npm and that
+sort of thing but let's let's talk about a more a broader range um or a more a bigger concept when it
+comes to supply chain which is maintainer attacks and the whole concept behind this um for those not
+familiar with it is that you know each one of these repositories that we're trusting uh these packages
+that we're trusting with our our code flow um are maintained by a bunch of unpaid open source you
+know maintainers that just love the community um and do it because of that but um because they're not
+getting paid because it's not they're actually their responsibility or any skin off their back
+sometimes they may stop maintaining the package um and there's a lot of ways that you can uh compromise
+a maintainer account and thus compromise the code um so could you talk about a couple of those
+techniques that that could result in a package compromise it's really funny because one of the
+first techniques that i've seen uh about this was right after dependency confusion occurred uh or a bit
+before i don't remember but i've seen it right after it was uh matthew bryant uh from snap in classic
+classic dude that did the research on how he managed to take over and one of angular uh dependencies
+uh through uh an attack that was like oh my gosh yeah well what it did is that uh you know the the
+open source community and developers really like to have custom domains right it's really cool uh to
+to have like i don't know you're justingardner.com or renorator.com domain somebody's somebody's
+squatting on justingardner.com really i don't own that man like and they're not even using it the last
+time i checked so have you tried to send them an email and buy it back you know maybe someday if
+i'm super loaded i'll be like hey man i'll slide you a 20 for that 20. i love it um yeah but no devs
+definitely love fancy domains yeah and they swap them pretty often with new like tlds coming out and
+stuff like that too exactly and so a lot of um those domains are used uh for for their main uh emails
+uh but a lot of people forget to renew domains and but uh what's interesting points us on npm is
+that uh even if your domain do not exist you can still log in uh just if you don't if you have mfa
+you can't log in but if you have your 2fa they are not really going to check your your domain anymore
+and so a lot of maintainers in the open source community do not own their domain anymore but are
+still using the email as a way to log in dude but when i say a lot it's a lot and there there is a
+research paper uh that that came and i think i'm going to drop the link so you can put that in the
+description we'll find it about the weak links of um supply chain and they said that domain
+takeover is a huge wingly weak links and they did a lot of statistics uh on that and it was appealing
+uh to to see that um and so the the the idea behind the attack is that your domain uh can be uh taken
+over so you buy it back and uh you do a forgot password and you can log in again classic man classic
+route the the forgot password and and man i'm i'm surprised that more of these um registries aren't
+enforcing 2fa uh because i feel like that's just a no-brainer like if you are a if you're the
+maintainer of a package that has like you know x thousand installs or weekly installs or whatever
+it should absolutely be mandatory for 2fa to be enabled yeah yeah i actually npm and pipey are uh
+starting to to do that more and more i know that github is also uh doing that but there is a lot of
+maintainer that are just setting up to mfa uh by default so we we are on the same problem uh all
+over again and um but but yeah it's it's a really interesting attack surface um and there is like a
+question when when you use that on backbunty like who is the owner of that and that question of
+ownership of the supply chain uh we might have need to talk about that earlier but no no no i we got time
+let's go but uh no one talks about that yeah yeah like who owns the software supply chains are the
+like the to the company using the packages uh the developers using the packages like as end users or
+are the maintainers responsible of that and like if there is an issue who who is at fault everyone no
+one and that's a problem like because we are putting figures at one another on that subject and no one
+really knows who owns the supply chain yeah dude that's a huge problem because it because also like
+wow yeah if i if i have the ability to attack a you know an asset that's in scope in a bug bounty
+program a lot of programs have these like and anything else you can prove that we own you know
+clauses or whatever right um am i authorized to attack that or am i not authorized attack that because
+it's not you know even though they're running this code is it their code now it's the maintainer's code
+but also is it though you know it's like that's super tricky yeah and even in case of a cyber attack
+it's really easy for a company to say oh no that it's not our fault it's the the maintainer that is
+underpaid in a third world country that is at fault and you're like what the heck it's still inside your
+code base you need to secure yourself about that and that's like really interesting because um european
+regulation you know european and regulations love that uh they put an answer to that and they said uh
+if you are uh targeted in the suppression attack you are responsible because you were the one uh that
+pulled the code and ultimately put that in your code base i'm clapping right now for the people that
+are not on youtube no that that's excellent and man i i do you know i'm american i i'm from america
+and i love america but um man uh europe really does have some has been doing a great job sort of leading
+the way on some of these things and there's a lot of things that europe messes up with their regulations
+uh but uh when it comes to making people take security seriously it seems like they are on the right
+path which is really cool i'm going to to give some kudos to america because they were the the first i
+think that had s bombs so software bill of materials including dependencies uh listing uh mandatory uh for
+every companies and critical services so um having an s bomb is a really already like a cool step to
+see to have observability on a supply chain um but it's not enough when you know how much attack surface
+there is yeah no absolutely and i think when you build that you know s bomb as software bill of
+materials yeah um it it opens your eyes to how how many packages you're actually relying on as well
+which is really cool um i did i did want to add one thing here i did google it really quick because
+as i was as the words were coming out of my mouth ah npm should enforce 2fa first yeah like yeah they did it
+yeah they did it actually in 20 in 2022 actually so it's been a little while um but it's only for
+packages uh with more than 1 million weekly downloads or over 500 uh dependence um is what this initial
+and maybe they've changed it since then but uh this initial post from two years ago um shows that it's
+that and that's kind of a high bar i thought i thought that it was for everyone actually okay well maybe
+maybe they've they've changed it um since then but i'm glad to see at least they made they made some
+change i know that mfa is mandatory but maybe 2fa with an authenticator app or everything is for more
+than one million maybe but still really interesting that yeah okay all right well i i won't get too
+yeah unfortunately joel's off today so i my i i normally i would just say joel i wonder about
+the body blah like and then he would just be instantly nerd sniped and then i would
+he would just research it and then interject five minutes later with the nuanced answer but
+um unfortunately he's not here today okay um he's off this week so we'll we'll leave that to the
+listeners to see uh to educate me in the youtube comments which will no doubt occur um so okay all
+right great so that covers maintainer attacks there's lapsed domains but there's also one one note
+that i wanted to add on maintainers is that uh from our test a uh big size company uh in france we call
+that next uh 40 companies so the big big startups uh they have in average between 200 000 to 400 000
+packages internally uh and i'm not talking just about like our first dev packages but like with the entire
+uh chain so like the entire debt right those 400 000 packages uh has a direct impact impact on the
+supply chain but now each package is maintained between one two to three person so you can easily
+have more than one million people uh being able to affect your code base and those numbers are insane
+because something that i said to a lot of people i go in the streets i can trust 100 people how do
+you trust one million of one million maintainers dude that is absolutely crazy um wow dude man just
+hearing about the the vastness of this it gets a little overwhelming for me you know thank goodness
+i'm not in corporate security because like if i were a blue teamer i just like and even as even as
+like a sas business owner it's like man this is such a it's really something you have to allocate
+for cost wise too because the amount of resources that it takes and i'm sure depie will help with
+this once it you know it hits the mainstream as well but like the amount of resources it takes to
+thoroughly vet and secure that whole flow and knowing that just one slip up can result in compromise of a
+of a build machine which is the thing that has your secrets that has like you know all of this i mean it's
+just it's not it's not great dude yeah that's terrifying and something that like i also have
+had a lot of pushback with companies when we're reporting supply chain issues they're like oh but
+there's a low probability of exploitation but the risk is always remote code execution so how do you
+assess that kind of stuff like when you know that the risk is highly low but when like why is the risk
+low i feel like the probability of exploitation is highly low but the risk is like the impact is
+super high but how do they even factor i mean what do you mean the probability of exploitation like
+are we saying like this is too complicated for attackers to figure out because we know that that's
+not the case more like the probability of a developer actually pulling the the package because
+like sometimes the artifactory is really well set up but imagine a developer forgetting to put their dot
+npm rc file and forgets to go through the artifactory as a company you can't like if you have like 2000
+developers for instance how do you know that they are configured properly on their machine you can't but
+also at the same time they should be configured properly so it's true that there is a low probability
+that one developer may sleep up but when they do the impact is always huge yeah no that's that's
+terrifying um and and actually it makes me think um you know i think it would be a really cool piece
+of like marketing material for you to release that'd be really helpful for the community to do like a a
+cheat sheet for companies on like how to secure your supply chain like go claim these packages like do
+you have this in your artifactory yeah go claim this just in case somebody you know slips up or something
+like that um because i imagine there's a lot of sort of defense in depth techniques that you could do
+that would um prohibit some of these attacks from happening because my response if i'm if i'm
+playing from the program side on to what you just said is like okay well um how do i fix that how do
+i fix a developer slipping up developers always going to slip up it's just like fishing right well the way
+you fix that is you one make sure they can't uh slip up too bad by you know claiming those packages and
+two you make sure that your you know development settings are set up with secure defaults um but i
+think going that extra layer could be really really helpful yeah and i think that there is a lot of like
+those can be fixed like uh it's not like we are doomed and that the world will collapse because you
+are using a supply chain uh you can fix all those um those holes in the supply chains and um and of
+course i think it would be a great resource to provide uh guidance on how to fix these issues and
+also how to assess them but it has been a really long debate with a lot of different programs on how
+to assess in the bug bounty ram and paradigm uh those supply chain issues because again we don't have a
+scope anymore but the impact is always great so how would you assess that dude it's got to be it's
+got to be impact based man i mean at the end of the day you you've got to you've got to look at
+these scenarios and you've got to say okay listen if if you know lupin is attacking this you know one
+off little little dev uh you know environment over here but then it's compromising a server that has
+access to these aws keys that give you the ability to interact with prod and like of course i mean that's
+the end of the freaking world yeah like the keys of the kingdom yeah exactly and and we know that it
+happens all too often and that's and i think i think from the bug bounty side obviously doing your
+your due diligence and really understanding what an attacker could do from from that perspective
+takes time and takes effort but i think that's where you kind of separate the wheat from the chaff
+there as far as programs goes you separate the good programs from the bad programs and the ones that
+are really um and not necessarily the bad programs you know i should be a little bit more understanding
+if there's anything these uh you know program versus hacker debates uh that we've had in the pod over
+the past couple months has taught me it's like you know a lot of these people are severely understaffed
+these organizations are severely understaffed and uh just cannot get the amount of people that they
+need to do their job properly of course and yeah that's why i'm bringing those debates on on the table
+because as a bug hunter i want to be paid uh but yeah i need also to understand the ram and um and
+that's a way in black bounty uh to re do more bounties and get more rewards is by understanding what
+the program needs from you for instance the email takeover to domains some programs accept that uh it's
+rare but uh it really depends on their maturity but a lot of programs will tell you it's not our
+responsibility uh the dev like it's the maintainer fault and i i mean in some ways they are right
+like they're not going to claim domains that are not theirs right uh but at the same time it will
+impact their supply chain uh at one point so it all boils down to your maturity your budget and uh how you
+want to treat the the research community more than bug hunters is really more about the research and like
+novel techniques and how do you see them and appreciate them uh inside your bug program i think
+if it if it expands your understanding of your own infrastructure and you make remediations based off
+of that i think you should pay for the scenario the worst case scenario if you do not have the the
+resources to do your full due diligence and and i think that's painful for a lot of um a lot of bug
+bounty programs um but at the end of the day we all know what should be happening which is that you should
+be doing a a thorough assessment of these threats and then if but if you don't have the manpower and
+the staffing to do it you know maybe split the difference with the researcher at least but just
+don't categorize these as lows or mediums because they're the the impact is really is really large and
+and we all know anybody who's ever performed an external to internal pen test knows that once you get
+a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+and you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot
+of data you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing
+a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+data you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+data you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+you're doing a lot of data you're doing a lot of data you're doing a lot of data you're doing a lot of data
+into uh from other side projects or something like that and then giving an attacker access to their
+like github account or their um you know registry account and allowing the attacker to move from
+there um so is that something you're also you know you've also seen and something you're scanning for
+within depi yeah uh we are still in a research uh module uh right now so uh we have this uh beta we
+call the frontline uh access uh that that will not have those uh secret scanning but we we are
+researching more and more trying to remove all those false positives but definitely uh something
+really interesting uh to see because like even in the ci uh compromission uh realm uh there is a lot of
+developers that set up their own cicd pipeline that will use their npm token that is tied uh to
+to their entire organization or for their company and if they don't secure their pipeline you are
+going to compromise the overall uh company so once you manage to find a package then you need to find
+the github associated to the package with the pipeline or the gitlab then once you find that you
+need to find all the maintainers that can commit code inside once you find those maintainers you find
+all their projects all their pipelines and you scan back again oh my gosh and that's something that
+we want to do and uh that that we are uh actually starting to to do but that spidering is like how
+much in depth we go that's the question i i imagine that's actually pretty computationally
+expensive too like when we're talking about the network effect of all this like like you know you've
+got all of these maintainers let's say there's a million maintainers and then each of them has you
+know a hundred repos or whatever and you and then each of these repos have like years of git history
+right and it's like wow now we're having to sift through like terabytes of code to try to find that
+one place where some developer you know put a token put a token or committed an ssh key or something
+like that of course um we we have some technical uh challenges here and uh we have a lot of fun uh
+with them yeah there is a lot of stuff that we thought that were impossible uh for instance um
+related to depth because uh by the end of the day we we're like it's exponential uh and uh and we have
+a lot of computing problem but uh to different uh techniques we managed to uh make one request that
+we're taking like three minutes to analyze per package we managed to make it like five seconds
+oh wow okay wow five seconds optimization going into this yeah but it's already long though but uh
+we're getting there we're getting there and you're writing this in rust too right so this is not like
+you're all of this is what yeah definitely yeah yeah and it's not like all this is running in like
+python or like you know some some much slower language you're trying to do this at a really optimized
+level and i think that's the right the right choice from the beginning now hearing about the scale
+and i we had a little bit of a debate on this the last time we discussed your we did like a little
+brainstorming um you know meeting for your product and i was like man like why you got to write this
+in rust but now that i'm sort of understanding the the the breadth of all of this yeah um it's an
+absolutely massive undertaking so um that makes a lot of sense man okay so the maintainer attacks we've got
+those um now this is a i guess this is sort of a complicated question so people that are trying to
+build out these software build materials right this this list of dependencies that they have for their
+given software i was thinking like okay wow this is actually going to be really tricky like we got
+to kind of nuancedly you know map out everything else but then i realized all we have to do is clone
+it down and then just run npm install right like yeah you can i mean that will pull that's why these
+node modules uh folders are just so like ridiculously massive is they pull everything down right so i mean
+is is a good way to do this to actually just clone the repo do npm install and then just like find you
+know find dot and just look at all of the packages yeah i think this technique is not as scalable uh
+because when you have a repository that is two gigs and then you you see all the the the dependencies
+uh it becomes uh horrible uh but um you can optimize a lot of things for instance github expose an
+api for the s bomb so every oh yeah that's awesome yeah every public uh uh github repository has an s bomb
+associated and that you can call with an api no way yeah and if there is i did not know that and if
+there is a log file uh you can actually have all the the packages back dude this is so this is so cool yeah
+i really appreciate i did not know that this existed this is really this is not like a secret source of
+our scanning but um really helped me a lot uh when i was building all the tools um and yeah i think
+that that would be the best way uh yeah well especially for us you know for for for people
+looking for the you know 80 20 situation here um that's really cool and and i think stuff like like
+me not knowing about that shows you know how how all there are all these little pockets of of info
+that we kind of need to be able to address the supply chain thing um correctly but i'm really
+glad that github uh went ahead and and went after that because uh that's a great level to solve it at
+right any almost everything ends up in a github repo at some point and so um and i imagine gitlab
+will put something together or already has something yeah github already is doing the something and they
+also have uh artifactories per repository so one repository can expose one artifactory that is just
+for the repository oh wow yeah it's really interesting and since gitlab is open source you can see how
+they are pulling packages and stuff like that and there is a lot of uh weird thing that they are doing
+and it's so fun to see the shortcuts that artifactories are taking to be compliant with the protocol of
+uh npm and stuff like that and like yeah most of the calls are mocked which is so funny oh man
+i i imagine that's a whole a whole you know good scope for you to go after when when looking at at
+these um in the github enterprise and in gitlab as well we we we can talk about that a little bit but
+if you really want to find that 20 i think more than checking the dependencies uh go check the
+artifactories but because they all have a bug bounty program and once you find uh artifactories uh there
+is so many bugs why because supply chain is infinitely complex and so there are so many use cases even
+within an organization like one developer can a developer remove a version no on the npm registry
+it's not allowed but on the factory it's allowed and you don't have any logging and monitoring uh so
+you can replace a version backdooring the version that already exists wow but and you don't have any
+way to know which developer did that uh that's a problem and once you you step back and you do not
+see that as a web app scope but more about a supply chain hub uh you'll find many more vulnerabilities
+that you may think is a low vulnerability from a business perspective but always ends up in a remote
+code execution and so yeah the stakes here are very high i've been hacking artifactories for the past year
+i i think and uh the attack surface is so big for one single endpoint because of all the supply chain
+implication so you have one endpoint just the one pulling the packages and you can hack it in so many
+different ways because for instance they didn't think about uh ranges versions uh or they they didn't
+think about a lower case or uppercase or unicodes and so you have like confusion here which is so funny
+to see yeah dude normalization bugs just all sorts of all sorts of craziness i imagine you know one one
+layer of url encoding missed you know across this whole thing could could mess up a bunch of stuff too
+because those are proxies artifactories are proxies you also have ssrf in some ways yeah wow that's
+that's nuts man there's so many so many ways to look at that problem um okay so sub-dependency mapping
+we got the software build materials we got our npm install that sort of thing um so the next area
+that i sort of wanted to go to was this and we kind of touched on this already but attacking the
+artifactories and registries right there's a great way to go after that like you mentioned is doing a source
+code analysis of the artifactories they've got bug bounty programs going after the way that they
+deal with this but also it's possible for us to attack the registries yeah um and and so i know you
+have a bug here that you are going to share with npm which i think would be really really cool and i
+it just went out uh i it just went out like right before we recorded two hours ago that's awesome that's
+great and so um we'll be covering it right on the pod uh just a couple days we'll be releasing this
+pod later this week so um you know we should be a pretty fresh coverage on this but uh talk about
+your experience hacking on these registries themselves and and what kind of impact uh and
+what kind of attack vectors they have yeah uh so uh the bug that we we disclosed today was on npm
+npm is owned by github i know that a lot of developers or tech people do not know that but npm by
+name is microsoft in some ways uh oh my gosh yeah multiple layers of acquisition there yeah exactly
+and so um we were doing like a uh sub module for dpi again in research mode and and our question was
+like how we can uh you know impact the availability of the packages of our clients and because they have
+like artifactory we're like hey what if we do cash poisoning on the artifactory we denied the artifactory
+if they are public and we just you know dust all the the pipelines of our clients that would be a
+really fun vulnerability right yeah that would be nuts actually and i love that you went for
+availability as well that you didn't forget about the a and the cia triad because um you know it makes
+a lot of sense to go after confidentiality getting access to that source code integrity obviously has rcu
+based impacts but availability i think would not be one of the things that would pop into my head
+immediately when i'm thinking about this but it has such a massive impact on the scope because
+it breaks all these builds um definitely and and cache poisoning is the perfect attack for this because
+um you know they have to if these packages are being downloaded millions and millions and millions
+of times they have to be cached or else the the cpu load is going to be way too much um so tell me
+tell me how you ended up being able to exploit that yeah so we developed a small script integrated that to
+to depi and uh we forgot to remove the public registries uh and so we did the first scan and
+then result uh registry.npmjs.org is vulnerable and i was like no that's no i'm not trusting my script
+that was the first run and i'm not kidding like this is twice in in our research where we had like a
+first hit uh so a lot of miracles are happening man like seriously like one the script works the first
+time you run it two it works on the freaking biggest registry out there and so i thought it was a false
+positive right and i i go to check manually and it triggers we have a cache poisoning if you set a header
+at the moment you do the get request uh to to to take the package uh it will create a 404 and this
+404 will be cached on the part like the prod registry and like it's not even a natifactory it's it's like
+the registry right and um and so dude you must have been so freaked out when it worked you're you're like
+i can't i can't believe this man so i i didn't write that in the article but i i really stepped back from
+the computer closed everything and just uh went in my bed and just you know stared at the ceiling for a
+little while yeah exactly i was like it's funny no i it's not possible i always you know we talk
+about uh finding bugs and stuff like that on the pod and and one of the one of the things i always do
+that i mentioned a couple times is as soon as i find a bug just step back a little bit take a breath
+and then run to my wife as fast as i can say look i just found this amazing thing and it's like no i
+haven't reported it yet no i i i have i haven't double checked it yet even you know and then you know half
+the time it's like a false positive and and she's like having to pull me out of the the pit of
+despair or whatever after i thought i had a mega crate and now it's not but i i actually do that with
+a lot of uh bug hunters friends where right right you know i've sent to you some of those crazy oh my
+gosh i love those moments man dude i found that and like oh no no it was a typo yeah i love your i love
+your um i love your messages i found it it's crazy it's got that thought uh wait a second but wait
+maybe it'll no no that's not gonna work you know it's the life of a bug hunter man the life of a bug
+yeah but but when we hit something we're really happy we are we are and it shows the passion for
+it so um it keeps us coming back for more yeah but but here i was a little bit more freaked out
+because i knew the implication of a software software supply chain bug at that scale like
+if you manage to deny a package you can like basically impact the entire javascript ecosystem
+and yeah bring down pipelines yeah and developers machine and like just say hey tomorrow is a
+holy day for everyone right you're not developing anymore oh my gosh dude could you imagine the havoc
+that would cause if you like dosed like express or something like that exactly like a friday night
+or something or like when do people deploy probably thursday you know the dasa doss express on thursday
+that'd be terrible man that will be so funny i think and a lot of like dev team security i mean
+incident response would be like what the heck is happening yeah yeah all of a sudden this package just
+expressed just 404s on npm it's like oh no we know the way they think in incident response is like oh
+we did something wrong and then you check and then you're like oh no they did something wrong like
+wait a minute how that happens it was dns yeah they did something wrong yeah i was thinking about
+the facebook bgp bug yeah like everyone was freaking out like oh my dns is not working it's like oh
+no it's facebook no worries yeah man and there's that's another interesting area there is if you could
+attack it at the dns level as well i imagine things would be cached but yeah that's an interesting
+approach let's write that down try it and then we do a pod again might have to bleep that who knows
+whatever yeah um uh so the other the other sort of um attack factor that i had in dos makes a bunch
+of sense here but also if there was an idor in this sort of environment it would absolutely be
+terrible um have you done any of that more granular testing on these on these uh organizations or
+mostly are you focusing on the bigger ecosystem for now i've done it on the artifactories uh level okay
+uh and not on the registry uh because like i've sent uh this bug uh for github npm and uh they give me
+a 500 dollar brunzi for like oh my gosh dude yeah and i was like really surprised because uh they said oh
+no it's a distributed denial of service and i'm like i managed to reproduce it from a machine of
+course the caching wasn't like for every backends but you know you you are still affecting a huge part
+of the traffic if you manage to exploit it correctly and they said no it's a ddos so it's not uh in our
+scope of the program it's more abuse and i was like oh my gosh dude yeah i mean you've got a you've got a
+uh a screenshot right here in your blog post that like says npm install and then you're downloading the
+the the package and then you know you can see it goes through successfully and then just like what
+what is this like a one minute later not even one minute later you you try to reinstall it again and
+it and it says no there's a 404 not found like how could they how could they argue with that i mean uh i
+i i didn't really understand and i've wrote in the blog uh my you know why i was bothered about
+this entire assessment i have nothing against the gilbert security team that amazing people again i
+uh i will tell you again that there are really amazing people but the overall assessment of this
+report was a bit of a mess i would say yeah i agree and i i don't know if you've seen the timeline
+but um what they did is that uh they said it was an internal duplicate at the beginning uh and then
+uh it's a couple of months later they traced it uh and then a couple of months later they closed it
+as informative uh six months later i sent no ronnie i'm so sorry man i know you told me lately you're a
+little burnout on bug bounties but and it don't make total sense given this experience because this is
+not how it's supposed to work when you're doing supply chain uh it has it happens a lot uh that
+that kind of assessment uh but um yeah i and then six months later i think i i send like hey can we
+disclose the vulnerability they said oh yeah and we can help for the technical analysis of your write-up
+and i was like awesome but they didn't fix the vulnerability right they didn't fix it and they told
+me we are allowing the disclosure and so i sent them the draft report and they told me hey we're
+fixing the vulnerability now yeah of course i imagine so but but my my goal with disclosure
+wasn't like to pressure or anything i just wanted to talk about like a super cool vulnerability that
+i really loved uh but i was really disappointed about the assessment and the fact that you know one
+year later one year after reporting the fixing the vulnerability is for me like really weird yeah
+it's super weird especially when the impact is so is so wide and i i'm looking through here and i think
+they mentioned in here that like there was some um inconsistency with the caching servers it seems
+like where like uh because only yeah yeah every every fourth or fifth request was being dropped but
+i'm like when it's expressed that you can you know like one you know every fourth or fifth request is
+like millions of requests like why is this a problem to put some numbers express is 30 millions
+install per week uh and on the latest version it's 12 millions install so every time there is a latest
+version in one week it hits 12 million installs and and so even though you have one fourth of the
+requests uh that that are getting denied one fourth of the 12 millions is that's huge insane dude yeah that
+uh man this is this i mean like you said i i love the get up team too there has been some
+difficulties with them in the past just to be perfectly clear and in my experience they've
+they've come around on it and they normally um you know after you have to talk to them and you you
+know go through the whole impact scenario they've paid out really really generously for me in the past
+but i imagine you know sometimes it doesn't always end up quite that way but i hope after this
+article was released in the the general security you know industry says oh you know this is bad
+um that exactly you know they come back and make it right on this because uh this is a serious bull
+man again i my goal is not to put pressure with the disclosure like if people want to to say something
+publicly they they will tell us something publicly it's not my problem like i really wanted to talk about
+the research and more like hey on on depi we have a sub module that will check for our ability too
+uh which was like the the the main goal of uh this research to be able to demonstrate that a supply chain
+attacks when it comes to other bt impact can be huge yeah yeah clearly no that that's that's amazing
+um all right so we've covered attacks on the artifactories and on the registries maintainer attacks
+the last one we sort of alluded to ci related bugs um there's there's some research out there that you
+guys can go and uh and dive into by ed overflow and this guy named justin gardner never heard of him
+yeah yeah um so there's that and there's also um i guess we will touch on one of these because i i
+also wanted to mention this um last time or last time we had johan on on the pod he he mentioned this
+whole concept of hijacking a a flow uh a ci flow um inside of git lab and i think that that's a really
+interesting approach and there's lots of ways to do that uh but i think that's another really um
+important part of this whole um supply chain attack vector concept um because these things are getting
+more and more complex as as they go and uh and there's more and more opportunities for for people to
+inject their their input into it whether it be a pull request whether it be like a lapsed domain
+or s3 bucket or that sort of thing um and then gain control of these ci flows and then leak
+important secrets and that sort of thing um so so yeah what are your thoughts on that whole on that
+whole front and how is depie addressing this issue it's amazing i i i i i love this area of research uh
+there is one researcher that i've been doing a lot of work on that and his name is adnan and uh it's
+amazing to see all of his uh ci bug and i'm really impressed by how many uh bugs we can find in this
+attack surface and again it's one functionality but the attack surface is huge and definitely
+something on the roadmap of depie for now we're focusing on software artifacts but builds as we
+said this is the beginning is an important component of the software supply chain and is the natural uh
+process to go through builds at one point with depie uh we found a couple of vulnerabilities uh
+related to ci but more like github uh overall yeah yeah there's lots of overlap there because
+i mean at the end of the day the stuff is going to be present in in github uh because that's where
+the the ci is running from so if you're just doing this you know if you're assessing from a github level
+you can see a lot of that and i think the only exception to that really is like the the stuff
+that's being injected directly um at the ci level you know the the tokens and the api keys and that sort
+of thing um and then also the logs that are generated from the uh the the ci themselves and and that's
+where you know that research that we did with travis ci came in and and where i found an rce a while
+back it was actually that's awesome one of one of my first rces was um grepping through uh logs for
+this uh crypto website or on their ci um and finding out that they had echoed out their private key in one
+commit and i just used that private key to just log in as root to the server that's awesome and it should
+have been a 10k bounty but it was like they're like um it's a 1k bounty by you know classic classic
+crypto program uh bs but yeah i feel like there's definitely some difficulties in in the sort of
+supply chain bug bounty ecosystem on getting them to actually pay the vulnerability some for some reason
+well one technique that i really like um for now i'm not focusing on um exploiting the ci but more about
+the results of the ci and one technique that i i i love is that to find all the metadata around the
+the pulling of the packages so you are going to see the the traffic of the which artifactory they they
+use and so and sometimes you can also find it in inside the javascript exposed uh publicly like which
+artifactory they're using so basically what i do is that i copy the domain of of this private artifactory
+that we can find in ci uh and we can find in public javascript usually if i find it in in in ci it's
+because norlax uh gave me the ci he's classic amazing hunter uh and really good uh with ci too so
+often he gives me the the factory but then i go on github and put path uh colon
+um and then package dash lock dot json and then i put the artifactory domain because what's happening
+in the log file you see all the all the the artifactories and where is the tar dot jz ball like
+the table right and so you see the domain and so every log file you know it comes from a developer of the
+organization and that's where i managed to leak source code of like private source code not even packages
+right source code of uh of many organizations insane and dev on developers uh accounts that weren't even
+inside the organization it's just like their like test account and they did a a a pushed internal source
+code and there you you managed to find a lot of different stuff credentials um you can assess like
+do code review you can already report it for some company it's uh already good enough to to report that
+kind of bugs um and so that's like my technique to uh find expose the source code and go through the
+artifactory and the build results that's that's an awesome tip and and i think also getting your hands on
+any sort of enterprise source code is just so nuts like i remember that that initial dependency
+confusion blog post you know mentioned that we were that i handed him some source code from from paypal
+the source code that we found that was actively being used in paypal's environment leaked secrets in
+it that we were able to use to encrypt and decrypt stuff um oh and it led to like over 50k in bugs
+uh just from being able to see these little pieces of middleware here and there that were like
+popping up around huge um and it's like wow just getting your hands on any any piece of that that's
+actually running allows you to make such more nuanced attack factors um towards that target so
+that's really really essential that can be taken more broadly in the supply chain and you just um check
+all the the internal uh domains of a company and then you search them uh on github uh and uh that could be
+also a really fun uh thing to do yeah yeah i think i think that's really um anytime you see
+here's here's the secret sauce for how we did it with with paypal actually it's been years i'll just
+kind of um you know uh share the secret sauce here um essentially you know in in paypal's environment
+there's a bunch of different little microservices right that that uh are powering the paypal app
+and each there's a way i won't disclose it all but there's a way that you'll see these around you
+know in the in the responses of the requests or when errors are triggered or whatever um and then you can
+take these little microservices names and you just put those bad boys into github
+and you know anytime and those microservice names correlate to like package is for the code
+and so you put them into github and then you you know search round look through everything and uh
+you know you may if you get lucky um uh pop some some internal source code uh and and i think a lot
+of other companies have similar structures uh i'm not sure if those little package names or host names
+or microservice names are getting leaked as much but i imagine i know on the back end that they have
+similar structures to that so um anytime you see a unique string that seems to correlate to the
+infrastructure behind the application you're attacking always take that to github and and run a
+search on it because um you'd be super surprised uh on what kind of stuff definitely um all right dude
+let's see uh okay so the npm cache poisoning bug super cool the tldr of that one was that you were able to
+go to attack the npm registry where they're actually downloading the package files directly
+and uh you know we won't specify through what method but you're able to somehow provide a uh a
+um additional piece of information in that request that makes it go to a 404 and that 404 gets cached
+and then when anyone else tries to request that page again uh they get the 404 instead of access to
+that you know targz file or whatever it is um crazy bug i really hope that gets addressed and we don't
+have to deal with that in the ecosystem um let's talk about the next one that you wanted to share on
+the pod which is the grafana npx uh confusion yeah oh that's uh that was uh really funny uh so first of
+all i think uh this needs to be said uh the graphana security team is one of the most mature uh security team
+i've ever worked with and not just that material they're wholesome they're so funny to work with
+and uh it has been a pleasure uh to send them about yeah i had the same experience with them back in
+in 2020 with the grafana ssrf they were they were awesome and so uh what happened is that i was again
+depi research mode uh and this time i wanted to find a bug on gitlab uh cut source uh because i have
+a friend that challenged me to do so and uh and i was like okay let's do it but when analyzing um gitlab i
+managed to find like a dependency uh that is called graphana dash toolkit um that was uh not claimed uh
+publicly and uh this boils down to um um basically graphana toolkit is not a package it's a binary but there
+is a package manager called npx uh which is from and the same npm team and npx stands from uh node package
+execute and instead of uh of being a manager and trying to install i've seen this okay i know what
+you're talking about instead of being a a manager that will just install the package it will run a binary
+directly okay so these are like for like command line applications or whatever that you're going to
+use to supplement some you know maybe use grafana toolkit or whatever to add a user to grafana or
+something like that from the command or something yeah exactly and so uh what's interesting when npx is
+that uh if you do npx a package and you do not have the binary name inside your computer it will pull from
+the public registry and then uh just install the package and will run it so you don't do not have
+to do an npm inside command uh before but there is a problem it's the npx takes a binary name but the
+public registry is packages name so there is a confusion on npx side between both of them basically
+if you have like graphana dash toolkit was like the name of the binary but the name of the package
+was at graphana slash toolkit and so that's not good a lot of companies in their uh docker file uh ci cd
+uh or even a documentation uh was writing npx graphana dash toolkit but this package didn't exist so what
+i did i claimed it and every time that you do npx graphana dash toolkit so i don't know i claimed it
+that's great i love it and and you you you are uh basically uh downloading uh this binary that i've
+claimed on npm uh what's really interesting uh from from this bug and that we need to say from grafana
+team it didn't affect their source code and actually all their ci cd that we're using npx graphana
+toolkit because there were some were archived uh from a long time ago but the open source community
+was still using uh this command because they usually install the package first and then running the npx
+command sure but if you do not have the binary installed and that can go really fast uh then you
+have the same dependency confusion and you have a remote execution but what's interesting here it's not
+on the artifactory level anymore it's directly on the package manager and that's a realm of research
+that we haven't seen much before ah okay at the at the i see yeah we are not trying to impact the
+artifactory and confuse artifactory we are trying to confuse uh the package manager themselves and the
+cli to install the packages and so that's an area of research of depi that we are doing a lot trying to
+find those zero days of misconfiguration there's so many two of these package managers there's you
+know npm yarn pnp just goes on and on and on um crazy wow yeah there's a lot of attack surface there
+well definitely i am super looking forward to uh seeing the results of your research continued
+research on this stuff with depi yeah lupin it seems like you're doing an excellent job and i
+you know it's pretty great that i haven't seen any other major competitors doing what you're doing
+here um so it's cool to see you sort of leading the the charge with this yeah and i think uh it's also
+great to have you as a bug bounty hunter because we get the the sort of from an experienced bug bounty
+hunter perspective of how we can apply this sort of supply chain vulnerabilities to bug bounty so um thanks
+for coming on the pod and talking about that yeah thanks a lot for the the invitation uh it's always super
+great to to talk with you indeed indeed thanks so much man um anything else you want to shout
+obviously we've got depi uh that's at what is it l and h dot and tech yes lnh.tech uh slash depi you
+can find more information about the tool there yeah um anything else you want to shout before we end the
+pod yeah i really want to shout out uh to the entire french team in the hacker one world cup uh get out of
+here no cut it cut it cut it off i just want to say those are crazy people finding crazy vulnerabilities
+and uh amazing talents amazing young people new in the field and just breaking the biggest companies
+in the world so i'm just impressed and amazingly surprised by all the talents uh that we have in
+france uh and yeah vive la france oh my gosh all right let's go cut the pot here let's let's go and
+that's a wrap on this episode of critical thinking thanks so much for listening and if you want more
+critical thinking content head over to ctbb.show slash discord join the discord there's lots of great
+conversations and chats going on over there and if you want to support the show there's the discord
+subscriber tiers which give you access to master classes amas hack alongs exclusive scripts and an
+exclusive chat channel with us we'll see you there

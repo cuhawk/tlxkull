@@ -1,0 +1,875 @@
+ so then you know it's doing something that's what i need to know okay the unicorn unicorn
+ unicode kelvin so dang it guys do not make a meme in freaking discord about unicorn
+ please i see a t-shirt dude shut up right
+ that's part of hacking when you can just you know critical thing right
+ all right hackers here's the deal before you skip forward give me like two seconds to give you a
+ takeaway okay here it is threat lock or detect is the best edr around they have a ton of tool
+ integrations the alerts are high signal so you're not swimming in a bunch of garbage and both alerting
+ and remediation actions are super customizable it's definitely the one you want okay that's it
+ skip forward if you must but i do feel like you should know why i think that right well we've talked
+ a lot about the threat locker suite and frankly they're the best implemented tools around from
+ a technical perspective with the cdr they're focusing a lot on customization and high signal
+ stuff like powershell activity log deletion sketchy rdp sessions stuff that i have
+ wished many times edrs were not uh detecting actively okay um and while it does work out of
+ the box it also gives you the experienced purple teamer the tools you need to implement custom logic to
+ lock hackers out of your network at the first sign of trouble that trouble is the trouble that you are
+ the most qualified to recognize so they're equipping you to deal with it right away
+ um they're definitely the ones you guys want to go with if you're looking for a new edr tool all right
+ that's it let's go back to the show all right ryan dude come here man thank you so much for today
+ we've i just had a fantastic day up in reston with ryan barnett um and we're here at the akamai offices
+ after battling our computer systems for a while to try to get the recording equipment in place
+ finally able to record the episode um ryan dude i'm looking at this doc you prepped a lot i so
+ appreciate that well yeah you know i listened to the pod as you well know and i love all the stories
+ especially war stories and all that stuff and so once you told me the dates i was like okay i got time
+ let me go through the files here and stuff i thought would be interesting for everybody and
+ you know us to talk about dude i'm very excited i think it's going to be a new kind of episode you
+ know a lot of times we have people that are actively hunting in the bug bani scene and you are on the
+ receiving side of a lot of these reports right and and you see them what's coming through the akamai
+ bug bounty queue and then you also see the traffic that's happening um live in the akamai network so um
+ very exciting stuff but before we get into too much of the details you got to cut your teeth with the
+ bounty with with uh with a bug that you found okay yeah um and and we do have a little bit of a twist
+ on this for for you today because there's a bug that you found here but there's also a couple bugs
+ that you've triaged that you were excited about so yeah um let's uh let's do a proof of concept here
+ let's uh poc or gtfo and uh tell me tell me what you got um so the first one was interesting um
+ because it was actually an accidental finding which sometimes that happens right you're using an app yeah so
+ this was a number of years ago but i was using uh online uh blogging software type pad i'm in the
+ middle of talking about some research right on cross-site scripting i'm typing up so i'm in the
+ editor and out of nowhere it popped up redirected to a third-party website oh man and of course my
+ spidey sense is like oh wait what's going on refresh doing it again happens again then i stopped and i
+ looked at where it was redirecting me to and i said whoa whoa whoa this was from a blog post i did a
+ week ago i said wait a second so the short of this is i had to get out some tools to look at what
+ was going on and see where my traffic was going so what happened was a week before i did a blog post
+ talking about cross-site scripting and there were cross-site scripting tags that were in uh user agent
+ headers so i'm putting it into the blog and when i put it in the blog i made sure the html entity and
+ code of course as you would yeah i did everything by the book and so uh the problem was what was
+ interesting once i tracked this down was in type pad they have all these plugins and what they want to
+ do is as you're typing as an editor it would show you oh we see the content you're doing here are some
+ related posts if you want to cross-link okay so it cross-linked with one of my former posts well what
+ happens is this third party and it's fixed so obviously so i can say it was called zamanta they had
+ uh api clients they come and scrape your content when they scraped it it was the rendered content so as
+ i'm typing and they said oh we have a suggestion here it comes back in json non html entity encoded and then
+ the other key piece was the plugin when it got that json it wrapped it it treated it as html
+ so popped and i was like ah crap so two things number one vulnerability disclosure i worked with
+ them they fixed it i guess that's one advantage of the kind of sas platforms that they don't have to
+ give patches to people they just fixed it boom done cross the board yeah treat it as text it was fixed
+ but for me that day forward i do pictures of exploit code i don't do text you never know there can be an
+ api and today it's like even worse right with all these api ai agents crawling and you don't know what
+ they're doing with your data or how they make i mean even with pictures nowadays sometimes something
+ will ocr it you know and they're like that's true but uh but yeah i mean i i definitely i think that's
+ definitely the safest way to go but then me for me when i'm trying to hack something right on the other
+ side of the board i'm like oh let me copy this no it's a picture yeah i'm like yeah geez it's it's a
+ balance it is but that showed me it's like you don't know who's coming to grab that content so that
+ was very tricky absolutely man and i think one of the unique things that we've discussed time and time
+ again is like how much you see the way that the internet is connected internet is connected from
+ across all of these different you know pieces right you know somebody puts in a piece of data here and
+ somehow it ends up you know in your client's log somehow and it's causing a problem somewhere right yeah
+ um all the the blind stuff yeah you put it in it'll pop out i can't imagine how many websites have alert
+ one you know just like popping up on the back end you know and they're like oh that's kind of funky but
+ nobody like took the time to do a blind xss payload or something like that yeah well tons of our
+ customers with sims and looking at logs yeah yeah yeah that's uh yeah custom stuff in the sims as well
+ you know it can it can pop anywhere um okay so you got you got chat scatter and you got abusing
+ third-party analytics yeah where are we going um well we can cover both they're fast again so these were
+ ones like triaged so cross-site scripting problem uh once it comes through um you know whoever's doing
+ the bug bounty program who's our customer back to us so these two different ones uh one looking at
+ it was um abusing some javascript analytic code okay so this fits in with all the printers that you
+ got to look and say okay what are all these urls javascript's calling up look at these endpoints
+ what are they doing and here was actually looking through the code because what they figured out was
+ um there was a function in the javascript that was pulled up where it was talking about a mod
+ configuration override set to true oh geez so the attacker just puts it in a query string so instead
+ of passing in javascript past it in a query string and then it's this long kind of serialized uh
+ configuration to say oh turn it on and by the way here's a script which is my hacker script which pulled
+ it up but like from our perspective those aren't normal payloads that we see yeah so it's really
+ abusing that default config yeah uh the short one there is of course we help the customer to tell
+ them what was going on you know we updated their configs um but the vendor silently fixed it
+ of course classic you're back to the sas platform though they just went and tweaked it
+ um so that's where wayback saves you of course because i can't go back and say this is what it was
+ right it was like this it was like this um and then the last one uh called chat scatter um again working
+ with the customer um there was some cross-site scripting stuff coming in once i was kind of
+ triaging looking at it cross-site scripting coming in a certain query string parameter but the parameter
+ was an entire long payload it was a uri from not our customer site third-party site so i had to start
+ tracing it back so you go to what that other site was and looking through and then time to tie back how
+ does this relate to our customer it was a chat widget so you get to that page hey papa can we help
+ you we want to talk to you so what's interesting those are everywhere nowadays yeah everything yeah
+ they pop up but so again for bug hunters knowing what happens there as soon as you load that in your
+ browser it can be making back in api calls and what it was doing is grabbing the entire uri and beaconing
+ to our customer so what i was seeing was telemetry this backscatter or chat scatter of bug hunters and
+ real attackers attacking cross-site scripting and it immediately sends it off to us and we see it so
+ they're not attacking our customer but we saw so for me interesting conversation sorry our customer smack the
+ mic yeah i do it all the time man uh with our customer to say look you do not have a vulnerability
+ your customer is using your software being attacked and i did confirm some of the cross-site scripting
+ that worked yeah and i said you might want to tell them yeah but there's an interesting situation
+ these are smaller companies who don't have security teams and they can misinterpret and say well this is
+ because of your software so it was up to them i don't know who all they reached out to but right
+ you know to get pass on the information as a good net citizen and say you may want to tell those well
+ i think it's something you know you see a lot of client-side stuff by nature of what you're doing
+ there and i think that analytics um those analytics uh providers you know they're integrated and sometimes
+ you go into some of these sites and they've got like 10 of them right and some of the the ones that
+ are i mean not to say that there isn't a vulnerability out there and like google tag manager
+ something i'm sure there is somebody can find not me um but you know in some of these other sketchy
+ analytics plugins there are a lot of weird configuration overrides why are you parsing
+ this url parameter you know like um i'll never forget i was at a live hacking event and there was this
+ piece of scope that everybody struggled with because there just wasn't very much there right they're
+ like there's not a lot of functionality we can't really do anything and somebody ended up finding like
+ a beautiful dom xss that affected every single page of that site because of this weird analytics
+ thing that they found and uh it was just taking a url parameter and in like you said importing a javascript
+ file so yeah um yeah they're they're out there they exist and it's it's a challenge because that's
+ usually a totally different team than the app team and they're kind of forcing in certain analytics
+ stuff for business yeah for marketing analytics yeah yeah absolutely it's and they probably don't
+ necessarily go through the same vendor vetting as like some of the other um places do and and actually
+ come to think about i think i've mentioned this on the pod a couple times but um i'm thinking about
+ a specific target where um you know is a very high security target that has to be by nature of their
+ industry um and yeah you know we spent so much time poking at the client side of this thing and then of
+ course the hole is in the third-party software that they just kind of threw in there as like let me
+ add this chatbot let me add this analytics right yeah um and we ended up hopping a bunch of loans
+ because of that vulnerable analytics uh piece yeah and for crazy man other folks you've had on the
+ show yeah you're just talking about lupin yeah like supply chain that's all this stuff and they're
+ adding stuff in yeah yeah different vectors yeah lots of different stuff there okay so the meat of
+ okay let me let me back up i always i always get tempted you know because we get in the in the vibe
+ from the the volantalk yeah i always forget to come back to the introduction and then when i do my
+ dad always messages me and he's like joshin you forgot to introduce and i'm like why are you watching
+ this 20 minutes in anyway dad you don't understand anything that's happening but shout out to dad thank
+ you for watching episodes and keeping me um uh in line with that um so with that i'll back up guys
+ this is ryan barnett he's uh an og in the defender space and actually we found out recently that i
+ bought your book back in 2017 when i was first learning how to hack i was like oh i got to get this
+ you know application defenders cookbook right and uh or and you know try to like figure out exactly what
+ i'm up against here right um and i went to my amazon history and it bought in 2017 i was like no way
+ that's my boy ryan perfect um so thank you for the the content you put out um really appreciate that
+ and um yeah i mean your your track record speaks for speaks for itself you're at mod security you're
+ at uh akamai now as a as a principal researcher for like 10 years a decade wow dude and and and we
+ were at lunch before this we went out and grabbed lunch before and i was just telling him like that's
+ inspiring because you know so many you know we really value highly technical people here on the podcast and
+ um you know so many people especially in a you know bigger company where it would be easy
+ to go up the up the ladder a little bit you know yeah uh it takes a lot of grit to stick to uh you
+ know uh you know well it's our research position it is it's a passion i love research and you you did
+ you did a lot of it for a long time thank you we're also joking about persistence yeah both for bug
+ hunters and also on the defensive side persistence is key yeah absolutely man well um you know obviously you're
+ working with akamai um the gut feeling when we hear the word akamai is terror you know from the from the
+ bug bounty hunter like ah that i just get my whole ip burned again like why can't i get my cross-site
+ scripting payload through um so i think you know one of the things we had here in in the doc as far as
+ discussion goes is this bug bounty versus waaf like how do we balance these two things in the industry and you know
+ know sometimes it is like we're juxtaposed you know it's like we're it's like we're up against each
+ other here you know um but we often forget that we're all on the same team so um i guess what what
+ are some things you want hackers to know about that that dynamic um of you know we're aspect as bug
+ bounty hunters we're on the same team but we're going up against you guys all the time yeah so a couple
+ different kind of discussion points and we can take different angles um one of the main one we always
+ start with is our customers and particularly when they're working in bug bounty it's like what what is
+ their main goal now everybody intuitively jumps to well defined bones that's why you do bug bounty
+ which it is but it's not every use case or some start there and they move to a different use case so
+ you can look at it as vulnerability enumeration if that's their main goal then they want bug hunters
+ to find the bugs so then if we're in the middle there how do they want us to treat the traffic
+ right so part of that is just understanding what the customers want and what their goal is
+ so in that scenario if that's their goal we need to figure out ways to allow bug hunters to get by
+ what we're doing just yeah olay let you through so there's ways they can do that for commercial
+ scanning companies right okay okay i like where this is going ryan okay yeah yes uh but that's because
+ they have registered ip space right right so it's like oh your qualus your white hat your verica your
+ whoever um we know your ips and it's easy in the product to do a bypass list if you're coming from
+ this trusted space okay you can get through sure um as everybody knows who's listening to this
+ you can't use your ip right that's ephemeral yeah and you sometimes have to hop and go around so
+ there's really not a good mechanism to let somebody go through if they wanted to yeah now the other
+ category is that we have of customers are it's not just about finding bones it is but there's a matter
+ of exploit tivity of it like we have to prove that you can get to this and that's where they want to
+ act like normal and treat bug hunters like they would anybody else and do whatever you're going to do
+ lock that request mess with the ip dude like do whatever um it's very interesting we had conversations
+ with some of these customers to understand like oh okay that's interesting uh but they want to do
+ attacker simulation yeah and they want it to be as as real world you know right and yeah it's a balance
+ because then they can prove this is exploitable and there's an issue with the waft blocking it
+ because if they get to that there's waft bypass yeah so it's a matter of them figuring out priority
+ because they may have a list of things that they found internally you know sast and all these other
+ things and they're like okay we have this pile of things we have to fix which ones we do first
+ oh waft's helping us with some coverage here let's delay that other leak or so but if you prove bug
+ hunters can get to it bypass off here oh crap real threat actors can do that now we have to bump you
+ up the suddenly becomes and and i mean that's what all of security is right there's always improvements
+ that need to be made somewhere in the system right you know and so that's a good point you know if you
+ are able to bypass the waft uh it helps with the whole triaging of issues right and triage in a
+ different sense you know figure assigning the the severity and the priority of these of these you know
+ various things you need to address in your security program right um dude i just i hate it a little
+ bit though like like come on like you know i can bypass this ryan i can't i just i'm spending so
+ much time yeah you know like there's a number of things too that we talked about there on from an
+ external perspective people see waft that are really a lot of separate products tied together we have
+ things that look for just how fast people are going and the customers can figure out those are rate
+ controls yeah they're going too familiar with that one yeah exactly and you can get blocked for a while
+ then there's client reputation and that's the biggest thorn for the bug hunters yes it is because
+ it's a little it's more persistent um it doesn't have to be just the website you're interacting with
+ where you were bug hunting because now akamai is giving that ip a global score and then other
+ people who have client reputation can choose to use that score it's not waft blocking you it's waft saying
+ hey here's the score and then the customer can choose what they want to do and some people want
+ to get aggressive and say do you've attacked another customer i don't want you to attack me and
+ we block you there yeah yeah dude it's that's a pain and that's what uh there's always like um there's
+ like a little meme that goes around in the bug bunny community of like oh you know you're hacking
+ you're hacking all of a sudden you know your wife in the other room is like justin why can't i get on
+ you know whatever website i'm like i can't shop like dang it what did i do yeah uh yeah yeah so
+ that's an issue it is it is and and i think there's but i mean like you said there's the
+ there's two sides of this of the same coin right you know we do want to try to show what is
+ actually exploitable live you know and at the end of the at the end of the day i think that's probably
+ the thing that aligns best with the bug bounty methodology right the poc or gtfo world right um
+ but man it would be nice to get get around it sometimes and and you asked me an interesting
+ question over lunch you said hey justin would you would you rather have some way to bypass akamai
+ right and like say we did like some uh you know certificate based authentication and we were able
+ to get you know trusted testers past akamai right uh and take a lower bounty or or would you rather
+ just poc or gtfo it and i'm like oh what's option c yeah exactly right yeah but the reason why that
+ comes up again a lot of bug hunters maybe don't have the same conversations we do with our customers
+ yeah and it's for them to understand it was that second category we talked about that if they're doing
+ threat actor simulation um as not not the primary it's always about bones yeah but that aspect they
+ may be um setting their bounties in accordance with that that it is raising your cost you know yeah
+ there's a chance for a dupe yeah you gotta go through different vps like you have to do extra work
+ but you're getting this amount so yeah i don't know that's a a question for every hunter to have to
+ decide for themselves it's painful number one oh no it's painful man and and i do like the way you've
+ broken it down here i'll just repeat this back for the listener you know um there there are two two
+ organ two types of organizations really one that prioritize vulnerability enumeration right that's
+ you know bug bounty hunters being able to say hey there is a vulnerability here but the waaf is
+ just a thorn in my side you know if i spend two hours i can bypass it but you'd rather me spend time
+ enumerating other vulnerabilities right that sort of organization would prioritize that sort of
+ behavior and then there's the prevention of exploitation attempts right uh types of
+ organizations where they really just want poc or gtfo and let me you know assign severity and
+ triage these issues so it's it's a very interesting um you know description of the industry that you've
+ set up and i think it's very accurate yeah um very cool man uh there's a lot of things that i i
+ would love to i'd love to get to here so i think the next one that we'll hop into is this whole concept of
+ of virtual patching right um where the waaf is being used to wall off specific endpoints as as zero days
+ you know come out and and sometimes it's a it's something that will solve the problem sometimes
+ there's you know ways you can path traverse around it and stuff like that um yeah how much of this how
+ much of this is your main focus at akamai like in and how have you seen customers implement this
+ effectively um yeah so two levels the the real key here virtual patching as a term sometimes people
+ really don't like oh really and i enter yeah and i understand why and really this falls in the same
+ bucket we always everybody talks about if an organization is deciding not to actually fix code
+ and do anything else you're like yeah you're sure yeah so a virtual patch some people can misconstrue oh
+ it's patched it's like no that the code's not passed and so one other should rebrand it temporary
+ virtual patch you know like yeah but that's a key thing it should be temporary yeah give you time to
+ fix the code right um so anyways the key here is how wafts typically work out of the box
+ as attack detection systems they look for bad stuff coming in right and another thing thinking about
+ coming on the pod talking with you and thinking about meta discussions like uh wafts live in a sources
+ world bug hunters live in a sinks world yeah right and that is a good that is a good line ryan that
+ is a good let's put that in a short put that in a short team yeah it's true because they're different
+ views they're all part of the process um and so we're looking at data coming in attacks another way i
+ talk like in the industry with our customers they're used to like mitre and cwe discussions last we live
+ in a kpec discussion and you know you have to make those correlations so here think of waft as a tool
+ really the paradigm changes is once a vulnerability is known like when traffic's just going and people
+ put a laugh in front and we have our default stuff there sure we can see a lot of bad stuff in whack-a-mole
+ we don't know if where when there's a bone now if they can signal to us oh we know there's a bone
+ here because we get a bug family report they do pen tests they do code review then think of laugh as
+ a tool to implement some sort of mitigation to you know reduce risk right um the other one we talked
+ about is like uh sharepoint stuff that just comes out exactly it's the same discussion it's just we
+ didn't get that from a customer we got it from microsoft third party but oh vulnerability
+ intelligence custom logic quasi virtual patch the the key here too like you were saying how good is it
+ to do that and how long like what's the half-life yeah of a virtual patch is how you're choosing what
+ logic to put in still if you're still trying to negative security stuff it's not as good it's tricky
+ though to figure out what should the payload be like we'd love to do positive security we don't know
+ the app necessarily so it's key on the vulnerability details to really figure out how to do that yeah
+ yeah two two directions i'd like to go with that one i want to go back to the the sources and sinks
+ world so we'll we'll um we'll circle back around to that but you know staying on topic of virtual
+ patching there are scenarios though when you're standing up a third-party software and that third
+ party software doesn't have you know you don't have the ability to patch that live you know and and you
+ know you can put akamai in front of it and wall off certain endpoints but then you know that's pretty
+ much the extent of what you can do until the vendor patches right and then you know this this is kind of
+ where these virtual patches become a little bit more of a permanent solution right if you cannot get that
+ that software to to patch um so there's been a couple vulnerabilities that i've found in the past where
+ you know people are abusing um the waft to just see like okay well you can't access slash debug anymore
+ you know but but really you know there's path reversals there's um other ways of accessing those
+ endpoints maybe method overrides or whatever um or path overrides uh that you can utilize to get at
+ them so it's a tricky balance between that right yeah it's another thing we talked about maybe we'll
+ loop back to it it's the whole hacking resistance discussion yeah because this is a really good point yeah
+ whatever security logic you're putting in i'm gonna grab my notebook really quick keep going yeah yeah
+ you know whatever security logic you're putting in it's a question of like how strong is that against
+ what type of attacks to do evasions right to get around it like you were mentioning um a lot of these
+ two depend on what's the category of the problem um sometimes there's discussions oh we found this problem
+ and quote unquote is this laughable like can we do something that's like that's more of an auth problem
+ you know access control off like those are things that when you have a third party system
+ we don't have the knowledge or the insights and to know exactly what should be done there right so
+ it's not that a waf can fix everything but some stuff would fit in there nice yeah uh so yeah hacking
+ resistance it's like okay we think that this would hold up but if you have a persistent yeah attacker that's
+ banging banging banging banging who knows how long that this can hold up right and it's a good way to
+ simulate that in the bug bounty world right like you know we we are persistent because we're motivated
+ actors you know because we're getting motivation from the money and and you know just like apts are
+ getting motivation from whatever they're getting motivation from so i think it is a i think it is a cool
+ a cool simulation and and um definitely there's this world in which having a laugh in front of your assets
+ makes you that much more annoying to hack where the where the hacker will just go hack something that's
+ less annoying tack you know um potentially whether it's real threat actors that like you said oh here's
+ the new cve of the day yeah i don't care if it's this company or that company you know i just want to
+ upload my web shell exactly they'll just move on you're you're weeding out all your botnet you know
+ your ransomware actors there's a lot of noise yeah you can just yeah yeah that's good um swinging back
+ around to your quote saying that you know laughs live in the source world and hackers kind of live in
+ the sync world or at least the connection world between the two um i think that's super pivotal for
+ uh bug bounty hunters to understand and now we get to do this segment ryan where i'm not sure how this
+ is going to be for you as an akamai employee but um i kind of wanted to talk about what seems to me
+ to be an unfixable problem in the waf world which is that um you don't know you know what's going to
+ happen on the on the flip side of your waf right on on the back end and so um you know you're you have
+ to make assumptions that that especially in the xss world makes it very very hard especially if you're
+ doing context aware yeah um you know uh blocking it makes it very difficult for a waf to perform
+ properly so the example that i that i'll often give is this let's say i've got an image tag image
+ tags need to be able to flow through the waf as a part of like you know user supplied input um you know
+ it's very common um and and maybe you know like an attribute a non-malicious attribute such as x
+ is also allowed right and so let's say you do something like this x equals double quote right
+ and then you do percent 22 and x equals double quote percent 22 you're inside of the html attribute
+ context right yeah um and then you know you can put anything inside of that x attribute and it's not
+ going to be malicious right um but so so the you know the the waf thinks okay you know now we're inside
+ of this x attribute so if i have something you know slash on error equals alert one right and then double
+ quote again right that's all just a part of the x attribute but really the back end is decoding that
+ percent 22 or the percent 25 22. right and and the the miss and sometimes it's it's inverse right
+ sometimes the waf will be smart about it and say okay well i know that that percent 22 is also a double
+ quote so i'm gonna decode that well then you can flip it on its head you know and and say
+ okay well now you think that i'm not in an attribute but i am in an attribute right and so and so there's
+ lots of ways that you can sort of flip that on its head um and i know you've seen that problem before
+ like just just yesterday yeah and i'm not kidding yeah oh geez um i mean is there is there some sort
+ of solution to this uh or is this just something that you guys are going to have to continue playing a
+ whack-a-mole game with um a combination yeah of it um getting back to the whole whack-a-mole and how
+ we were joking before where it's like okay i've been doing laugh now 20 years yeah oh geez too long
+ and at black hat i can't remember uh 2011 i gave a talk called cross-site scripting street fight
+ dude and you can find it i think it'll probably be in show notes i think it's in our thing yeah so the
+ idea was going through all these stages of waft what do i try and do let me try this but then the bug
+ hunter attacker does this crap that doesn't work let me try this here's the evasion for that and it's the
+ chess game back and forth back and forth regular so there's always blacklisting whack-a-mole approach
+ because you can do that the question is how much coverage are you getting right yeah and then these
+ evasions um ultimately where i am today personally understanding the limits because we live in a source
+ world and what we're looking at the big x factor for us or or what i want to say uh challenges are
+ the black box behind us and it's not just the customer app if you think about what we what we're
+ tasked with right i'm sorry as as defenders of it can be going to some application tier
+ esp java like whatever can do all sorts of decodings potentially it could go into databases they
+ may do something and then something different when they pull it out to use it but then also what
+ you just said think about browsers and then we have to do that layer as well so a common thing that with
+ the researchers i work with and we talk about this and uh there's also a funny situation again this
+ kind of cross-pollination of of us attackers and defenders we hire a lot of bug hunters yeah on the
+ team and yeah exactly and we kind of joke when they come in we said look we brought you because it's
+ the whole kind of know your enemy so to speak and how to attack but then i always throw out the uh star
+ wars yoda line i said you must unlearn what you have learned and so ryan dude i gotta i gotta work
+ with you man like this is like amazing whoever gets that job i'm jealous of you to work with ryan so
+ what we're thinking about here and this is a common phrase that we have to use is can we as akamai do
+ customizations for your snowflake app because you want us to help you protect it absolutely outside of
+ that it's best size fits most we have to figure out okay what can we do that will work across every
+ single company customer and scale and so a lot of times what you get into is between the app tier
+ database web browser or whatever who's going to decode what is it going to decode once twice three
+ times mutations yeah it's the issue we saw yesterday yeah data came in a bunch of stuff was encoded
+ up to three times in certain parts but then by the time it made it into the sink
+ the thing that was decoded three times was fully decoded other stuff was not touched wasn't even decoded
+ one so we're in a very tough position to match up decoding so yeah it's a constant battle uh to figure
+ out how much to do how much not to do and you just have to tackle it from different angles of detection
+ yeah absolutely and and one of the and i just wanted to mention this for the listener because i i kind of
+ sort of said a lot of code a second ago was one of the interesting things about html attributes is
+ if you if you start an html attribute with a double quote obviously that double quote becomes the
+ encapsulating you know right piece for that html attribute but if you start the double quote with
+ the the actual text percent 22 then there's no there's no encapsulating attribute right and you can
+ you know a space will terminate that ht html attribute so so i you know the there's so many
+ tricks you can do where it's like okay we're gonna put a double quote at the beginning of this a this
+ attribute right right uh encoded as percent 22 and the waaf has to think okay well i think that's a
+ double quote which makes this this a quoted html attribute right but actually if they're not decoding
+ it then it's not a quoted it's an unquoted and there's different terminators right so it's like
+ there's there's so many layers to that um and it's it's a very tricky very tricky problem yeah
+ definitely another key thing i would say is well it depends it always depends on the exact context yeah
+ um some other phrases i've used in the past which i think are relevant here yeah we're in a world of
+ artificial intelligence i go old school again for those people who know marcus rainham from a long
+ time ago he had artificial ignorance and it's a totally different approach because when you know
+ certain things that you already know about you filter those out anything left over so we try and
+ take multi-approaches to this because it's very hard to get the context right because we're not in the
+ sinks yeah so we don't really know where it's a hard job you're doing ryan right it's hard man so yeah
+ all i can say is multi-dimensional detections of ways to try and detect this because you try and do
+ certain things in context if that doesn't work you take a step back and you look more general and you
+ catch a lot of those that get by the other one so let me ask you this you know this this situation that
+ i described with like hgm attributes that is something that um affects context aware laughs right right and
+ i'm wondering you know how far you can get in your opinion with just like you know regexes or like you
+ know blacklists or or really you know at the end of the day it's going to be very hard if you to get
+ anything through if you're allowing or to to prevent everything from getting through if you're allowing
+ less than and a you know uh an alphabet character right yeah um that's kind of where it kind of
+ reduces down to i think in a big way yeah so maybe there's a regex for that you know regex serves a
+ purpose yeah and i i'm forgetting off the top of my head chomsky whatever model that's like you have regex
+ we have a higher level grammar we can't define yeah that higher level with so regex serves a purpose but
+ we realize the limitations but yeah it serves a purpose because it's fast you know you can iterate
+ and do stuff quickly but we have other ways to to look at that data it going back to what you were
+ saying especially on client side yeah yeah um i did some things in the past i think we had talked about
+ mod security we had these cross-site scripting challenges where and i said it in the cross-site scripting
+ street fight presentation that's like this is a browser problem it's like yeah the app's not
+ properly encoding or output you know encoding escaping data but ultimately the problem is in
+ the browser so there are situations for example and this is i think there's some stuff in the in the
+ dock where some of our customers really want to get into things like content security policy or
+ pushing something like uh don't purify yeah we can do that from the edge we can dynamically modify data on
+ the way out because we have separate products that do different things and we can dynamically put down
+ purify so there's all sorts of other things because i'm like look like you said there's a limit to what
+ you can do with sources so for our customers that want to get more advanced say okay we can help you
+ and dynamically put that in um so i don't know it's like more it's a question of what is wow
+ and where does it end what is wow yeah i love that well it it goes to what you are going to talk
+ about in a minute as well here with regards to unicode normalization right um this order of operations
+ right like because if we put dom purify i'm sure you know but if we put dom purify at the edge if
+ there's any modification of that data post dom purification you know uh then it's it's going to
+ affect the integrity of the work that dom purify does sure and if you see any you know on encoding or
+ anything like that then uh dom purify becomes you know it doesn't work effectively so man it is a
+ hard problem to solve but i think we're going to continue going back and forth as uh as waaf and bug
+ hunter and uh treating trading punches in the street fight right yes yes or we have to do our own
+ rescue exactly yeah dude right at the end um i did want to mention one other thing here which is
+ going to be interesting i think that one of the things i'm most excited about is uh for the onset of
+ hack bots is a waaf bypassing bot uh i think that's going to be really interesting um and kaido by the
+ time this uh episode airs or i'm going to have to cut this segment we'll see uh kaido uh will have
+ released this thing called uh shift agents where you can inside of kaido create your own hack bot of
+ sorts and and delegate a tab to the task yeah you can give it a task and you can give it a tab in in
+ replay right okay and then it will modify replay and you can you know click through it just like you
+ normally do forward forward back back and see what things it's tried and then create things um so what
+ i wanted to ask about that was like i and i don't know man ryan you can you can sit you can not
+ answer this i told you i was going to put the screws to you a little bit on this podcast what kind of
+ things do we need to have in our arsenal as as hackers what should we know about bypassing wafts
+ um we talked about encoding already is there anything else you can give us oh no uh this may
+ have to be uh when we're in vegas at a face-to-face get-together uh-huh i don't know that's a good
+ i'm not sure well i mean most things are out there yeah um no i will say in general and it's not an akamai
+ thing yeah is joining different i think everybody knows akamai is the biggest pain in the ass to bypass
+ like it is we hope so it's very hard but go ahead yeah it's when you're joining multiple different
+ techniques together and you know if you go to like even port swiggers cheat sheet cross-site scripting
+ it's like they have a lot of individual things but if you start mixing and matching
+ um that's a challenge um yeah i mean outside of that of course then it's uh secrets we can't
+ we can't take you behind the the come on right all powerful i know it's in here somewhere what room
+ where do you keep the wife the laugh bypass that's down the hall i gotta keep an eye on just dang it
+ my badge gotta have access to that yeah um well very very good man very good um so i guess we talked a
+ little bit about what it would look like you know how hackers often circumvent wavs um but one of the
+ things we didn't touch on quite as much is this this piece of ad a aws api gateways and using stuff like
+ um fireprox and stuff like that you know to get around these ip-based restrictions and i know that you
+ have mentioned in the past that um aws has this as a part of their terms of service that that we
+ shouldn't be we shouldn't be using that um
+ like what what i want you to say to the bug hunter is you know to do it or not to do it right
+ it kind of goes to this whole this whole concept of like bug bounty is supposed to be an emulation of
+ attackers and they're not actively preventing us from using uh aws gateway do you think it's it's
+ unethical for an ethical hacker to do that oh that's a good one um i think it's tough when you
+ know what the acceptable use policy is yes choose to vote that's a personal decision so what you're
+ saying we should cut this segment is that what you're saying so speaking in general for a second
+ like you said there's a couple tools right that can help to automate some of this but part of the
+ question is okay why are you doing this well it's the ip blocking and so you have to be able to
+ distribute whatever you want to do workloads yeah and come different ips so you're getting around that
+ problem so there are ways to do that that don't violate acceptable use um so another interesting side
+ thing right akamai had purchased linode yeah a few years back ups right they had a lot of bug hunters
+ on there and a lot of people were using like axion yeah and those kinds of tools yeah uh for a while i
+ talked to the trust and safety it wasn't my doing and everybody said i'm just i'm on a webex with those
+ yeah yeah hey we have to cut this because people were running it to the hill oh yeah and it was having
+ network problems so they disallowed axiom for a little while but their customers will say hey we're
+ going to go somewhere else we'll go to a different vps so they worked with axiom uh project folks okay
+ and there is a document there says hey everybody if you're going to run this here's a way to put some
+ bounds here's a few flags that maybe people didn't know about you can still scan but you won't take
+ down the network right here's a few flags that you didn't know about clearly read the docs um so there's
+ ways to do all of that now where it gets interesting again is for me i have to deal with both threat
+ actors and bug hunters and threat actors are a pain they have dtps that they do bug hunters we've joked
+ they're they're we have a frenemy relationship yes right we are all security researchers you're not my
+ enemy but the interesting thing is when the ttps overlap and what i was seeing is we see attack traffic
+ coming from amazon api gateway ips and the there's a lot of overlapping topics here but how would i know
+ once i investigate this is a bug hunter right so i can start to look now if the program says you have
+ to do request header tagging and say hacker one handle i can look and say okay they're bug hunters not
+ a big deal the problem is we were seeing enough traffic where there were no indications that it was bug
+ hunter yeah a lot of people don't use those headers yeah and then i said okay they might not use the
+ headers but then i was looking at what was being sent and it was stuff that was more damaging the
+ sequel injection dropping tables and i said this could be a regular attacker yeah not bug hunter so
+ i have to initiate conversations with security teams at aws yeah very similarly we saw on cloudflare
+ people setting up web workers all they were doing is open proxy and they would funnel their traffic geez
+ so i had to get with cloudflare even though competitors but there's a security trust safety
+ so here's where it gets interesting though like you said the the person doing the activity and saying
+ okay is this acceptable use am i going to get in trouble like all that it's a similar thing for the
+ companies i talk with because it's a situation of if you're doing this but you're paying your bill every
+ month right do they really care yeah so i don't know the mileage varies where sometimes they say no no
+ we're shutting this down and they do other times they don't because you pay for it but one other thing
+ bug hunters should think about too from a linode perspective yeah the trust and safety team uh sometimes
+ people will get access spin stuff up scan who are not bug hunters or threat actors and they've
+ used a stolen credit card yeah and quickly they figure it out and shut it down but they scan for a
+ day you know what i mean so keep that in mind when you're doing what you're doing as bug hunters
+ you're you're right next to people who aren't sometimes there's some friendly fire repercussions we are
+ sorry well i i i like that i like that because it is frustrating you know especially when you're an
+ ethical researcher it's like no i'm on your team stop inhibiting me but yeah especially when that
+ infrastructure is also being used negatively and you know you're saying it is um it's a difficult
+ it's a difficult balance to strike but yeah i think i think if you can use stuff like um like axiom or
+ shadow clone or whatever right and not break the uh the the terms of service on a lot of these uh
+ yeah providers then maybe that's maybe that's for the best as much as i hate to say it yeah yeah yeah
+ what um i guess let me ask you this has there been thought and has akamai sort of pursued working with
+ the platforms to create an environment where um hackers could either go through a vpn or a proxy or
+ something like that and bypass the waft to validate their proof of concepts um you know in kind of working
+ with the platform for that um to a certain degree yes i mean i've we've talked i know offline a little
+ bit about this but yeah just brainstorming lots of different ways to figure this out as we're saying
+ the normal mechanisms to allow a commercial desk customer just aren't there in this yeah the ips
+ are rotating constantly yeah so you need some way to validate if you're coming directly through the waft
+ product so uh there's some discussions i will say they're early but talking about part of the question
+ is if you wanted to do something like this who registers the bug hunter who gives a token who
+ manages there's that question of who could do that but if something's implemented then it's a matter of
+ akamai making it an option for a customer to opt into if they even wanted to do that yeah but you would
+ let them buy there so yeah we're brainstorming some ideas because we know it's a pain point there's there's
+ some there's some stuff in this document here about using like tls fingerprints to try to figure out
+ i'm trying to think about how all that would work what is what is the vision for that well again
+ this is me yeah this is just ryan this is a ryan okay brainstorming yeah um and uh i don't think he
+ would care i said anything but like i pinged uh ben yeah i'm saying hey if we were to do something
+ like this because the question is how can we validate somebody that's not an id yeah and there's
+ tools out there that let's say you're going through a proxy that you can run that will funnel all
+ your traffic goes over then tls different tools where oh wait a second in tls there's all this
+ different data in there where you can have like a comment field maybe you put your hacker hand like
+ something there the end result is certain parts of your tls fingerprint will change and all of a sudden
+ that becomes unique to you and so i'm mentioning that because in akamai's waft product you can do a
+ bypass list based on a tls signal really yeah okay so we're trying to figure out low friction
+ yeah how do you make that simple for the researcher and for the companies that are implementing that so
+ i don't know that we are at brainstorming phase so hopefully they're saying when we're out in vegas and
+ we're yeah brainstorming with hackers and whatever maybe there's other ideas but any way we can do one
+ of the other things that i kind of thought of for this was attacking the problem from the application layer
+ and saying hey okay we've got a set of um certificates that uh trusted researchers have
+ and then we create our our http request and we you know add an x akamai researcher header with the
+ signature for the for that request right right and and you know that includes a time stamp and stuff like
+ that so it can't be like vulnerable to replay attacks right and then we utilize that it it's not going to
+ be perfect because you know it's not going to get us past all of the like and all of our tools aren't
+ going to be able to integrate that that signing structure and stuff like that but at least for like
+ kaido and burp you would be able to have an extension that would um allow you to get past akamai right to
+ get at the target well most the cdm platforms are able to do client certificate validations so yeah it
+ makes more sense to do it at the tls layer i think well yeah it just depends on how you wanted to
+ implement so it is a problem that should be solved we gotta keep brainstorming i guess very tricky
+ very tricky um so dude you are presenting at black hat this year with your daughter come on give me some
+ that's like dad goals right there absolutely um congrats isabella on getting your uh talk accepted
+ that's really awesome congrats to you ryan um you know you you've done some unicode stuff last year
+ as well um can you give us a teaser of what lost in translation is going to look like this year um
+ yeah i guess by the time this has aired but it'll already be out so yeah don't give me a teaser give
+ me give me the good stuff yeah that's very true yeah um yes you'll be able to go i think download
+ our presentation yeah um yeah so last year at defcon bug bounty village um it was a higher level concept
+ of what are different ways where back to this order of operation problem if data goes through some
+ security checks and then later it's changed in some way that causes a problem right so last year we
+ talked about different scenarios you have like edge site includes that might change it on the way back
+ out yeah um uh there was the html entity decoding which can split in the end like there's all sorts of
+ different things so the one that resonated though was things related to unicode yeah so we said okay
+ that's what was interesting can we expand it a bit so over the past year we were trying to gather
+ stuff and my daughter i think had laughed at me before like when we're on you know socials or doing
+ whatever and i said oh bookmark oh bookmark said what are you doing i said anytime i see cool stuff on
+ our our like feeds i'm like oh bookmark that for later yeah i come back so just to give kind of a
+ quick run through on on what this is kind of from a agenda perspective um one thing that's interesting
+ is you have to start with url decoders like before you even get to what the character should be like
+ in its regular form or glyph or whatever so url decoders can have different problems the first one
+ is if it is not multi-byte aware which you would think isn't it 20 25 what yeah you think you think
+ that that would be solved already but really like multi-byte i think a deep understanding of unicode is
+ pretty is pretty rare and yeah i know i talked to i think you probably listened to the episode with
+ the ts and where we where we uh talked about this a little bit so you know lately it's been coming
+ across you know the pod a good bit that these multi-byte sequences can be really um really impactful
+ yeah so what was interesting as we were going to prep the what do we show people when we're talking
+ about this well just fire up burp and go to decoder yeah it's not multi-byte aware yeah you put in utf-8
+ you get mojibake yeah so we had to get a different extension yeah what did you say moji what mojibake
+ that's what it's called what is mojibake that is when data is translated in a way that it was not
+ encoded and you get gibberish it's called mojibake ah okay i was gonna say you're picking up on the
+ japanese yeah yeah i'm like yeah yeah so i said that word uh isabella and same thing she's like wait what is
+ that so we were researching yeah but it has a name so yeah and burp you have to use decoder improved
+ it's got java swing line and it under properly decodes yeah it understands utf-8 basically so that's
+ one thing and there's lots of things that are not fully like say multi-byte aware because technically
+ we're just saying really utf-8 normally the other one is overlong encoding so so let me ask a question
+ about that so multi-byte sequences that's when you've got like um percent ef uh percent bc and then
+ something else right and it's got those those longer sequences that that will create a unicode character
+ correct okay so a great shout out maybe it'll be in the notes sonar source they do a lot of great
+ research but they have a tool it's a utf-8 online visualizer yeah it is awesome it's so fun i've seen
+ that before and we've covered it on the pod and i totally forgot about it and i i was having trouble
+ visualizing this in the pod with matias and like four people messaged me and were like you should use
+ this like yeah there it is yeah uh very very cool piece of software they built there yeah and it's
+ great because it shows you at the bottom the utf-8 encoded bytes yeah the next thing are the actual raw
+ bytes and then you have the unicode code point and the glyph yeah so it depends on what layer you want
+ to look at um but it it helps you to understand that wait a second these three individual bytes
+ that are encoded that's percent eighty percent whatever they're all in relation to each other
+ because there's one that's a leading byte and then you have a continuation continuation by yeah but it
+ depends on what the character is and what each byte is storing and things like that but yeah if you
+ mojibake it and you just get crap yeah so what's interesting is from a defender perspective
+ if we're going to look at data and make a security decision if we mojibake it we're screwed
+ but the other thing is if the application is moji baking it that can cause problems so it depends oh
+ yeah yeah yeah because there were scenarios and maybe get into this um oh i guess that makes sense ones
+ you're perceiving it as a unicode character but they're perceiving it as ascii you know or yeah okay
+ that's interesting if they treat each byte as a individual ascii character and they ignore the
+ leading bit yeah it's just seven bite bit ascii then you can get an ascii character and two who knows
+ what characters that may be thrown out yeah so when you think about uh control line feed injections
+ yeah yeah response splitting that's where we saw a crazy bug bounty report i want to say was that a
+ report on x or on twitter back in the day do you do yeah by file descriptor i think was the guy that
+ that did it i don't remember the handle but the one i was looking at um it was bug bounty versus
+ microsoft yeah said how i got six thousand dollars yeah um and we had to deal with this i dealt with
+ a very similar problem at work when i first sold this yeah all right so wait a second i know from a
+ defender you're trying to do response you know injection you're trying to do a set cookie
+ you're sending these crazy chinese characters yeah but when it comes out of the app it's control line
+ feeds what the heck is happening here now on the one hand it could be a url decoder issue emoji bake
+ where it's only taking the lowest bite and did it but the other aspect that we researched that's kind
+ of a related category is what we call unicode truncation that's where even if the url decoder is
+ multibite aware you decode it you get what the character is how's it going to use that character
+ is it going to put it in a database is it going to put it in memory and again most of our customers
+ that they're black boxes but we can tell that they're doing url decoding appropriately but they
+ took that character and all they're doing is taking the least significant bite treating it as ascii and
+ it becomes an ascii character so a lot of these control line feed injections when you see those on
+ cheat sheets this is why they were because the app is just saying nope we're treating this as asking
+ okay so yeah wait so there's there's truncation there's uh there's and then there's also normalization
+ and there's things not actually parsing it as multi-byte sequences yep there's um what's the
+ what's the other one that matias mentioned uh over uh over long yeah yeah that's a subcategory too of
+ it's a question in the rfc about how you're supposed to do this so if anybody by the time
+ you're listening to this we're maybe at our talk yeah the real world analogy we have is a picture we
+ got offline of an amazon box and you open it up there's another amazon box and a bunch of packaging
+ and you're looking at saying why didn't you just send me that box exactly it's the same thing over
+ long encoding is needless padding so you have an ascii character it's a single byte yeah you can send it
+ that way but you can send it in two bytes if you wanted but that other byte all it's doing is saying
+ i'm a leading byte but i don't have any data that yeah just look at that guy yeah so yeah so the
+ question is what do you do with that either you can fully normalize it back to ascii which in my
+ views better or you can say this is bad i'm going to block it so the the one throwback i gave to my
+ daughter as we were prepping to this and i said when i see this sequence of the overlong i get a
+ shiver in my and she said why and i said because back in 2001 the nimda worm came out and what the
+ the nimda worm what's the nimda worm so whoever named this was real crafty yeah it's admin spelled
+ backwards ah so it's the nimda worm and what it was doing was propagating across microsoft environments
+ it would exploit systems through a bunch of different protocols in different ways but one was
+ through iis server they overlong encoded dots and slashes so the security check would fail
+ because it was overlong but then it would get normalized after the fact yeah and then they
+ could do command injection and all sorts of stuff so my gosh this stuff's not new yeah and it's still
+ around it's been around for a while and it will continue to be around because because this unicode
+ thing is tricky it really is and there's a lot of uh there's you know there's best fit mappings
+ there's truncation there's uh all sorts of things one of the things that i think is really interesting
+ also is is what you put in here in the doc is the casing the casing really problems right yeah uh can you
+ tell us a little bit about some of the gotchas where you know characters may be different you know
+ and simply running like upper or lower on something exactly transform it uh in these environments
+ yeah like you were saying like confusables and best fit mappings more people are aware of that over time
+ yeah this is something too that i think as a developer you're not thinking there's a unicode
+ component to this but there is now each platform and language depending on how you're doing upper and lower
+ and you can be doing upper i can't remember full in python i can't remember there's different terms
+ but when you think from a bug hunter perspective oh here's some input what type of an attack
+ should i do here right so this is something when you think about like usernames they don't want to
+ have you log in as like justin@email.com i log in as capital j justin yeah and those are separate no no
+ they're the same so anytime you think we need to normalize and not have a case sensitive problem
+ typically they would uppercase or lowercase it and when it does that there's case mapping in unicode
+ so you can put in a unicode character and this was something that was very uh interesting as well it's
+ kind of related it was one of the things we talked about uh it was actually on naham con yeah this year
+ right the ato puny code stuff yep as we were looking at this and we were trying to generalize it and say
+ well could there be an uppercase casing transform component not in this particular case but in general
+ maybe but then this dovetails into collations and databases man yeah so as we were researching that
+ the interesting thing again now is it's unicode combining characters so when you think about you
+ let's say you have an a character and it's got an accent yeah on it right or umglots or like whatever it might be
+ depending on the normalization that may happen they may do a decomposition and say okay we understand
+ what this glyph is but when we store it we're going to store it as ascii a and an accent graph
+ separately right okay so keep that in mind because with these collations that databases may have
+ they can have default flags and we were looking at my sql because we actually highlight the ato puny
+ code examples this is really interesting yeah so what it'll do is you pass that in let's say with
+ an a with an accent character the default flags in my sql is ai which is accent insensitive so even if
+ you pass something in that has an accent on it it ignores it so now you just have the base character
+ no way yeah so my sql itself is doing that conversion yeah it's part of the default so if
+ you're in it's a part of the default config oh my god yeah and also the other flag is case insensitive
+ uh so case insensitive accent insensitive now it depends on the collation right however so if
+ you're bug hunting who knows they may have set their own collation and they may be handling stuff
+ okay i'm sorry i keep on saying collation i don't have a firm grip of what collation is what is a
+ collation uh yeah it's 100 disgrunt basically it's you're checking the equivalency of two characters
+ okay so in the basic sequel statement that we did it's just saying oh select in quotes
+ the unicode character a with the accent equals in quotes ascii character a okay and it's either
+ returning a zero or one oh okay okay so are these are these the same character anyone says one oh
+ they're the same that's not the same and then we show if you change the collation when you do the
+ select and we changed it to be accent sensitive then it's a zero no no these don't match dude i'm so
+ hyped for this talk right now this is going to be crazy yeah it was interesting as we were looking
+ at that because we want to understand wait how did this actually work yeah um yeah so many layers to
+ it as well right like you know there's that there's the WAF layer there's the application layer there's
+ the database layer you know there's the browser right like we were talking about we we saw a um
+ this is only tangentially related but we saw an exploit come across google vrp the other day um
+ that got got um disclosed uh that was uh taking advantage of um ligatures in the default font used in
+ your url bar nice so you know there was a google ligature you know to create the google logo in the
+ font yeah you know we covered it on the pot it was yeah now it's ringing the bell it was freaking beautiful man
+ it was it was lovely um so there's so many layers to this dude the one last thing because that's what
+ what we were focusing on initially for combining characters or uh uh critics diacritics yeah um the
+ other thing which is interesting for bug hunters yeah is think about the sources and sinks again if
+ there's a sink where your data is right before let's say a greater than character so you have like a
+ text input yeah it's ending what if you only put the combining character as your first character
+ and so what we have here as an example there's code this is a dream yeah yes okay okay you can break
+ context right so what you can do is you send this unicode character which is a reverse full width
+ soldus or a full width soldus depending on which way you want it to go the one you have linked in
+ the doc here yes uh you zero three three eight oh my gosh and so then it will combine and become a not
+ greater than symbol now the key here though is this has to happen server side there needs to be where
+ the code that's going to be rendered and generated for the web page including your your um like whatever
+ input text it's wrapped in a normalization and they're adding your character and so is it semi edge
+ case maybe is it worth a check and tooling it's something to try you know absolutely and and i've
+ also thought about this many times and i've tried to make it work time and time again in in um scenarios
+ where you know you need to get rid of something following your thing where i'll put like a um i'll put a
+ percent sign there right and i'll try to like get an ampersand like like say i need to get rid of a um
+ a query parameter that is appended after my right specific thing right i'll put like a
+ a percent sign in there and then it becomes percent ampersand you know the first character of the the
+ query parameter right right and then that's an invalid you know url decoding so then it freaks
+ out and sometimes it does weird stuff yeah right right i don't know how to decode yeah exactly so
+ this is another thing that we can try with that because i've always been like ah there's got to be
+ something that i can do to affect post you know because obviously the the uh ideal situation is
+ you've got like a like a hashtag or something like that and you can turn it into the fragment or whatever
+ right but you don't always have that and so all of the any primitive like this that could potentially
+ allow you to affect previously hard-coded text that follows your input right so interesting man
+ breaking context right um frick i love this dude oh my gosh what we were doing and prepping oh my gosh
+ for the talk and doing the research um is to update tooling right we want to give back and you know
+ let people use this so um i've worked with james kettle so active scan plus plus for burp users uh we
+ already have some pull requests in there we're making some more but basically the concept is and
+ you can adapt this to other tooling yeah yeah is if you're checking for this behavior it's figure out
+ all right are we talking about confusables do we want to see if there's any normalization do we want
+ to check your byte trunk like what are we checking for and essentially you get a prefix and a suffix that are
+ random strings send whatever character you want in between because then the random strings tell you
+ where it is in the return yep and you're seeing if it changes in the way that you want it if it's
+ transformed yeah so for example if you want to see if it does any normalization you can send the
+ unicode kelvin sign it normalizes under all four normalizations so then you know it's doing that's
+ what i need to know okay unicorn unicorn unicode kelvin so dang it guys do not make a meme in the
+ freaking discord about unicorn please i said t-shirt dude shut up riot uh the unicode kelvin sign yeah
+ i think i've seen this before because i think there was a they called it special k yes special k
+ polygraph exactly that's the one and i believe um the first time i was exposed to this actually was um
+ yes we hacked bit k researcher um right it showed me some really cool transformations in javascript i think
+ they used that that k right where you can lowercase it and it goes to like a a normal ascii lowercase k
+ yeah and i'm like oh my gosh that's crazy that's the same concept so you can check for everything
+ like we have the other example for unicode truncation we send a chinese character yeah and
+ if it comes back in between your prefix and suffix as a left curly bracket maybe you want to try some
+ server-side template injection like there's different checks to do so there should be some tools out by the
+ time our talk so all right wow definitely interesting stuff there uh gonna be on the lookout for that
+ talk um i'm glad i get a little insight into it now this is good this is good i got to start adapting
+ some of this uh this tooling for kaido um yeah very nice man i think i think this last bit about you
+ the combining characters is really intriguing to me in my brain i can feel it in my brain that i need
+ to try to figure out what combinations those are there are there um that's in your talk i'm excited
+ to see it man yeah um let's let's uh we've only got a couple more things here uh you mentioned you
+ know active scan um we talked a little bit about re-collapse uh before right where uh that's really
+ helpful for normalization tables and creating those kind of vulnerabilities um trying normalization
+ vulnerabilities what what um you mentioned sso you mentioned uh you know usernames and stuff like
+ that what kind of places do you see this most being uh effective for the bug hunters you know
+ and and i guess yeah it it affects definitely things like cross-site scripting you know normalization
+ but also you've got critical impact with arbitrary account takeover and if normalization is happening
+ across sso sign in yeah so i think some of these overlap with the discussion about like
+ what are good vulnerabilities that lap is great at identifying yeah right so the ato stuff again
+ in akamai's got a different product to help you account takeovers yeah that's not like an injection
+ it's a different scenario um most of what i've seen when we get tickets and we have to triage
+ it's around all of the um well ssrf yeah because enclosed alphanumerics okay those get normalized
+ there's a unicode or an idna element processing there with the urls that does some normalization
+ um control line feed injections okay and then cross-site scripting those are the top three those
+ are the top three that we see not only trying because we see people try all sorts of crazy stuff
+ with the tools right and now you got all these ai agents it's cheap to test yeah yeah but we have to
+ weed out that and say what are the things actually show impact that are work yeah exactly and apps do
+ crazy stuff oh yeah and how they're transforming data so we've seen examples where it's confusables
+ it's casing haven't seen any combining characters yet keeping my eye out but those are the big ones
+ and then it's like well okay why is it happening you know that's usually part of our triage we have to
+ figure out what is going on access xss crlf yeah ssrf ssrf and then we've got those sort of normalization
+ attacks on sso and usernames uh yeah yeah yeah yeah if it's normalizing all right well we'll uh we'll
+ give it a shot we'll see what we can find i definitely think the combining characters research that
+ you've done and especially the i mean the the collation stuff for sure but the um the combining
+ character stuff definitely has a lot of potential i think that will result in some bugs i got to get some of
+ those uh you know into my um normal testing routine exactly you know get them in your tooling yeah um
+ the last thing that we had really on the list here is csps um and i think you have been a very
+ interesting little piece here about how csps can sometimes be implemented at the the waft level right
+ you know um can you talk about the pros and cons of implementing csp there and what bug hunters need to
+ know about that yeah um whether it's a quote-unquote laugh or just something that's an
+ intermediary yeah upstream from the app right yeah um some customers find that attractive because
+ maybe not every app stack they have that can quickly oh you're doing csp like that's built into some
+ apps right it's easy to do other ones it's not and you want to have a centralized place to have your policies
+ so from an architecture perspective it makes sense for me when i work i keep hitting this thing
+ when i work with customers who want to do this it's a question of what are you trying to achieve
+ with csp right what order do you implement these in and then where is it where you probably want to
+ do that at what we call origin that's the customer application yeah um so anytime you're getting into we
+ want to nonce data to say obviously oh no this is secure or hashing or anything like that that really
+ should be done at origin yeah but other stuff is easy and fine you can push that where we say downstream
+ to us and then we'll send it out to the client so there's advantages depending what they want to do
+ with the policy where this gets interesting is if you have that intermediary and it's auto noncing data
+ originating from the app right in in line cross-site scripting um so yeah i i ran into this with testing
+ with some other third-party security products that were doing this yeah as a customer was evaluating
+ and i kind of pointed this out because i was able to do reflected xss and it auto nonced it for me and
+ yeah i don't think this is the best idea that's very interesting yes stored xss reflected xss i guess
+ really what that auto noncing feature would be intended to stop is is dom xss right because that's
+ the only scenario where that's really going to become handy but yeah the the only kind of reference
+ i will make here again i'm name dropping that uh xss doctor yeah and he's doing all my boy exactly
+ my boy xs doctor so we were chatting on discord a little bit and this was coming up and we were just
+ going over stuff and he had made a comment about in general like csp ways to bypass it and generally
+ saying oh like if i see a not it's like is it worth my time to try and do because they're announcing
+ it yeah so i just made that comment i said just because you see a knots test yeah it may be worth
+ now are they in this scenario maybe not but they might be and then the nonce does not matter it'll auto
+ not so it's something again from a tooling perspective maybe you could test a few things and see
+ yeah i wouldn't just give up on that yeah because it may just be auto noncing it it might be considering
+ it apart or there could be some like i don't even know if it's middleware you know something you know
+ back end back side where i don't know you know that that after everything's done it's going back
+ through and and announcing it uh so there's lots of ways that that attackers input could get nonced in
+ those sort of situations yep wow very interesting stuff and then and then um you also you know one of the
+ things that uh you kind of have access to with akamai is the perspective of looking at these csp violation
+ reports yeah um what kind of juicy stuff have you found in those and and uh i always thought that
+ that's a really cool vector because if you were able even as an attacker to inject into that you know
+ csp reporting environment you can trigger a csp violation right and then you know get data out that way
+ so there's lots of cool tricks yeah um right so we talked about the scenario if they wanted akamai to
+ add the csp policies which we can yeah then if you want to do any sort of reporting to beaconing right
+ yeah you can send that wherever you want it doesn't have to be back to us or whatever but um some
+ customers opt to have it come through us and they can have us actually act as like a csp report endpoint
+ and then they can actually see stuff interesting or it goes all the way through but with that we
+ had to talk with them and say okay well then when that's coming through you don't want to block it
+ like just come on through and then they have a reporting that's back behind us right so it's an
+ architectural question now what's interesting what you were just saying is i can look at all sorts of
+ csp reports and if you're familiar with what those reports look like in the json different uh you know
+ policy things and so i'm interested in of course like samples and i said report sample uh what was the
+ blocked uri there's a few things i go and look at and there's interesting stuff that you can see that
+ people are trying to beacon or what are they trying a new technique whatever it might be well what's also
+ funny those exactly what you just said all this tooling will take anything and every input and
+ whatever and inject everywhere it's inject everything and so i'll be looking at something
+ that oh what was the original csp policy cross-site scripting tag they're just they're trying to
+ anything you know what i mean because oh my gosh maybe it'll pop somewhere so that's part of weeding out
+ it's like that's bogus that's just an attacker yeah putzing around with the report json coming back so
+ it's noise yeah well sometimes sometimes you know those logs can end up i mean we talked about a
+ blind xss scenario before those those can go into like janky back-end systems where they process it and
+ that's why blind is so crazy yeah exactly exactly yeah um so there's always that that impact there as
+ well very very interesting one one thing you said before that it didn't have on the list but i do want
+ to circle uh circle back to is um one of the first sort of interactions that i had with a waaf as a as a
+ hunter was trying to bypass a waaf uh via locating the origin server um right how often do you see that
+ misconfiguration in in clients you know like where they're not just white listing communication with akamai
+ right or something changes is that and i guess i don't know my question that i want to ask is like
+ how can i find the freaking origin server but i don't know if you're going to be able to give me much
+ with that uh not really mainly i'll plead that that's not my area okay that's a platform okay okay
+ all right get off the hook on that one yeah um that it is in a sense now it's supposed to be a typical
+ onboarding yeah that you talk with the customer because we have a lot of customers that are only on
+ performance yeah they want us as a cdn yeah reminding it so okay right yeah we don't even think about that
+ as hackers you know because we're like oh my waaf but it's you know originally it was a cdn right
+ serves a purpose yeah makes everything faster so yeah yeah but security side of the house that's a
+ discussion when there's onboarding and to say look if you don't want people to reach your origin
+ and get around the edge network then you have to figure out how to configure that um so they know
+ about it now the question is okay why wasn't it implemented um sometimes it's hard you know you
+ have to configure network firewalls to figure out how to talk with the edge systems and make sure
+ that they're always set up properly right um and sometimes i guess that that doesn't happen or
+ things change there's also scenarios where typically the edge network to make everything
+ faster it knows where servers are that are geographically close to you and all of that so
+ you know i again i don't work on that side of the operations and working with customers on
+ configuring but if you only configured it to work with certain akamai servers because they're in
+ your region but then somebody goes through a different one and you're just not restricting
+ i don't know um yeah but yeah being able to bypass that um it's an issue so that's why we tell
+ customers no no if you want this we call it site shield you got to configure site shield to say we
+ only talk you know with akamai directly yeah the other scenario there is you were thinking typically
+ oh i'm a hacker i'm doing web application attacks um there's also the issue of denial of service yeah
+ that if they know the origin and go directly to it now in this case
+ because if they find an ip they can still slam it oh yeah from an application attacker yeah you
+ can't actually get in to do what you wanted but if they're just wanting to flood they can do that
+ anyway so again there's different ddos scenarios where we can front end and we have a whole different
+ system for doing that but um yeah but that's been an issue with any cdnwap i've seen tools out there
+ with like cloudflare trying to find if you can find the original source ip before they onboard it that's
+ the issue yeah exactly so and and that's often in the dns history you know you can go back and look
+ before they onboarded their waft you know you can say oh where was that ip oh it's still there yeah
+ yeah exactly exactly um yeah uh okay i i said last thing but i did come up with one more thing
+ um one of the you know by nature of these these wafts it's important that it's necessary that you have
+ to be able to have some routes that you hit that return data from the waft rather than from the actual
+ origin you know something to do like your bot check and stuff like that um that has become a very
+ interesting attack surface uh for uh attackers and i've spent a good amount of time looking at
+ um you know the slash c cdn cgi uh endpoints and stuff like that right okay um
+ i guess what what is your your and this once again this might be a product question rather than
+ you know the researcher side which is kind of where you're at right but um running a bug bounty
+ program yourself right you know that i imagine is very high value attack surface to you and it is uh
+ what would it be possible maybe for us to get some additional introspection into what those
+ endpoints are exposed on every on every host oh yeah good question um well it is important one thing
+ that you just mentioned that uh akamai does have a bug bounty program yeah right now it's scoped just
+ for the platform yeah but also linode had a long yeah excellent program yeah to them yeah so that's
+ within scope of what we're doing as well um so i don't know that's a good question to fit it's a
+ scoping question yeah right we set up also a sandboxed environment that has different origin setups with
+ different stacks and also from more from the protocol perspective that we want to have uh nginx apache node.js
+ but we have a whole system set up where you can test and stuff echoes back and so you can see what's
+ happening that's interesting um a a a hat tip uh to james kettle who's doing his his research you know
+ i we talked i triaged his bone he found that he's talking about a black guy yeah um so we have an area
+ set up for this which will help to identify these types of situations and gives you back some debugging
+ information to see exactly what made it to origin how did it change how's it coming back um so it's not
+ full-blown it is more of a product question on all these different things that may potentially have
+ problems but we're looking to expand the scope yeah um so the waaf currently is not in scope like like
+ if we find vulnerabilities um let's say on those endpoints that need to be exposed right uh you know
+ that are under a customer's domain but are actually you know akamai code uh those are currently not in
+ scope correct that's okay it's a product question now yeah i am working to get it within scope yeah
+ part of the question is okay what scope do you put around laugh right um yeah because there are some
+ programs that'll just be like all right here's 25 dollars per right you know laugh bypass high volume
+ low value yeah uh we don't not really go in that direction we don't really want to get in that game
+ because when yeah part of when you think about the day-to-day business of laugh and yes a bit of
+ whack-a-mole with some of the detections that's day-to-day business that's not something we deem
+ as a like evasion and some of this is internal terminology and i'm not sure maybe this is something
+ that i just use but uh the way i look at these are the day-to-day stuff like that or oh that's an
+ interesting cross-state scripting vector okay we need to catch that that's a bypass evasion is something
+ deeper in the platform protocol processing the way i say it is if my team can't fix it it's an evasion
+ because we have to get with engineers ah whole different scope and timelines and so we don't want
+ to get into the bounties for bypass that's maybe we'll do some specials i've seen that before like
+ hey for the next whatever here send us give us cool techniques yeah but right now it's it's focusing
+ more on on lower level kind of protocol bypassing kinds yeah that's that's fun research though it's a
+ good research target so yeah um glad you guys are running a program on that um one other thing i'll
+ mention actually this is going to come out i guess after we're in vegas um the current state of the
+ program right we had a private for a while now it's not private it's on hacker one you can find our page
+ um but it was invite for a while but now anybody who kind of asks you haven't turned anybody away
+ like if you say hey can i come to your program we'll just let you in and then nice there's a
+ little different information where it gives you about our sandbox and you do all that stuff so
+ we are right on the fence to being full-blown public public yeah we're working our way over that fence
+ um but anyways i plan when i'm in vegas talking with people to let them know yeah um so if you're
+ talking with people and they say aka mike say oh you can ask to join the program they can join heck
+ yeah dude i'm excited for that i think that'll be great i think it's really important for for these
+ types of software to have you know bug bounty programs and i know a public program is a big step
+ um yeah and you got to deal with a lot of uh you know reported blocks and stuff like that but
+ yeah it's a bandwidth issue yeah absolutely man well uh whenever you guys go public let me
+ know i i i'll give you a shout out i owe you one for for coming on the pod and for showing me a good
+ time up here today absolutely pleasure dude thank you so much man appreciate it oh hold on yeah we
+ got it for the end of the for the end of the episode let me get the uh hold on uh all right
+ well we'll call it a wrap there oh you guys can see um here we go this is going to be the thumbnail
+ right here yeah three two one nice very good all right thanks man great episode and that's a wrap on
+ this episode of critical thinking thanks so much for watching to the end y'all if you want more critical
+ thinking content uh or if you want to support the show head over to ctbb.show discord you can hop in
+ the community there's lots of great high-level hacking discussion happening there on top of master
+ classes hack alongs exclusive content and a full-time hunters guild if you're a full-time hunter it's a
+ great time trust me all right i'll see you there

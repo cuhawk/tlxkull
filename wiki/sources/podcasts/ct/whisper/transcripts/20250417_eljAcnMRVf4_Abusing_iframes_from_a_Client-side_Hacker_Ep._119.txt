@@ -1,0 +1,590 @@
+The most overpowered way of doing this, by the way, is just writing some very quick and
+easy code to just have the iframe follow your cursor, right?
+Whenever your cursor is not centered on the invisible iframe, then just move it so that
+it is.
+The best part of hacking when you can just, you know, critical think, right?
+All right, so Packers, today, we are going to cover one of my favorite topics in hacking
+that is iframes.
+This is going to be just a little quick and dirty episode on how I approach iframes, how
+I use them in my sort of methodology, things you need to know about all the attributes that
+are on there, and some common vulnerability types and uncommon vulnerability types.
+We've got a couple on here that I think will be really helpful.
+Okay, so let's jump into it.
+Iframes, of course, are the ability in HTML, it's an iframe tag, or a HTML tag that allows
+you to embed another page inside of your website.
+Okay, so why is that helpful?
+Well, there's a lot of reasons why that's helpful.
+The first one that comes to mind is, of course, clickjacking.
+Now, you know, when I say clickjacking, I'm sure a lot of you guys are triggered and like,
+oh, this guy's a scrub.
+He's talking about clickjacking.
+Guys, I just want to like, take a second to say, clickjacking can be an incredibly impactful
+vulnerability, right?
+You think about one click XSS, we report that all the time.
+And, you know, this clickjacking can have very, very similar impact.
+Consider this scenario, you are able to embed an authorization, an OAuth auth flow into your
+own website, right?
+With one click on your website, you know, in this invisible iframe, you are able to get
+the victim to approve full access to their account, that's full account takeover and one
+to click, right?
+So, clickjacking gets a bad rap.
+I have submitted plenty of impactful clickjacking reports that have gotten bounties.
+The reason it gets a bad rap is people will report it without pocking it at all, right?
+So they'll just be like, X-frame options headers missing, critical clickjacking.
+That's not the case, right?
+You need to find a single point of failure click that can make your clickjacking report impactful
+for it to actually be a good report, okay?
+So, I know I said clickjacking, chill the heck out everybody.
+But I really do think they can be very impactful, okay?
+So, clickjacking is one of the things that you can do with iframes that's impactful to hacking.
+The other one is frame references, okay?
+So, frame references are extremely important when it comes to exploiting lots of client-side types of vulnerabilities.
+The reason for that is that if you have a reference to a frame, you can send a post message to it.
+If you're same origin, you can sort of jump into that page and grab the DOM and manipulate it and that sort of thing.
+So, especially in this era of like same site lacks default cookies, having a frame reference to a top-level page or something like that really allows you to manipulate that page a lot.
+But the most common, you know, use for having a frame reference is to send a post message, okay?
+What is a post message?
+A post message is inter-tab communication or inter-frame communication for the browser.
+And I really think that this is still, after me talking about it for years and years and years, a underserved attack surface, right?
+Like a lot of people just don't even look at post messages at all.
+And they're just completely missing an API that lives in the browser that is extremely important to the browser security, okay?
+So, definitely something to look into.
+I'll talk more about post messages maybe on a different like deep dive, technical deep dive episode like this.
+But for now, what you need to know is that iframe is one of the, the, the, okay, there's like a decent amount of ways to get a frame reference.
+But one of the few ways to get a frame reference is, is, is via iframe.
+Okay.
+So, keep that in mind.
+All right.
+And then the other two things that I have in this, like why they're useful section for the iframe is window name hijacking, which is a,
+a vulnerability that I'll talk to you about a little bit later.
+And then the second one is, or the last one is your, hiding your attacks that take time.
+So, there's sometimes there's like either a post message based attack or some client side based flow that will take a lot of time to exploit.
+And you kind of need to have your attack be hidden on your website.
+And you need to be able to target the victim website.
+Now, unfortunately, this doesn't happen quite as much nowadays because of same site lacks default cookies.
+You can't really embed stuff quite as simply, but in certain scenarios, you can embed this, you know, target page in an iframe on your site, distract the user with like a game of click this, click that.
+And then, you know, have full enough time to fully exploit your vulnerability.
+So, that is, is what I would say are some of the four top reasons why iframes are useful to hackers.
+So, let's go into some of the attributes of iframes so we can understand how they can be manipulated, how they can be used.
+Okay, the first one is source and source doc.
+Obviously, these are going to be the most impactful ones.
+These are the ones that control where the iframe is pointed at.
+Okay.
+So, source simply allows you to point to the source of the iframe at a URL.
+It could be a JavaScript URL.
+That's one of the common ways to get XSS is an iframe source JavaScript URL.
+Could be a, you know, absolute URL where you're pointing to a different website and embedding a victim page.
+Rarely do we see something like where it's a relative URL.
+That's just like not super helpful for attackers typically.
+And then what is source doc and why do I lump them together?
+Well, source doc is sort of the alternative to source.
+And it is a attribute that allows you to define what should be inside of the iframe directly in the source doc attribute.
+And this is extremely helpful for several things.
+But the first one that pops to mind when I think about the source doc attribute is the fact that you can write a new DOM inside of that iframe.
+And that is really, really helpful when you need to use a script tag in a post-DOM rendering environment.
+Because a lot of you guys know that if you try to do an inner HTML sync in DOM XSS, and you try to put a script tag in there, it will not fire because the DOM has already rendered.
+And that's when script tags trigger.
+So you can have an inner HTML sync, put a script tag in there, it's not going to do anything.
+However, and typically you can get around that by using something like a on event handler, like an SVG on load or an image on error handler.
+However, sometimes you are limited, or maybe you need to import a different origin, right, something like that, or import your script from a different origin.
+And you want to use a script tag.
+Well, you're kind of stuck until iframe source doc comes in.
+So what you can actually do is iframe source doc, and then inside of that source doc, you can define the script tag.
+And since that iframe is in a new DOM inside of the iframe, that script tag will trigger, resulting in XSS.
+Okay, so it's a little bit of a roundabout way, but you can still accomplish the same goal.
+And it has saved my ass a couple times because sometimes there's just a really weird filter on there that doesn't allow for, you know, any sort of on event handlers,
+or maybe there's a character limitation or something like that.
+This one does work.
+So very helpful.
+The other thing is that source doc will be same origin as the parent when it's defined.
+So that is helpful for just being able to embed content inside the page in an isolated DOM that is still the same origin as the parent.
+Okay, so that's source and source doc.
+I'm not sure that there's a lot of other things there that come to mind as far as like tricks that a hacker needs to know.
+So let's move on to the next one.
+The next is the CSP attribute.
+Okay, now you guys have all heard of CSP content security policy.
+It is the way that modern browsers add additional limitations to what scripts can scripts can be run styles can be run.
+And what hosts we can connect to that sort of thing.
+Let me get some water for a sec.
+Lovely.
+Okay.
+So CSP is often used.
+And in this scenario, as an attacker, oftentimes, if you're coming up against the CSP attribute, then you're trying to get out of that CSP or get around that CSP.
+Now we could spend a whole episode on how we block, how we get around CSP blocks, right?
+And probably we will at some point.
+But for what you need to know right now, there's a CSP attribute that can be applied directly to the iframe.
+And this has a couple of cool uses.
+One is, you know, okay, now we need to get around the CSP where the attacker we're stuck in the iframe.
+How do we escape?
+Fun stuff.
+The other thing that I was thinking is it's actually helpful for an attacker on a page where they can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around the CSP.
+And then we can get around CSP.
+And then we can get around CSP.
+And then we can get around CSP.
+And then we can get around CSP.
+And then we can get around CSP.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks and run the CSP blocks and run the CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks.
+And then we can get around CSP blocks blocks.
+And then we can get around CSP blocks blocks.
+And then we can get around CSP blocks blocks.
+And then we can get around CSP blocks blocks blocks.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+And then we can do that.
+Okay, so you can have, you know, you can open up an iframe, you can name it Bob, and then you navigate that iframe to a completely different window, and it's still called Bob.
+And I recently found in, where did I read this?
+Somebody told me this, or I read it somewhere, that this is how they used to do, this is from an OG, cross domain communication before the post message API came out, is they would set a message in the window name, and then they would redirect to that other domain.
+And the domain would read the window and be like, okay, here's the response message and they read about redirect back to the other domain.
+Right.
+So that was how they would do sort of cross domain communication.
+Very interesting.
+And the other cool thing about the name attribute is it can be used to specify what windows specific window.open calls should be opened into or forms, or a links can be pointed at, right.
+And there are a couple really cool niche vulnerabilities that can happen where you have a specific window open on the page, the attacker controls the ability to open a window into a certain tab or frame via the name attribute, and then you can sort of force that, that iframe or whatever to contain the contents that you want as a malicious actor.
+Very cool vulnerability, I found it a couple times feels amazing when you pull it off.
+We'll talk more about that later under the window.name hijacking vulnerability section.
+A couple more attributes to cover and then we'll kind of get to some of the some of the meat on different attack vectors you can use with an iframe.
+So the next one is refer policy.
+This is a, this is a pretty new one, I feel.
+This hasn't been around for too long.
+Back in the good old days, we used to be able to just leak data via the referrer anytime, you know, if we could inject an image tag into a page and land like an OAuth code on that page and the image would load, then we would get that OAuth code on our server every time because it was just eating the whole referrer out to whatever resource loaded up on the page, which is totally crazy.
+Now in retrospect, but it was awesome back in the day.
+And what prevents us from doing that now is the referrer policy.
+Now, I've said this a couple times on the pod, but you should definitely go back and listen to the episode by Jrock17.
+He drops an amazing zero day misconfiguration slash Chrome and Dom purify fighting over stuff on that episode where essentially you can put a meta tag affecting the referrer policy.
+of a specific page into Dom purify and it will get sanitized, but somehow it still has effect on the page, which is just such a cool thing.
+So if you ever have a Dom purify based injection and you're trying to think, what can I do with this?
+You can change the referrer policy.
+Very, very interesting thing.
+Very impactful, especially in a scenario where, you know, a lot of times when you're going up against Dom purify, you have user controlled HTML, right?
+That's what they're purifying.
+That's what they're sanitizing.
+So you embed an image tag in there.
+You set the referrer policy to unsafe URL.
+You land it in unused OAuth code on that page via dirty dancing, right?
+A la Franz Rosen.
+And then boom, you're good to go.
+So definitely very, very interesting piece there and there for policy.
+A little bit less interesting referring to iframes, but I did have in my notes here.
+I forgot there is a really interesting idea that I kind of came up with when I was thinking and prepping for this episode about referrer policy and iframes.
+And that was that I finally found a use for the client side post message based open redirect.
+Now, I talked about this a little bit on the gadgets episode that we did a while back and we were like, is this really gadget?
+And the answer is no, because if you have a frame reference, most of the time you have the ability to redirect anyway.
+But the the what's interesting about this is that if you want to embed a victim page inside of your your browser, you know, inside of your attacker controlled page in an iframe, right, and set the referrer policy that for that unsafe URL,
+and then use a post message to navigate the page inside of the iframe, right, so the the navigation comes from within the iframe, then you can leak the top level on URL of that page via the referrer, which is a very valuable gadget, much more valuable of a gadget than a client side post message based open redirect, right?
+So, you know, maybe you landed no auth code on there, maybe you get a piece of PII in the URI somehow.
+But that was something that I hadn't really put together in my brain before today that that if you if you can set the referrer policy once again, we're in this sort of weird situation of like, how are we setting the referrer policy for cross origin domain, just because it's in our iframe, it's a little bit, it's a little bit funky.
+But you don't really see people set the referrer policy, it's mostly just screwing us because it's implicitly set to just the the top level domain.
+So very, very interesting flow there. I'm definitely going to keep my eye out for that. I just thought of that like a couple minutes before the episode.
+All right, next up is the sandbox attribute. This one is where we kind of get into a little bit of meat and I'm not going to spend too much time here because there's so many different attributes that you know, components that can go into this attribute.
+But the sandbox attribute for an iframe allows you to isolate that iframe even more from your current domain and control it in very clear ways.
+So some of the most popular and useful attributes for an attacker to be aware of is allow scripts and allow same origin. Those two are really impactful one allow scripts of course allows you to run JavaScript within the side frame to allow same origin allows you to have the same origin as the parent frame and access also the the like cookie or the same origin.
+Like cookies and local storage and some of those things that are tied to that domain very, very cool stuff.
+Allow forms allow pop ups allow pop ups to escape sandbox and allow top level navigations are also sort of like second tier interesting to an attacker. I admire sort of rating system inside of sandbox allow forms obviously allows you to do form based navigation.
+That's a really cool way to get around on CSP sometimes trigger some very impactful stuff.
+I mean, I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm going to say that I'm
+and you do a pop up on that then the website is also going to be original.
+So it like you can do some really weird stuff with, you know, window.open inside of a allow scripts iframe when it doesn't have same origin.
+Very, very fun, very fun stuff there.
+So definitely investigate that if you're into client side stuff.
+Okay.
+And the last one is allow top level navigation.
+A lot of people don't know this, but you have a lot of power when it comes to iframes and openers.
+If you are the opener of a specific page, then you can redirect that page at will anytime.
+If you are an iframe within a page, you can also oftentimes redirect the top level page.
+So there's a lot of power that comes with that.
+And that can be really helpful for an attacker if they're able to inject an iframe somewhere into a page or hijack an iframe.
+There's a lot of capabilities that come there.
+All right.
+And then the last one that I had as far as attributes go is the credential list attribute.
+We covered this recently on the pod like a couple weeks ago, so I won't talk about it too much.
+But essentially what it allows you to do is sort of create a siloed browsing context inside of that iframe.
+And that means that, you know, that iframe doesn't have access to your cookies, none of your local storage, none of that other stuff that you normally have access to in a traditional iframe scenario.
+It's just isolated.
+And so this is really helpful.
+A buddy of mine recently had to do an XSS where you cannot send any same site none cookies.
+And the same site cookie none cookie that he needed to not be sent was set immediately whenever you went to the page.
+So it was really hard to exploit.
+And this credential list was the solution.
+Okay.
+All right.
+I'm going to get some water and then we'll jump into a couple of attacks that I love with iframes.
+All right.
+Let's see what we got.
+All right.
+A couple more.
+A couple of attacks that we were going to talk about with regards to iframes.
+Now, the first one is called window.name hijacking.
+Okay.
+And this one is a little bit tricky to understand.
+But I'm going to do my best over the audio medium.
+Okay.
+Consider this.
+You have an attacker-controlled page and you window.open a victim page.
+The victim then clicks a button on that page, which triggers another window.open with a very specific name that you know the value of.
+What attacker can then do is create an iframe on their own page before the button is clicked, just to be clear, that has that same name.
+Now, the victim page and the attacker page are in a linked browsing context because of the opener relationship between those two pages.
+And because they share the same browsing context, they will also be able to reference each other's frames.
+And what will happen then is if an attacker knows the origin that the victim will be opening the tab into, so if they're going to do a window.open on like site.com or whatever, then they can embed their own attacker iframe inside of the attacker-controlled page that points to site.com that is on site.com.
+Maybe you find a 404 page or something that doesn't have X-frame options on it, and you embed it in your page, and you name that iframe the same thing as the victim will be opening with window.open.
+Okay.
+And what's going to happen in that scenario is when the user clicks the button and it opens the pop-up, it is not going to pop up at all.
+It is going to open that attacker or that victim's new pop-up window into your iframe that's on your attacker-controlled page.
+Now, the reason why that is interesting is that there's often a lot of implicit relationship stuff that occurs between opened windows and their opener.
+So the opener will take that frame reference and be like, all right, I'm just going to use this frame reference as the source of truth as whether I should trust this post message or not.
+Or when, you know, I'm going to keep checking the origin of that window reference, and when it comes back to my origin, then I'm going to trust the data that comes out of it.
+You know, I'm going to grab from like the hash or something like that.
+I've seen that a couple of times.
+So what you can do by hijacking that frame, obviously, you're the parent of that frame.
+It's in your own page.
+So you control, you know, where that frame is pointed to.
+So you simply redirect that frame to an attacker-controlled page and send the post message back to its opener saying, hey, yo, I'm the frame you opened.
+Here's the data, you know, and pass it through and exploit it that way.
+Or if it's looking to, you know, get a callback or something like that on that frame, then, you know, you get whatever data you want to call back, throw it in the hash, and then redirect it back to whatever callback page the opener was expecting.
+And it will parse it just like, you know, it just coming back from the call that it did.
+So this is a very cool attack.
+I've exploited this several times.
+I think probably less than 10 times.
+But still, very, very fun attack.
+You know, when it works, it's a blast.
+And I just love that we can control where a pop-up goes, right?
+Like, isn't that such a cool thing?
+The victim is expecting sort of a pop-up to happen, and instead it just opens into an attacker-controlled iframe.
+And now you're focused on the attacker's page, and your iframe now is populated with that victim's data that they were trying to open up.
+Very cool.
+All right.
+The next one is open-faced iframe sandwich.
+Okay, this is the next attack that was on my list.
+Now, I've talked about this a couple times on the pod, and I wanted to bring it up again because a guy named Cooper Young, who I helped with in Open-Faced Iframe Sandwich, recently did a write-up, I want to say like two or three days ago, on the iframe sandwich.
+Okay?
+And the write-up was great.
+It explains how everything happens.
+We were able to pop a bug with this, which was really fun.
+And, yeah, I wanted to go ahead and review it for the listeners of the pod because it is...
+a little challenging, I have to say.
+Okay?
+Now, I'm going to do my best to describe this with my two hands, but maybe, I don't know, maybe I'll put a graphic up on the screen.
+We'll see.
+This episode goes to production pretty quickly, so I'm not sure we're going to have time to this, but I'll try to explain it anyway.
+Okay, so we've got an attacker frame, right?
+And a victim frame.
+And what happens in this scenario is that the attacker gets an XSS on an origin that is iframed in a victim tab.
+Okay?
+So consider the scenario where you've got...
+One of the real examples from my experiences was I was able to pop an XSS on the origin that controls the user's mail settings, right?
+Like, you know, do you want to subscribe to our newsletter or whatever, right?
+It's like sometimes those things are super easy to pop and they're embedded in an iframe on like www, right?
+So you're like, okay, what can I do with this?
+It isn't really in scope.
+I want to affect www.
+What do I do?
+Well, here's what you do.
+So you...
+From the attacker's page, you open a frame.
+That's the victim page.
+The victim page has that...
+I'm going to call it the mail domain, iframed into it.
+Now, as the attacker, you iframe on your page, your XSS into the mail to the mail domain, right?
+So now both pages have an iframe to the mail domain and they're open and they have an opener relationship with one another, right?
+I guess one of them has an opener relationship.
+One of them has an open E relationship.
+So what you then do is from the attacker's frame, inside of the iframe, you go up to the attacker's top level page.
+Over to the victim tab and down into the victim's iframe.
+Now, these two iframed pages have the same origin, which means they can access each other's DOM.
+So the attacker with the malicious XSS then affects the DOM within that page or grabs whatever information is out of it on that page.
+In my scenario, there was a bunch of PII leaked into that from the parent when it tells the mail domain, hey, this is the user I want you to control the mail for.
+And you get impact that way.
+Let me grab some water.
+Okay, now I'm back.
+I just had like a cough attack from that little tickle in my throat.
+But that's the open iframe sandwich, open-faced iframe sandwich.
+Really cool exploit.
+Love to use it.
+Okay.
+And then last but not least is clickjacking.
+Of course, you can't really not mention clickjacking when you talk about iframe security in web security.
+Like I said before, iframe gets a bad rap all the time.
+And I don't really know why it can be very impactful when done correctly.
+And I just want to say, you know, I built a clickjacking POC recently and it was impactful, as I said.
+And the most overpowered way of doing this, by the way, is just writing some very quick and easy code to just have the iframe follow your cursor.
+Right?
+Whenever your cursor is not centered on the invisible iframe, then just move it so that it is.
+And that's really easy to code.
+I'm pretty sure I told cursor to do it and it just like one shot got it right and it was totally fine.
+You center the iframe, you know, where the user's cursor is over whatever button you want to click.
+And it doesn't even matter.
+The user can be like running their cursor around and it will still always click the right button, which is super overpowered in my opinion.
+So very cool stuff there.
+Had to mention clickjacking.
+Don't submit crappy clickjacking reports.
+Build out the full POC and you will very likely get paid for those if they're not explicitly out of scope.
+Because the impact is there.
+Or it should be there if you're reporting it.
+Okay.
+Last but not least, a couple of fun facts about iframes that have just landed me a couple bugs recently.
+This is a fun one from the critical research lab, actually.
+The content security policies frame ancestor attribute will override Xframe options header.
+Okay.
+So let me say that again.
+The Xframe options header, of course, you guys know what the Xframe options header is.
+It has, you know, it controls whether a page can be iframed or not.
+So what you'll often see is Xframe options deny, right?
+So this page cannot be framed at all.
+GG, game over.
+Well, if there's a content security policy that has a frame ancestor attribute in it, and that defines, you know, some pages that the page can be iframed from, then that will override Xframe options and be given priority.
+Which is very interesting because a lot of times what happens in browser security is if there's a conflict between two, you know, security related entities.
+And the one that they go for is the one that is more safe, the one that is least permissive, right?
+But in this scenario, we actually have it going with the one that is, that is, I'm sorry, yeah, the one that's least permissive.
+In this scenario, we have one going for the one that is more permissive.
+Kind of odd.
+Okay.
+Okay.
+Um, let me see what else was on here.
+I know I had a couple more.
+I've already mentioned that iframes can redirect their parents and openers by default.
+That's pretty cool.
+Oh, the last one here is, is that I have to mention is, um, window.frames is also is one of the very few, uh, attributes that can be accessed by a cross origin, um, sort of relationship.
+The, the window, uh, reference here, right?
+So let's say I've got attacker.com and I've got victim.com and they have like a relationship where they have a window frame.
+Um, the attacker can see how many iframes the victim has, uh, in that page.
+Now, this is really helpful for a lot of reasons, um, from a cross site leak perspective.
+But one of the ones that I've always thought was really cool was like, wouldn't it be amazing if there was a, a page where you could like very easily update the hash and it would.
+You know, give you an iframe for every like result of a search or something like that.
+So you just put in, you know, the hash a and it like says, okay, there's like six, six of them.
+And you say B and then there's like four of them.
+And you say C and then there's just one of them and you say E and then it says, nope.
+And then you say D and it says, yes, there's one, you know, so you can do like, you can really sort of character by character brute force.
+Um, codes in sort of like a cross leak scenario if the number of iframes changes, uh, based off of what is controlled by the attacker.
+Very, very cool stuff.
+I've used this several times to land vulnerabilities.
+Um, and it's something I always check cause I'm like, wouldn't it be sick if I could just leak this data via, via cross, uh, like a cross origin property on a window reference.
+Um, yeah, every time I, every time I think about that, my brain just keeps turning and turning and turning.
+Like, where can I use that?
+Where, where are there iframes that are relevant to data that an attacker can control?
+All right, y'all that's about a wrap.
+Uh, I, I think that is a good, you know, basic overview of the iframes.
+I'm not sure that there's anything that's really essential that, uh, I missed there.
+Um, so I hope you enjoyed it.
+Let me know what you guys think about these sort of like one off, uh, you know,
+one off, uh, single single person talking, um, sort of technical deep dives on a topic you're comfortable with.
+So let me know what you guys think.
+That's the pod for this week.
+Peace.
+And that's a wrap on this episode of critical thinking.
+Thanks so much for watching to the end, y'all.
+If you want more critical thinking content, uh, or if you want to support the show, head over to ctvb.show slash discord.
+You can hop in the community.
+There's lots of great high level hacking discussion happening there on top of the masterclasses, hack along,
+exclusive content and a full-time hunters guild.
+If you're a full-time hunter, it's a great time.
+Trust me.
+I'll see you there.

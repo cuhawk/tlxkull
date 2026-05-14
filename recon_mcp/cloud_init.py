@@ -20,6 +20,17 @@ def render_user_data(
     advance, so the very first SSH connect can verify it (no TOFU window).
     """
     bootstrap = _BOOTSTRAP.read_text()
+    # Cloud-init's YAML parser rejects bytes >= 0x80 with "unacceptable character #x0080",
+    # which silently turns the entire user-data into an empty cloud-config (no SSH host key
+    # plant, no runcmd). Fail fast at render time instead.
+    try:
+        bootstrap.encode("ascii")
+    except UnicodeEncodeError as e:
+        bad = bootstrap[e.start:e.start + 16]
+        raise ValueError(
+            f"bootstrap.sh contains non-ASCII byte at offset {e.start} (context: {bad!r}). "
+            "Cloud-init's YAML loader will reject this. Strip em-dashes, smart quotes, etc."
+        ) from None
     ssh_keys_block = ""
     if host_private_key and host_public_key:
         ssh_keys_block = (

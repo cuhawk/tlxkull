@@ -1,0 +1,191 @@
+All righty, my guy, this is a crazy bug.
+Thanks so much for agreeing to share it.
+Thanks for having me.
+All right.
+I have just because I'm here and I'm talking to you,
+I have my water.
+I know you're really into that.
+Dude, there, here it is right here.
+Got my water.
+Hydrating.
+I've always wanted to drink some water on this podcast.
+Dude, dreams, dreams do come true.
+Dude, this bug was amazing
+and I so appreciate you reaching out, you know,
+and saying the kind things about like
+how the pod has helped you get there.
+And I see you using some of the techniques
+we've talked about on the pod.
+Absolutely.
+So yeah, I guess this is my boy XSS doctor.
+Take it away, man.
+Tell us about this bug.
+So I was, I started to hack on like a kind of a large scope
+bounty that, you know, I looked at it for a few days,
+three days really, until I found a couple of gadgets.
+The first gadget I found on the main site,
+it's kind of an e-commerce platform.
+And I was looking through the local storage parameters
+and I just saw one that it just said was just a JS file,
+a remote JS file.
+So I just replaced it with my own remote JS file and it popped.
+So that's gadget number one.
+And not only did it pop, but it popped on every click
+of the application.
+Wow, dude.
+So you were just casually scrolling through the local storage entries?
+Yeah.
+I was like, I don't know.
+Sometimes I like to look at local storage.
+I look at window.name.
+Like that's like kind of one of the first things I do,
+like anything that I could mess with.
+So that was like the first thing.
+So I'm like, okay, if I could set this local storage parameter,
+I have XSS on every click.
+And that's pretty big.
+So then I was like, looked around for a long time to see if there was a way to arbitrarily
+set a local storage parameter.
+But there was not.
+I feel like that's kind of rare.
+I don't know.
+Yeah, it's pretty rare.
+I mean, like normally you find that the other way around, right?
+Like you'll find the way to arbitrarily set a local storage parameter,
+and then you'll utilize that to get some exploit.
+You don't normally be like, I need to set a local storage parameter
+and then like find a magical local storage gadget.
+Yeah, every night, that'd be cool.
+But hey, man, you moved heaven and earth to make this thing happen.
+So I'm not going to put it beyond you.
+I went crazy.
+Yeah, so then the next thing I was looking around and I found a self XSS on the site.
+And that was in when you're creating, you can post stuff, you can post items to sell.
+And so when you're posting something to sell in the description section,
+if you put brackets or quotes, it would URL encode that.
+But if you do it in burp, then or in Kaido, then it will not, it will fire.
+But it gives you a warning.
+They know about this.
+It gives you a warning like, hey, you've put JavaScript in here.
+If you post this, it will get taken out.
+So it's a self, but you can save the listing for yourself for later.
+So every time you click on that listing, the self XSS pops.
+So you'd like create a draft and then that draft has a self XSS in it.
+But if you were to publish the draft, the XSS would get stripped.
+It's and it even like has a thing that says that.
+That's hilarious that they allow that still.
+I don't understand.
+But so that was that.
+So I'm like, okay, great.
+So I can set the local storage parameter with that XSS, self XSS.
+But now all I need is the easiest thing to get in all of hacking, which is a login CSRF.
+And so I'm like, I'm done.
+I even started like texting my friends about it.
+Like, I have this it's done.
+Yeah.
+And then it turns out that this platform like really, really does not want you to get a login CSRF.
+There's like 20 cookies.
+Oh, my God.
+Set different in different pages when you log in.
+And if you if you just change the session, the session token, it doesn't log you in it like flips out and tells and like alerts the authorities.
+Hmm.
+So I did that for like four days, five days.
+I tried to get you spent four days trying to find a login CSRF.
+I tried to like mimic that flow.
+Oh, no.
+And try to like set the right cookies and like do all the right stuff.
+And I still can't even figure out the flow, to be honest, even after all that time.
+Oh, my gosh.
+So then I started looking at sub domains and I actually did like jhaddix's entire thing to get all of the, you know, and I spent like a week looking at all the sub domains.
+And I found, thankfully, reflected XSS on a sub dome.
+Sorry, I saw a post message, reflect this via post message on another sub domain.
+Thank God.
+And so then I used that to set the cookie for the main domain.
+So you just document that cookie equals.
+Sorry.
+No, no, no.
+I'm just trying to put it all in my head.
+So we've got the graph here, right?
+So, so you've got the post message XSS.
+Yeah.
+That's on the sub domain.
+So, and because of that, you can set cookies for the whole domain.
+Right?
+So then you, you use the document, use the post message XSS to document.cookie and set these cookies to the specific path of the self XSS.
+Right?
+That's right.
+And then, so you essentially use it as a login CSRF for the main domain.
+I used it as a login.
+Actually, I still didn't really even understand which cookies were which.
+So I just, I took all my cookies.
+Oh my gosh.
+Like 12 to 13 cookies.
+And I just set all of them to my, to my, my attacker cookies.
+And I got, it's finally worked after like the 12th cookie.
+And then I, I set it to a specific path to the path of the self XSS.
+And then I redirected the, the second window to that.
+So then it set the local storage parameter.
+And then I redirected it again back to the main site where I then had the XSS.
+Wow.
+Okay.
+So we do have a graph on the screen for those of you that are, that are watching on YouTube.
+Um, so the, the whole flow is this, let me, let me repeat it back to you, dude.
+I also just have to say crazy props for the amount of like.
+Endurance and like, I don't know what's, what's the word gum on is the word in Japanese, but like, you just stuck to it.
+Stuck to witness that you did to get this.
+Um, so first step post message XSS on the sub domain.
+Then you use the, you get the XSS.
+Then you use the Matan bear trick to have yourself logged in as the attacker only on that specific endpoint.
+That allows you to, uh, trigger the self XSS.
+Then now you, you redirect to that endpoint, trigger the stored self XSS.
+Then that, uh, stored XSS changes the local storage entry that was, would create the persistent XSS on every single page.
+And then now wherever the victim clicks and they would never click on your listing anyway, cause it's your, it's that the URL is your specific listing.
+So it's essentially as if they were not logged in at all to the attacker's account, right?
+They're just logged into their own.
+That's correct.
+But the local storage is still shared.
+And so it pops XSS on every single page on the victim's account.
+That is correct.
+That that's the, it's, it was the greatest moment of my life.
+I mean, I have kids, but I think it was the greatest moment of my life.
+Oh my God, dude.
+What a, what an amazing, what an amazing find.
+And, um, yeah, so you built out a little lab for this as well.
+So thanks for that.
+Um, we're actually going to drop that lab and a little explanation of the lab, um, to the critical thinkers tier on discord.
+So, um, we'll go ahead and cut it here.
+And, uh, if you're interested in seeing the rest of it, make sure you check out the critical thinkers, uh, on discord.
+Thanks so much.
+
+Thanks so much.
+Thanks so much.
+Thanks so much.
+Thanks so much.
+
+
+Thanks so much.
+Thanks so much.
+Thanks so much.
+
+
+
+
+
+
+
+
+
+Thanks so much.
+Thanks so much.
+
+Thanks so much.
+
+
+Thanks so much.
+Thanks so much.
+Thanks so much.
+
+
+
+
+

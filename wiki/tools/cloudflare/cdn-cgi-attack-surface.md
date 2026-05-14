@@ -2,7 +2,7 @@
 title: Cloudflare /cdn-cgi/* attack surface
 slug: cloudflare-cdn-cgi
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [tool/cloudflare, technique/recon]
 inbound: []
 ---
@@ -43,6 +43,7 @@ deployments still hex-decode attr.)
 ## Seen in the wild
 - Cross-subdomain CSurf (Mathias/Frans).
 - Critical Thinking Podcast Eps 64, 66, 68.
+- {date: 2025-02-20, source: CT Ep 111} — Kevin Mizu chained ATO: `/cdn-cgi/image` proxies an attacker-uploaded image whose EXIF contains HTML; consumed by `document.write` for cross-origin-blocked XSS chain. See [[../../techniques/dom-xss/cloudflare-cdn-cgi-image-exif-xss]].
 
 ## References
 - Critical Thinking Podcast Eps 64, 66, 68

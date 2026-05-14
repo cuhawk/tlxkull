@@ -22,14 +22,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TLX_HOME = Path(os.path.expanduser("~/.tlx"))
-DB_PATH = TLX_HOME / "js_analyzer.db"
+DEFAULT_DB_PATH = TLX_HOME / "js_analyzer.db"
 
 
-def export(target_name: str, out_dir: Path, frameworks: list | None) -> dict:
+def export(target_name: str, out_dir: Path, frameworks: list | None, db_path: Path | None = None) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
-    if not DB_PATH.exists():
-        raise FileNotFoundError(f"missing {DB_PATH}; run js_index_target first")
-    conn = sqlite3.connect(DB_PATH)
+    db = Path(db_path) if db_path else DEFAULT_DB_PATH
+    if not db.exists():
+        raise FileNotFoundError(f"missing {db}; run js_index_target first")
+    conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row
 
     nodes = [
@@ -113,9 +114,11 @@ def main() -> int:
     ap.add_argument("out_dir")
     ap.add_argument("--frameworks", default=None,
                     help='JSON array of detected frameworks, e.g. \'["react"]\'')
+    ap.add_argument("--db", default=None,
+                    help="path to js_analyzer.db (default: ~/.tlx/js_analyzer.db)")
     a = ap.parse_args()
     fws = json.loads(a.frameworks) if a.frameworks else None
-    export(a.target_name, Path(a.out_dir).resolve(), fws)
+    export(a.target_name, Path(a.out_dir).resolve(), fws, Path(a.db) if a.db else None)
     return 0
 
 

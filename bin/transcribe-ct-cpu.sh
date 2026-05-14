@@ -17,6 +17,9 @@ MAX="${1:-99999}"
 
 mkdir -p "$OUT_DIR" "$AUDIO_DIR"
 
+# Sweep stranded outputs left by previously killed bash wrappers.
+"$(dirname "$0")/finalize-stranded.sh" >/dev/null 2>&1 || true
+
 # Clean stale lockfiles whose owning process is no longer alive.
 for lf in "$AUDIO_DIR"/*.lock; do
   [[ -e "$lf" ]] || continue

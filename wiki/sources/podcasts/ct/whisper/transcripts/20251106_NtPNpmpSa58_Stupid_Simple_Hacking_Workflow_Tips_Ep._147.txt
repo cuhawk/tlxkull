@@ -1,0 +1,634 @@
+ you don't hit a deposit enter deposit yeah now you just hit AFS to add filter
+ size if you do if if you do FS it will just do like filter size oh and then
+ enter to resume yeah it just resumes it how did I not know about well so this is
+ why we're doing this episode
+ best part of hacking when you can just you know critical thing
+ all right hackers the average is gonna get a little technical today so buckle up
+ for this okay I'm gonna tell you exactly how ThreatLocker is screwing
+ hackers at every step along the way with dynamic access controls
+ preventing even port scans from happening on ThreatLocker networks so
+ let's dive into it there's three primary ways that ThreatLocker implements this I'm
+ gonna give you guys two for this for this quick read and hopefully you'll be able
+ to understand how exactly they're preventing hackers from doing port scans
+ so first one is called local challenge this is on the common scenario where a
+ computer wants to connect to a network resource and they're on the same network
+ so what's gonna happen is over you know this this ThreatLocker handshake the
+ computer is gonna send a request to the server the server is gonna respond with a
+ challenge and then the computer has to you know complete that challenge and
+ provide a response back to the server before the SMB port is even opened up to
+ that specific computer right so you can't do any port scanning or anything like that
+ because you're not going through this handshake with the computer so that's that's
+ one way the next way is in like remote work scenarios where your laptop is like you
+ know out on some Wi-Fi or whatever and you still need to access network
+ resources in this scenario the computer is going to shoot in I you know authenticated
+ IP change up to the ThreatLocker cloud then when it requests access to a specific server maybe it's
+ trying to get in by like RDS or whatever if it's if it's in a remote work scenario the
+ RDS server you know before it opens up that port is going to query the allow list in the ThreatLocker
+ cloud and say hey this IP trying to connect what should I do with him and then ThreatLocker
+ cloud will give them a yes or no on that and they'll open or close the port based on that response
+ okay so with ThreatLocker in place really you can't even do port scans guys so tell
+ you what let's go back to the show and hack something easier and we'll let ThreatLocker
+ do their thing all right all right let's get all right sub hackers before we jump into the episode
+ got that this weekend bug bounty segment we've got actually quite a few items this week the first of
+ which is an exciting one hacker one has launched the nets killer program which is a really cool
+ opportunity for those of you guys that like to go after the you know asset note esque attacking
+ enterprise applications or appliances or whatever in scope is the nets killer gateway the nets killer ADC
+ nets killer AAA and they have treasure maps and credentials for each of these it's a public program
+ lows or 300 medium 600 highs 4,000 crits 10,000 not bad definitely something that you guys should look
+ at if you're interested in those sort of enterprise applications going after this
+ um next up is from yes we hack we have the ultimate guide to bug bounty HTTP request smuggling
+ vulnerabilities um like I've said in the past guys everybody has been sleeping on yes we hack
+ educational content it is super freaking good um so if you're looking to sort of uh clean up your
+ knowledge on HTTP request smugglings something that intimidates a lot of hackers from what I've heard
+ um this would be a great place to do it it's very thorough very long very detailed
+ um really good place to uh clean up your knowledge on HTTP request smuggling so we'll link that down in
+ the description um also uh this is coming from bug crowd uh there have been some changes to the request a
+ response feature in bug crowd um and this is when you know you need you need some feedback from the
+ program um and previously this was uh this feature was limited to one request open at a time that has been
+ bumped to two and you can request a response on submissions in the informational state so they're
+ expanding that a little bit which I think is cool right they are creating more overhead for themselves to
+ give you a voice right I just wanted to highlight that for you guys because I just think that's that's
+ good guy bug crowd um really caring about the hacker there in addition to that bug crowd also released a
+ hacker spotlight recently for Evan Connelly uh who is one of my favorite hackers out there um and this is a
+ great read as well if you're interested in getting to know uh the pastor and hacker uh which I think is a
+ really cool um personality that Evan's got there um so it's a good read I recommend it last but not least
+ um I wanted to point out a couple positions that are actually open in epic games now I collaborated
+ closely um you know worked with the epic game teams uh really closely in the past live hacking event
+ and um I got to know a little bit of the team and they are recruiting for some really cool roles one is
+ senior manager threat intelligence and offensive security um and the other one is ecosec programmer
+ intern okay um both of these are really good opportunities they're um located in Cary uh North
+ Carolina um and so if you're interested if you're in that area or you're interested about um hopping into
+ these uh we're gonna link these at the website um jobs.ctv.show okay jobs.ctv.show there we are right
+ there so we've got those on there I would definitely recommend working with the team they're amazing um if
+ either of those titles sound good to you all right let's go let's hop to the show there was kind of
+ two things one was I just think this is a really funny story for my daughter the uh I thought of it
+ when I saw myself wearing a black shirt today I was like oh I don't think I've ever told Justin that story
+ but uh we were at her cross-country meet and she was walking behind me talking with a friend and I heard her
+ say her friend asked like oh who's your dad or which one's your dad and uh my daughter sailor
+ pointed and said uh oh he's the one in the black shirt he almost always wears black he's a hacker
+ okay yes that's me yeah I thought that was funny kids kids are hilarious man I uh yeah uh one of my kids was
+ writing a little you know essay for school and she was talking about my job and I was like you got to
+ put ethical in front of hacker you know because they're like uh yeah my dad's a hacker he works
+ really hard at it he loves it you know that sort of thing and I was like their image is like me over
+ here like scamming people like right working really hard as a hacker stealing money and stuff so funny
+ and honestly like with the some of the bugs you found around css injection for like credit card leaks
+ it's like you could be legit at that but no yeah I want to do before we hop into the episode talk about
+ the life hacking event for just a second yeah um I don't know we since we're alive we don't have to
+ necessarily talk too much about it if you don't want to share but I feel like I had a self-realization
+ I just struggled with do I go solo or do I be on a team for the last like three or four events
+ and I have kind of just I don't know had mixed results or mixed success and then this time I was
+ like I want to hack with literally everyone like Justin's in this event Ronny's in this event Kieron
+ and BuzzFactor in this event a bunch of people from like Pliny's B Team 6 are in this event I want to
+ hack with really I didn't know that yeah there's like there's like five or six of them and half of
+ them have never been to live hacking event before and so it's really cool but anyways so I basically
+ just like didn't commit and then within one day of being in the event I was like I should have just
+ committed this is like such a struggle and it's so annoying and I think it's just my personality type
+ I know you are a big fan of like at least until dupe window ends solo hacking but I think it's just
+ 100 personality related because what I did was I buddied up with like one of the more talented B Team 6 guys
+ who's never been to live hacking event before and it wasn't like he fed me the bug in fact he had
+ nothing to do with one of the bugs that I found but we immediately found two bugs one I found basically
+ solo but just like because I was like communicating with him and because I was much more energized and
+ excited about the event having like someone I'm hacking with I immediately found a bug and then we
+ found one together that was like like pretty incredible too and so anyways I think I'm just gonna
+ like stop trying to be solo unless for some reason I don't know I have to but I think that for me it's just like
+ I feel so much more motivated energized excited and work harder when I'm with other people so yeah man
+ I think I think it depends on your personality type and I also think this event is kind of like very
+ well aligned to your skill set and your your hype you know um so I think this could definitely be a fun
+ one for you to to play with you know and and at the end of the day man you know when we've reached
+ the point that we're at it's kind of like well I might as well do it for fun you know it's like it's like
+ what you want right we don't have to you know like I think there's a lot to being content and you know
+ a lot of value to being content and then you know making decisions that are not necessarily the most
+ optimized for winning the live hacking event or cash return you know but I had a lot of fun with my
+ friends and I found bugs that I'm proud of you know yeah yeah sweet dude yeah all right so that being
+ said we are in the middle of a live hacking event and uh and so we have some hacking to do today and
+ I'm realizing actually I am wearing the wrong glasses I don't know if you guys know this I actually
+ have special glasses for my ctvv episode that don't reflect oh that's cool yeah so I want to switch
+ into those but um yeah so let's let's get into the uh let's get into the meat of the content today so
+ we can get back because I was just telling you right before I got on this call I was like man I want to
+ hack so much right now I have a a psc exploit like primed and I haven't like and it's ready to press you
+ know test on it and I I'm waiting till I get done with this uh to test it so um it's gonna be a palooza
+ uh all right you want to you want to start out with um with some of the stuff you got or do you
+ want me to start with one sure yeah so I mean let's just set the stage real quick basically this episode
+ is going to be I thought this was a good idea I suggested it to Justin I again maybe it's a
+ personality thing but I'm just obsessed with like uh ways to make myself more efficient like I've just
+ kind of always been obsessed with efficiency and uh one of the best things I've noticed that I take
+ away from other hackers is basically watching them work anytime I'm screen sharing or collaborating with
+ other hackers they're doing things that are like oh wow if I had known that I could have saved so much
+ more time I would have like found more bugs I've been more efficient or whatever and I was like this
+ would make a great uh episode and I think you and Justin are you and Joel actually almost like a year
+ ago or a year and a half ago did an episode where you kind of talked about something light it was more
+ like kind of like scripts or like you know the best tool for certain jobs or something and so this will
+ probably feel similar to listeners to that episode but I think that uh cumulatively all of these like
+ little like efficiency hacks are going to make you a much better faster more efficient hacker because
+ honestly some of that boredom and some of that downtime can not only make you like like make you slower
+ but it also can make you lose motivation I don't know like have you've noticed that but sometimes it's
+ like if there's a barrier to entry to like doing the next thing oh yeah you always say reduce the
+ friction or remove the friction when there's that friction there you basically just don't test for things you
+ should be testing for 100 yeah you've got to figure out a way to optimize these things and I was actually
+ working with Matthias the other day on a bug Matthias Carlson and you know like before I even really
+ knew that they're like I was very confident there was a bug there he was like hey dude we've got to
+ automate this whole test process like you know like and I was like well I think maybe we should validate it
+ first you know validate this one pivotal piece first and then and then you know we'll go back and build
+ the the like you know um harness or whatever and like you know get this exploit testing um accelerated
+ and he's like nah dude I'm like really confident we got to do it right now and I was like all right like
+ I'll I'll do it and lo and behold you know like it would have taken me probably hours of I'm so close to just
+ validating I'm so close to validating it I was so close to validating it you know uh and I was so glad
+ that I had it automated that whole time you know so yeah I definitely think uh investing in that automation
+ pays dividends yeah because your initial attempt that you thought was going to work one shot it had
+ a little air and then you fix the layer then you fix a little air and it just keeps going right
+ yeah and each attempt takes so long that and I find that to be the case in this live event that we're in right now
+ because the setup is so onerous for some of these things to test you do have to set up like a big long
+ thing or you know and with a lot of um just ai related bugs I know oftentimes you're having to like
+ clear the chat or delete all your messages in the queue you know like a lot of these the things are
+ really difficult to do so yeah all right well let's jump into it um okay dude I I'm just gonna pick
+ on you right off the bat so your first one is even better auto decoding right yes okay dude so but
+ you know right by the time this episode airs I think kaido will have released the new convert
+ feature have you seen that I have seen you all talking about it I haven't used it yet okay yeah
+ so it's like a little drawer at the bottom of kaido that does like kind of what inspector does in burp
+ right yes um but it's got some additional uh nice nice features in there so um but yeah I totally agree
+ some sort of like auto decoding or something that allows you to see easier what you're working on
+ in an encoding environment is like super essential well so the reason why this came up I was actually
+ on a sales call with like with kaido and we were like showing it to somebody and you know they were
+ like you know they they asked if there was a plug-in the equivalent to um oh man what's the one where
+ you can use like custom tags in your actual request and burp hackverter because obviously that's a
+ really good thing and it's like no we don't have a hacker equivalent yet I'm sure we will pretty soon but
+ why have I not needed that and it was like really frustrating to me why I've not needed hacker and
+ I thought about it I thought about it and I even opened up burp and started using it was like I know
+ sometimes I have to edit inside of like url encoding and it's like oh even better just has the thing
+ here I just edit it over there it auto updates and then I resend the request and so anytime I need
+ to do like quick edits that way edits that way that's how I always do it and so anyways I just
+ wanted to mention that because I'm sure there are some people out there who are painstakingly copying
+ and pasting out of replay yeah yeah and I think for right now that is a good solution um probably by
+ the time this episode airs the new convert uh uh drawer will be available in kaido which is going
+ to have some really awesome features so I think that'll be one of the things that are is near the
+ top of my list but actually I've got a different solution that I use for that so this is actually
+ what I was hoping we would do in this discussion was I was hoping you would point out things that I
+ could do even more efficiently oh okay so this is just a rezzo like rezzo's like hey justin I've got an
+ idea what if we go on the pod and talk about you give me all your secrets yeah exactly just teasing out your
+ secrets here well dude I think it's also really awesome that I don't know you know how much the
+ community knows the history of your interactions with the pod but like you know rezzo was like
+ every episode as soon as it come out he would listen to it give us feedback you know send messages
+ like retweet and uh write it actually on on the like deck that we have when we talk to sponsors
+ like on the first page is like a glowing review from rezzo uh like if you're not listening to the pod you're
+ doing it wrong or something exactly yeah yeah and I'm like and we were working on updating the slides
+ the other day and we're like oh well I guess we got to take this out because it just looks like our
+ own co-host right exactly it just looks like you yeah dude it's great anyway what I was going to say
+ was um that actually what I've started doing is using the kaido command palette to do these encodings um
+ which has been pretty solid so uh I did a pr to um even better uh when was this like back towards defcon
+ I think and uh for those of you that don't know even better is like just like couple ui customizations
+ that sort of thing to kaido um and what the pr does is it adds all of the convert workflows to the
+ command palette and allows you to use them inside of your um repeater uh you know equivalent right for
+ those of you using verb um the the replay uh window so you can just highlight some stuff and then you
+ just press ctrl k base 64 and then you press enter and it you know basically towards encodes whatever you've
+ you've got um and so that's been really solid for me like I just it's something that feels really right
+ to use you know and like I don't really have to think about it I just say okay ctrl k basis for
+ ctrl k url you know and it just does it you know um so that's been that's been pretty solid for me but
+ I think that's I'm also going to add in there one of the things that I hope to make a pr for soon
+ is um also adding all of the named replay tabs in there so you can just do commit you know ctrl k or
+ command k and then just say like that one request and it and press enter and then it jumps to that
+ replay tab you know so yeah I feel like it could get busy and big re but like you know it might get
+ noisy but that's still a good idea oh for sure especially with the auto rename feature from shift
+ right like that's that is uh you know all of them are renamed to something a little bit more reasonable now
+ right um but I think I think that has increased the efficiency of my workflow a good bit yeah that's
+ awesome um so yeah you mentioned command palette from kaido um one thing I wanted to mention this is
+ like kind of uh almost silly but I think that it is going to probably help a lot of people who have
+ like never had a way to do this in the past in chrome dev tools you can right click on a node in
+ the dom and do edit as html I'm sure a lot of people already know that but it has been really
+ helping me in two ways one way is um there are often times that you're setting up a project or a
+ landing page or hacking together like some sort of like bug bounty tool and the like your um ai
+ assistant like whether it's cloud code or codex just can't like it doesn't know what's wrong or it's
+ trying to fix some ui or css thing and I've just realized that what I'll often do is go in there and just
+ like select like the the parent element like a couple parent elements up that is html copy and
+ paste in there complain about it and it increases the odds of a fix like very significantly oh totally
+ because it has like it has all the html and then and it's able to kind of correlate that with whatever
+ code is generating the html at the time um and then the other thing I've used it for is actually in this
+ live hacking event there are a lot of um scoping and policy documents and setup documents as I'll say it
+ nicely and um some of them are in an app where you actually can't download you know sometimes with
+ google drive for example you can set something where it's like not downloadable or copy and pasteable
+ and that was like pretty annoying to me because I wanted to give all that context to ai to like
+ start asking things about the scope or whatever just like help with like justifying um certain bugs and
+ stuff like that I knew I would need it throughout this event and so I just right clicked edit html copy and paste that
+ into an html converter online like there's plenty of html to markdown converters and then I saved that
+ off into a markdown note so that ai could reference it very easily and you know that whole process took
+ like three seconds whereas I can see some people struggling or not even being able to figure out how
+ to do it without like doing a screenshot or printing the page and then yeah yeah it gets complicated for
+ sure I think uh I think I definitely do that exact same thing and I and two two things that I wanted
+ to say on that that I've been thinking oh I should improve this in my own hacking workflow
+ is apparently now cursor you can hook your browser into cursor and it like has access to the page that
+ you're on and can look at the dom yeah I think it has its own browser as of yesterday yeah yeah yeah
+ it has its own browser too and um and that's just such a game changer for kaido dev because like now
+ literally you can just be like okay it's not centered fix it and it and it like oh I never thought about
+ loading kaido in there since kaido's browser based yeah yeah it can just look directly at kaido um which
+ is awesome uh so I'm definitely gonna have a lot of fun with that but the other one dude while I was
+ investigating what you were saying just a second ago I noticed this so um open up dev tools and select
+ like a you know a field or whatever right click on it and there's this like thing that is debug with
+ ai that has a little new thing next to it yeah you hit start chat and it just dumps it into gemini
+ in the dev tool nice that's cool so yeah I knew there was ai in dev tool but you would have to like
+ ask it about the element you'd have to like go find it that's cool that you can just right click on one
+ yeah yeah I think that could be really solid for like understanding you know why something is
+ operating the way that it is or um stuff like that I always also use edit as html to check I don't know
+ why I always do it but I always check whether like the less than sign is uh is actually url encoded or not
+ or html encoded or not or um html encoded or not because I'll see it in there and I'm like well
+ you know less than space is not a valid tag name so maybe it's not encoded you know but yeah it's
+ definitely encoded always so yeah that's actually interesting you brought that up because I've always
+ curious what how people did that who were like front-end people since it shows up as a normal
+ um angle bracket there yeah actually as we're talking about this I'm gonna go and do the thing that
+ I uh I was gonna talk about next which is uh the I actually have a set of tools that I use for like
+ client-side stuff um and I've got them on my on my web server under like quick tools is what I've got it
+ called um but essentially what it does is it I have like a set of tools that will allow me to just get
+ xss on my own page right I've got a set of tools that will do window.open I've got one that will do
+ a window.open in a null you know no origin I've got something that will iframe something I've got something
+ that will iframe and then like apply some sandbox properties I've got like some redirect scripts all of
+ that stuff is sort of bundled into a toolkit that I call quick tricks yeah uh you know and and I think
+ having those there especially like the window.open ones where okay I know I need this window reference
+ so I'm just gonna like hit it throw it into my window.open script I know that it's you know the
+ variable is always named j or whatever so I can like send a post message easily through through dev tools
+ or whatever um having those in place really minimizes the amount of time it takes for you to test
+ something um and then I've also got like this this test.html file that's got like a nice code mirror
+ editor like in it and then renders whatever I type in a you know uh iframe right beneath it so that
+ I can like very dynamically test how certain things are rendered or how javascript is affecting the dom
+ inside of that little you know debug environment. Yeah dude that's sick yeah I'm sure the community's gonna
+ beg you to release it now but well and and it well I I think I've released it to the critical thinkers
+ if not I will um but uh it also takes it automatically this is another cool piece is it takes the script
+ and it puts it automatically in the hash encoded so I was like if once I find the thing that I want
+ I can just copy it and be like yo joseph check this out and then it loads everything up for you and you
+ can see exactly what I saw yeah honestly there are probably other places where that um what's that
+ called where that like flow could be pretty helpful you know like places where like kind of like cyber
+ chef or whatever like anything that puts the content of the thing in the in the url bar or in or in the
+ hash um so that you could make shareability really easy if it's not like a massive mega script you know
+ yeah yeah in fact I was going to mention that so I'll go ahead mention it now but I still use cyber
+ chef sometimes like pretty frequently um recently I've been using it for like some AI hacking um not
+ for this event but just in general there are um often what are called you know queue params I think
+ I mentioned this last week on the pod but yeah and oftentimes if you have a query that's being passed
+ in as a get parameter and you're wanting to like iterate on it a bunch or like load it as like a csrf or
+ like or like basically test as like a one click um it's like a one click vulnerability you're like
+ very frequently having to do you know url encoding on your prompt and so I'll just have like a cyber
+ chef you know tab up and I'll just like edit my prompt and then I'll have it automatically url encode
+ and append it to the to the url and so then I can just copy and paste the thing at the bottom and it
+ just allows me to work like really quickly um so anyways if people haven't heard of cyber chef it's
+ definitely worth like playing with and using um it's almost always for me just like find or place
+ I often will also use it I don't know if you have like a it's a good question for you justin if
+ you're if you have like an http response that is like json um escaped um where all of like uh you
+ know your quotes are uh are all like protected and maybe it's all like on one line with like slash n's
+ like um or backslash n for new line characters how do you then like get it in like a human readable uh
+ view before you like are able to test it or hack with it dude this is a this is a you know somebody hacks
+ when they ask this question right like this is the real shit question that like that like only the
+ guy that's like damn this stupid like json encoding yes exactly it's so annoying to parse visually I
+ gotta go like put in cyber chef and that's what I do but I'm curious what other people do yeah um
+ so I've got a couple solutions for this sometimes I'll just like paste it into dev tools and have it
+ render the object and then like you know or do like a json uh you know parse on it oh interesting or
+ json load from from the um the dev tools uh but actually I've also got another toolkit that I that
+ actually integrates nicely into my next thing that I was going to talk about in raycast okay so raycast
+ is like the um I think I've ranted about it on the pod before but it's like a really awesome um command
+ palette tool for your os right so you you pop it in there um I've got a custom I've got a custom script
+ for it that I have bound to jeez I don't even know what I have what do I have it bound to I've got it to
+ windows key space um and then that drops me right into my like uh my tool and let me just read you
+ some of these tools that I've got so um in here I've got the following commands I've got cvss which
+ opens up cvss advisor for me to calculate that I've got pyd which drops me into a python console I've got uh
+ checks which opens up uh the the clipboard content in a hex editor I've got c edit edit which opens it
+ in a text editor I've got c command which pipes the current clipboard content into a command and then
+ copies it back out I've got cookie which takes the current http request that I've got and redacts the
+ cookies in the auth header oh that's sick right which is helpful for pasting stuff into the uh like a
+ report or into ai or whatever yeah I've got jwt and then I paste in the token and it puts it in jdp.io
+ I've got um url encode all which is different than uh url encode because I often want that yeah yeah
+ yeah and it's very hard to find stuff that will actually do it it's weird it does um I've got an ocr
+ one and then these are the ones dude these are the ones that are hype okay listen to this so I've got one
+ called mr which is just matching replacing the clipboard so I open up the command palette I type
+ mr space whatever I want to find space whatever I want to replace right so it's kind of like said
+ yeah exactly and and but it just does it but it happens on the clipboard and it puts it back on the
+ clipboard yeah you've told me this before yes so it's great I do this I do that exact thing with one of
+ the tools I was going to mention if you have more you can mention it but yeah I wanted to mention to the
+ the audience if they didn't know at least on mac os there is a command called pb paste and pb copy
+ and so I use that all the time if I have something on the clipboard and I want to do a match replace
+ I just like we'll have all over the terminal do pb paste pipe then like my said command and then pipe
+ and then pb copy and so it just pasted in you know it pipes it to the replacement and then it pipes it
+ about to the copy that's interesting you have the same thing in raycast yeah I've just got it built right
+ into raycast there so I can just do mr boom boom and and you're good right so I'll often use this for
+ like getting rid of new line characters or something like that in like a like a GraphQL query or something
+ like that right like for example if you grab a GraphQL query and it's got all the you know backslash ends
+ or whatever yes and you want to actually like see it yep um you can use the kind of plugin for that now
+ but uh if you want to actually you know just yeah have it in a text file or whatever and see it how it is
+ um then you can just use you know mr to to replace the backslash ends with an actual backslash n uh and
+ that will do it so you can tell it's a GraphQL query by the way it is exactly yeah you can tell
+ it's an Aspen by the way that it is I love that um but one more thing on this raycast thing that I had
+ was I've actually also got um I've also got a subcommand called text transforms and what it does
+ is it looks directly at the string that I've entered into my like custom command palette and if it's a q
+ w a s z x e r c or v uh it will apply that transformation to it so for example if I if I hit qq
+ that's going to double url encode you know q is url encode q is url encode right so it's going to
+ double url encoded right and then if I type qqw then that's going to url encode url encode url decode
+ right and then if I add qqwa url encode url code url decode base64 encode nice right so you can
+ create these like sort of muscle memorized um you know uh just strings that represent patterns of
+ encoding uh and then the system will just do it and then pop it right back into your clipboard that's
+ really cool yeah I like the way that you basically view your clipboard as like an object that can be
+ modified yeah yeah I think that's essential for for you know being able to automate these things
+ quickly I think most people don't though I would say most people paste it somewhere transform it and
+ then put it back but you're like just transforming in place which is really cool yeah yeah that is I
+ think that is a unique a unique factor there I also use raycast like native features like uh like quick
+ links and stuff like that for like a lot of the ctvb stuff that I go to pretty often and I'm really bummed
+ that gemini does not have have a q parameter because uh like I would love to set up like a custom gemini
+ uh command in raycast where I could just you know open raycast query gemini and then have it open up in
+ a new tab but it doesn't I've got something for you do you okay what what do you have a q parameter
+ for gemini maybe what are you dming me no that's somebody else okay I was like what the heck I'll message
+ you after the pod okay yeah that sounds good raycast does have ai built into it though which I do use
+ sometimes uh but I just prefer pure gemini I'm gonna rant for 30 seconds on this thing there are so
+ many um command pallets right now on my computer I have like there's like an auto pop-up one for clod
+ and an auto pop-up one for chat gpt atlas and I have one for raycast and then like when I'm in shift
+ it also has you know there's like I'm sorry when I'm in kaido there's like one for shift and there's a
+ regular command palette and um anyways my brain is a little bit um overstimulated with that um kind
+ of sort of on that topic uh actually it doesn't matter I was going to mention that I installed
+ omarchy on an old linux thing and I was trying to anyway it doesn't matter I'm just gonna stay on mac so
+ yeah what did okay no no no now you got it you baited me tell me about omarchy because I've seen it
+ it's just like arc it's like you say arch or arc I don't know okay it's it's our clinics but in easy
+ mode you don't have to actually configure all the things it puts you in like a default install that's
+ like already kind of sort of pretty and dhh and kind of invented omarchy it's really great um actually
+ I will spend another 30 seconds on this kind of um cool story because I feel proud of myself but basically
+ I have a my old lenovo laptop is dual boot um and the linux side is disk encrypted and I had ubuntu
+ on there and then I had windows uh installed on the other partition that I used to play minecraft with
+ the kids because I just you know sometimes you need windows yeah and um so when I wanted to install
+ install omarchy I was like oh I'm sure I can just pick the you know the ubuntu partition and it'll just
+ install great it did not and so they say on their website like oh if the uh omarchy default installer
+ like you use like an iso usb bootable usb it's like if that doesn't work then you have to install
+ it manually and all you do is you install arc linux and then you run this script that then like
+ customizes it to basically be like omarchy so then I tried to use the arc linux iso and bootable
+ installer it also doesn't work if you have partitions like that so anyways I ended up like manually running
+ commands to like um install it without the installer I basically installed our clinics from scratch without
+ an installer like without even using the arc linux installer and it took like two hours but anyways
+ now I have a marquee on on my lenovo and I'm gonna play with it sometime dude yeah you know I had a
+ season of like I'm gonna customize all my stuff and you know like it was was running that as well and
+ then I was like actually I don't want to do this you know like all I want is everything to work so that I
+ could focus on hacking you know exactly and reduce friction to hack yeah exactly so I just install you
+ know freaking out of the box ubuntu and just you know yeah or debian you know nothing something that
+ no blow and then just do it you know exactly yeah all right um let's see uh dude this one's a good one
+ why don't you talk about that one uh sure yeah can you how do you strike out in google docs you have it up there and it's so clean and I can't even find it in my ui I got you it's format
+ text and then strike third gotcha they need to make it as a quick button but anyway they totally do yeah
+ okay yeah I wanted to do it for these ones anyways okay guys yeah the one thing I wanted to mention
+ here because I still think there are probably not enough people using it although I'm sure some people
+ out there know about it is the ffuf dash request flag um ffuf is probably still my favorite tool besides
+ you know um proxy and um I still use it all the time and I think that you know wide scale
+ recon is a pretty busy place right now like it's hard to be the first person to find a domain and then
+ to fuzz and all the things and not get banned by you know nearly every company has cloudflare now
+ or you know something else akamai in front of it so you're often going to get rate limited and banned
+ anyways but one thing that I feel like basically very few hackers are doing well is doing content discovery
+ and fuzzing especially of like apis post authentication and some people are right
+ they'll they'll use automate or they're using intruder but it is not um trivial and often you'll
+ like quickly get rate limited or banned and when you're hacking on your own machine on your own public
+ wi-fi I feel like most people are just hesitant to do it because it's like if I get a WAF ban now it's
+ going to affect my ability to watch hulu or my kids ability and so I feel like people probably
+ aren't doing it as much as they could and should but one thing that makes it really easy is the dash
+ request flag in ffuf so you can just copy and paste an entire raw http request with your cookies or your
+ auth token if it's an api request and then I just like have my vps up in a terminal I paste the command in
+ I already have like a bash alias that uses the dash request flag with the file name like req.text or req
+ and so then I like I just always save the request as that file name and then I can just use my bash
+ alias to automatically use that file in the current folder and so now I can just like fuzz with my
+ personal quick hits list I have you know as quick and as easily as like oh copy and paste out of kaido
+ bam run it copies out of kaido and I could probably just write a kaido plugin that would just do that
+ right click ffuf this or whatever at some point but yeah it's already so fast it's like it doesn't
+ save me that much time to do that yeah you can actually do it with a with a workflow as well um
+ you know you don't even have to do a plugin you can just do an active workflow and that'd do it too
+ and you could launch that active workflow from the from the command palette uh but what I was going
+ to say was with this new version of kaido as well we they've got the save to file uh uh you know
+ built in now so if you hit if you right click save to file it'll drop it into the file and then
+ you can run fluff from there um so that that's an another optimization to that but I totally use
+ the dash request thing all the time as well that is like one of my most commonly used uh forms of buff
+ to be honest you know one thing I wanted just as like maybe a thing for the community or maybe this
+ could be built into kaido sometimes I'll want to um basically have a hack verter for ffuf you know
+ I want to like uh request with a file like a raw http file and then also have like uh you know the
+ payload that it's inserting in for the word list be wrapped in like a hacker tag so anyways it'd be
+ interesting yeah yeah that would be interesting I think I think uh yeah I'm wondering how
+ how I mean the way the way that kaido already automatically what's it called processes payloads
+ it's probably already the ideal way to do that um no I'm just talking about by default like you know
+ url encoding as a pre-processor oh yeah yeah pre-processors yeah yeah yeah yeah you could
+ definitely do that but I mean at the end of the day it's you know I mean kaido is rushed so you know I
+ don't know maybe it is faster than uh than buff but buff I think you know has been very optimized for
+ speed right um and yeah I don't know I guess it's not within my workflow to like use automate to fuzz
+ for something you know like you know do directory brute forcing it is for fuzzing actually but not for
+ directory brute forcing so maybe there's some uh some integration there that would be good like you know
+ you set up like uh your buff uh harness on the server and then like connect it back to kaido and and
+ have it you know you might even be able to do have it generate word lists like it does where it processes
+ the specific injection points like with a convert workflow or with a pre-processor and then goes from
+ there yeah I would be really neat if it came back and like dropped it in findings too if it like yeah
+ had a hit or something it'd be like a cool flag it's such a process though for me like typically
+ with fuff I'm I'll run it and then I'll see like okay you know every I'm not interested in anything
+ that's size 92 right now so then you do whatever uh fs 92 you know and yeah well it's afs right it's
+ like hit enter afs because you can add file size or do you control see it and then change oh I control
+ see it do you do you do you stop in the middle yeah there's a new thing where you just hit enter
+ you just hit enter it pauses it and then you just and it like drops you into like a little fuff um like
+ input input shell and you do and you do afs for add file size oh dude I don't have the new version of
+ fuff because I'm pressing a and it's not doing oh it's like it's like a year old you haven't installed
+ no it's it's like at least it's at least a year old yeah you just press a yeah do I have to like add
+ some sort of interactive flag on it no you enter deposit sorry oh you don't hit a deposit you enter
+ deposit yeah now you just hit afs to add filter size if you do if if you do fs it will just do like
+ um filter size oh my and then enter to resume yeah it just resumes it
+ how did I not know about this well so this is why we're doing this episode right even like
+ like you're obviously a top hacker you've used ffuf a million times you have a million hacker friends
+ but like these little tips can be like super beneficial yeah dude damn okay that's sick thanks for that
+ and you know what's crazy dude is I'm looking at this yeah I mean it definitely says
+ uh man I I should have seen that I should have seen that that's amazing I've wasted so much time
+ with that though yeah because you're like you're probably like hitting control c and then like
+ tacking it on at the end or something aren't you oh no it's so much better it's so much better
+ I just do I'll do um an auto calibrate but then you know someone get through or something I'll hit
+ enter and then just do afs because it'll it'll add it to the filter so anyways yeah but and dude
+ sometimes like my ssh session buffers if it's like you know 403 bajillion 403s and I'm like
+ press c c c c c c c c c c c c c and it's like well and then sometimes you run out of the of the term
+ history and you can't actually go back and see that one cool green hit you saw you know I'm talking about
+ yeah you get like a green hit then you get 403s you control c it real fast and you can't get up to it
+ wait what do you mean green hit hold up hold up hold up are you using like coloring too am I am I
+ like living in never use color in ffuf oh my gosh dude you're joking rep color no it's just dash c just
+ actually I can't you use dude okay visually parse for the for the character it's 200 without just seeing
+ green yeah I mean I do like I parse for bracket like you know I I T it and then I or like I pipe it to an
+ outfit file and then I no no way dude apparently I'm not a little power user no I mean literally
+ like five years ago when I started bug bounty and I was using it like freshly made ffuf to fuzz
+ um like verizon media stuff just like waiting just watching for the little green hits it's like tick
+ tick tick whenever it gets hits it's like such a dopamine rush for me yeah yeah it's I'm so shocked you
+ haven't like uh had that experience wow dude all right well I've got I'm gonna go read the uh the
+ man page for fuff after this because apparently I need to up my fuff game to be to be fair though I
+ actually don't use fuff very often like I mostly I'll use automate for targeted fuzzing inside of kaido
+ and then yeah you know when I'm brute forcing which is very rare uh you know maybe once or twice a week
+ then uh you know then I'll use fuff but um yeah still man once or twice a week I should I should I
+ should know how to use fuff damn it all right fine all right well hold on let me let me um let me give a
+ good one then since yeah do it yeah dude I have to give it give a shout out to uh jx scout I mean
+ we've mentioned it a couple times on the pod but I've started using it recently especially in conjunction
+ with cursor and uh it's pretty freaking great to have like yeah so tell me about it I don't know much
+ about it at all yeah so essentially what it does is it is it a chrome extension is it an app it's a it's
+ a um plug-in in kaido and the kaido plugin kind of sucks it's just like a hook for the uh command line
+ utility um definitely some improvements that could happen there but it uh hooks into kaido watches
+ your request history looks at your scope and downloads all of the js files beautifies them
+ puts them in a folder uh and then we'll try to like enhance a little bit too you know like uh with uh
+ source maps and uh you know trying to find other files to download and stuff like that um so you just
+ have vs code pulled up with that in it yeah I do yeah and I know that there are um there's other I know
+ that there's jas weasel and I and I think there's some newer versions of jack scout that I kind of need to
+ uh update to um but oh like to be honest it's it's so it's good enough for me to like just use it as
+ is and then just hook cursor into it because all I really need is the javascript files there beautified
+ and then ready for me to throw ai at it right and so then I'll just query ai and I'll be like okay you
+ know identify the pads I didn't you know pull this stuff out you know like and it'll just jump through and
+ read everything and and uh especially with the massive context window ais it's it's very good um
+ that's awesome yeah and you you just you know your js is there when you need it right you don't have to
+ go download it and stuff whatever it is it's there you know so I I think that's really nice it does eat
+ up disk space though just FY it'll eat disk space like um what did I say yeah I think like um so what do
+ you do if the are they often too large what's your go-to if it's too large it's it's not I mean this I
+ haven't run into that before with it being too too large um I'm talking about for using AI like like
+ let's say yeah you just always switch to gemini flash yeah I'm doing I'm doing targeted stuff anyway I
+ mean like sometimes I'll switch the model specifically to gemini or whatever but um uh you know a lot of
+ times I'm doing more targeted stuff like okay you know look at this block or or just the other day I
+ was like hey uh there's like this super weird um gts what is it it's glitter or something what is the uh
+ gts file no no it's like there's there was some weird file uh that was in embedded inside of these
+ javascript files where it's like you know calling functions with like bracket 40 comma you know I'm
+ like oh this is so yucky so I just handed it to AI and was like reverse this and give me readable
+ templatized js and it like plopped it out I was like oh god I love you so much um so yeah I use it
+ for that sort of thing I'll use it to say like hey you know identify you know the local storage places
+ or but to be honest man I often just use it for vs code functions where I'm like go to the function
+ definition please you know oh that's true just navigating around the file is huge yeah and then
+ in cursor I've got bookmarks you know I've got like bookmarks extension that I can use to like bookmark
+ certain parts of code and stuff like that to quickly navigate back and forth so yeah it's pretty solid
+ that's huge yeah js scout plus uh plus cursor plus the bookmarks extension really good stuff yeah I'm
+ definitely gonna use it now um I just assumed it was like js weasel or whatever like it was like
+ something kind of complex or something you had to pay for or whatever yeah I think I want to say that
+ yeah there is I think there's like a premium version of jx scout and um there's also a vs code extension
+ that you can use that will like parse the ast tree and like um identify paths and like pull a bunch of stuff out
+ kind of like js weasel does um but to be honest man like just having it downloaded and grabbing the source
+ maps and like you know doing its thing I think is pretty solid so it's like a command line component
+ that downloads everything there's a kaido component for the plugin then there's like a vs code extension
+ if you want to as well so there's lots of components sweet yeah um one thing I was going to mention which
+ is this is a super dumb but I'm sure there are some people out there who don't know about it I um uh
+ often in the last couple live hacking events or whatever have um seen or like just had a really
+ strong use for actually I want to talk to you about afterwards for this like school app that uh yeah
+ my kids use at their school but anyways I've just used the mac system-wide proxy um so I was going
+ to tell people how to use it real quick if you have a mac you can probably tell them how to use it on
+ windows but if you just go to wi-fi settings it's actually kind of annoying to find sometimes
+ but if you just like go to wi-fi settings and then click details next to the connected wi-fi
+ you can just set up like a system-wide proxy and so I'll just throw it you have to have installed you
+ know the kaido cert into your um keychain but you can just proxy the entire system and so that's a
+ lot of times that's useful if you're testing like a desktop app or just something that's more
+ difficult to proxy yeah hopefully there's not cert pinning man like like freaking have you had that
+ like um yeah I've had it yeah it's super annoying you know like like desktop apps and yeah it's bad but
+ yeah system level proxy is definitely helpful for hitting those those uh desktop apps and and it can
+ be easy wins too everybody thinks you know hacking these desktop apps are really hard if you can just
+ proxy it and then get to the apis then you're just web hacking again yeah exactly so yeah the thing
+ actually I'll go ahead and mention on the pod because I'm sure some people might be able to give us good
+ advice for it the thing that I was going to ask you the app that I want to test um because it allows
+ you to like see what your kids are browsing from their school which is just kind of crazy is is like a
+ http2 grpc and dude it's nasty it's really nasty it's like yeah there's one kind of doesn't support
+ http2 so I'm using like burp free edition but then uh the copy to curl from kaido uh doesn't seem to
+ work um whenever I then try to pipe it into burp um and then at burp you can't even really edit it
+ very well because you know how like when you're trying to actually edit like the bites the pain
+ for um anyways this is a really weird protocol uh but I almost could guarantee it's going to be
+ vulnerable and I you know I feel like impact on seeing what kids are browsing to on their computers
+ like being able to see what all the students are browsing to is such high impact and I just care
+ about so I care about securing it for my kids so exactly yeah totally man I I think http2 you know
+ right now did you try a downgrade like does it does it support http1 if you downgrade it or it doesn't
+ yeah that's whack yeah I mean then you're stuck using using burp there uh but yeah I think that
+ one of the things that I have had success with though is is getting a like if you if you can get ai to
+ um poke at yeah to like get there that's true I should I should have had ai used python to do it
+ it would probably be a lot cleaner like hey here's my token you poke at this yeah exactly yeah yeah um
+ so might go after that okay um we've only got a couple more minutes but uh I was going to mention
+ dude I know matan pointed this out in his episode that we did and so a lot of the like die-hard listeners
+ have heard it but I'm going to repeat it again for everybody conditional breakpoints in dev tools
+ are massive like one you don't need to be pressing you know next next next next next next every single
+ time you're trying to set like a breakpoint and load into something um and you can use conditional
+ breakpoints not only for their actual purpose which is can you know conditionally triggering a breakpoint
+ but you can use conditional breakpoint to run arbitrary js code at a specific spot in the execution
+ script without having to use match and replace and dealing with like you know I know a guy that's
+ been using that for testing feature flags yeah it's uh it's yeah uh what who's that guy you know
+ who that guy who could that guy possibly be um but I use it all the time for testing feature
+ um and it's just very helpful right because feature flag stuff there's always a function that's
+ parsing the feature flags and being like should I turn this on should I not and you just say like
+ yes for everything um so the way that I do it is typically like you know use um parentheses or whatever
+ and then put whatever you want to do comma false so it just returns false uh always which is which
+ will not trigger the conditional breakpoint but it does run the js code um and I just you know it's
+ hacky it's it's messy but that's the kind of we like you know like and it gets the job done really
+ quick when you need to run some js code at a specific point um yeah how do you I I still find devtools
+ um breakpoint system to be like confusing and annoying like sometimes they all disappear sometimes
+ they don't get triggered it's like yeah yeah no it's a pain and then sometimes you you use the little
+ like disable all breakpoints button and then it still does it like it still breaks on them I'm like
+ frick stop you know and then I got to go in there and like uh you know delete all of or uncheck all the
+ breakpoints with the like uncheck all button and then I disabled the one that I wanted and it's like
+ that interface could really really use a facelift in my opinion yeah cool you want to rapid fire these
+ last few yeah okay so rapid fire um all right you next go all right cool I'll rapid fire both of mine and
+ and then you can clear out your list okay I for this event um did something pretty cool chat gpt atlas
+ is like good enough where it's like actually usable and I've heard perplexity comment comment
+ is actually like more than usable like pretty fast and like basically doing things in the browser
+ and so like for hacking it's kind of useful kind of not but what I found it to be really useful for
+ and I think other hackers will too is basically setting up things so like let's say
+ you're trying you're trying to like set up a new um I'm trying to think of like an example of stuff I
+ have a hack uh or like thing anyways where you're trying to set up a new sass or like let's say okay
+ actually here's a great example you're inside of gcp right and you're trying to set up some new service
+ and you're like confused and you're annoyed you don't really care and you know whatever you like
+ open up chat gpt atlas and say hey here you're inside my gcp account don't do anything that's going
+ to cost me a bunch of money but go spin up a vm or whatever or go enable this service right and it's
+ like it'll it'll do its own research it'll browse around it can click around it can kind of figure
+ it out for you which is really cool and really useful there probably are some implications for
+ like crawling a site more intelligently than just like using katana that you could also use this for
+ if you were proxying but anyways i thought that was i thought that was really cool second thing is um
+ a completely different tip which is terminal notifier there's probably an equivalent on windows
+ but there's this mac thing called terminal notifier and it gives you like a notification
+ i um in my system prompt for codex and cloud code have it use a terminal notifier whenever it's done
+ so it like can ping me and let me know that it's done working because i find myself getting distracted
+ and like an hour later i'm like oh crap i had this thing writing code for me in the background and it
+ now has asked me a question and i want to know about that question um i think there's also like
+ basically a way to like they're called hooks where you can hook in where it doesn't even have to choose to
+ notify you it just like always run some snippet of code when it's at like a stopping point i'm pretty
+ sure they're called hooks if anybody wants to look into that anyways those are just two tips i wanted to
+ bring up yeah are you talking about when the command is done running or are you talking about when it
+ hits like a pause point um both but specifically a pause point oh really yeah the pause point is
+ interesting i i i haven't found anything that does that uh i have used like something like notify sh or
+ project discoveries notify to like get like a you know discord ping or whatever when my thing's done
+ or i actually had an alias on one of my laptops i don't think i transferred it over but it would go
+ beep you know i could just say like pipe it into beep or like and and beep and whenever it was done it
+ would go beep you know daniel measler has one that uh pipes it into another ai which summarized what it
+ did and it immediately talked to him out loud at his desk so it'll just like it'll be like i just completed
+ the task that you gave me it appears as if this task has been completed here is the summary so
+ exactly exactly all right thanks jarvis um yeah dan would have jarvis um all right do you have a hard
+ stop right now or can i rapid fire these you can have fires okay i'm gonna rapid fire these um i talk
+ about kaido a lot so this is mostly for the people in the kaido ecosystem because i am in the kaido
+ ecosystem and that's what i hack with so that's what you're gonna get but you can also think about how to do
+ these things in burp if you are not using kaido also jx out that i mentioned earlier does have a
+ burp extension as well um okay so top level navigation highlighter i cannot like say this
+ enough i know i've said it time and time again you guys are probably sick of hearing me say it if you're
+ not using this you are in the stone age like it's it's on by default i think i don't know that they
+ turned it on by default because people were like people you know i think they turned it off it was
+ definitely on by default for a while i used what was it okay yeah you got to be using color navigations
+ in kaido as a password that is just non-negotiable at this point like it is just so much better okay
+ so you will be able to navigate so much quickly so much more quickly at the very at the very least it
+ is installed into kaido it might not be enabled but you just go to pass workflows and you enable it and
+ then anytime there's a top level nav in your browser it'll get highlighted specific color and it's it
+ helps just like bookmark what you're doing too even if you're just scrolling really fast through history
+ and you're like what was i doing your eyes will jump to those colors and get able to find requests so
+ much faster yeah that was uh that was five top level navigations ago you know like okay i it just
+ gives you much more you understand where things are in hp history much better um next is shift which
+ we've talked about before but i went through my shift queries and i identified what i most use
+ them for and here they are um adding quick and dirty match and replace rules is number one i do that all
+ the time with shift i never use the matching place interface anymore i just tell shift to do it
+ uh generating quick word lists with specific things that i want in them so you know you know one to
+ a hundred line wordless um justin was typing that out he actually said quick workouts so apparently
+ he uses shift to generate his workouts as well dude why are you watching me type in the doc man i'm like
+ listen all right give me like give me like tabata you know give me like a tabata thing to to do oh my
+ gosh dude i sound like an i just said tabata in english and that sounded horrible oh gosh i don't
+ even know anyways anyway uh it's it's one of those like hit workouts right so you know you can do like
+ you know burpees lunge jacks you know those right yeah tabata yeah oh is that how you say it in english
+ i think that's how you say it in english i've never heard in any other language yeah well anyways that
+ makes sense more shift tips okay um i use it to mass modify json so hey you know add some tags here
+ you know modify the casing here you know do that um i use it to generate uh hpql queries and i use it to
+ update filters so those are the main um uses that i use to shift work um drop is super helpful and
+ expedites the workflow a ton if you are collaborating with people super easy to set up super clean um
+ definitely use it uh and then the last one that i'm going to do is because everyone for literally
+ everyone's still on the stone age they're literally copying and pasting raw http into discord then the
+ person has to copy it then they have to send a natural request because otherwise you know in burping
+ kaido both whenever you paste it in you have to set the host header and so it's like um normally what
+ i always do and i'm sure you do this too you go find a similar request that you know is to the same
+ host which is sometimes annoying and also costing you time to send the replay so that when you paste
+ it in you don't have to edit the host editor right exactly so now you can just right click drop it to
+ justin so much easier so much freaking easier dude drop is beautiful drop is really beautiful um
+ and then last but not least there's dev tools so for any uh in in kaido okay so this is not the dev panel
+ uh you know that you see in the browser this is a hot reload script in kaido that reinstalls your
+ plugin every time you push code changes if you're not using this when you're doing kaido dev i don't
+ know how you're doing it because it's a pain to manually reinstall and uninstall the plugin every time so
+ um those are our hacking workflow tips for you guys hope you enjoyed that i know it was a uh
+ little bit of a rapid fire episode with a little bit here a little bit there but um yeah and i i guess
+ these things have really made a difference in my hacking workflow and i learned a ton as well from
+ you rezo today i'm so excited for that for that pop stuff yep yeah dude yeah i'll have to show you later
+ all right sounds good thanks guys ready to bounce all right yeah peace peace guys and that's a wrap
+ on this episode of critical thinking thanks so much for watching to the end y'all if you want more
+ critical thinking content uh or if you want to support the show head over to ctbb.show discord you can
+ hop in the community there's lots of great high-level hacking discussion happening there on top of
+ master classes hack alongs exclusive content and a full-time hunters guild if you're a full-time hunter
+ it's a great time trust me i'll see you there

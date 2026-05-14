@@ -1,0 +1,930 @@
+Do we need this?
+Like, would it make our life?
+No.
+Is the answer that is no?
+No, no, because this takes JSON
+and it tries to make it into something that it's not.
+Like, it's like, let's take JSON
+and make it like a structured, defined, typed,
+like property, like, it's like, that exists.
+It's called XML.
+Oh.
+So we've all been on those pentests before, right?
+Where we're just banging our head
+into the external attack surface of the company
+for what feels like an eternity.
+And then when you finally get inside the network,
+it's like open freaking season.
+There are accessible shares everywhere.
+CVs are popping left and right.
+There's seemingly no controls at all
+on what ports can or cannot be accessed.
+Too many companies are neglecting
+their internal network security.
+And that's why ThreatLocker came up
+with this product, Network Control,
+which makes it super easy to control
+what kind of ports are exposed on a given host,
+whether that be a user machine or a server.
+The thing I like the most about Network Control
+is that it understands far more than just the IP layer.
+You can allocate specific controls to keywords or tags,
+and then use those to manage access from different machines,
+regardless of whether they change IPs or not.
+So if you're looking to share up your internal network,
+make sure you check out Network Control by ThreatLocker.
+All right, let's go back to the show.
+All righty, my man, we are rolling on this beautiful fall day.
+How's it going?
+Oh yeah, good. How about you?
+Pretty good, man.
+The size of the to-do list is growing and growing.
+I'm going to Grenoble next week for Grehacks,
+and I'm going to be presenting on some Kaido stuff out there.
+Nice.
+And let's just say that presentation is not fully completed yet.
+So that, I don't know.
+I don't know.
+Some people, I feel like I hear a lot of hackers talk about how,
+like, they'll be going to this conference
+and they're like in their hotel room the night before prepping the slides
+and stuff like that.
+And I've never been that sort of guy.
+Like, I'm always the guy that like, has it done way in advance,
+has it rehearsed, that sort of thing.
+But like, I felt like I should try it this time and it is not working for me, dude.
+No, dude.
+No, that's stressful.
+I mean, I'm up for procrastination to some extent,
+but like for stuff like that, I definitely, I wouldn't want to really be winning it.
+You've got that ADHD brain where you can like procrastinate
+and then trigger like superpower mode, right?
+Yeah, but that doesn't make the presentation good.
+I don't know.
+That's the trick part.
+Yeah, I suppose so.
+All right.
+All right.
+What we got on the news for today.
+Let's see.
+Dude, this bcrypt thing is insane.
+Okay.
+So let me, let me just give a little bit of a,
+let me just read this, this release from that Okta put out.
+Okay.
+So it says for Okta orgs without MFA sign on policies
+and using accounts with usernames of 52 characters or more,
+this could allow users to authenticate by providing only the username
+and no password entered or regardless of the password entered.
+What the heck dude?
+Yeah.
+So super interesting stuff.
+I, somewhere, I guess in the bcrypt spec,
+it says that it truncates inputs beyond,
+is it 72 characters or 72 bytes?
+52 characters.
+52?
+52 characters?
+Yeah.
+Yeah.
+So it only takes, you know, up to a certain point.
+And then the rest of it gets truncated during like hashing, I guess.
+Jeez.
+Um, and, uh, they were concatenating username and password together
+and then hashing that in bcrypt.
+So if your username was too long, then it would just create a predictable hash,
+uh, that would never get changed by your password.
+And, uh, yeah, very, very,
+dude.
+I think, could you imagine like, this is one of those things,
+like, I want to say a couple of years back,
+there was like this scenario with Apple where you could just like press enter
+a couple of times or something like that.
+And it would log you in as root.
+And, uh, yeah.
+Oh yeah.
+Yeah.
+I forget what, I forget what it was called.
+Let me see.
+Apple press enter root.
+It was, it was something.
+With a blank.
+Oh, this was in 2017.
+Yeah.
+Blank password.
+Yeah.
+Yeah.
+Click the lock type root in the username field.
+And it was just because root had no path.
+Oh, that's funny.
+Yeah.
+I used to use this quite a bit actually back, back around that time as well.
+Just for like logging.
+Like I had like a secondary user account.
+Yeah.
+And I would use that.
+Um, so it's really interesting.
+It's just one of those things where it's like,
+you would never expect that to happen to Apple.
+And you would, I personally would never expect this to happen to Okta,
+where it's like, there's just no, it just doesn't take a password.
+It's just like one of those brain fuck things.
+That's like, what is going on here?
+Yeah.
+Yeah, for sure.
+It's a, it's very, very interesting bug.
+So I mean, it's good that it got caught.
+How did they find it?
+Or like, how did it like, what?
+I didn't see, I didn't see the way that they found it.
+Uh, ideally their bug bounty program would have caught something, but,
+um, this is just one of those things that I think it for me.
+It was discovered internally.
+Oh really discovered internally.
+Wow.
+Yeah.
+And their timeline.
+So July, July 23rd, it was introduced, uh, as part of a standard release.
+And then on October 30th, it was discovered internally.
+And then they switched from Bcrypt to PBKDF2.
+Yeah.
+And actually it says down in the comments here, uh, that PHP.net even mentions that inputs
+above 72 characters get truncated.
+So you had 72 in your, in your head, but they say 52 in the actual disclosure.
+Um, so it's, it's one of those two.
+I, well, it could be that they have an additional pad.
+So like, you know, the speculation I think is that it was username password, but they probably
+have like a timestamp or some other thing in there.
+Oh sure.
+It's like 20 characters padding.
+Or who knows.
+Right.
+Exactly.
+Yeah.
+Gotcha.
+But, uh, either way, very, very interesting.
+Yeah.
+Definitely going to be on my radar because Bcrypt, I think is like something that you see
+from time to time when doing white box source code review.
+So if you see, if you see Bcrypt at all, I just going to have it in my head, like,
+okay, there's truncation happening here.
+How might I do that truncation?
+And I think if the username was an email in a lot of scenarios, this becomes a lot, a lot
+nastier, right?
+Like, I feel like the length of that could be dramatically longer and, and result in this
+sort of truncation.
+Yeah, for sure.
+It's, I mean, it's one of those things where I don't know how you would find it, I guess,
+from like, I, I would be kind of interested in how they found it.
+Like what caused them to find that?
+Yeah.
+Um, I feel like somebody should have just found it.
+Interesting.
+Right?
+Like if somebody has a, a, a super long username and then they just, like,
+the thing is like, if you think about it,
+logged you in, like, I would be like, the fuck, like, what is going on here?
+I think more of it is like, you know, from like a security perspective, like you'd look at that
+code and you'd be like, okay, they're hashing it.
+Yep.
+Looks good.
+They run it through Bcrypt.
+
+They call it standard Bcrypt function.
+Okay.
+They compare it, blah, blah, whatever.
+Right.
+Right.
+But unless you know that like Bcrypt has that quirk or that you've read into the spec that like Bcrypt,
+like, I don't think most security engineers would second guess like how Bcrypt works.
+Yeah.
+Bcrypt.
+Yeah.
+Right.
+So it's, it's very interesting.
+It's like a very, very bad edge case.
+Yeah.
+That's not great functionality.
+I wonder, I wonder, yeah, there's not really much, I mean, from an attacker's perspective,
+I think it's not super exploitable because, you know, the username has to be so long.
+So you can only attack victims with super long usernames or whatever.
+Well, and it depends on like how it's being done.
+Yeah.
+Right.
+So like in this case, it's bad because it's username then password.
+If it was password then username, that'd be completely different.
+True.
+True.
+But then, yeah, man, they wouldn't, that, yeah, that's a good point.
+So it really, you, you have to see that, you have to see that same pattern where they're concatenating
+something that is a part of your, you know, a part of the account identifier.
+
+That's like guessable or like knowable, like more than a password or like, you know.
+Or static, like a salt or whatever.
+Yeah.
+Like an email, like knowing the email, not a big deal.
+Knowing the email and password is a big deal.
+Yeah.
+Knowing the email and being able to get it without a password, also a big deal.
+Yeah.
+Massive deal.
+Okay.
+Solid.
+So, I mean, a little bit of an edge case there, but definitely something to be considering
+if you're auditing the auth flows of, of these sort of environments where they're,
+they're dealing with this crypt, like password hashing or using bcrypt.
+I've been, I've been diving a little bit deeper lately when I've been hacking stuff.
+I've been trying to look at least cursorily, cursorily, cursorily.
+Cur, cursorily.
+Cur, I've been looking at least a little bit at, at, at like the implementation of crypto stuff.
+And, and bugs keep on falling out, man.
+I had, I had a bug yesterday where I could bypass the, the signing, some, some signing that was being
+passed from the server side into the client side.
+And, and then the validation was being done in a JS library.
+I bypassed something there.
+And then let's just say, at a live hacking event in the past six months, there was some crypto related
+bugs too.
+So I think I was scared of those for a long time.
+But I think if you, if you understand some of the basic concepts and then you look a little bit
+deeper at the implementation, I think a lot of times those, those sort of issues kind of pop out.
+Yeah.
+I think you'll find that most of the time it's not, it's not super home rolled.
+Yeah.
+Like sometimes, sometimes it is, and that can lead to its, its own problems, but it's mostly
+just like in functionality, like how it's being used or like they're generating this hash and then
+they're trusting it.
+And, you know, you, maybe you can poison that hash or whatever, you know, there's,
+it's more of like the fundamental principles more than it is like needing to be a math major to
+break SHA-256 or whatever, you know?
+The one, the one that I, I looked at the other day was there was a JWT token that was being passed.
+And, and it was hard coding.
+It looked, the way that they had written the code, it looked like it was hard coding the algorithm
+that it should be using to validate.
+It wasn't even using the, the header.
+Right.
+Mm-hmm.
+But then if you look a little bit deeper into the code, it, it wasn't, it was trusting the
+algorithm that was in the JWT header.
+So you could just provide the non algorithm and it would still pass.
+Interesting.
+A lot of libraries have that built in.
+Super interesting.
+Yeah.
+All right.
+Let's, let's, let's jump over to this, to this next one.
+This is by NDEV TK.
+And this is just a write up of a bunch of Android specific Chrome behaviors and
+compatibilities and incompatibilities.
+I just thought this was super fascinating because I think there's a lot of attack vectors that I didn't
+really think about from, from an Android and Chrome perspective that he seems to be really aware
+of the threat model with.
+So I wanted to get your thoughts on all these, Joel.
+What do you, what do you think?
+Yeah.
+So, I mean, I think a lot of people just sort of jump from like, you know, oh, you click a link
+and then it opens the app or whatever, but that has to happen from somewhere.
+And so there's a lot of like browser specific behavior, like Android out of the box ships with
+Chromium as like the Android web view.
+And then I think it probably, most of them ship with the Chrome app too.
+Yeah.
+Most people are probably using the Chrome app as well.
+And so there's a lot of like, you know, intent URLs.
+I'm pretty sure that is not like an implicit feature.
+It's like implemented specifically by Chrome and Chromium into the browser so that you can
+launch stuff with this intent schema.
+So there's like a lot of nuance to how that stuff works, the parameters, what's allowed,
+what's not allowed, what stuff you can launch, like how it gets parsed, all that kind of stuff.
+So this is a really good in-depth like look at that kind of stuff as well as it seems there was
+a number of issues with like just the format of it, how it was being parsed and all that kind of stuff
+as well, like separate from how it's supposed to work.
+So very, very interesting stuff.
+They got quite a number of bounties.
+I like here how they mentioned some of the attack vectors that I wouldn't really
+have known about without going through and reading like the Chromium issues.
+For example, apparently it's a problem that can be awarded $3,000 because that's what happened here.
+If you can force another browser to pop up from Chrome without a prompt,
+apparently there's supposed to be some sort of prompt saying,
+hey, we're going to open this URL in Samsung browser.
+And the reason for that is because like if you, if like Samsung browser is running on a much older
+version of Chromium as a base, right?
+So if you can pivot from Chrome and force it to open up Samsung browser, then that makes it,
+you know, your chain there becomes a lot easier to do some something like a, like a browser
+end day attack on that older version.
+Is that accurate?
+Is that what you saw as well?
+Well, I mean like that, that's true.
+Generally speaking, you don't want to make it so that you can open other apps or like spawn
+intents from one app to another app.
+And especially not without that confirmation dialogue.
+So there's this, like this, this concept of registered schemes, right?
+And so let's say you have two browsers on your device and they both register the HTTP scheme
+and you open a link, it should prompt you and say, do you want to open this in Chrome?
+Do you want to open this in Opera?
+Do you want to open this in whatever?
+And if it doesn't implicitly by like directly opening a specific app instead of prompting
+the user to do it, then that's, you know, obviously a vulnerability just like manifesting
+itself within the browser application.
+Right.
+So, um, yeah, it's, it's, it's awesome research and, uh, definitely a lot of good
+snippets in here.
+Just generally speaking about like the intent URL, uh, schema, like format and like how that
+stuff works and what stuff you can do with it, what like the parameters are all that kind of stuff.
+So, um, yeah, yeah, we talked about that a little bit, I think on the mobile episode
+where we were talking about intent URLs and how all that works.
+But I think that is something that like, if you want to level up as a mobile hacker,
+like I think one of the next things on my docket as a mobile hacker would be,
+I need to understand how all of those work so that I can make my exploits more reliably.
+Um, like, uh, I guess, what would it be?
+Network?
+I mean, you could raise the, yeah, I like the severity of them because, you know,
+even if it may be a more complex attack, you might be able to launch it from the browser
+instead of like having to rely on another app on the device.
+Right.
+So then it goes from like adjacent to, to like remotely exploitable, right?
+If they click a link in their browser.
+Right.
+So it still requires user interaction, but it's still, it, it allows you to access some of those
+like more intent, some core, some more core Android, um, exploitation techniques.
+If you understand how those work, that's pretty rad.
+Yeah.
+And I feel like there's, there's a lot of crap that ships with, uh, with Android devices
+and with like Samsung devices and stuff like that, like a lot of apps.
+And so, um, I think there's probably a lot of more ripe attack surface than I, I actually gave it credit
+for actually attacking like vanilla Android devices and say like, all right, let's grab all of these,
+these apps that come pre-installed and develop exploits that do things like, for example,
+opening up specific apps without a prompt.
+Yeah.
+Well, and you'll see that like, you know, nine times out of 10, when there is a vulnerability
+in like Samsung or something, that's like not a kernel exploit.
+It is that it's like, there's a permissions issue in one of the system apps that's installed
+at a system level that has additional privileges.
+And you can escalate through that by doing something insecure through just like a standard
+Android mechanism.
+Very cool.
+Yeah.
+I'm looking through some of these other ones, man.
+And, and there's like, um, add to home screen spoof.
+There's like, um, an iframe escape.
+And some of these haven't been, uh, fixed yet.
+It says asked and not fixed.
+Uh, controlling Google assistant asked and not fixed.
+The, the controlling Google assistant one is actually kind of scary to me, man.
+Cause it looks like you can, um, you know, trigger the user to go to a, a deep link or
+whatever, and it will invoke specific routines or workflows in inside of Google assistant, which
+Yeah.
+I would not want that to happen.
+Right.
+Like I have some, I, I, man, my offset is so bad, dude, but I have, uh, I have some, some
+routine set up at my house that will, that will do things with my home automation.
+Right.
+And I'm like, I don't want people invoking that remotely.
+So I'm, I'm kind of confused about why this Google app colon slash slash deep link, and
+then passing in this whole URL, I'm kind of confused as to why that wasn't fixed by, by Google.
+Yeah.
+Yeah.
+It's very interesting.
+I mean, it might be the, it's part of, I mean, you never know.
+Like I'm sure Google is not the kind of team that I generally am like worried that they're
+mishandling vulnerabilities.
+Yeah.
+So usually if they have like taken a stance on something, it's very, very specific for
+a valid reason.
+And like, either they're working on fixing it or there's a threat model, like, or there's
+mitigating factors or whatever.
+I'm sure that there's some reason, um, you know, I, I don't think I've ever really seen
+an instance where the Google security team has like miss valued something or like on not
+paid something properly.
+Well, it was that YouTube thing a little while ago, but, but I don't know if that was like,
+I don't know if that was necessarily like miss payment per se, but they could have maybe paid
+higher.
+Yeah.
+I mean, and to be honest, I often see, like we talked about on the podcast, I think a couple
+of weeks ago, or maybe I was just tweeting about it.
+I forget, but there's, there was a, um, a vulnerability that was essentially a click jacking
+that, that worked out and, and got paid or an iframe injection.
+That's what it was.
+It was like, and then it got paid, uh, 15 grand.
+The Zendesk one?
+Yeah.
+I, I want to, I don't know.
+I don't know if I have a good one.
+No, no, no, no, no, no.
+It's a different one.
+This is for Google.
+So it was, it was a, um, it was a, uh, iframe injection.
+So you were able to control what site gets injected into an iframe.
+And then somehow he used it to get account takeover apparently, but 15 grand.
+Did you ever get clarity on?
+Yeah.
+I think the, the result of that was very similar to like the, the person wasn't very
+explicit about it.
+I commented on that and, and they responded and said, um, the result of that was something
+similar to that, that Google drive one we saw a while back where it's like, you could embed,
+like there was like 15 kinds of chains.
+
+That's what I was talking about.
+Yeah.
+It was kind of similar to that where you could, you know, force share some Google drive or like
+your root Google drive, um, folder, but I think he was able to get his two account takeover.
+So 15 grand would make sense for that, I guess.
+Yeah.
+I mean, I think if you can figure out how to open arbitrary URLs within a Google product,
+that's usually like a really good foothold.
+Yeah.
+Um, and probably one of the more common footholds you're gonna like see, like, you know,
+cause they have fairly strict like CSP and like, like CSP evaluators written by Google.
+So yeah.
+Yeah.
+Um, so I'm looking, I'm looking through this whole thing.
+We'll link it down below.
+I would actually recommend any, any of the listeners that are trying to understand a little bit more
+about, um, I guess, intermediate to advanced, uh, like mobile attack vectors.
+I think this writeup is really good.
+Not only cause it, it talks about some of these more fringe, fringe features, like the intent URLs
+and that sort of thing, but, um, also because it, it talks about understanding
+the threat models of, um, these various apps and ecosystems, right?
+You know, I, I did not know that if you could bypass that little, that little pop-up that says
+like, all right, we're going to open Samsung browser now, you know, press approve that,
+that was going to result in a, in a bounty.
+Um, so understanding those threat models is one of the ways you can really stay on top of finding,
+uh, volumes in these sort of more complex environments.
+Yeah, for sure.
+And I, I think what I'd say is like to that specific instance, just think about it like,
+as if it's any other app, right?
+If you can open another app from PayPal, that's an issue.
+If you can open another app from Chrome, that's also an issue, like without user authorization.
+Right?
+Really?
+I didn't, I didn't know that.
+So that, that little box that pops up from the bottom, is that, is that what you're talking about?
+Where it's like open with that?
+So if you can bypass that, that's a problem.
+Yes.
+Okay.
+Well, today I learned.
+Cool.
+Well, we'll link this NDEV TK, um, uh, right up in the, in the description.
+So check that out.
+Um, if you're wanting some more details on that, um, dude, another, another Portswigger research
+drop.
+You see me, I'm rubbing the hands together, guys.
+I'm excited.
+I wonder how much they're paying these guys.
+Dude, they've been, they crank out some serious stuff, man.
+They really do.
+James Kettle just hit like 10 years, right?
+Yeah.
+At Portswigger.
+He was like, I love it here.
+I was like, dang, bro.
+It's a good model too.
+I always hear these Europeans, or wait, UK is not part of Europe.
+I always hear these people overseas, uh, on the other side of the Atlantic Ocean, uh,
+Exactly.
+Um, talking about how they get, they don't get, uh, these Bay Area engineering salaries,
+but, uh, somehow they managed to capture James Kettle and Gareth Hayes for so many years.
+I feel like you gotta, yeah, you gotta just write a, a blank check to Gareth Hayes and,
+uh, Kettle, man.
+Like those guys are so valuable.
+Maybe that's why they raised money.
+Yeah, maybe.
+They raised, they raised funding so they could pay their salaries.
+Yeah.
+Seriously.
+Um, this one, this one was really cool though.
+It's titled Concealing Payloads in URL Credentials.
+And I've got a couple of comments on this one.
+It's, you guys know me, you guys know me and my clients love of client side stuff.
+So I see this and I just, I just want to like give Gareth a hug because this stuff is so nice.
+Um, but actually it, it, it originated from Johan Carlson, uh, talking about how you,
+this sort of similar functionality, um, on Twitter a while back.
+Um, and it's not visible in the URL.
+The functionality was in Twitter or he was talking about it on Twitter?
+No, no, he was talking about it on Twitter.
+Oh, okay.
+And essentially what this is, is it's using the, um, the username and password parts of the URL,
+right?
+So you've got HTTP, HPS, you know, colon slash slash, and then username colon password.
+Call password ad.
+Yeah, exactly.
+So that, and, um, you know, you can navigate to those URLs in Chrome and it just won't show
+anything in the URL in the URL bar, but, and it won't show anything in window location.href,
+but it will show something in document.url.
+Mm-hmm.
+So this is, um, this is another way that you can smuggle payload information into a page
+without like affecting the actual URL of the page or putting anything in the hash or giving
+the WAF anything to work with because it's, it's client side.
+Um, so it was, it was surprising to, to both Gareth and to me that location and document.url
+are different.
+Um, and that, you know, definitely provides some, some ability to, um, to play around with this.
+And he, he pointed out really well that if that URL is actually being embedded into a, an a tag or
+something like that, and that a tag has a, an ID associated with it, then you can very easily access
+that value by using, you know, ID with like Dom clobbering, like functionality by using ID.
+In this case, it was X dot username or dot password.
+And that will return that string that you smuggled in.
+Um, yeah.
+Um, yeah.
+So I have a suspicion as to why this is the case.
+And if you look, if you look kind of closely at it, um, document.url is a string.
+Mm.
+Right.
+So, uh, either it's crafted or it's set or whatever, you know, somewhere document.location
+and window.location is a location object, right?
+So it's parsed.
+So, cause I was curious if there was like a user name property on the location object or something,
+but it doesn't appear there is, but you'll notice that it is, it's a, it's a, it's an object.
+It's a location object.
+It's not, um, it's not like document, document.url is literally just a string.
+Yeah.
+So I'm wondering, there might be other instances where that like exists as a proxy or something.
+Yeah.
+Well, like I said, like maybe there's another object that has a URL property on it or something
+that's, that's nested somewhere else.
+So that might be.
+Well, window.location.href is also a string, but that href is,
+Well, that's not going to come from the location object, right?
+
+
+It does.
+And it doesn't contain that username, username and password there either.
+Um, yeah.
+So I guess is that the location object constructor probably like parses it out specifically.
+And then when you do .href, it basically like goes back, it like parses it and then
+turns it back into a string.
+Yeah.
+Yeah, no, absolutely.
+And I think, I think that, um, oh, just as a note, I'm just going to mention this before I forget.
+Safari does discard the URL.
+So this only works in Chrome and Firefox, which is crazy.
+You know, normally you see it the other way around where Chrome does something and Safari's like,
+Hmm, let me do .
+Safari is the new security champ.
+Yeah.
+So I did want to mention a couple other things, you know, because we talked about last week,
+how Safari has some weird cookie attribute commenting out functionality.
+Um, but, uh, the, this whole concept of smuggling data through, um, and
+in such a way that the WAF cannot see it, I think is really valuable.
+And, um, you know, there's a lot of really unique, um, payloads out there for XSS.
+But my, my favorite one, which is in line with this is simply JavaScript colon name.
+Okay.
+That is a full XSS payload.
+And the reason for that is that you can assign the name value that, that name attribute,
+window.name persists across.
+Through clobbering?
+It's not clobbering.
+It actually persists across window refreshes.
+Right.
+So I open a window and I name it whatever I want.
+I can name it SVG on load alert one.
+Right.
+And then when I redirect to that JavaScript URL, JavaScript colon name,
+what it does is it returns from that JavaScript URL, the name string.
+Right.
+And then that name, the value of the name string gets considered to be the dom of that page
+under the same origin that it came from.
+So if I put SVG on load alert one into the name and then redirect to that by a
+JavaScript colon name, it will actually render the SVG tag on the page in pop alert.
+And there's no way that the WAF can see that.
+Yeah, because name is actually always, always exists.
+Yeah.
+It's a, it always exists.
+Mm-hmm.
+There's also, I mean, there's a lot of things that actually fall on it, fall into this.
+So window dot persistent, all caps is a one.
+It just holds the value one.
+Yeah.
+So, so if you did like JavaScript colon all caps persistent, that would, or alert persistent?
+Yeah.
+I guess?
+No, no, no.
+I mean, yeah, you could, you could do, there's lots of variables that are accessible, you know,
+at that, at that capacity.
+But can you just do like JavaScript colon one?
+Does that work?
+Yeah.
+Well, that, yeah, that'll put one on the page.
+Isn't that weird?
+Like, like that, that was what freaked me out one time is I like did something that returned
+one or whatever, and then I saw it appear on the page and I'm like, what is going on here?
+And it's well documented.
+I thought for a second that I had found something weird here, but if you look at it,
+you know, JavaScript colon name is a pretty popular payload, you know, it's well documented,
+but it's just crazy to me that you can, you don't have to do any assignment.
+You don't have to do anything like that, right?
+If you control the location that it's being directed to, you can just do JavaScript colon name
+and you don't have to do any function calls, anything like that.
+Because a lot of times the WAF block, they block the backticks and they block the parentheses,
+right?
+So it makes it really hard to actually call functions.
+In this scenario, you can smuggle everything through window.name,
+which is something that WAF never even sees.
+Yeah.
+And interestingly, because name is an empty string by default,
+you could concatenate to it with plus as well.
+So if you did like name plus one, you would get one in a string.
+Yeah.
+So you could potentially pivot off of that as well.
+Yeah.
+Yeah.
+There's lots of cool quirks there.
+And then, so bringing this back around to the research that they were talking about with the URL stuff,
+this is another way to smuggle in data that the WAF never even sees, right?
+So you can smuggle in by a name, you can smuggle it in by a hash, or you can smuggle it in via,
+you know, this username and password functionality.
+And if that username and password gets embedded into an A tag, then you have a really easy way to
+access that with whatever ID dot username or dot password.
+So pretty cool stuff.
+Yeah.
+Super interesting.
+All right.
+Now we got the monster, man.
+You ready?
+You ready for this guy?
+I don't know if I'm ready for this guy.
+This is a pretty intense one.
+Okay.
+
+Okay.
+Dude, we got to talk about it though.
+So there's this tool that got released this past week called Lightyear.
+And this is one of those things that, like, I feel like I should probably read through this
+and understand it fully.
+But when I read through it and I try to understand-
+This is one of those things that I'm going to put a pin in it until I need it.
+Next time I see a PHP page, I'm going to be like, oh, god damn it.
+Here we go.
+Dude, that's a good, that's a good, thank you.
+That's what I'm doing too.
+That makes me feel a little bit better about this, right?
+But the TLDR of this, and I wanted to give it some publicity because,
+I mean, this is a shit ton of work and a shit ton of, you know,
+code that they had to write and intricacies that they had to understand to get us
+this tool.
+This tool allows you to abuse those PHP filter chains that we talked about on the pod a while back.
+And the current state-of-the-art tool for that is, or prior to this one,
+was PHP filter chains Oracle exploit.
+And they outlined in the beginning of this that there's a pretty big downside to this,
+which is that if your primitive is via a get parameter, right?
+So if you're injecting into an open or whatever where you can use the PHP schemes,
+then if you're doing this via a get parameter, then the size of that get parameter inflates pretty
+quickly if you're trying to get data out.
+So you can only get about 135 characters out before you start hitting the URI too long problem,
+right?
+And this tool, Lightyear, not only fixes that, it can dump files of tens of thousands of bytes
+with just small payloads of a couple thousand characters.
+But it also does it a lot faster and does it more efficiently and doesn't produce any PHP warnings or
+errors which will sometimes break the whole flow. So I think...
+You don't want that pesky IR team knowing what we're doing.
+I know exactly, right?
+So this is an awesome tool if you're able to actually inject into any of those sort of
+functions that allow you to utilize those PHP schemes.
+For me, I don't do a lot of PHP hacking. So this is... I think I'm going to do exactly what you said,
+Joel. That makes so much sense to me. It's just, next time I'm hacking PHP, next time I need this,
+I know exactly where to find this bookmark. But it's nice to know that they've got something that
+really allows you to read arbitrary files with that.
+I think that's a really important part of learning is knowing when you should really learn something
+and when you should have it ready to be learned. Because there's a certain point. When I was young
+and invincible, I had infinite brain space. I am now old and no longer invincible and have limited brain
+space. And so I have to really pick and choose what I decide to keep.
+Yeah. Yeah. And I think that's absolutely necessary in this environment as well, in the IT environment,
+right? Particularly the security environment where there's so much onslaught of amazing research and
+stuff. We're in this very small niche of bug bounty and I can't even keep up, right? And it's my job to keep up, you know?
+Yeah. And so I think having these sort of categorized and knowing where to find them when you need them
+is important. So Lightyear is the new go-to tool for that. It seems like they've solved a lot of the
+problems. We can use small payloads. We can do it really fast. There's no errors or warnings. So that's
+a good one to have in your back pocket for sure. But Joel, did you see the little thing I added underneath
+this in the docs? Oh, I didn't actually, that was the one link I didn't click. No, dude. So it's like,
+oh, there's a, wait, but this is old. No. So there, I think they're going to implement it now though.
+So I see they referenced this issue four days ago. Yeah. So back in 2023, when this whole PHP filter chains
+research came out, someone was like, Hey, we got to fix this in PHP. And, and they're like, nah. And then when,
+when this, this, this new research came out, they're like, all right, we got to fix this. So I think
+at some point they're going to limit the number of filters that you can apply, which I think would
+kill a lot of this research. So yeah, this guy, some, some guy mentioned this. I didn't know you
+could do this. This is one of those annoying things about GitHub that you can like, there's always like
+ways to like make yourself appear on things. Yeah. And so I guess he mentioned this issue on his own
+repo in a commit and it like populated, but some guy has added like a limit to the number of filters
+into the PHP. It needs to do a fork of the PHP source. Uh, so we'll see if it actually gets pulled
+in or not, but if you want to do that yourself, you can, uh, I guess. Yeah. Oh, it's a PR. I'm stupid.
+Yeah. It's a PR. So I think, I think it, I think it should be, I think there's somebody, uh,
+opened a PR. Chaining filters becoming increasingly popular primitive to exploit PHP applications,
+blah, blah, blah, blah. Yeah. So we'll see. I mean, it still has to be accepted, accepted. I haven't,
+it's just going to be a configurable option, right? Like there's plenty of dangerous things that are in
+PHP that you have to enable as a configuration option. Yeah. Even though that's a lot of people do turn
+these things on, it's just going to be, you know, somebody who's going to be like, Oh, number of
+filters, negative one or whatever, like, and, and just then you'll have the same problem. But
+for now, at least it'll be like, you know, secure by default, which is good.
+Yeah, absolutely, man. Alrighty, Richard, what's on the docket for today?
+An ASMR ad. Say less. I got you. I got you. All right, guys. So today we're going to,
+uh, attack surface management roles, not ASM. Okay, I got you. Well, if we're talking about
+attack surface management, then of course, we're talking about the acid note team, right? The OGs
+in the ASM space. And this time around, they've released a new community project, their attack
+surface management job board, a place where you can see all of the companies that are hiring for
+attack surface management jobs. So if you're interested in that sort of thing, if you're a
+recon heavy hacker, or if you just want to get your hands on the acid note product to play around
+with it, definitely check out that job board. That's going to be at acid note.io slash
+acid note.io slash ASMR. I'm going to make them change it to ASMR. So if you want to support the
+pod, or if you want to check out that job board, head over to acid note.io slash ASMR. All right,
+back to the show. Let's go. Okay, so moving on to this next one. There's a release from Yes,
+We Hack on a tool called Dom Explorer. And its architect, of course, is our boy BitK.
+And I just got to say, man, I think I've been sleeping on Yes, We Hack a little bit.
+Like, I think Yes, We Hack is actually putting out some really solid stuff, a lot of which is
+coming from BitK.
+I'm sure I'm not wearing my Yes, We Hack hat right now.
+I know, dude. We got to go get our swag because the swag they sent out was really,
+really high quality too. But it seems like they're actually dumping a lot of really cool
+toys for hackers, right? Because we mentioned before, they've got that XSS exploitation framework,
+right? That makes it really easy to exploit XSS and XFL information. And it's got a bunch of
+sort of modulized exploitation vectors. Okay, I'm sorry. Hold on, Joel, I have something.
+Modulized.
+No, no, something like that. But I'm actually going to just totally deviate from this really
+quickly because I wanted to mention something that I did the other day that I thought was really cool.
+Okay.
+Okay.
+So on the concept of XSS exploitation, I was in this scenario.
+All right. Story time with Justin. Let's go.
+Okay.
+I was in this scenario, right, where I had a page that was triggering a redirect and then writing my
+data to the DOM, right, via inner HTML. So it shouldn't trigger, right? Because the redirect
+would delete the DOM before it actually writes to the DOM. And it's one of those things where you're
+like, you're redirecting, but then if it's too slow, we'll let you click this button, right? That does
+like a redirect, right? And I had the injection into this button.
+Okay.
+And so here's what I did. I just wanted to put this on y'all's radar. The host that I was redirecting
+to, that the page was redirecting to, was controllable by me to a certain degree, but it had to be
+whitelisted, right? So what I did is the domains were whitelisted, but the port was not whitelisted.
+So, so what I did is I get, got a valid domain and I put, you know, semicolon one, three, three,
+seven. So now it's redirecting to a page that doesn't have an open port on it, right? So it's
+trying to set up that TCP connection and it's retrying and it's retrying and it's waiting.
+And it doesn't remove the DOM of that page until it opens that, that TCP connection with the next page.
+The navigation doesn't actually occur, right? So that allowed the delay to be long enough for it to
+write my, my payload to the DOM. All right. But that's not the end of it, Joel. Listen to this.
+Okay. So now I've got my payload written, written to the DOM, but there's a WAF, there's a WAF dude.
+And so what do I do? I'm like, okay, of course I just use like location name, you know, just like
+we talked about earlier. You send like 80,000 ads. Yeah. There's like, well, that, that, that can work too.
+But, um, classic move. Um, but the, the, the WAF was really getting in the way and it was, and it was
+blocking any function call and I can't use location because there's already a location change in
+progress, right? So it wouldn't let me override that. So here's what I did, dude. I didn't actually get
+the full exploit to work. Um, what I did was I set window.name equal to document.cookie, right?
+So now I've, I've set name equal to cookie and name persists refreshes, right? So then from my
+attacker control tab, because I opened this, this tab where the exploit is happening, I can control
+where that tab goes. So then I redirect it back to an attacker controlled origin. I reach into that DOM
+and read the name property and I can leak the cookies on that page. Um, so it's like,
+it's like a holder. Yeah. Yeah. So it's like, it's like a way to steal information out of those
+sort of environments, uh, without actually executing any functions because it's just name
+equals document.cookie. I'll see you in three months when Chrome patches that, dude.
+Isolate the name variable. It's a pretty, it's a pretty, it's a pretty niche scenario. Um, but I just
+thought I'd mention it as well because I think there are a lot of scenarios where, where,
+WAFs are kind of a pain in the ass to bypass when, when you're dealing with, um, you know,
+execution, you're actually getting JS execution, but you can't trigger function calls. Um, and so
+having some way to smuggle data back out, uh, via the window.name, I think could be a pretty useful
+technique for people. Um, yeah, for sure. So, okay. So the, the, the reason I went on that was that
+XSS tools thing, um, which was triggered by DOM Explorer. So now, now we're going to talk about
+DOM Explorer. Are you still with me, Joel? I'm still, um, DOM Explorer inspired by Cyberchef,
+but looks nothing like it. Oh my gosh, dude. I'm sorry. I, I, I had to rant there for a second.
+Ooh. All right. So DOM Explorer, I guess this one's mine too. Cause I'm the, I'm the,
+the DOM, the DOM geek. You want me to, want me to talk about this one?
+Um, I mean it, it's so basically I, I feel like, uh, I saw, I saw like a screenshot of something
+that was very similar to this. Maybe it was during the DOM purify, uh, XSS like a couple months ago.
+Yeah. I don't remember. I think Carlson has something, doesn't he? Yeah. Yeah. Somebody,
+I think somebody had scrapped together something very simple where you basically just put an input
+in and then it would like, you click a button and it just runs it through DOM purifying CD output.
+Yeah. So that's basically what this is, right? Where you have, um, this DOM Explorer tool and you can
+create a pipeline of, you know, that that's where it's very much so like cyber chef where you have
+like steps that you can run, uh, an input through. And so you can say, okay, I want to run it through
+DOM purify or want to run it through this parser or whatever, the sanitizer, et cetera. And you can
+have this pipeline of, of steps that your, your input goes through. And then you can inspect what
+the output would be after all of those different pipeline steps. Um, and so that can be really,
+really helpful when you're, you know, trying to exploit an XSS in some specific environment,
+you know, it's going through X, Y, and Z sanitizer and renderer and a parser and whatever.
+And you just want to really quickly, rapidly test inputs, see what stuff you can get through.
+Instead of sending request, wait three seconds, request, wait three seconds. You can build out
+that pipeline on the DOM Explorer and test your inputs. And then when you're pretty sure you,
+you know, for bypass, you can actually go test it.
+Yeah. And I think this is helpful for looking at those sorts of scenarios where you've got a stack
+on a, on a open source software that you want to pwn. And it's like, okay, it's using like DOM purify
+and then it's putting it into this and then, or maybe it's putting into this like HTML renderer on
+the, on the server side. And then, you know, uh, it's exporting as a PDF or something like that.
+And you can chain together these pieces and see how they, how they, um, interact together.
+Um, and yeah, I did find that, that thing you mentioned, dude, it's, um, it's a lead in Brun.
+It's Matthias Carlson. It's a tool called multi HTML parse. And I'll add this to the,
+to the docs as well. So it gets put in the, um, in the notes. Um, but I think as many of these as
+we can get the better, because there's so many different frameworks for parsing HTML and, and
+rendering stuff. Um, so I think that's really good. The one thing I like about, um, DOM, uh,
+Explorer, which is the, the one by YesWeHack that we're talking about right now is that, um,
+it's actually in the browser. So, uh, and it's set up and you don't have to do like Docker or
+anything. It's just like, go to YesWeHack.getup.io slash DOM dash Explorer.
+And it will give you this interface where you can play with it. Um, and you can add a ton of
+different parsers. So DOM parser, parse five, DOM purify JSXSS, all sorts of stuff. Um, and so,
+you know, if, if maybe if it isn't in, uh, uh, this one, this tool, DOM Explorer, then,
+you know, it might be in multi HTML parse or vice versa. And I think as we sort of build these tools
+up, it becomes a lot easier to find mutation XSS, right? Where, where different parsers are
+treating things differently and, um, and trigger those more universal XSS scenarios where you're,
+you're bypassing some white lists that are, are like absolutely pivotal to security.
+Yeah. Yeah, absolutely. Um, and there's like lots of configuration options as well on the,
+on DOM Explorer. So like, for example, like DOM parser, um, it has, you know, what's the mime type
+that you're feeding into it? Does it have a doc type? What selector are you feeding it? What's the
+output for like, and so you can, you know, you can really get sort of pretty narrow down on it and
+you can, um, make it very, very accurate to what you're testing against so that it works
+very, very well. And it's good for testing. Yeah. Very solid dude. Yeah. Yeah. So definitely
+I'm going to keep an eye on the, the yes, we hack GitHub stuff because they, especially,
+you know, what big case has been releasing lately has really been kind of putting them on the map for
+me, I think. Yeah, absolutely. Super, super cool tool. Um, this is another one of the ones like
+everything else, uh, bookmark it, put in my, my tools list and then I don't think about it. I don't
+think about it until I need it. Um, all right. What we got next here. This last one. Yeah. Let me see.
+Yeah. Jason. Okay. I had a bone to pick with this. Okay. All right. Well, okay. So I put this in here
+here because I'm like, you know, I feel like Jason is something that we deal with a lot, right? We're
+the listeners don't have context to the docs. Let me, I put a link in here that, that essentially
+allows you to visualize Jason a little bit easier. And, and the thought was this, um,
+is there a place for Jason visualization progress in our, our HTTP proxy tools? Because 90% of the time
+we're dealing with Jason, right? The request bodies are, our request Jason. And I feel like,
+you know, we spend a decent amount of time modifying attributes and like moving things around and that
+sort of thing. And I wonder if it would be better to have some sort of visualizer inside of the HTTP
+proxies that makes it easier to, to, to work with Jason. What do you, what do you think about that?
+I think the only thing I would like to see is JQ searching. That's it.
+What is JQ searching? Oh, JQ like search searching?
+JQ format searching. So, so like being able to filter by attributes using a JQ query and just
+like put that in a search box. I know you can do it in, um, PAW, uh, now rapid API. Um, but like
+the, the PAW, like API tool, it's kind of like postman insomnia, you know, whatever you choose to use.
+But yeah, um, it has a thing in like the response format where you can filter down,
+um, you know, whatever your, your response is, which is like a query like that. And so you can do,
+you know, like dot attribute or whatever, and, uh, you'll only see that in your output. So I think that
+would be really nice. Um, you know, this is a, it's an interesting tool, right? So, so this JSON
+crack thing, it's like, um, a JSON editor, it's like visualizes JSON graphs, but yeah.
+And I feel like this wasn't necessarily the thing that I was trying to like talk about, like JSON,
+we can talk about JSON crack, but the, the concept more that I was thinking of is like,
+do we need this? Like, would it, would it make our life? No, no, no, no, because this takes
+JSON and it tries to make it into something that it's not, right? Like, it's like, let's take JSON
+and make it like a structured defined type, like, uh, property, like, it's like that exists. It's
+called XML. Oh, yeah, no. And we don't want to go closer to XML for sure. Yeah. Yeah. You know,
+okay. Maybe, maybe I'm off base with that. I just, I just think, you know, it's worth,
+That being said though, it's worth challenging the status quo on, on these sorts of things,
+right? Like I feel like there should be easier ways to modify the, um, the things that we,
+that we need to modify in the request body. And actually I've got a solution for that,
+that I'm going to be releasing in a couple of weeks. It's not specifically for that, but it,
+it can do this as well. Um, so we'll, uh, we'll see when I'll talk about that,
+when that episode goes live and we'll see if we still need to address these sort of, um,
+the sort of way that we interact with, um, the, these various content types. I, I do want to say as well,
+and I told this to the Kaido team and, and I think this is something that is on the, in the pipeline,
+but I feel like both burp and Kaido should automatically just change the content type
+based off of what format you have in the request body. Does that not make sense? Like, like, I mean,
+sure it should be a checkbox, you know, where it's like, okay, you know, do you want us to automatically
+update the content type? Like we update the content length, but like, it's very easy to determine whether
+the request body is JSON, X, X form URL encoded or multi-part.
+Yeah. I will say like one of my, one of the more annoying things in recent burp updates,
+recent, I don't know, within the last two years is the JSON, like auto formatting. That thing drives me
+crazy when I'm typing in the request and like, I'll put like a quote and then it like adds a new line
+because it's trying to format it. And then I put another quote and then it like brings it back
+because it's closed the string. It's hard, man. JSON, JSON formatting, I think is a really challenging
+piece. So that's, that's why I'm kind of wondering is like, is there a better way to approach this?
+Um, yeah, I don't know. I think the visual, the visual editor could be like a nice touch. I just
+think it kind of overcomplicates things. And then like, I want to say there was an interface in burp
+at one point where they were like, where you could switch the way that the request bodies were
+represented. And then it would give you like a text box on the left-hand side and a text box on the
+right-hand side. And like, did you ever see that or am I hallucinating? That's how I use my burp.
+Is that not how you use burp? What? That's how mine looks. Is that not what your burp looks like?
+Wait, wait, no, no, no. When you're, when you're manually modifying the, the request body.
+Yeah. You don't have to. Maybe, maybe I just need to, to be fair, I haven't opened burp in a long time,
+but, uh, yeah, I think that's nice for, for, I think that that is nice for, for, um, for Xform URL encoded.
+But I don't, I don't, you know, I feel like something like that for JSON could be really helpful as well.
+I don't know. Just a thought.
+Yeah. I know HackVertor does that too with like previews.
+So like you can do like a HackVertor preview in the like replay tab and stuff. And it has like a left,
+like a input output thing and all that.
+That that's pretty rad. I think that'd be good. Dude. Okay. On, let me see if I got permission to
+talk about the thing that I was going to talk about. Yes, I did. Okay. They messaged me back in
+time. Sweet. All right. So let me just tack this on at the end here of the podcast. Um, and I'll
+probably talk about a different podcast as well, but, um, you know, a while ago you and I talked
+about on the pod about building, somebody needs to build a freaking notes plugin for Kaido and for burp.
+That is good. Right. That, that has Markdown rendering that I found the guy, man, that guy
+is static flow Tanner. And, um, and it's good, man. I I've, I've seen it. He's, he's been kind of
+working with me. That's the guy I know. Oh yeah. Yeah. Dude, he built, he built out this tool and it,
+and it rocks. Uh, I've been playing with it and it's really well structured. Um, the, the Markdown
+rendering is really clean. It supports exports. We're working on like a sync feature where it'll sync to a
+specific part of the file system. Um, I'm going to use it, man. That's where I'm going to write
+all my reports and all of my, um, you know, notes. And, uh, I think, I think that'll be the go-to
+methodology because then you don't have to jump in and out of your, your proxy. You can just say,
+and, and he has it, um, tied to a key binding as well. So I'm like in my report, I click, you know,
+whatever the key binding is. We just implemented that feature. So I haven't played that yet, but
+jump into the key binding and then you're in your notes and you're type, type, type. And then
+I like that. How do you like that? Uh, and then the type, type, type. Um, uh, so I'm excited for
+this. Um, I, I'll link it in the description depending on when this episode airs. I'm not
+sure if it'll actually be live yet or not, but, um, yeah, I think it will be. Um, so, uh,
+definitely check that out. I think it'll be really, uh, so the, the kind of one will be released by
+the time this episode come out. I don't know that the burp one will, but I know that he is working
+on a burp version of this as well. And I think this is going to take over the notes market for
+the, for the plugins. Yeah. Yeah, for sure. Yeah. Cause it's just kind of like, you know,
+it's like your Evernote or your obsidian, right? But it's just built into, to kind of, oh, here's
+the other feature, dude. That's crazy. You can link replay tabs in it. So you can say like,
+Hey, you know, this specific replay tab has. Yeah. He showed me when he did, when he did that,
+he was like, yeah, check this out. And he, it's like links it and you just click it. It just like
+opens the tab. Oh, dude. It's so good. I, why haven't we had that? I don't, I don't know, but
+because burp is a swing base. Yeah. Well, that's what he said. He's like, it's so much harder to
+code this in burp because it's a pain in the ass, but yeah, kind of, I think because it's, it's just,
+you know, JavaScript and HTML, there's a lot of libraries, you know, you can use for that. So it makes
+it much easier to dab there. Yeah, for sure. All right, man. Cool. Is that a wrap? Is that
+the pod? I think that's it. All right. Peace. Peace. And that's a wrap on this episode of critical
+thinking. Thanks so much for listening. And if you want more critical thinking content,
+head over to ctbb.show slash discord, join the discord. There's lots of great conversations and
+chats going on over there. And if you want to support the show, there's the discord subscriber tiers,
+which give you access to masterclasses, AMAs, hack alongs, exclusive scripts,
+and an exclusive chat channel with us. We'll see you there.

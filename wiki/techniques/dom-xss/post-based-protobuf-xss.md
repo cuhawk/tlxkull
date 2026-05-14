@@ -2,7 +2,7 @@
 title: POST-based Raw Protobuf XSS via Form Submission
 slug: post-based-protobuf-xss
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/dom-xss, technique/protobuf, technique/xss]
 inbound: []
 ---
@@ -112,6 +112,8 @@ base64 < modified.bin
 | date | target | notes |
 |---|---|---|
 | 2026 | (undisclosed, heavy protobuf user) | Justin Gardner (CT Ep. 171): required binary-level protobuf in POST body; ASCII-range constraint, CRLF padding, equals-sign alignment, and trailing-CRLF absorption all needed to produce a working top-level-navigation XSS. |
+
+- {date: 2026-04-23, source: CT Ep 171} — Justin Gardner walked the four constraint discoveries (ASCII range, bare-LF normalization, equals-sign placement, trailing-CRLF absorption via +2 declared length).
 
 ## References
 

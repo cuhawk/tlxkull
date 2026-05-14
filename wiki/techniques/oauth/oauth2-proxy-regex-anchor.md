@@ -2,7 +2,7 @@
 title: oauth2-proxy skip-auth regex anchor bypass
 slug: oauth2-proxy-regex-anchor
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/oauth, technique/auth-bypass]
 inbound: []
 ---
@@ -44,6 +44,7 @@ path-only:
 ## Seen in the wild
 - {date: 2025, CVE: CVE-2025-54576}.
 - Discussed Critical Thinking Podcast Ep 169 (OAuth changes / MCP / PKCE).
+- {date: 2026-04-09, source: CT Ep 169} — Brandon highlights as a public-route allowlist regex matched against entire URI; bypass by appending the regex pattern as a query parameter.
 
 ## References
 - CVE-2025-54576

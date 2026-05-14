@@ -2,7 +2,7 @@
 title: PKCE Downgrade Attack
 slug: pkce-downgrade
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-14T00:00:00Z
 tags: [technique/oauth, technique/pkce-downgrade]
 inbound: []
 ---
@@ -91,6 +91,8 @@ grant_type=authorization_code
 | 2025 | Django OAuth Toolkit | ZeroPath — mutable `preferred_username` claim used as account UID; combined with PKCE issues → ATO. 4 provider integrations affected (Okta, NetIQ). 2M monthly downloads. |
 | 2025 | Cloudflare Workers OAuth (community package) | Accepted `code_verifier` even when initial `/authorize` had no `code_challenge`. All CF Worker OAuth implementations affected. |
 | 2025 | Harbor (JWT `alg:none` variant) | Any unknown algorithm or `none` bypassed signature check — `algorithm=banana` worked. CVE-2026-23993 by PentesterLab. |
+
+- {date: 2026-04-09, source: CT Ep 169} — Brandon walks through the OAuth 2.1 transition gap as the primary 2026 attack class; ZeroPath Django + Cloudflare Workers OAuth CVEs cited.
 
 ## References
 

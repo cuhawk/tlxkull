@@ -1,0 +1,797 @@
+C-Tiers? There's a whole conversation that was happening in the Discord that's like,
+okay, well, you need a better name for us than C-T-E-R-S. C-Tiers. Yeah. We're all from Connecticut.
+Yeah. We're all like C-Tier hackers. We're all C-Tier hackers. Yeah.
+Hey guys, real quick. I just wanted to tell you about our sponsor ThreatLocker. Now, wait,
+wait, before you hit the skip forward button, let me just say this. Most of the stuff that holds my
+attention nowadays is Red Team stuff as well. But I sat down with the ThreatLocker team this past week
+to do a demo of their EDR software. And it was super technically fascinating how this thing works.
+So check this out. You drop this thing on a system, right? And for the first week or so,
+it's creating a policy and a profile for that system. It's logging all the executables,
+what child processes are being spawned, the files and their hashes, that sort of thing.
+And it's creating this policy. Okay. Then after the learning mode is up, we're in secured mode,
+and that policy gets put into place. And anything that's not on that allow list is immediately auto
+denied. That's the zero trust piece, right? So in addition to that, they've got a bunch of crazy
+features like ring fencing and dynamic access controls that would stop a malicious hacker at
+pretty much every step along the way. Actually, I was watching this demo and I was kind of freaked
+out because I have no idea how I would cope with getting dropped into a ThreatLocker system
+as a Red Teamer. Anyway, if you want to learn more about this, head over to ThreatLocker.com
+and request a demo. And when you do, ask for my boy, Andrew. His demo was super to the point,
+and he was able to answer all my technical questions. All right, cool. Back to the show.
+You hear that, Joel? You hear that? That's a brainstorm coming. That is the rain.
+Bro.
+Ah, wow. That was... Are you going to keep that?
+Dude, Justin hyped this up. He's like, dude, I got the best intro. Wait till you hear this.
+Oh my gosh. Wait till you hear this. Okay.
+You know, but it's like I made the voice, you know, I did the sound with my mouth, you know,
+for the brain, when it's raining, you know, and then it's a brainstorm. You see what I'm saying?
+I thought we were talking about toilets again in the beginning.
+No, no, no, no. We're not doing it. We're not doing it.
+Ah, all right, dude. Ready for a brainstorm episode?
+Uh, I guess so. Yeah. Dude, I, um, I was, uh, did you have thunderstorms yesterday?
+Because we had, we had thunderstorms. I thought that's why you, you brought that up.
+No, no. My house is not leaking. Everything is good. I just, you know, the amount of
+valuable information that is just raining out of our brains right now.
+Raining. It just needed to be vocalized.
+Yes.
+All right. Well, thanks for bearing with me there, Joel, for that. Um, so we're going to
+brainstorm today on, um, various types of plugins, extensions, Chrome extensions,
+Kaido extensions, Burp extensions, Men in the Middle proxy extensions, all these sort of things.
+Um, but before we get to that, man, Gareth Hayes just tweeted something out, dude. And you know,
+when Gareth Hayes tweets something out, your boy is on it. Like here on a gorilla.
+Yes. So I, he's one of the few people who I've tweet notifications turned on for.
+Yeah.
+Uh, along with the critical thinking podcast.
+Critical, critical, critical.
+Oh man.
+Anyways.
+We've been getting a little goofy lately.
+This is not good, dude.
+We gotta bring this in.
+All right.
+Uh, okay.
+But anyways, I like went and I sat down on the toilet and I pulled my phone out and sure
+enough, I have all these tweet notifications from Gareth Hayes and, uh, he's tweeted some
+crazy big brain.
+Uh, I don't even know.
+What is this?
+A zero day.
+Weird behavior.
+So, okay.
+So let me, let me clarify on this because I saw this and I was like, wait, what the heck?
+This is super weird.
+I hadn't even understood this.
+And, and then like, John Carlson pops in there and he's like, eh, this is like kind of cool,
+but pretty normal.
+But let me add some context to this.
+Okay.
+So, um, the tweet that Gareth tweeted out that we're talking about is essentially just
+an a tag that he tweeted out.
+And the a tags H ref is a slash and then ampersand B soul, uh, semi-colon, right?
+So it's a HTML entity B soul, which apparently is for backslash.
+I don't know why it's B soul.
+Um, and then he uses like a, like a negative medium space, um, uh, entity as well, HTML entity.
+And then, uh, you know, provides shazer.co.uk as the domain where this, uh, H ref should be
+going to.
+And when you click on this link, it goes to shazer.
+Um, and it doesn't start with slash slash.
+Um, and, and so like, here's the thing with this is like, there's always so many times we've
+talked about it time and time again on the pod where you're trying to fuzz for a way to get around,
+a redirect URI or something like that in an OAuth flow, or, um, get this some, some like iframe,
+a source attribute to like point to a different host rather than a relative URL within the host.
+Right.
+Um, and I think this is just another great way to get around it.
+And somehow I just hadn't fully formulated in my brain that we can use HTML entities inside of,
+uh, these HTML attributes like this.
+And especially, you know, with the research that came out from the RCE man that we covered on the pod
+a long time ago, um, about, uh, like the different types of HTML entities that have kind of been
+overlooked and, and shazer, um, you know, whipped up a whole list of all these crazy HTML entities
+that we hadn't heard of before.
+Um, this is just becoming more important in my brain is like, okay, how can we utilize these sort of
+under, underserved, under known HTML entities to break out of these various contexts, um, inside of
+an HTML attribute.
+Um, and I think that's exactly what, what he does here.
+Yeah.
+Yeah.
+Yeah, for sure.
+Um, I just posted, uh, a link in the doc.
+We will include it in the, in the references, but, uh, Wikipedia actually has a really good table.
+Uh, I found that has like just a list of all the XML and HTML, um, character entities.
+Jeez.
+There's a ton, dude.
+I did not know this.
+Yeah, there's a ton.
+There's a ton, um, of like really weird ones, including like, you know, special characters
+and all sorts of stuff like soul and back soul, be soul.
+Like you, uh, like you said, um, there's also like fraction slash.
+So maybe like our F R A S L. So maybe that would get, um, normalized somewhere somehow.
+Um, yeah.
+So there's, there's a lot of really interesting, um, interesting stuff.
+Yeah.
+That fraction slash is a, is not, um, Unicode code point zero zero two F that's Unicode code
+code point two zero four four.
+So that's like a, like a, a non-ascii, uh, character there.
+Um, so man, there's a lot of really interesting stuff here.
+I, I think, man, there's just so many, dude, I'm like scrolling and scrolling and scrolling
+on how many entities there are here.
+And I'm sure there's going to be a bunch of other bugs relating to this, but I,
+the, the attack vector that came to my mind and came to the mind of, um, uh,
+Hakupiku in the reverse order there.
+Right.
+And he like, when I saw it, I was like, oh man, this is going to be really helpful in
+ReaderX and then like, uh, 10 minutes later, uh, Hakupiku, uh, messages me and he's like,
+Hey man, this is really helpful in OAuth flows.
+Um, because what you can do is you can set the response type to form post.
+Right.
+And the way that that works is then it'll generate an HTML element.
+So if you have an OAuth flow, that's going to, um, uh, return a code or whatever, like normal
+
+OAuth does, if you set the response type to form post, instead of like 302ing, what it'll do is
+generate a HTML page with a, with a form.
+And it's going to set the action on that form to be whatever your redirect URL is.
+So if you're able to specify a relative URL, you know, and they're saying, all right,
+as long as it starts with slash and it doesn't, you know, have a backslash or a forward slash next to it,
+um, then we're fine.
+And then you can use this sort of entity, this, uh, ampersand B sole, semi-colon, um,
+to bypass that flow and actually redirect to an absolute URL, or I guess more specifically,
+a protocol relative URL, um, and then leak that code out to, uh, uh, another domain that
+isn't within that redirect URI flow.
+So my, my prediction, and I think, uh, Haku Piku's, or, um, prediction as well, is that
+this will affect a lot of, uh, OAuth flows, uh, specifically in the, the form post environment.
+Yeah.
+Yeah.
+This is really interesting and, uh, I don't want to spoil too much, but I have a,
+I have a thought that I see has already been thought ahead of my thought.
+So, um, about something related to this, uh, what is, what is your, you're just not going to say
+it on the plot?
+Well, it's an extension idea.
+Oh, really?
+Okay.
+There you go.
+All right.
+It's something that's in the list too.
+It's already in the list.
+It is in the list.
+I did put that in the list.
+I was like, this would be a good idea.
+And then I went and I looked and I was like, this is already a thing.
+So yeah.
+Um, well, we'll talk about it later, but.
+Okay.
+Yeah.
+No, that sounds, that sounds great.
+Um, very cool stuff there.
+TLDR of that whole situation.
+There's a bunch of weird, weird HTML attributes out or HTML entities out there.
+You should know them and definitely check out, check out the, um, the Shazer results for all
+the fuzzing of HTML entities that, that Kara's been doing because lots of weird stuff is coming
+out of that.
+Um, all right.
+What's this next one on the list, Joel?
+There's a, there's a, there's a link on the list from, from Joel.
+From me, from me, this is revolutionary.
+Okay.
+So, um, Chris Evans, who, uh, is the, uh, the CISO, um, over at hacker one tweeted out that they are
+making a change to the hacker one leaderboard.
+And now hacker one leaderboards are separated based on bug bounty program reputation,
+vulnerability disclosure program reputation, and then both together.
+And by default, it shows just the bug bounty program reputation in the leaderboard.
+So now VDPs, uh, you're, if you're farming on VDPs, that's not going to boost you in the default
+leaderboard.
+It will boost you in the separate and combined leaderboards for VDPs and both, but the default
+leaderboard is the bug bounty program leaderboard.
+That's where you're going to have the most reputation.
+I like, I like that they broke it out.
+And then I liked that they made a bug bounty program, the default.
+And I wonder how this is going to show up on your profile as well, because I think, you know,
+the hacker one leaderboards is great for essentially us people, us folks that are really in the hacker
+one environment.
+And we would like go there and we want to compete and want to see where we're at and
+that sort of thing.
+But I think for a lot of people, um, the profile is the bigger measure, like being able to have,
+you know, hacker one.com slash Ryan reader, you go there, you see, oh, Justin's, you know,
+I don't know this month.
+I'm probably like not even in the top, uh, hundred or whatever, because I've been doing so much
+things for the critical thinkers.
+Um, uh, but you know, like that view that's in the, on the profile, I think it's going to be
+super duper important, like what is being highlighted there and what metrics says, okay,
+in the last 90 days, Justin is, uh, you know, in the top 50 or whatever, as far as a bug bounty
+reputation goes.
+Yeah.
+Yeah.
+And I think I may have said that it already is that they already made the change.
+It's planned.
+I don't know when it's planning on being rolled out.
+This was just tweeted, um, less than 24 hours ago yesterday.
+Okay.
+So yeah, it's, uh, it's still, I don't know, but there's a screenshot, so they're definitely
+like engineering it to some extent.
+It's probably going to come out within the next couple of weeks.
+So, um, pretty soon.
+Well, this is, you know, this is the result of that whole conversation that started
+a while back, uh, with Noggle, I think tweeting something out and starting a fire like he always does.
+Um, and yeah, so it's good to see that them, them actually following through on this and then,
+and then, uh, it also just shows like how long it takes to get like a markup of, uh, of what this
+UI change should look like in these bigger organizations sometimes, man.
+And, uh, you know, that's the world of, uh, software engineering.
+I, I always think things should take less long than they do, but it is what it is.
+Yeah.
+You never know.
+You never know.
+It's always, it's always impossible to plan these things properly.
+Yeah, for sure.
+Alrighty, man.
+Cool.
+Well, let's get into the storm.
+Let the lightning, let the lightning, let the thunder begin.
+It's cracking.
+Yeah, exactly.
+Let's start, let's start brainstorming.
+Okay.
+So I'll start out with a couple and then you like intro, intro Joel style.
+We can, you know, you can just take those ideas and make them better and bounce off of it.
+Okay.
+Sure.
+
+So, um, first, first one that I wanted to talk about, uh, is I think that
+a 403 bypassing workflow in Kaido is something that I really want to want to work on.
+And here, and obviously I know that, that there's a, um, that there's a 403 bypasser plugin in Burp
+Suite.
+Okay.
+Um, and if you look at that plugin, it does, you know, it shows all these like path traversal things
+that it will do.
+And it tries, it lists like maybe eight things that it will try in there.
+And, um, here's the problem with that is I feel like this needs to be custom for each person.
+Because I know there's a ton of tricks that I know that are not in this, uh, 403 bypasser
+extension.
+Right.
+And if I have this 403 bypasser extension, I'm going to see a 403 and I'm going to right click on
+it.
+I'm going to say trigger the, the 403 bypasser extension, and then it's going to do its thing.
+And then I'm going to assume that it tried the things and it's not.
+So this is one of the things that I really like about, about Kaido is like, um, for one,
+there's a lot of ground that Kaido has to make up, uh, on the, on the plugin space and we're moving
+towards it.
+We're, we're, we're knocking it out.
+Um, it'll be there probably within the next year or so.
+But, um, I think that one of the areas where it shines is this whole concept of custom automation.
+Right.
+Not everybody has the time to go break out their Java environment and build their own
+custom burp plugins that are like super hard to write in your using this language.
+And it's just, uh, whereas with Kaido, you've got the, the low code, no code interface for automation.
+You can easily say, okay, Hey, I want to take the request.
+I want to sub, uh, I want to do URL encoding on the last, uh, portion of the, of the path.
+Right.
+And I want to resend that request and I want an alert if that response is different than
+the response that I send without URL encoding that.
+Right.
+This is classic 403 bypass or bypassing technique.
+Right.
+So I think there's a lot of merit to having your own 403 bypassing methodology automated and
+implemented in a workflow, or if you, you are a diehard burp fan in your own burp extension.
+Um, because those things that you know about how to bypass 403s or that you have experience with
+about how to get around a certain control, that's what makes you unique as a hacker.
+And that's what you need to automate.
+Yeah.
+Yeah, for sure.
+I, yeah, I think, um, generally speaking, there's a lot of plugins that need to be ported
+over and we're, there's a couple that we're gonna talk about specifically.
+Yeah.
+Um, so that are like really great plugins that should be ported over.
+Um, and I think probably some of them might be able to be made work a lot easier.
+Mm-hmm.
+Like Kaido, you can call shell commands.
+So if you really want, it's written in Python, which a lot of them are for, to work with Jython,
+like you could just take the core functionality of that plugin, put it in a separate Python file,
+call it out directly from Kaido in a workflow and just, you know, call it a day.
+Don't bother making it more complicated than that.
+Um, but I think some are definitely a little more complicated than that and a lot more involved
+or they have UI components and stuff like that, that need to be converted over.
+Um, but once those things can be ported over, it's going to be huge.
+Yeah.
+And I, I don't know that I mentioned this to you, but there's a, probably by the time this
+episode airs, um, the basic implementation of backend plugins for Kaido will be in place,
+which will open up the possibilities for creating things like Autorize and, um, uh, like, um,
+Turbo Intruder and, and all these sort of, uh, like a single packet attack based thing,
+right. Um, all of these sort of key features of, of burp, um, will be able to be ported over here
+shortly. And I'm really looking forward to that. And I think that's, that's great. And I think it
+also creates an opportunity for us to look at these plugins that we've been trusting for years and
+years and years and say, okay, I've used this tool time and time again, where are my pain points?
+And, and let me make this better when I transition it over to Kaido, you know, or, or when I transitioned
+it over to like a, a men in the middle proxy extension, like we were talking about where
+if you want to write something that is independent of Kaido or independent of burp, right. Then maybe
+men in the middle proxy might be the right solution, or you can just kind of chain these things together.
+And it's a very lightweight intermediate that doesn't cost anything. Um, so yeah, I think there's a lot of,
+a lot of ground to cover up there, but I think, I think we're moving towards it. And I really think that
+whole concept of it customized automation to the hacker, um, will become, will become huge.
+Yeah. Yeah, for sure. Um, on that topic, another one that I would love to see is like hackverter
+type behavior for Kaido. Um, yeah, dude. Okay. So that actually is going to be native and introduced
+like next week. So definitely by the time this episode airs, um, that will be, that will be
+released and essentially how it's going to work is, um, there's going to be, you know, there's this
+whole concept of convert workflows in Kaido, right? You select some range of bytes or whatever, right.
+And it pipes it into a workflow where you can do all sorts of stuff, manipulate it, encode it, decode it,
+run a run JavaScript on it, you know, all that sort of thing. And then essentially that is going to be
+integrated right into the replay tab, which is the Kaido equivalent of repeater in, um, in Kaido.
+Um, and so essentially like we use, uh, you know, how like an intruder and an automate,
+you like select a little region where you're going to start brute forcing.
+Yeah. So yeah. With those little like marker things.
+Yeah. With the little marker things. So we're going to have the same thing like that in Kaido
+where, and it's already built, it's just hasn't been released yet where, um, you select a certain
+portion and you select a convert workflow that goes along with it. And then when you send that request,
+it will automatically dump it through that convert workflow, which is going to be absolutely massive
+for, um, doing some more complicated testing in an environment where like, all right, now I've got
+to like take it and URL encode it, then base 64 encode it, then URL encode the base 64, you know,
+like, and then convert all of the slashes to dashes and like that sort of thing.
+Yeah. I do love how modular the, the like convert workflow, like ideology is, um, cause you can call
+other convert workflows from convert workflows.
+Yeah. I mean, you can chain them. Yeah.
+Yeah. Yeah.
+Yeah.
+So that'll be, but I think the whole, the whole concept is, you know, around the, the workflows is
+you have these little nodes where you can do each individualized pieces, um, along the way in one
+convert workflow. Right. Yeah. Yeah. And they function kind of as extensions in the same way
+as well. Yeah. And so you can write like encapsulated JavaScript in one and then pass it to another
+one and that sort of thing. Right. Yeah.
+Super cool. Super cool.
+Yeah. Hackverter will be great. All right. So let me, let me tell you about this one, man. And actually,
+this one's already implemented and this one is already released to the critical thinkers, um,
+and the discord, which by the, by the way, there have been like 30 plus people that have joined
+the critical thinkers tier over the past like week.
+So they, this book, this book he wrote is a killer. It's, it's, it's, it's flying off the shelves.
+Best seller in the, in the bug bounty world. Um, no, the New York times
+top read his digest.
+100 copies sold.
+No, uh, I really do appreciate that. All of you that have subscribed over the past, uh, week. Uh,
+it's amazing to see so encouraging and thank you for all the positive feedback about the, uh,
+the full-time bug bounty blueprint that's been amazing. Um, so yeah, shout out, shout out to y'all.
+But anyway, the, the extension that I was going to talk about has already been released to, um,
+the critical thinkers, uh, and essentially it's, so have you ever heard of, um, what is the name of it?
+It's like a spin, a spando. What is the spando? Yeah.
+Yeah. Yeah.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+! Yeah.
+
+Have you ever heard of it? Wait, is that the one where you like type something and it converts like
+what you wrote into?
+Yes.
+It's like a tool. It looks like a piece of software you install, right?
+It's like a text expander, right? So I use this all the time and all of my stuff is in here.
+It's amazing.
+And so you showed me this and I think you're crazy for using it by the way, but, but I love you for it.
+It's just, I don't know. It's very like, um, it's very like old school. You know what I mean?
+Yeah. Like I, I'm, I mean, I, obviously I think we all use it in like our own way. Like I use bash aliases.
+Like it's, you know, that's like whatever, but this is like,
+Hey, Mr. Calling me, calling me old school.
+Listen, listen, I use, I use auto correct for this. Okay. So he's old school. I don't,
+I don't use any third party software. I, I, I create like an auto correct, like dictionary entry and
+I'll put like my own custom, like H2, I use like HTML encoding format. So I'll use like,
+and then like a keyword and then semi-colon, and then I'll type that and auto correct.
+You'll be like, did you mean this?
+And you're like, yes, I did. Well, all right. Let me explain to the people who don't even know
+what this is. So Espanso is a text expander. So essentially I type, um, uh, I type colon wh one.
+Right. And that automatically replaces that colon wh one with rhino raider at we are hacker one.
+Right. So whenever I'm trying to like log into my, my accounts for testing and stuff like that,
+I just type colon wh one and it just populates my, my name. Yeah.
+Here's a weird question. Yeah.
+Does it work on Android emulators? Like through, like if you're typing,
+it happens at the, at the keyboard level. Um, so I think it does.
+Does it like backspace?
+So like, yeah.
+Yeah. Okay.
+Which is pretty cool.
+That might work.
+Yeah.
+Cause normally what I have to do is like, I copy something on my clipboard and then I
+switch tabs like into the window and it transfers the clipboard over and then it's like kind of
+clunky, but it works.
+Yeah, it works.
+And that's actually, and that's actually how I implement it. So anyway, I took this concept
+and I was like, wow, this is great. Um, I want something like this for my HTTP proxy.
+Right. Cause I'm constantly going through and I'm like, okay, I've got like Joel's organization ID.
+And then Joel's like account ID. And then, you know, and then I'm Justin's account ID,
+Joel, you know, Justin's organization ID. And you've got all of these IDs and all of these like
+payloads and stuff like that you got to keep track of. And so what you do is, is I built a plugin where you
+just essentially hit it, highlight some text, hit a keyboard binding and give it a name. And now,
+uh, you can access that, that text that was selected, uh, in the replay tab in any, any interface in Kaido
+by just typing like squiggly line and then the name you gave it. And it automatically backspaces the stuff
+you wrote and then inserts the, the stuff that you, you had selected in the beginning.
+Does it use it, uh, a spando for this, or is this like a fully within Kaido?
+This is native to Kaido. I just wrote it in JavaScript and it was really easy.
+So it's like globally anywhere, or is it just?
+What do you, yeah, anywhere, anywhere inside the Kaido interface, because Kaido's front end is all
+JavaScript, right? So, you know, I just wrote a front end plugin that, that just looks for selection
+and waits for this key binding. And then when you hit it, it just pops up in alert box. Say,
+great. You selected the text, ABC one, two, three. What do you want to name it? And you just type like
+a or whatever. And then any type in time you type, uh, whatever that squiggly line is, tilde,
+then it backspaces a backspaces tilde and replaces it with ABC one, two, three.
+Okay. So you, you got me thinking here because I'm using my brain again. Uh-oh.
+Uh-oh. Uh-oh.
+Okay. So, um, I used to, so I still do this sometimes when I'm testing a really complex API,
+sometimes I will go through the effort of writing it out into like PAW or, um, insomnia or, um,
+put a postman or whatever. And I'll, I'll actually structure out the API and I'll build out like parts
+of it, especially if it's something that like, for instance, OAuth 2 signing, major pain in the ass
+to do testing on. So if you use like a rest client, oftentimes it'll do the signing and it'll update
+the header and stuff automatically. Maybe that would be a good kind of plugin in and of itself.
+But, um, the point is for like really complex API testing. Um, one of the really nice features I like
+about these rest clients is they have like the concept of environments, right? So you have like an
+environment with different variables and each of those environments, you can switch between the
+environments, you can define variables, and then you can use those variables throughout your project
+and you can change them in one place. So like, like you said, like user ID, for example, like
+Justin's user ID and Joel's user ID. If I want to do cross account testing, I could create two variables,
+like account one ID, account two ID, and then you could just swap that in easily in different parts.
+I don't know. Wow.
+If you could do that with plugins, but it would be really cool to have some sort of like
+environment plugin or variables plugin where you could define different variables,
+and then you could use those throughout like in your replay tab, um, or wherever you're trying to
+do testing. And then you could change them in one place. You could just have them written down.
+Cause I find that a lot of the time when I'm doing testing, especially with cross account testing for
+ID or some stuff, I just have to like write it down in my notes and just like put it at the top of
+the note and just keep it there. Cause I don't really have a really good way of doing that sort of
+testing other than that. Um, and having it defined within the proxy would be really neat.
+Yeah, absolutely. And, and, and that solves that whole problem of like, okay, your session died and
+now all of your, your repeater tabs or your replay tabs or whatever are, are dead. And now you've got
+to like copy the cookie in, you know, 15 bajillion times until, you know, it, until you've repopulated all
+of your requests and that sort of thing. Right. Well, and I think it's like one nicer step up from
+your expand thing as well, because it, again, like you can update it in one place. So if your account
+gets banned and you have to create a new one and you want to change that all of your expanded text,
+that's like just like static within the request, but this would like reference like a variable,
+so to speak. And then you could just like change it in one place and it would all of them would still
+update dynamically. Yeah, no, I like that. I like that a lot. And I think that's something that,
+that this exact concept is something we've discussed with the Kaido team of creating this
+sort of like global variable of sorts that you can use, you know, and automate and replay and that
+sort of thing. And I would love to see Burp implement something like this too, because at the end of the
+day, something like this should absolutely exist already. And it's kind of odd that it, that it doesn't.
+And it should be pretty easy to do. I know that with, you know, with these convert workflows in Kaido,
+you could sort of hack something like this together where you create a convert workflow that's named
+like Joel's session. Yeah, it just returns a string. Yeah, exactly. And so you could sort of hack this
+together, but I like the idea more, more so of having like a front end environment drop down or
+whatever that you can select when you, before you submit a request or like, maybe it'll be like on
+the send button for, for replay or repeater, it'll have like the send button and then like a little
+drop down arrow or whatever, right? Where you click that and you say, send with Joel's environment or
+send with Justin's environment. Well, and you think about how this could apply to like sessions,
+for example, like that plugin that updates your session in replay. Well, instead you take a request,
+you highlight your session and you right click and you say, you know, assigned a variable session or
+update variable session. And then all of your requests, instead of having a static cookie,
+they're referencing the variable called session. And again, it all updates from one place. So,
+you know, you can dynamically update your requests. You don't have to have big long cookies or whatever
+in every single request. You just have a reference like session variable and, you know,
+Absolutely. That's big, man. That's big. I like that. I would love to see that. I think that one might
+take the cake so far. I mean, I think my expido tool, um, like the reason I wrote it,
+It's like a good V zero, you know? Yeah. It's a good V zero and it's like solves a,
+it scratches an itch that I had in the situation. And it got me, um, a little bit deeper into the,
+the Kaido sort of front end plugin environment, which I really liked, but I think there is a lot
+of room for improvement there. And I think if you were to use something, if they were to implement
+something natively like, um, environments and variables and that sort of thing, then, um,
+then that would be massive. And a lot of this would become irrelevant then. Um, yeah. So no,
+that's really interesting though. Um, anyway, so regarding that plugin until that, this environment
+thing comes out, um, that plugin, I think I'm going to release to the public around Defcon time. So
+depending on,
+It's already released to critical thinkers, right?
+It is, it's already released to the critical thinkers, um, exclusive content channel. So if
+you're interested in that, check out, um, check out ctbb.show slash p slash discord. I should probably
+actually make slash p slash discord. Yeah. Cause it's like, if you do slash slash discord, then it,
+it just takes you right to the discord invite leak. Maybe, maybe I'll make like a ctbb.show
+slash ctbb.com slash ctbb.com slash ctbb.com slash ctbb.com slash ctbb.com slash ctbb.com slash ctbb.com
+Right. Critical thinkers? No. Ctbb.com
+No. Ctbb.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ct-ers. There's a whole conversation that was happening in the discord. That's like,
+we need a better name for us than Ct-E-R-S. Ct-ers. Yeah. We're all from Connecticut.
+Yeah. We're all like C-tier hackers. We're all C-tier hackers. Yeah. Critical thinkers
+slash critical thinkers. All right. I'm just going to make that ctbb.show slash critical thinkers. If
+you want to get into that environment. All right. Jeez, Joel, come on. All right. You want to take
+one or should I take one? Hold on. I'm just reading through. I'm reading through. I'm reading through.
+Yeah. So this trace cookies one is really interesting. I don't know if you have more
+information than what's written down here, but let me just spin off it for a second. So
+I mean, based on what it sounds like, it seems, you know, basically just tracing cookies. Right. So
+I find this really interesting when you're trying to figure out like how login flows work and like
+what's necessary, what's not necessary. We've talked about this a lot with like cookies and I'm
+constantly haunted by whether or not I should be removing my cookies or not because of that one zoom
+ATO. I know. I'm like, I'm like, I'm probably just missing an entire category of bug. But that being
+said, being able to trace stuff and figure out like what stuff to be looking at, I find this to be a
+really interesting category as a whole. And I find myself more and more writing like long filters and
+stuff in my in my Kaido to really narrow down what I'm seeing in my proxy so I can focus in on stuff
+that matters. Yeah. So like CSS files are really cool, but I don't give a crap about them at all.
+You know what I mean? Like maybe, maybe at some point I will care. You know what I mean? But like
+most of the time I don't. So, and the one thing about Kaido, super nice is everything's recorded
+regardless, right? Like with burp, if you have, I mean, the way that I have it configured is when I
+put stuff in like the scope or whatever, it like completely ignores it from the proxy. So if there's
+stuff in the past that may have not matched your current scope rules or proxying rules or filters or
+whatever, then it's completely gone for good. You will never know. But with Kaido, you can bring that
+back. So maybe later if I'm looking for CSS, then I can, you know, find it.
+Yeah. The way, the way I used to configure burp as well is like that. And the reason why,
+and then I stopped doing that once I got this like server that I'm on right now,
+that I'm recording this podcast on right now because, you know, essentially you have to put stuff
+that's not in your scope. Don't like, don't record it in burp or else it'll just blow everything up.
+And you're just, you're going to be, you know, 30 gigs of Google searches.
+Exactly. Exactly. But I think you can afford to not do that in Kaido, which is great.
+And it does allow you to have that sort of retrospective. You can go back and say,
+ah, you know what, actually I really need to know every S3 bucket that's ever been referenced
+by this site. You know, you can do that sort of thing.
+Well, really quick. I find the big thing for me is that I will at some point during my hacking,
+find a domain that either wasn't in my like search or in my scope properly, or that I didn't know about,
+and I'll need to add it later. And all the previous requests I now have, instead of just like being
+a completely blank slate and trying to figure out where that's used from then on.
+Yeah, I dig that too. But what I was going to say with regards to the trace cookie thing is like,
+here's my vision for this. Like, I want to be able to select a cookie and say like,
+give me a history of this cookie. And this cookie was like set in this request,
+and reset in this request. Like the, like the follow, like trace,
+in Wireshark, how you can follow a packet. Yeah. Trace route. Is that kind of what you're
+talking? Oh, no, no, no, no, no, no. Trace stream.
+You could, yeah. Trace stream, how you can basically like put together a series of TCP packets.
+TCP stream. Yeah, that's it. Yeah. Yeah. So like something like that. Is that what you're
+doing? Exactly. And it's a little bit tricky because you don't know whether it's being,
+you don't have a great way without resending every request with every single permutation of cookie to
+determine whether a specific request needed a cookie or not. Right. So it's a little bit tricky
+to know what requests exactly needed what cookie. But what I would say is if it,
+you could definitely trace the updates, right? Like, yeah, where it's being used is just like,
+I mean, generally speaking, if it's being sent in the request, whether or not it's needed,
+I think cookies are like so broad as a whole that it's really difficult unless you have like, again,
+like a separate, there is that plugin for burp, that minimum request minimizer. Yeah. Yeah. Yeah.
+That does. That basically does that. But I think at least the setting part of like following where
+it's being set, where it's being updated, that you could definitely do pretty easily just based on
+the server responses and where you have a set cookie header being being returned. Yeah. So I think
+creating some sort of mapping, you know, following the lifespan of a cookie would be really interesting.
+And then also take looking at a cookie and saying, okay, where, when is this value found in the
+response ever? And just kind of tracing those things as well. And then maybe even integrating. So this
+kind of goes down to what I was talking about a little bit later in this document, which is,
+it would be really great to have something that seamlessly hooks into the front end in both Kaido
+and burp and, and, and, and, um, uh, Dom invader sort of does this with, with burp. Uh, but I think
+there's, and I'm not a Dom invader master by, by any stretch, but I think there's some, some things to
+be improved upon in that arena. And, and I think this could be a really cool one, which is if there is
+some way for us to determine whether a document.cookie is being accessed and then parsed, and then this
+specific cookie is being utilized by the front end, uh, at a specific page, um, and trace back that
+JavaScript execution. That would be also a really valuable piece of this whole, whole like trace
+cookie profile that we would build. Um, and, and man, this sort of introspection would just breed the
+coolest bugs ever because that's one of the things that's like getting my goat right now is I don't
+have enough introspection into when a front end application is looking for a cookie and not
+finding it. Um, looking for a cookie, finding it and doing something that I don't know about,
+looking for a query parameter and not finding it, you know, and that sort of thing. So I need to do
+more Dom hooking to actually understand what's actually happening at the application level.
+And I want to create some sort of heads up display either in the browser, just like maybe like,
+I'm thinking like a marquee, you know, toolbar across the top of the browser, or like maybe in Kaido
+natively or something like that, where it says, um, this page that you're on, uh, looked for these
+eight, uh, query parameters. Uh, and we know this because we hooked URL search parameters or something
+like that. Right. Uh, that, that, that, uh, tool for parsing out query parameters. Um, so yeah, I guess
+that's my rant. I would love more introspection into that. Yeah. Yeah. And I think it's really
+interesting. I mean, I think both Kaido and Burp have like, we're out their own like browser
+integration type thing where you can launch a browser and it like auto proxies or whatever.
+I honestly can, I've had so much trouble like getting behind that just because like, I'm very
+used to like, you know, my certain flows or whatever extensions. Yeah, exactly. Exactly. Yeah. So I don't
+really like doing that. That being said, one thing that I've done, and I don't know if a lot of people
+do this is burp. The only way that I know that you can use Dom invader is if you use the burp built-in
+browser, right? But if you look in the way that works, it actually loads, uh, like a dev extension
+from like a specific folder. You could do that. I use Chrome, uh, as my testing browser. So I just,
+in my profile, I, you know, enabled dev and I load it from the same folder in my own Chrome instance
+so that I can continue my testing and I can also use Dom invader still. Um, and it works fine. I think
+like half the tool doesn't work properly because it's not like hooked in, but yeah, it's, um,
+I, I, I would imagine that Kaido could probably do something similar there or, you know, verb2 where
+you could have, um, you know, an extension that you can point your browser to load and that will
+interface with your proxy at a more deep level where you could do that type of stuff where you're talking
+about like interfacing with the front end and checking for variables and query parameters and
+hooking and just wrapping around like all those different types of things. Yeah. Someday, man, I'm really
+looking forward to that because I think there's so much, as I start to understand the web environment
+a little bit better and I, and I start understanding like, Hey, these individual top level pages have so
+much more encapsulated in them than what comes through the HTTP proxy in modern day web apps because
+of JavaScript and just how much stuff JavaScript does in so many different spots. And it's not like you can
+just look at one spot and be like, this is what it does or this is what it doesn't do. You know, there's
+like all sorts of middleware throughout this whole flow. Um, and so tracing that out would be, would be
+massive and definitely some, some, uh, some massive challenge. I think that'd be really cool. Um, and, and
+while we're on the, on the cookie front, let me just talk about this next one really quick. So I have in the,
+in the doc, you're setting cookies that you're not responsible for. So I saw this the other day and I, and it's like a pretty,
+it's like an informative thing. Like it's not, it doesn't indicate a vulnerable or anything, but I saw
+a, a website, you know, let's call it site.com setting a cookie where the domain was scoped for
+like backend.site-dev.com. Right. You know? And it's like, and that was in the domain attribute
+for the cookie. And I was like, Hmm, that's a little interesting. Uh, and you know, you hear people
+talking about like, look at the CSP headers, like brute force for V hosts, that sort of thing.
+And this is another area where you can find internal host names that correlate to your application
+that you may be able to use in other areas is, um, if it's setting a cookie that it's not
+authoritative for on this specific domain. Yeah. That's super interesting. I wonder if they
+just did that for like the ease of developer testing or something so that it works on the
+developers laptop as well. It's a bug. I mean, it wasn't an important cookie and, and that was the,
+the name of the backend server. And it just like defaulted to whatever it perceived its own host
+name to be. Um, so, but yeah, I thought that was, I thought that was really interesting.
+That is very interesting. Um, one thing that you, that you put in here, but I also expanded on,
+um, highlighting or bolding, uh, basic to foreign coded values. So I think that'd be really neat if it
+just automatically sort of showed you that, you know, this thing is a basic for foreign coded.
+Um, that's probably a little hard to do accurately. I think, uh, if you just think about like writing
+a regex second properly and accurately, or any way of, you know, just generically saying, oh,
+this is basically for, as a human, we can like eyeball that so much easier, uh, honestly. Um, but,
+uh, that being said, so you can highlight values and it'll try and auto decode it. Um,
+in both Kaido and Burp, I'd love to see some expansibility for that, where we could, you know,
+write your own decoder, or maybe there's some custom value or encryption that the application's
+using and you can just like double click on it and you could, you know, specify that you want
+to use your own custom decoder instead. And again, just pipe this through workflows or something. Um,
+and, you know, just be able to do some extra easier custom decoding without having to constantly
+like right click or pop something up or whatever. Yeah. So, so, because currently in,
+in Kaido to do that, you have to select, then right click, go to the convert workflow and click it.
+So it's like three, three clicks if you're going through that whole thing.
+Well, and you could see how this could also be awesome with like match and replace rules as
+well. If you could do that, where you could just do a match and replace rule to call a workflow
+and just say like, okay, if this matches, like select this regex and then
+that's exactly what I want them to do too, is like convert workflows and match and replace would be
+super cool. Um, and then you just define like a regex on the front end and then like a convert
+workflow to actually like pipe through it. I think that would be really amazing. So I think that one's
+on the, on the unblest as well. But what I kind of wanted to see with the base 64 encoded values was,
+um, in burp, there are some extensions that will be like, Hey, this thing is basically foreign coded,
+just FYI. Right. And then here's the value. I think that might be even like built into burp by default or
+whatever. Um, instead of putting that in my findings tab, I would love for that like base 64 encoded
+string to be like underlined or in a different color or like, yeah, where you hover over it,
+have some little tool tip or something like that, that draws my attention to it because I'm very rarely
+when I use burp going into the findings tab and being like, all right, let me just like check out
+what's in the informative section, you know, like, it's always when you're, when you're having some
+problem. And then at like three hours later you go and you check in, your answer has been sitting
+there and you're like, Oh, exactly. Exactly. I didn't have the certificate and stuff. Exactly. So
+I think there's some room for improvement there as far as usability goes, because there are some
+detectors, but having it underlined or like having a little tool tip on it would be really good.
+Um, yeah. All right. Let's see. I see you wrote GPT integration, but I, this already exists.
+I know it exists. They were early on the train. They were, they were. And I, and I think that
+there's cool stuff that you can do with assistant, uh, in Kaido. Right. Uh, and I think that's great.
+I think there's room for improvement. The reason I say this is because I've recently started using
+copilot and copilot is unbelievable. Like absolutely unbelievable, uh, in VS code, right? Where, where you're
+trying to write some code and you just like write a comment that says like, write this function that
+reverses the string and XORs it. And then, you know, and, and then all of a sudden it just, boom,
+it's there. And, and I just, wow. Like how stunning is that? And I think there's lots of ways that we
+could integrate this into, um, into Kaido or to burp that would be really like friction reducing. So,
+you know, I'm trying to write out this whole syntax. Uh, I can just select the code, you know,
+this whole bunch and say, dude, make this modification to it, you know, encode every
+slash with, uh, you know, a double URL encoding and just type that out. And then the AI just does it.
+Or like, um, one area that I said, and actually, um, we've kind of shouted this out a couple of times.
+There's actually a Kaido plugin for this now, um, surrounding actually auto renaming. Yeah.
+It's called AI replay, uh, rename by riddle. Um, like renaming your tabs in, in replay in Kaido,
+uh, based off of using AI to do that, to make an intuitive name. So like, oh, this is the get
+request for this end point, uh, that gets the user information, you know, does that use the built-in,
+does it use the assistant like backend that's built in Kaido to do all that? Okay. Yeah.
+So there's like a certain number of like token counts you get, uh, if you're a kind of pro user
+or whatever. Um, but I just think after using, uh, the copilot and just being able to like select a
+bunch of text and then say like fix bug and then just describe what I wanted to change and then have
+it do it. I just like, wow, we need this in an HTTP proxy. Yeah. Yeah. And I think the big thing would
+be if they could figure out how to make some sort of assistant that is specifically geared towards
+that and trained on that type of data. Like one of the reasons that copilot is so good at code is that
+it's specifically geared towards writing code. So it's really, really good at that. And like chat GPT
+can write code sometimes. Yeah. Depends on what it's doing. Um, but you know, yeah, it's pretty good,
+but you know, a lot of the time, well, some of the time it definitely will miss, um, because that's not
+really what it's, you know, designed for. Whereas copilot is like trained on, you know,
+GitHub and stack overflow data and all that kind of stuff. So it's like very, very specifically
+designed to write code. Yeah. Okay. I agree. And I, and I want to say that in addition to that,
+I think this is one of the few areas where it's like, I wouldn't really say to the burp team or to
+the Kyto team, like, Hey, you should implement this natively. Like, I think this is something that
+I would actually pay for as a plugin. Like there's very few plugins that I would like shell out cash
+for. I don't know why that is because I'm sure some plugins would make me tons of ROI. Uh, but like,
+I don't know, it's just a, now that I'm saying it, it sounds, it sounds dumb, but, uh, but you know,
+like you've got JS weasel, right. Which is a, you know, an enterprise product for assessing JS code.
+Right. I think definitely, I haven't purchased it yet, but I think very soon when it meets the capabilities
+that I'm looking for, that will be a buy. And I think this could also be a buy where it's like,
+Oh, there's a really, really, really high quality, um, AI plugin for burp and for Kyto. Um, and this
+is a startup and it costs $30 a month if you want to use it or $50 a month or whatever. And it just
+reduces friction left and right in your HTTP proxy and allows you to just describe what you want. And it
+just does it. You know? Um, I think that, I think that could be a really amazing product.
+Super interesting. Maybe you shouldn't have said that on the podcast.
+You know, I'm here to add value. I'm here to please take my startup idea and do something with
+it. I would love that. All right, man. Um, I got to bounce. Uh, there are a couple more ideas in here.
+Maybe I'll be late to this next meeting.
+Are there any that you, all right, I'll tell you what, pick your top two. Cause there is one I, I
+still wanted to talk about. Um, and, or, so I would pick your top one and I'll talk about this one. So,
+um, the one that I'd mentioned, you, you mentioned that, um, uh, I think you said, uh, uh, Hakopiku
+was talking about, um, you know, how this, this, uh, this functionality that Gareth had identified is
+really good for a lot of stuff. Well, I was thinking like right off the bat, I was like, well,
+there should be a OAuth testing plugin. And then I looked through the list and on the list,
+it says something for attacking OAuth specifically. And then there's a link to this burp plugin called
+OAuth scan that it does exactly this. So yeah, this is another one of those ones that I mentioned that,
+is probably just a direct port. I don't know if this one's going to be so easy. It looks like it's
+written in Java and it's like pretty in depth. Um, and it does like a lot of different tests and stuff,
+but this would be another one of those great ones to port over and get working in Kaido. And
+in addition to that, maybe add this functionality, customize it a little bit, like you said, to add in
+this additional scan, uh, for this additional, um, you know, a bypass or whatever you want to call it,
+that Gareth described this behavior. Yeah, no, I, I, and I think, I think it's great that they have
+all these, all these, you know, extensions already in burp. And I think, you know, it's just one of
+those scenarios where it's like, wow, there's so many pieces that I don't know about. Right. So many,
+so many extension code, you know, pieces of extension code that I don't know how they work.
+And I should probably just deep dive in and learn how to use it, uh, efficiently or whatever.
+Or I could just write my own. Cause I have to know, I have to have that gut sense anyway, as the hacker.
+Yeah. Like this is actually goes, goes to a pretty, a pretty big hacker topic. Cause I've always
+wondered like, what makes hackers so scrappy? Like, why don't we just want to pay for something?
+Or why don't we want to just use these tools? Why don't we want to reinvent the wheel every time?
+And I think the reason for that is because we need to know what is happening at, you know,
+at a low level so that we can feed that gut and that intuition of like,
+this feels like something I should apply this tool to, you know? Yeah. Um, so I don't know.
+I'm sure there's more to suss out there, but, um, okay, let me, let me, let me just, I'm gonna,
+I'm gonna do two. I gotta go like, okay, like two minutes, but I'm gonna try to cover two more,
+two more extensions really quickly. Okay. One is I would like some extension that allows you to
+specify where an API lives and then, um, makes sure that you have 100% coverage of that API. So
+let's say I give it a path. I say, okay, all this stuff for, um, you know, Epic games lives under
+epic games.com slash API. Right. And essentially I want to see in my HTTP history, if there is a API
+endpoint that I'm missing, that I haven't sent to repeater or haven't marked as like boring.
+I want that like glowing in my HTTP history, you know? Okay. Yeah. So, so like coverage,
+like a reverse target where like in burp, you can have like your target of like things that are under
+domains of endpoints that belong to that domain. But instead you say, here's all of the endpoints that
+exist and it would say, okay, here's a request for every single one of these and then highlight the
+ones that don't have a request. Yeah. Well, absolutely that. But also when a new one comes
+through and this is like, you know, one that I haven't sent a replay or haven't marked as boring.
+I want that like glowing in my HTTP history. Like, Hey, there's this new one that you haven't seen that,
+you know, got bundled in with the other requests that happened when you went to this page.
+Yeah. So like marking a, uh, endpoints as like processed or seen basically as well within the scope.
+So that when something new comes up that, you know, you can mark them all as seen, but then you can,
+yeah. So that I can be sure that I have coverage of all of these API endpoints and I understand
+every single freaking thing about this application. Cool. Okay. Cool. And then next one, sorry, last one
+is that man, there is, why is there not good note taking in either Kaido or burp? Like how cool would
+it be to be able to write notes and like reference, um, tab numbers and like, bro, there's this,
+there's this notes, uh, organizer thing or whatever. And burp, I've tried to use it. I can't even tell
+you how many times, uh, more than 10, it's never worked. Never. I clicked the button. Nothing happens.
+I gave up. Yeah. So it's like, I just feel like this is something that should be super pivotal. And
+instead we all have like notes.as, you know, uh, asked if dot txt or whatever, uh, notes dot txt.
+And then we all just kind of dump stuff into. Um, but man, it would be really, really helpful to be
+able to like apply a note to a specific path regex or like apply a note to a specific, um, request,
+uh, or just lots of functionality that should be built out surrounding that. Um, all right, cool.
+That's it. I got to run, but notes, please, please somebody build that notes at least notes. Yeah,
+exactly. Awesome. Good pod. Cool. All right. Catch you later. And that's a wrap on this episode
+of critical thinking. Thanks so much for listening. And if you want more critical thinking content,
+head over to ctbb.show slash discord, join the discord. There's lots of great conversations and
+chats going on over there. And if you want to support the show, there's the discord subscriber tiers,
+which give you access to masterclasses, AMAs, hack alongs, exclusive scripts,
+and an exclusive chat channel with us. We'll see you there.

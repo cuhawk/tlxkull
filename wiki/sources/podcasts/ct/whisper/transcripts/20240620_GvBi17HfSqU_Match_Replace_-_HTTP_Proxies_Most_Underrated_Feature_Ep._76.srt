@@ -1,0 +1,4836 @@
+1
+00:00:00,720 --> 00:00:05,840
+My experience has been that if you can show impact, if you can show a pricing matrix table
+
+2
+00:00:05,840 --> 00:00:12,720
+that says, hey, you should not be able to configure the single sign-on for a non-enterprise
+
+3
+00:00:12,720 --> 00:00:17,520
+organization and you can, and it works for a pro-level organization or something like that,
+
+4
+00:00:17,520 --> 00:00:23,760
+and there's a little X in the box for pro and there's a little check mark in the box for business,
+
+5
+00:00:23,760 --> 00:00:24,640
+then they're normally like...
+
+6
+00:00:24,640 --> 00:00:26,880
+The true crux of having documentation for your product is...
+
+7
+00:00:26,880 --> 00:00:28,000
+I do. I mean, that's the real shit, right?
+
+8
+00:00:28,000 --> 00:00:29,680
+There's a book bounty hunter reading it.
+
+9
+00:00:29,680 --> 00:00:31,120
+Like, that's the real...
+
+10
+00:00:31,120 --> 00:00:32,640
+You know, and...
+
+11
+00:00:32,640 --> 00:00:35,200
+If you never make documentation, then they can't call you out on it.
+
+12
+00:00:35,200 --> 00:00:49,520
+Hey everyone, this is TechnoGeek here. Just wanted to give a quick shout out to our latest sponsor, Project Discovery.
+
+13
+00:00:49,520 --> 00:01:07,200
+Now, Project Discovery makes a lot of tools that you probably know of or have even used. One of them is Nuclei, and the latest release of Nuclei is version 3.2. Now, 3.2 comes with a lot of really awesome new features. Two that I really wanted to highlight here for you are the authenticated scanning,
+
+14
+00:01:07,200 --> 00:01:17,200
+and the advanced fuzzing support. Now, for authenticated scanning, it used to be that you would have to do all your Nuclei scanning against unauthenticated endpoints, or you'd have to add your cookies manually, all that kind of messy...
+
+15
+00:01:17,200 --> 00:01:29,200
+No more. It's all automatic. You can use existing login templates to automatically log in to your application, and then you can run all your existing Nuclei templates against an authenticated part of the application now to really increase your coverage.
+
+16
+00:01:29,200 --> 00:01:41,200
+The other that I mentioned is advanced fuzzing support. Now, Nuclei had added way back in version 2.8 the ability to fuzz different things, but now they've expanded this comprehensively across the board.
+
+17
+00:01:41,200 --> 00:01:53,200
+So not only can you fuzz in the normal spots, but you can fuzz within headers, you can fuzz within cookies, you can fuzz within specific parts of the body, whether that's in JSON or XML or form data.
+
+18
+00:01:53,200 --> 00:02:08,200
+And so many of them are in the same way that you can fuzz within the normal spots, but you can fuzz within headers, you can fuzz within cookies, you can fuzz within specific parts of the body, whether that's in JSON or XML or form data.
+
+19
+00:02:08,200 --> 00:02:25,200
+And so many more things. So if you want to learn more about what came in Nuclei 3.2, go ahead and check out the release blog post over at NUX.GG slash podcast. That's NUX.GG slash podcast. Thanks.
+
+20
+00:02:25,200 --> 00:02:29,200
+You hear that?
+
+21
+00:02:29,200 --> 00:02:32,200
+Nothing like the sweet smell of allergies.
+
+22
+00:02:32,200 --> 00:02:39,200
+That is the sweet sound of a clear nasal passage.
+
+23
+00:02:39,200 --> 00:02:39,200
+
+
+24
+00:02:39,200 --> 00:02:41,200
+The sickness is gone.
+
+25
+00:02:41,200 --> 00:02:42,200
+I'm almost there.
+
+26
+00:02:42,200 --> 00:02:45,200
+I'm like 90% of the way there.
+
+27
+00:02:45,200 --> 00:02:46,200
+All right.
+
+28
+00:02:46,200 --> 00:02:47,200
+Well, hang in there, man.
+
+29
+00:02:47,200 --> 00:02:48,200
+Hang in there.
+
+30
+00:02:48,200 --> 00:02:52,200
+I'm feeling 110% back in the game after last week.
+
+31
+00:02:52,200 --> 00:02:53,200
+That's good.
+
+32
+00:02:53,200 --> 00:02:54,200
+Having a nice restful week off.
+
+33
+00:02:54,200 --> 00:02:56,200
+So thanks for taking over the pod last week, man.
+
+34
+00:02:56,200 --> 00:02:58,200
+Yeah, of course. Absolutely.
+
+35
+00:02:58,200 --> 00:03:03,200
+We got some stuff we're going to cover today, as usual.
+
+36
+00:03:03,200 --> 00:03:07,200
+You've been doing some hacking lately.
+
+37
+00:03:07,200 --> 00:03:09,200
+You want to talk a little bit about that?
+
+38
+00:03:09,200 --> 00:03:12,200
+Sure. Yeah, I talked about it a little bit at the beginning of last episode.
+
+39
+00:03:12,200 --> 00:03:17,200
+But yeah, I've been, I took a little vacation.
+
+40
+00:03:17,200 --> 00:03:22,200
+And I was, I got that little itch again.
+
+41
+00:03:22,200 --> 00:03:28,200
+And I just started digging in on some target that I had been interested in for a while.
+
+42
+00:03:28,200 --> 00:03:34,200
+And I just found a bunch of really interesting, you know, sort of almost bugs and stuff.
+
+43
+00:03:34,200 --> 00:03:37,200
+And then I hit a bit of a stopping point.
+
+44
+00:03:37,200 --> 00:03:39,200
+So I sent a bunch of it over to you.
+
+45
+00:03:39,200 --> 00:03:44,200
+And then in like five minutes, you started escalating stuff.
+
+46
+00:03:44,200 --> 00:03:48,200
+And then we like, we like started writing stuff up.
+
+47
+00:03:48,200 --> 00:03:53,200
+We submitted it and we checked the scope page and it was explicitly out of scope.
+
+48
+00:03:53,200 --> 00:03:55,200
+So we self closed it.
+
+49
+00:03:55,200 --> 00:04:00,200
+So yeah, it's just one of those things, but it was, it was a good experience.
+
+50
+00:04:00,200 --> 00:04:03,200
+Have you, have you followed up with that target at all after that day?
+
+51
+00:04:03,200 --> 00:04:07,200
+Or did we, did we get a gut punch there with the out of scope?
+
+52
+00:04:07,200 --> 00:04:14,200
+Um, well, I think had, I had to return back to normal a little bit as well.
+
+53
+00:04:14,200 --> 00:04:18,200
+So I think, um, I lost a little bit of the momentum.
+
+54
+00:04:18,200 --> 00:04:23,200
+So, haven't returned back to the target yet, but maybe I will.
+
+55
+00:04:23,200 --> 00:04:24,200
+Do you think you will?
+
+56
+00:04:24,200 --> 00:04:25,200
+I might, I might.
+
+57
+00:04:25,200 --> 00:04:27,200
+I think that there's, there's some other things for me to look at.
+
+58
+00:04:27,200 --> 00:04:29,200
+That website was sketchy as heck, dude.
+
+59
+00:04:29,200 --> 00:04:32,200
+There's a lot of weird things going on.
+
+60
+00:04:32,200 --> 00:04:33,200
+There was, there was a lot of weird stuff.
+
+61
+00:04:33,200 --> 00:04:48,200
+I think it happens, you know, sometimes it, and I think it's good to put it on air and on the pot as well, that, you know, this sort of thing happens to more experienced bug hunters as well, where you're just like, you know, you kind of get in your flow or you're excited to look at a target or whatever, and you start poking at it, poking.
+
+62
+00:04:48,200 --> 00:04:49,200
+What did you say?
+
+63
+00:04:49,200 --> 00:04:51,200
+Pokity, pokity, pokity, poke at it.
+
+64
+00:04:51,200 --> 00:04:54,200
+Poke at it until you can't poke at it anymore.
+
+65
+00:04:54,200 --> 00:05:02,200
+And then, um, and then, you know, you realize something's out of scope and you know, it's just that the L's we take along the way in bug bounty.
+
+66
+00:05:02,200 --> 00:05:03,200
+Right.
+
+67
+00:05:03,200 --> 00:05:04,200
+It happens.
+
+68
+00:05:04,200 --> 00:05:05,200
+It happens.
+
+69
+00:05:05,200 --> 00:05:06,200
+It's all part of the process.
+
+70
+00:05:06,200 --> 00:05:07,200
+You know, it is indeed.
+
+71
+00:05:07,200 --> 00:05:08,200
+It is indeed.
+
+72
+00:05:08,200 --> 00:05:20,200
+So speaking of L's, um, I did want to talk a little bit about the, uh, the ambassador world cup because every other country besides the U S is going to be taken in L.
+
+73
+00:05:20,200 --> 00:05:23,200
+Uh, no, um, uh, hopefully that's true.
+
+74
+00:05:23,200 --> 00:05:25,200
+I was sure you were going with that.
+
+75
+00:05:25,200 --> 00:05:26,200
+I was like, wait a sec.
+
+76
+00:05:26,200 --> 00:05:36,200
+Um, no, uh, I just, so, you know, the first round of the ambassador world cup has been completed and the results are not.
+
+77
+00:05:36,200 --> 00:05:49,200
+Um, and when I say the ambassador world cup, of course, I'm speaking about the hacker one ambassador world cup hacking competition where, um, ambassadors from all of the different countries around the world, uh, and their teams are competing in a hacking competition.
+
+78
+00:05:49,200 --> 00:05:58,200
+Um, for, uh, what last year was an in-person live hacking event and, uh, a bunch of prizes and that sort of thing.
+
+79
+00:05:58,200 --> 00:06:00,200
+So, um, pretty fun little thing.
+
+80
+00:06:00,200 --> 00:06:07,200
+Uh, however, something was really odd with it this year, which kind of threw me off a little bit as a full-time hunter.
+
+81
+00:06:07,200 --> 00:06:07,200
+
+
+82
+00:06:07,200 --> 00:06:13,200
+So we've got 700 over 700 hackers participating in this, right?
+
+83
+00:06:13,200 --> 00:06:14,200
+It's pretty big.
+
+84
+00:06:14,200 --> 00:06:15,200
+It's, it's massive.
+
+85
+00:06:15,200 --> 00:06:16,200
+It's massive.
+
+86
+00:06:16,200 --> 00:06:22,200
+So just for, for scale size, that's, you know, 15 times the normal live hacking event, right?
+
+87
+00:06:22,200 --> 00:06:25,200
+50, you got 50 people, you know, roughly.
+
+88
+00:06:25,200 --> 00:06:28,200
+So it puts it at a pretty decent ratio there.
+
+89
+00:06:28,200 --> 00:06:32,200
+Um, there's no dupe window.
+
+90
+00:06:34,200 --> 00:06:40,200
+That seems a little off to me, man, because like for me as a full-time hunter, who's doing this for my livelihood, right?
+
+91
+00:06:40,200 --> 00:06:43,200
+Why am I going to expose myself?
+
+92
+00:06:43,200 --> 00:06:52,200
+So expose myself to what is the equivalent of probably a hundred times or more the dupe risk.
+
+93
+00:06:52,200 --> 00:06:58,200
+And man, I have seen some absolutely gutting dupes come through from this live hacking event.
+
+94
+00:06:58,200 --> 00:07:07,200
+Like, like people working really hard, getting what should be 25 K plus crits getting duped out.
+
+95
+00:07:07,200 --> 00:07:12,200
+Um, within, and they submitted them within, you know, the first couple of days of the competition.
+
+96
+00:07:12,200 --> 00:07:13,200
+Yeah.
+
+97
+00:07:13,200 --> 00:07:14,200
+Yeah.
+
+98
+00:07:14,200 --> 00:07:15,200
+So I think, I don't know.
+
+99
+00:07:15,200 --> 00:07:16,200
+It seems a lot to me.
+
+100
+00:07:16,200 --> 00:07:17,200
+Yeah.
+
+101
+00:07:17,200 --> 00:07:27,200
+So we have participated in the ambassador world cup before, um, from the programs that I have, I have.
+
+102
+00:07:27,200 --> 00:07:33,200
+Um, and I think I don't remember how it works and they might've changed it this year.
+
+103
+00:07:33,200 --> 00:07:34,200
+Um, but it's, could be a points thing.
+
+104
+00:07:34,200 --> 00:07:39,200
+So one thing to remember is that teams are given points based on the severity of bugs found.
+
+105
+00:07:39,200 --> 00:07:44,200
+I don't recall how duping affects that and whether or not dupes count.
+
+106
+00:07:44,200 --> 00:07:49,200
+Like if you have a dupe of a crit, does that count as points, even though it's not a bounty?
+
+107
+00:07:49,200 --> 00:07:50,200
+No, it does not.
+
+108
+00:07:50,200 --> 00:07:51,200
+It does not.
+
+109
+00:07:51,200 --> 00:07:56,200
+So, so it's like, it's kind of like a double whammy because obviously, you know, if dupes counted, you would be getting some gamification of that, that whole thing.
+
+110
+00:07:56,200 --> 00:07:57,200
+Yeah.
+
+111
+00:07:57,200 --> 00:07:58,200
+Yeah.
+
+112
+00:07:58,200 --> 00:07:59,200
+Yeah.
+
+113
+00:07:59,200 --> 00:08:00,200
+Yeah.
+
+114
+00:08:00,200 --> 00:08:04,200
+But, um, you know, it's, it's no bounty, no, no points.
+
+115
+00:08:04,200 --> 00:08:05,200
+Right.
+
+116
+00:08:05,200 --> 00:08:20,200
+And, and I could understand if, if they wanted to say like, okay, you know, we'll, we'll give you, um, you know, no points because whoever gets the first submission in gets the points, but no bounty.
+
+117
+00:08:20,200 --> 00:08:29,200
+Like, like, like, I mean, so across these 700 hackers, so many, so many of them have spent all this time hacking on these targets.
+
+118
+00:08:29,200 --> 00:08:36,200
+Can you, I can't even fathom the amount of like hacker hours wasted because of dupes on this.
+
+119
+00:08:36,200 --> 00:08:37,200
+Right.
+
+120
+00:08:37,200 --> 00:08:38,200
+Whereas at least with the life.
+
+121
+00:08:38,200 --> 00:08:40,200
+And then here's the other piece of this, right?
+
+122
+00:08:40,200 --> 00:08:44,200
+Like the bounties aren't that inflated for the ambassador world cup.
+
+123
+00:08:44,200 --> 00:08:44,200
+
+
+124
+00:08:44,200 --> 00:08:52,200
+So it, it, if they were mega inflated, it's like, okay, well I'm exposing myself to a little extra risk for a little extra reward.
+
+125
+00:08:52,200 --> 00:08:53,200
+Right.
+
+126
+00:08:53,200 --> 00:08:58,200
+But the only reward in this situation is you get to move on to the next round of the ambassador world cup.
+
+127
+00:08:58,200 --> 00:08:59,200
+Right.
+
+128
+00:08:59,200 --> 00:09:00,200
+Yeah.
+
+129
+00:09:00,200 --> 00:09:10,200
+And, and so I think, I think for me as a full-time hunter, it's hard for me to justify just from a financial perspective, whether like, should I be investing time in this or not?
+
+130
+00:09:10,200 --> 00:09:16,200
+Because at the end of the day, my dupe risk is so much higher and my reward is nominally, you know, more.
+
+131
+00:09:16,200 --> 00:09:17,200
+Yeah.
+
+132
+00:09:17,200 --> 00:09:18,200
+So I don't know.
+
+133
+00:09:18,200 --> 00:09:19,200
+Maybe I'm off base with that.
+
+134
+00:09:19,200 --> 00:09:26,200
+That being said, I did put, you know, I want to say like 15 hours or so, like two days into the competition just to kind of support my team.
+
+135
+00:09:26,200 --> 00:09:27,200
+I got a couple triaged bugs.
+
+136
+00:09:27,200 --> 00:09:28,200
+Nice.
+
+137
+00:09:28,200 --> 00:09:44,200
+So, you know, it is what it is, you know, it'll, it'll, it'll pan out one way or the other, but I, I next, and, and also let me just caveat this explanation with like, I get that it's hard for hacker one to deal with dupes at this scale.
+
+138
+00:09:44,200 --> 00:09:55,200
+You know, when, when we're dealing with, you know, 700 hackers, how are, how do you even in like 1400 submissions, how do you even dedupe across 1400 submissions?
+
+139
+00:09:55,200 --> 00:09:58,200
+Very challenging across three targets even.
+
+140
+00:09:58,200 --> 00:10:09,200
+But I still think that it strongly de-incentivizes the hacker, the hacker that takes their time and, and, you know, time investment in these sorts of things seriously.
+
+141
+00:10:09,200 --> 00:10:30,200
+Yeah. Yeah. Yeah. It's definitely tricky. Um, cause I don't think the programs are asked to operate, you know, really differently than, you know, they're basically still, um, the public programs that are participating. Right. So it's, um, it's not like a full on live hacking event or anything like that. It's like halfway between.
+
+142
+00:10:30,200 --> 00:10:42,200
+So, yeah, I did, I did appreciate that the, that the bounties for the, um, for one of the targets, they increased the mediums and the lows at least, which is like, okay, you know, that's something.
+
+143
+00:10:42,200 --> 00:10:54,200
+Yeah. And, and I think increasing mediums is an under underrated play by programs because that really does help put some, some, you know, cash back in the hacker's pocket along the way.
+
+144
+00:10:54,200 --> 00:11:04,200
+Especially if you're like a, a very, like a chain heavy, um, and like a, uh, a sort of a progressive hacker, like I am, like I'll get in there and I'll find a couple of mediums.
+
+145
+00:11:04,200 --> 00:11:10,200
+You know, I'm looking at these sort of medium and low severity bugs as well as going for these bigger ones instead of trying to put them all together.
+
+146
+00:11:10,200 --> 00:11:13,200
+So, but sometimes along the way, you're just going to run into some mediums.
+
+147
+00:11:13,200 --> 00:11:15,200
+So it definitely helps to get those paid out well.
+
+148
+00:11:15,200 --> 00:11:34,200
+Yeah, for sure. And I will say like the, the, the one advantage that, um, there is to sort of, you know, making it to that next round, uh, other than, you know, just the fact of making it there is that theoretically that do, you know, rate or whatever goes down as you, you know, filtered down to, if you're
+
+149
+00:11:34,200 --> 00:11:43,200
+more and fewer teams. So in theory, it does get easier in a sense or hard, you know, harder, but easier, like less dupes, um, but more skilled teams.
+
+150
+00:11:43,200 --> 00:11:53,200
+Yeah. Yeah. It's, it's more of a hustle. I think, you know, in this, in this first round, then it will be in the later rounds. And that's what some of the guys in the chat were saying, but, um, yeah, you know, maybe it's, it's the price you pay.
+
+151
+00:11:53,200 --> 00:12:06,200
+Yeah. It's the price you pay. And, and for me, you know, somebody who, for me and you, Joel, you know, people that are sort of accustomed to the live hacking event, um, circuit or whatever, it may seem as like, okay, well, why aren't we being actually incentivized here?
+
+152
+00:12:06,200 --> 00:12:22,200
+Yeah. But, uh, but for, you know, the people that haven't had the opportunity to participate in a live hacking event and that's their like, you know, bucket list item or whatever, then, uh, then, you know, having the opportunity to participate in a live hacking event is like the ultimate motivation. So yeah.
+
+153
+00:12:22,200 --> 00:12:25,200
+I can, yeah. Have you, um, have you ever seen an F1 race?
+
+154
+00:12:25,200 --> 00:12:26,200
+Have what?
+
+155
+00:12:26,200 --> 00:12:28,200
+Have you ever seen an F1 race?
+
+156
+00:12:28,200 --> 00:12:33,200
+Have I ever seen? Oh, an F1 race. No, I haven't seen an F1 race.
+
+157
+00:12:33,200 --> 00:12:38,200
+I haven't seen an F1 race. Okay. Well, have you ever seen like a clip of an F1 race starting?
+
+158
+00:12:38,200 --> 00:12:55,200
+No, no. Okay. Well, maybe this analogy will fly over you, but I feel like this is, this is very much so like the first turn in the race where, uh, it's, it's always turned one where just like shit hits the fan and all the cars just like everybody, cause everybody's like starting and trying to like get ahead.
+
+159
+00:12:55,200 --> 00:13:02,200
+Yeah. It's really tight. They're trying to like get whatever lead they can. They're all like, you know, inches from each other and like, uh, disaster strikes.
+
+160
+00:13:02,200 --> 00:13:08,200
+And then whoever just makes it out of that is immediately ahead of the pack.
+
+161
+00:13:08,200 --> 00:13:09,200
+That's great.
+
+162
+00:13:09,200 --> 00:13:13,200
+So that's kind of like, uh, what's going on here with round one of the world cup is, uh, I see it.
+
+163
+00:13:13,200 --> 00:13:21,200
+You know, it's, it's turned one. So everybody's, uh, everybody's neck and neck and whoever makes it through the bloodbath at the beginning will, uh, you know, inevitably lead the pack.
+
+164
+00:13:21,200 --> 00:13:29,200
+We'll see. We'll see. I don't know where I think last, last night, uh, us was in fourth place or something like that. So I think we're third now actually.
+
+165
+00:13:29,200 --> 00:13:30,200
+Are we at third? Nice.
+
+166
+00:13:30,200 --> 00:13:31,200
+I believe so.
+
+167
+00:13:31,200 --> 00:13:32,200
+So, yeah.
+
+168
+00:13:32,200 --> 00:13:35,200
+So, Hey, you know, there's, there's a chance. There's a chance.
+
+169
+00:13:35,200 --> 00:13:53,200
+Yeah. Um, I don't know why, like, I, I don't know if it was just like the intonation or something, but it sounded like you were saying like, have you ever seen an F1 raise? Like, like, and I was like, is this some sort of like knock knock joke or something like that? Like, I don't know who's there.
+
+170
+00:13:53,200 --> 00:14:07,200
+You know, like, how am I supposed to respond to this? Um, all right. Well, moving along from that. Uh, did you, did you get a chance to peek at this, uh, no client, um, zoom ATO?
+
+171
+00:14:07,200 --> 00:14:19,200
+Yeah, man. Uh, really interesting bug. There was some stuff in there that I was like, I don't even know, like the Google OAuth thing. Is that like a zero day? I don't even know.
+
+172
+00:14:19,200 --> 00:14:40,200
+No, you know, well, I, I think it depends on the implementation, you know, uh, Google, Google's got a bunch of little nuances to their, to their OAuth flow. But, um, I thought this one was really a really cool example of like a really solid client side exploit chain and, and, um, sort of using all these different pieces along the way.
+
+173
+00:14:40,200 --> 00:14:53,200
+You've got a little bit of CSP, you got a little bit of cookies, you got, you know, um, you know, cookie tossing, you've got the post-based XSS, you've got the, the cookie XSS, and, and then chaining it all the way through to create something of massive impact.
+
+174
+00:14:53,200 --> 00:15:04,200
+And I was actually thinking about EJOL when, whenever I was reading this, because I was like, um, you know, I know that your, your focus has, has often been a lot on mobile and APIs and that sort of thing.
+
+175
+00:15:04,200 --> 00:15:14,200
+When you're looking at this stuff, a lot of times you're looking more at, um, you know, the backend stuff, because that's the, the stuff you've got more exposure to when it comes to, um, you know, hacking APIs through the mobile front.
+
+176
+00:15:14,200 --> 00:15:26,200
+And this is, I think is just a really cool, um, example of like how all of this stuff can be applied in, in front end and in, in, in the browser and a full chain.
+
+177
+00:15:26,200 --> 00:15:29,200
+Um, so for any of you guys that haven't read it, um, it's, it's super good.
+
+178
+00:15:29,200 --> 00:15:31,200
+We'll link it in the description.
+
+179
+00:15:31,200 --> 00:15:40,200
+Um, I guess the TLDR of this is that there was a, a cookie based XSS in zoom that affected.
+
+180
+00:15:40,200 --> 00:15:45,200
+That affected, I love this, the, the CSP feature, uh, for, for zoom.
+
+181
+00:15:45,200 --> 00:15:49,200
+So apparently you could set a cookie that would reflect a nonce into the CSP.
+
+182
+00:15:49,200 --> 00:15:51,200
+And, um, oh, okay.
+
+183
+00:15:51,200 --> 00:15:54,200
+So this was, this was a really interesting takeaway.
+
+184
+00:15:54,200 --> 00:15:57,200
+That is also something that I I've been looking at recently.
+
+185
+00:15:57,200 --> 00:16:09,200
+Um, the way that they reflected their content into the, the header, uh, this, or the CSP, the nonce attribute for the script.
+
+186
+00:16:09,200 --> 00:16:10,200
+Thank you, Joel.
+
+187
+00:16:10,200 --> 00:16:11,200
+Joel's over there.
+
+188
+00:16:11,200 --> 00:16:12,200
+Like you got it, Justin.
+
+189
+00:16:12,200 --> 00:16:17,200
+Like, um, was, was this cookie parsing thing?
+
+190
+00:16:17,200 --> 00:16:20,200
+Have you seen this like double quoted cookie parser oddity?
+
+191
+00:16:20,200 --> 00:16:21,200
+Um, yeah.
+
+192
+00:16:21,200 --> 00:16:28,200
+So I guess I never really thought about it, but I definitely have seen this where cookies, right?
+
+193
+00:16:28,200 --> 00:16:35,200
+If you think about it, this, this, um, this kind of exists in a couple of different areas.
+
+194
+00:16:35,200 --> 00:16:47,200
+I think a great example of it is, um, with HTML elements actually, where you can define an HTML attribute with, within an element without quotes, with quotes, with slashes.
+
+195
+00:16:47,200 --> 00:16:49,200
+You know, there's a ton of different separators, right?
+
+196
+00:16:49,200 --> 00:16:55,200
+So you could just be like input equals value, and then you can put a space and it'll just assign value to input.
+
+197
+00:16:55,200 --> 00:16:57,200
+Or you can surround it with quotes.
+
+198
+00:16:57,200 --> 00:16:59,200
+Maybe there's special characters or delimiter.
+
+199
+00:16:59,200 --> 00:17:00,200
+Double quotes, double quotes.
+
+200
+00:17:00,200 --> 00:17:01,200
+Double quotes, double quotes, right?
+
+201
+00:17:01,200 --> 00:17:02,200
+Exactly.
+
+202
+00:17:02,200 --> 00:17:08,200
+So it's very similar kind of thing here where I assume that, um, the reasoning is maybe there's special characters.
+
+203
+00:17:08,200 --> 00:17:09,200
+Maybe there's spaces.
+
+204
+00:17:09,200 --> 00:17:10,200
+Maybe there's spaces.
+
+205
+00:17:10,200 --> 00:17:15,200
+I think technically you're supposed to URL encode cookies, uh, cookie values entirely.
+
+206
+00:17:15,200 --> 00:17:26,200
+Um, but this is probably trying to account for maybe some weird special edge case or just to give the option for you to send a non URL encoded cookie, which I don't really know how that would ever happen.
+
+207
+00:17:26,200 --> 00:17:27,200
+Um, but yeah, yeah.
+
+208
+00:17:27,200 --> 00:17:31,200
+So you can basically wrap your cookie values in, um, in quotes or double quotes.
+
+209
+00:17:31,200 --> 00:17:38,200
+And that, and that seems to allow you to basically bypass it by like wrapping a double quote in a single quote, right?
+
+210
+00:17:38,200 --> 00:17:39,200
+Exactly.
+
+211
+00:17:39,200 --> 00:17:39,200
+
+
+212
+00:17:39,200 --> 00:17:44,200
+So, so yeah, there's, there's a lot of oddities to the way that cookies are parsed.
+
+213
+00:17:44,200 --> 00:17:47,200
+And I feel like it's not something that's super looked into.
+
+214
+00:17:47,200 --> 00:18:00,200
+And we, we talked about this actually at the beginning of the year in, um, the top 10 web hacking techniques from, excuse me, from 2023 post, because there was a, some research done and I forget who it was by.
+
+215
+00:18:00,200 --> 00:18:03,200
+But I've actually referenced it on a couple of podcasts since then.
+
+216
+00:18:03,200 --> 00:18:10,200
+So I think it was probably some of the more impactful research that was done in 2023, um, for sure about cookie parsing.
+
+217
+00:18:10,200 --> 00:18:18,200
+And like, for example, you can put like cookies that don't have any values or cookies that don't have like some specific parts of it.
+
+218
+00:18:18,200 --> 00:18:19,200
+Right.
+
+219
+00:18:19,200 --> 00:18:29,200
+And it will, sometimes the backend server will get confused and like smush cookie values together and you'll be able to like cancel out headers or other cookies, you know, by setting a specific cookie.
+
+220
+00:18:29,200 --> 00:18:32,200
+So, um, there's all sorts of oddities there.
+
+221
+00:18:32,200 --> 00:18:43,200
+And the one that they're using in this scenario is that, um, if you put in, you know, let's just say you set the cookie value for this nonce to, uh, ABC double quote, you know, ABC, right.
+
+222
+00:18:43,200 --> 00:18:51,200
+It's going to properly figure that out and remove the double quote and just put, put it into the nonce, you know, it just ABC.
+
+223
+00:18:51,200 --> 00:18:53,200
+Uh, and then cut off everything after that.
+
+224
+00:18:53,200 --> 00:19:09,200
+But if you do, if you open the cookie value with a double quote, so you're doing like equals double quote, and then ABC backslash double quote ABC, and then close it with a double quote, then it's sort of like a string encapsulated value for that, for that cookie.
+
+225
+00:19:09,200 --> 00:19:19,200
+And, um, and then that value gets reflected on, on, uh, unescaped into the, the script, um, nonce, uh, attribute in HTML.
+
+226
+00:19:19,200 --> 00:19:31,200
+Uh, and, and I think, I think that this was a very apt time for me to be reading this write up because there was a vulnerability that I discovered recently that, uh, I was not able to exploit.
+
+227
+00:19:31,200 --> 00:19:34,200
+Um, and that a lot of, let's just, let me see.
+
+228
+00:19:34,200 --> 00:19:35,200
+Oh, I know.
+
+229
+00:19:35,200 --> 00:19:36,200
+I know you're talking.
+
+230
+00:19:36,200 --> 00:19:42,200
+I need to be, I need to be more vague about this because, uh, yeah, because it's still.
+
+231
+00:19:42,200 --> 00:19:45,200
+A lot of, a lot of hackers were, were, were unable to, yes.
+
+232
+00:19:45,200 --> 00:19:49,200
+A lot of hackers were unable, unable to exploit this vulnerability.
+
+233
+00:19:49,200 --> 00:19:52,200
+And there was a particular hacker, a hacker that you will hear.
+
+234
+00:19:52,200 --> 00:19:55,200
+You guys will hear this write up story at some point.
+
+235
+00:19:55,200 --> 00:20:00,200
+Um, but a particular hacker was able to come in and exploit this vulnerability because of the, you know,
+
+236
+00:20:00,200 --> 00:20:30,200
+the, you know, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the,
+
+237
+00:20:30,200 --> 00:21:00,200
+the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the, the
+
+238
+00:21:00,200 --> 00:21:01,000
+we're reading this right up.
+
+239
+00:21:01,640 --> 00:21:02,080
+Yeah, yeah.
+
+240
+00:21:02,140 --> 00:21:05,000
+So a couple, a couple of thoughts that I have on this.
+
+241
+00:21:05,900 --> 00:21:26,020
+One, it's probably a good opportunity for some sort of automation or tooling around testing cookie values for a couple different escapes and conditions and just alerting and saying, hey, there's this cookie on this endpoint supports being encapsulated with quotes or something.
+
+242
+00:21:27,780 --> 00:21:28,640
+That's one thing.
+
+243
+00:21:28,640 --> 00:21:36,760
+Another thing that I was thinking about is I would almost never test this.
+
+244
+00:21:36,960 --> 00:21:49,080
+It's such an interesting gadget to have found because I'm really guilty of taking all the cookies in my request and the first thing I do is I delete every single one of them except for the ones that I need.
+
+245
+00:21:49,540 --> 00:21:57,720
+Because cookies, like a lot of times the cookie string is just really long and like busy and I want to just be able to look around it.
+
+246
+00:21:57,720 --> 00:22:01,220
+And so I'll say, okay, where's, which one of these is the auth cookie?
+
+247
+00:22:01,440 --> 00:22:03,040
+I'll remove everything else except for that one.
+
+248
+00:22:03,140 --> 00:22:05,660
+And then I'll minimize my request down to just that.
+
+249
+00:22:05,780 --> 00:22:07,360
+And I don't even look at the cookie values.
+
+250
+00:22:07,520 --> 00:22:09,520
+And so I probably would have never found this.
+
+251
+00:22:10,180 --> 00:22:10,180
+
+
+252
+00:22:10,180 --> 00:22:10,500
+Yeah.
+
+253
+00:22:10,500 --> 00:22:11,720
+Yeah, I can understand.
+
+254
+00:22:11,860 --> 00:22:20,440
+You know, it's good to know sort of like what's required in the requests and to be able to identify, you know, maybe unauthenticated requests or what part of the request is providing authentication.
+
+255
+00:22:21,040 --> 00:22:22,560
+But yeah, I'm super guilty of that.
+
+256
+00:22:22,560 --> 00:22:36,600
+So I think testing for this and testing those types of values, like inherently, I don't even know if like, let's say, you know, like the reflection in the CSP issue.
+
+257
+00:22:37,080 --> 00:22:40,560
+That by itself is not like really an issue.
+
+258
+00:22:40,660 --> 00:22:43,820
+Like, yeah, you can leverage it like as it was demonstrated in the blog.
+
+259
+00:22:43,860 --> 00:22:46,860
+But by itself is like, you know, what are you going to do with that?
+
+260
+00:22:46,860 --> 00:22:51,560
+You have to have something else that can set that cookie and then, you know, actually like leverage it to trigger the XSS.
+
+261
+00:22:52,900 --> 00:22:56,420
+So it's just one of those things that is a super useful gadget.
+
+262
+00:22:56,420 --> 00:23:01,840
+But testing it by itself is a very interesting thing.
+
+263
+00:23:01,980 --> 00:23:05,280
+Like I don't, unless I was looking for something explicit, right?
+
+264
+00:23:05,380 --> 00:23:08,860
+Like it was like, okay, let me try and find a gadget that I can use later.
+
+265
+00:23:09,080 --> 00:23:16,840
+Or I would probably do it in reverse, honestly, if I found something, some XSS and I wanted to escalate it, being able to, you know, then find a cookie that I can use later.
+
+266
+00:23:16,860 --> 00:23:18,980
+That I can reflect, you know.
+
+267
+00:23:19,360 --> 00:23:20,340
+Well, I agree.
+
+268
+00:23:20,420 --> 00:23:27,560
+I kind of think, I think in this scenario, like a lot of times cookie based XSS is, is sort of like an open redirect.
+
+269
+00:23:27,880 --> 00:23:30,660
+Like you don't really look for it until you need it, you know?
+
+270
+00:23:30,740 --> 00:23:45,780
+And, and, and I think, and I think maybe that's a little underrated because I think there's probably more stuff there than we often go after because we're not often really fuzzing stuff in the, in the cookies as like a matter of habit.
+
+271
+00:23:45,780 --> 00:23:47,720
+Or at least I'm not, maybe, I mean, clearly some.
+
+272
+00:23:47,720 --> 00:23:48,120
+Yeah, I'm not either.
+
+273
+00:23:48,120 --> 00:23:51,560
+And that was one of the big takeaways I had as well.
+
+274
+00:23:51,560 --> 00:23:57,920
+And when we were hacking together was like, I started sending you stuff and you were like, hmm, I wonder if, you know, how this works.
+
+275
+00:23:57,920 --> 00:23:59,940
+And then you were like, oh, here, here, I got it.
+
+276
+00:23:59,940 --> 00:24:09,040
+And you had fuzzed the parameter names with like a static value and you'd found it like a hidden parameter that allowed us to do something.
+
+277
+00:24:09,540 --> 00:24:12,520
+And, you know, I was like, oh, I, I need to start doing that.
+
+278
+00:24:12,520 --> 00:24:18,440
+Well, the, the interesting thing about that was you found this like crazy endpoint that's like clearly like, what was it?
+
+279
+00:24:18,480 --> 00:24:21,380
+Like slash render HTML or something like that?
+
+280
+00:24:21,380 --> 00:24:22,200
+Yeah, slash PDF proxy.
+
+281
+00:24:22,440 --> 00:24:22,840
+Exactly.
+
+282
+00:24:22,840 --> 00:24:25,620
+I was like, okay, we got to figure out how this works.
+
+283
+00:24:25,620 --> 00:24:30,440
+So, so yeah, definitely in that scenario, that was, that was the route I took.
+
+284
+00:24:30,520 --> 00:24:40,060
+But I also wanted to say, I saw, I want to say it was in the critical thinking discord, Franz comment on the, this writeup.
+
+285
+00:24:40,140 --> 00:24:42,400
+Somebody had posted that, I want to say in the cool research channel.
+
+286
+00:24:42,400 --> 00:24:45,620
+And, and that he had known about it.
+
+287
+00:24:45,800 --> 00:24:55,740
+Like he, he, he had, he had said like, ah, yeah, that weird thing with the, you know, on zoom with the, you know, reflecting the script value into the, into the HTML attribute.
+
+288
+00:24:55,740 --> 00:25:00,280
+So I think that's really interesting because it shows that he at least was looking at that sort of thing.
+
+289
+00:25:01,840 --> 00:25:05,000
+Which, so, I mean, that's another good positive indicator.
+
+290
+00:25:05,200 --> 00:25:07,580
+If Franz is doing something that maybe you should be doing it too.
+
+291
+00:25:07,580 --> 00:25:17,600
+And it also goes to show like the gadget thing is very universal where like, yeah, other hackers probably know about that thing and have probably seen that behavior, especially if you're really familiar with the program.
+
+292
+00:25:17,600 --> 00:25:28,760
+I think that's one big thing I see a lot when people, um, I see this all the time at live hacking events, when hackers come together after hacking on the same target for two weeks, there's like a lingo almost.
+
+293
+00:25:29,100 --> 00:25:29,260
+Yeah.
+
+294
+00:25:29,260 --> 00:25:31,680
+Where we're, we're just like, oh yeah, that behavior.
+
+295
+00:25:31,680 --> 00:25:34,900
+And like everybody just sort of knows what you're talking about because they've seen it.
+
+296
+00:25:34,900 --> 00:25:35,180
+Oh yeah.
+
+297
+00:25:35,240 --> 00:25:35,560
+The script.
+
+298
+00:25:35,660 --> 00:25:35,960
+Oh yeah.
+
+299
+00:25:35,960 --> 00:25:36,180
+Yeah.
+
+300
+00:25:36,180 --> 00:25:36,680
+That thing.
+
+301
+00:25:36,740 --> 00:25:36,880
+Yeah.
+
+302
+00:25:36,880 --> 00:25:37,940
+Did you find a way to use that?
+
+303
+00:25:38,060 --> 00:25:38,860
+Like, yeah.
+
+304
+00:25:38,920 --> 00:25:49,740
+So it's really interesting, um, to see how everybody sort of picks up some of the same identifiers, but nobody like it's usually only one or two people who figure out the right way to be able to leverage it.
+
+305
+00:25:49,740 --> 00:25:53,800
+Or they piece together like the, the, the, the correct chain to actually exploit it.
+
+306
+00:25:54,160 --> 00:26:06,720
+That's, that's the crazy thing too, Joel is like about going to these live hacking events is the amount of times that the thing that you thought was interesting actually gets exploited is like, it's like 95%.
+
+307
+00:26:06,720 --> 00:26:14,260
+I can't tell you how many times I've seen a show and tell where they're like, yeah, so a lot of people probably saw this thing and everybody just like groans.
+
+308
+00:26:14,260 --> 00:26:14,760
+Yeah.
+
+309
+00:26:14,760 --> 00:26:15,260
+Yeah.
+
+310
+00:26:15,260 --> 00:26:15,500
+Yeah.
+
+311
+00:26:15,500 --> 00:26:16,500
+Yeah.
+
+312
+00:26:16,500 --> 00:26:16,900
+Yeah, dude.
+
+313
+00:26:16,900 --> 00:26:20,140
+It's so, it's so crazy, but it should be really inspiring.
+
+314
+00:26:20,140 --> 00:26:25,860
+Cause it's like, okay, this thing that you're looking at, this thing that you're playing around with, you just haven't given it enough time probably.
+
+315
+00:26:25,860 --> 00:26:29,920
+And, and, and, you know, a part of all this is knowing when to quit.
+
+316
+00:26:29,920 --> 00:26:31,200
+You gotta know when to quit, right?
+
+317
+00:26:31,200 --> 00:26:32,700
+Like that's, that's an essential part.
+
+318
+00:26:32,700 --> 00:26:33,200
+Right.
+
+319
+00:26:33,200 --> 00:26:44,720
+But, and, you know, to know your own limitations as a hacker, but as long as you can continue to ideate and you can continue to think about what the possibilities are for some of these, you know, gadgets that are floating around.
+
+320
+00:26:44,720 --> 00:26:46,480
+I think there's, there's value.
+
+321
+00:26:46,480 --> 00:26:48,000
+There's a lot of value in that.
+
+322
+00:26:48,000 --> 00:26:48,420
+Yeah.
+
+323
+00:26:48,420 --> 00:26:48,840
+Yeah.
+
+324
+00:26:48,840 --> 00:26:50,100
+Like if you think about it, right?
+
+325
+00:26:50,100 --> 00:26:53,640
+Like there are only, there's only so much depth you can get out of certain things.
+
+326
+00:26:53,640 --> 00:27:00,300
+Like if, if you find this CSP injection, you can mess with it to your heart's content.
+
+327
+00:27:00,300 --> 00:27:00,300
+
+
+328
+00:27:00,300 --> 00:27:11,160
+But I would almost guarantee that you're never going to turn that by itself into a bug and you could spend a week straight poking different values into there and it's going to give you the same output.
+
+329
+00:27:11,160 --> 00:27:15,900
+You have to have some, you have to find something else that allows you to actually leverage that to use it.
+
+330
+00:27:15,900 --> 00:27:22,360
+So like knowing about it is one thing, but like, just like with any bug, not everything that you find can be directly turned into a bug.
+
+331
+00:27:22,360 --> 00:27:26,520
+Like sometimes you have to leverage other things along with it to actually make it into something.
+
+332
+00:27:26,520 --> 00:27:31,800
+I remember, I remember a scenario where I was hacking with my mentee, uh, Mokso.
+
+333
+00:27:31,800 --> 00:27:33,740
+Uh, he's come on the pod before.
+
+334
+00:27:33,740 --> 00:27:49,240
+I think he was in the bug bounty mentorship episode and we were hacking together and he found this like absolutely sick client side path traversal flow that used like a post message in the implicit auth between a relationship between like a window generated by a client side path.
+
+335
+00:27:49,240 --> 00:27:52,000
+I mean, it was just, it was an awesome bug.
+
+336
+00:27:52,480 --> 00:27:56,440
+Um, but he couldn't exploit it because he didn't have a, an open redirect.
+
+337
+00:27:56,740 --> 00:27:59,740
+And I was like, okay, you know, I'll, I'll poke around and see if I can find an open redirect.
+
+338
+00:28:00,040 --> 00:28:04,720
+And so I started poking around and, and like 15 minutes later, I was like, I got an open redirect.
+
+339
+00:28:04,720 --> 00:28:07,180
+And he's like, he's like, you what?
+
+340
+00:28:07,900 --> 00:28:08,920
+You freaking what?
+
+341
+00:28:09,220 --> 00:28:10,300
+You got an open redirect.
+
+342
+00:28:10,300 --> 00:28:15,720
+And then he just like jumps up and we like start screaming and like, you know, and he puts it into the chain.
+
+343
+00:28:15,720 --> 00:28:22,400
+I know the target you're talking about too, because I had asked you, like I had a, we had a very, very almost bug, uh, the same target.
+
+344
+00:28:22,400 --> 00:28:24,120
+And I was like, Hey, you have an open redirect.
+
+345
+00:28:24,260 --> 00:28:29,380
+And you're like, ah, no, actually it's not the right kind of open redirect.
+
+346
+00:28:29,380 --> 00:28:32,260
+It was like HTTP or need to be HTTPS or something like that.
+
+347
+00:28:32,400 --> 00:28:32,440
+Yeah.
+
+348
+00:28:32,460 --> 00:28:32,700
+Yes.
+
+349
+00:28:32,700 --> 00:28:33,760
+You clearly know the target.
+
+350
+00:28:33,760 --> 00:28:43,940
+Um, so, so yeah, but in this scenario it ended up working and, and, uh, and it was like, sometimes you just got to go, you got to go hunt for those, those gadgets along the way.
+
+351
+00:28:43,940 --> 00:28:58,980
+Um, and I think as you get your, that's another skill in and of itself is this sort of, can I fill the requirement of this, this vulnerability by finding a very specific niche functionality, you know?
+
+352
+00:28:59,360 --> 00:29:02,780
+Um, and I think that takes reps just like everything else does in hacking.
+
+353
+00:29:02,780 --> 00:29:07,700
+You gotta, you gotta get your reps trying to find this gadget, you know, and, and get the hints on.
+
+354
+00:29:08,260 --> 00:29:08,740
+Yeah.
+
+355
+00:29:08,820 --> 00:29:13,280
+I'm looking at, for an open redirect, I should look at the login functionality.
+
+356
+00:29:13,280 --> 00:29:15,080
+I should look at the account linking functionality.
+
+357
+00:29:15,080 --> 00:29:15,280
+Yeah.
+
+358
+00:29:15,280 --> 00:29:17,780
+Like, you know, all of these areas where redirects commonly occur.
+
+359
+00:29:18,480 --> 00:29:19,100
+Yeah, for sure.
+
+360
+00:29:19,100 --> 00:29:25,220
+I think it's, it's definitely a different skillset to be able to think sort of cross functionality within the application like that.
+
+361
+00:29:25,220 --> 00:29:43,220
+And probably the hardest part of being like a really getting to that next level of top hacker is being able to go from just like single sort of level vulnerabilities where it's like, here's an ID or here's, you know, and then combining functionality.
+
+362
+00:29:43,280 --> 00:29:44,280
+Yeah.
+
+363
+00:29:44,280 --> 00:30:07,620
+And then having these multiple different things across the application that you can click together and say, oh yeah, there's, there's this thing that I can leverage to, you know, set the cookie here, which will then force it to redirect to here, which will then take me to Google, which, you know, and, and being able to piece those things together in an, in a successful way, instead of just having them as separate ideas or just not even, you know, having those notes.
+
+364
+00:30:07,620 --> 00:30:09,940
+I think that's, that's the real hard part.
+
+365
+00:30:10,240 --> 00:30:11,940
+It's a, it's a force of will thing too.
+
+366
+00:30:11,940 --> 00:30:17,580
+It's like, all right, I'm gonna, I'm gonna bend this application to my will, you know, I'm gonna make it happen.
+
+367
+00:30:17,580 --> 00:30:19,360
+And I think that's a really valuable part.
+
+368
+00:30:19,980 --> 00:30:24,060
+So we've talked about this right up tangentially for like 15 minutes now.
+
+369
+00:30:24,140 --> 00:30:31,000
+I do want to add one more thing before we move long, which is, I think there is another, like one cookie tossing.
+
+370
+00:30:31,000 --> 00:30:34,300
+If you don't know what it is, you need to figure it out because it's super helpful.
+
+371
+00:30:34,300 --> 00:30:41,380
+It TLDR is, you can use a subdomain to set cookies for the top level domain.
+
+372
+00:30:41,800 --> 00:30:48,820
+And that cookie gets sent to all the different domains and you can specify a more specific path so that your, your cookie gets prioritized when it's sent in.
+
+373
+00:30:49,320 --> 00:30:53,800
+Extremely, extremely valuable tool in the hacker toolkit.
+
+374
+00:30:53,800 --> 00:30:56,180
+So research that if you're not a master of it already.
+
+375
+00:30:56,180 --> 00:31:03,260
+Um, the other, the other tip was I really like, and I've seen this before, but I, I kind of, I don't know.
+
+376
+00:31:03,260 --> 00:31:07,100
+It, it hadn't, it hadn't really like fully seeped into my brain yet.
+
+377
+00:31:07,100 --> 00:31:12,300
+I think I could have figured out it out in the scenario if I needed it, but I just figured I'd shout it out here again.
+
+378
+00:31:12,300 --> 00:31:21,160
+Is like this whole concept of switching the response type in, in OAuth flow to code underscore ID token.
+
+379
+00:31:21,160 --> 00:31:25,400
+I mean, um, uh, sorry, code comma ID underscore token.
+
+380
+00:31:25,400 --> 00:31:25,660
+Right.
+
+381
+00:31:25,660 --> 00:31:35,320
+And, and what that does is it, because the token can't be sent in, in the query parameters, like the code can, it will put the code and the ID token in the hash.
+
+382
+00:31:35,320 --> 00:31:35,820
+Yeah.
+
+383
+00:31:35,820 --> 00:31:44,680
+And the beauty of that is that you don't have to even like have an endpoint that requires you to, or, you know, uh, allows you to like hand it a token or anything like that.
+
+384
+00:31:44,680 --> 00:31:51,280
+You can just take the hash back out and put it in the query parameter when you're finishing your exploit, if you're able to leak that hash.
+
+385
+00:31:51,280 --> 00:31:59,040
+Um, and I just think that's, that's pretty nice because it's like, you don't have to find any sort of alternative flow or alternative gadgets or anything.
+
+386
+00:31:59,040 --> 00:32:07,160
+You just smuggle the piece of information you need in a different medium because, uh, of the caveat of also sending the ID token along with it.
+
+387
+00:32:07,160 --> 00:32:08,040
+I thought that was really good.
+
+388
+00:32:08,040 --> 00:32:08,120
+Yeah.
+
+389
+00:32:08,120 --> 00:32:09,080
+Yeah, for sure.
+
+390
+00:32:09,080 --> 00:32:10,800
+It's, it's interesting that it behaves that way.
+
+391
+00:32:10,800 --> 00:32:21,720
+It's very similar format to the, um, like the scope, uh, parameter that you would also send, which, you know, comma delimitate, delimit, delimit, delimit, delimit, delimit, whatever.
+
+392
+00:32:21,720 --> 00:32:24,560
+Delimit, comma, delimit.
+
+393
+00:32:24,560 --> 00:32:26,040
+There's a comma delimiter.
+
+394
+00:32:26,040 --> 00:32:27,080
+Yeah, yeah, yeah.
+
+395
+00:32:27,080 --> 00:32:32,560
+Comma separated, uh, values of, you know, ID profile, email, et cetera.
+
+396
+00:32:32,560 --> 00:32:34,320
+Um, same type of format here.
+
+397
+00:32:34,320 --> 00:32:39,360
+It, there's a, a couple of things that we talked about today that I would be really interested to see sort of like a.
+
+398
+00:32:39,360 --> 00:32:45,480
+Um, broad analysis of how these features work across different implementations.
+
+399
+00:32:45,480 --> 00:32:46,480
+Yeah.
+
+400
+00:32:46,480 --> 00:32:53,120
+So different, um, OAuth libraries that are being used to implement OpenID, um, as well as like the cookie thing, for example, like different web frameworks.
+
+401
+00:32:53,120 --> 00:32:54,120
+Yeah.
+
+402
+00:32:54,120 --> 00:32:55,120
+Different browsers, different web frameworks.
+
+403
+00:32:55,120 --> 00:32:57,320
+And just see like, how does express handle this?
+
+404
+00:32:57,320 --> 00:32:58,320
+How does PHP handle this?
+
+405
+00:32:58,320 --> 00:33:00,720
+How does, um, you know, go and handle this?
+
+406
+00:33:00,720 --> 00:33:01,600
+Like all sorts of things.
+
+407
+00:33:01,600 --> 00:33:06,360
+I'd be really interested if somebody from the community wants to take me up on that.
+
+408
+00:33:06,360 --> 00:33:07,360
+Give us a freebie.
+
+409
+00:33:07,360 --> 00:33:08,360
+Give us free research.
+
+410
+00:33:08,360 --> 00:33:09,360
+Yeah.
+
+411
+00:33:09,360 --> 00:33:11,600
+I'll tell you what, if you make a blog post about it, we'll probably shout it out.
+
+412
+00:33:11,600 --> 00:33:11,600
+
+
+413
+00:33:11,600 --> 00:33:12,040
+Yeah.
+
+414
+00:33:12,040 --> 00:33:12,800
+Well, absolutely.
+
+415
+00:33:12,800 --> 00:33:13,520
+Well, for sure.
+
+416
+00:33:13,520 --> 00:33:15,640
+Um, yeah, absolutely.
+
+417
+00:33:15,640 --> 00:33:20,400
+And I think, I think, uh, the cookie, the cookie thing has got me thinking, man.
+
+418
+00:33:20,400 --> 00:33:21,080
+So I don't know.
+
+419
+00:33:21,080 --> 00:33:26,160
+I might take the dive and do some of that research myself because there's, we'll cover it.
+
+420
+00:33:26,160 --> 00:33:26,840
+We'll cover it later.
+
+421
+00:33:26,840 --> 00:33:27,480
+We'll cover it later.
+
+422
+00:33:27,480 --> 00:33:28,800
+Let me just wait on it.
+
+423
+00:33:28,800 --> 00:33:29,800
+Um, yeah.
+
+424
+00:33:29,800 --> 00:33:30,400
+Okay.
+
+425
+00:33:30,400 --> 00:33:31,400
+Next one on the list.
+
+426
+00:33:31,400 --> 00:33:38,160
+Uh, amazing write up that I'm not even going to attempt to, uh, consolidate into the audio
+
+427
+00:33:38,160 --> 00:33:39,160
+medium.
+
+428
+00:33:39,160 --> 00:33:43,400
+This is the SharePoint XSE write up by Chuddy PB.
+
+429
+00:33:43,400 --> 00:33:46,640
+Uh, it was posted by the zero day initiative.
+
+430
+00:33:46,640 --> 00:33:53,400
+Um, and essentially this is an XSE on SharePoint and you really need to go read the whole write
+
+431
+00:33:53,400 --> 00:33:59,000
+up because he does an awesome job of explaining the whole flow of the exploit and how he identified
+
+432
+00:33:59,000 --> 00:34:04,360
+it, what all the turning points were, what, you know, nested code he was reading and how
+
+433
+00:34:04,360 --> 00:34:05,640
+deep he went.
+
+434
+00:34:05,640 --> 00:34:10,760
+Um, but I did want to shout out one thing here, which was a takeaway for me, which is,
+
+435
+00:34:10,760 --> 00:34:16,400
+uh, he was looking at a piece of the SharePoint functionality where a, you know, XML was parsed.
+
+436
+00:34:16,400 --> 00:34:18,760
+So of course every hacker, ah, XSE.
+
+437
+00:34:18,760 --> 00:34:19,760
+XSE.
+
+438
+00:34:19,760 --> 00:34:27,600
+But there's, there's very clearly, um, XML reader settings dot DTD processing is set to prohibit
+
+439
+00:34:27,600 --> 00:34:31,720
+and it uses like safe XML, safe resolver or something like that.
+
+440
+00:34:31,720 --> 00:34:32,720
+Right.
+
+441
+00:34:32,720 --> 00:34:39,560
+And it's like, okay, this probably isn't vulnerable to XSE, but he still tries a couple of things
+
+442
+00:34:39,560 --> 00:34:40,560
+against it.
+
+443
+00:34:40,560 --> 00:34:44,840
+And I'll just, I'll just read one little snippet from the, from the blog post now.
+
+444
+00:34:44,840 --> 00:34:50,400
+I decided to play around and send a general entity based payload as some of the text code
+
+445
+00:34:50,400 --> 00:34:52,840
+I wrote similar to the code, uh, shown above.
+
+446
+00:34:52,840 --> 00:34:59,880
+Um, so he sends in this general, uh, XSE payload as expected, no HTTP request was performed
+
+447
+00:34:59,880 --> 00:35:03,840
+and a DTD processing exception was thrown, but what about this payload?
+
+448
+00:35:03,840 --> 00:35:06,000
+And he provides another, another payload.
+
+449
+00:35:06,000 --> 00:35:07,720
+And I'm going to try to attempt to describe this now.
+
+450
+00:35:07,720 --> 00:35:14,560
+So typically with, um, you know, doc types and entities, you've got your sort of doc type
+
+451
+00:35:14,560 --> 00:35:19,560
+section, you define an entity and then that entity is then used in the XML body.
+
+452
+00:35:19,560 --> 00:35:20,560
+Right.
+
+453
+00:35:20,560 --> 00:35:21,560
+So, you know, within.
+
+454
+00:35:21,560 --> 00:35:22,560
+Right.
+
+455
+00:35:22,560 --> 00:35:24,560
+So that its value is evaluated and put into, yeah.
+
+456
+00:35:24,560 --> 00:35:25,560
+Into the XML body.
+
+457
+00:35:25,560 --> 00:35:26,560
+Right.
+
+458
+00:35:26,560 --> 00:35:27,560
+Exactly.
+
+459
+00:35:27,560 --> 00:35:28,560
+It has a value within an element.
+
+460
+00:35:28,560 --> 00:35:29,560
+Yeah.
+
+461
+00:35:29,560 --> 00:35:35,200
+So you'll see like a XML tag and then you'll see, uh, ampersand, uh, the name of the entity
+
+462
+00:35:35,200 --> 00:35:41,000
+and then a semi-colon and that, that will be, that entity will be expanded when the, uh, XML
+
+463
+00:35:41,000 --> 00:35:42,400
+document is processed.
+
+464
+00:35:42,400 --> 00:35:45,400
+However, what, and that was the one that, that didn't work.
+
+465
+00:35:45,400 --> 00:35:46,400
+Right.
+
+466
+00:35:46,400 --> 00:35:51,920
+However, what he does in this scenario is he actually does the doc type definition, defines
+
+467
+00:35:51,920 --> 00:35:57,160
+the entity, and then references the entity inside of the doc type on the next line.
+
+468
+00:35:57,160 --> 00:36:01,320
+So you've got the entity line defining this, uh, SP variable is the one that he chose in
+
+469
+00:36:01,320 --> 00:36:02,840
+this specific scenario.
+
+470
+00:36:02,840 --> 00:36:09,880
+And then directly below that before closing the doc type, he, he just writes a percent sign
+
+471
+00:36:09,880 --> 00:36:13,760
+SP semi-colon to reference that entity.
+
+472
+00:36:13,760 --> 00:36:21,720
+Um, and wow, this is an interesting one, uh, because it, it bypasses all of these, uh, uh,
+
+473
+00:36:21,720 --> 00:36:25,240
+DT D processing settings.
+
+474
+00:36:25,240 --> 00:36:30,920
+And I think the reason for that is it, it, it processes the, the entities that are there
+
+475
+00:36:30,920 --> 00:36:38,280
+and then, uh, checks afterward after processes that whether the XML body contains any of the
+
+476
+00:36:38,280 --> 00:36:39,960
+like entities that need to be expanded.
+
+477
+00:36:39,960 --> 00:36:41,400
+And if it is, it says no.
+
+478
+00:36:41,400 --> 00:36:48,240
+Um, and I just thought, wow, there's probably a lot of sort of sketchy, uh, blocking of, uh,
+
+479
+00:36:48,240 --> 00:36:53,040
+XML entities out there, uh, considering this list of broad scale research.
+
+480
+00:36:53,040 --> 00:36:54,080
+Exactly.
+
+481
+00:36:54,080 --> 00:36:58,000
+Like, you know, this is, this is, um, you know, a pretty core .net.
+
+482
+00:36:58,000 --> 00:37:01,520
+I want to say this was .net, um, functionality here.
+
+483
+00:37:02,800 --> 00:37:06,880
+They were talking about how these XML reader libraries are used pretty, pretty globally across
+
+484
+00:37:06,880 --> 00:37:08,560
+that, that language's ecosystem.
+
+485
+00:37:09,120 --> 00:37:11,360
+And, uh, and this still had this massive hole in it.
+
+486
+00:37:11,360 --> 00:37:17,360
+So when, when you're testing for XXE, it might be helpful to have several variants of, of processing
+
+487
+00:37:17,360 --> 00:37:19,600
+in place that have outbound calls as well.
+
+488
+00:37:19,600 --> 00:37:25,200
+Uh, because there could be a sort of a niche, uh, exception to that, to that here.
+
+489
+00:37:25,200 --> 00:37:29,200
+So anyway, sorry for that super long-winded explanation, Joel.
+
+490
+00:37:29,200 --> 00:37:29,840
+Joel.
+
+491
+00:37:29,840 --> 00:37:38,160
+No, I honestly like, uh, if it doesn't click, just open the writeup on ZDI and there's two
+
+492
+00:37:38,160 --> 00:37:44,160
+little XML snippets and it'll say, I decided to play around with this one and it didn't work.
+
+493
+00:37:44,800 --> 00:37:49,040
+And then I tried this payload and just look at the two of them.
+
+494
+00:37:49,040 --> 00:37:51,360
+And it's a very, very subtle thing.
+
+495
+00:37:51,360 --> 00:37:55,760
+But if you know anything about XXEs, it's one of those things that like, you might try the first
+
+496
+00:37:55,760 --> 00:37:58,160
+payload and just be like, all right, XXE is not possible here.
+
+497
+00:37:58,160 --> 00:38:00,720
+They're blocking it and never try the other one.
+
+498
+00:38:01,280 --> 00:38:06,640
+Um, and it kind of just goes to show that you sh you know, testing in depth.
+
+499
+00:38:06,640 --> 00:38:10,960
+This is one of those moments where make sure that you, you know, you've tested sort of a bunch of
+
+500
+00:38:10,960 --> 00:38:14,640
+different payloads and a different bunch of different options before you decide to move on.
+
+501
+00:38:14,640 --> 00:38:15,200
+Not just one.
+
+502
+00:38:15,200 --> 00:38:16,000
+Yeah.
+
+503
+00:38:16,000 --> 00:38:16,320
+Yeah.
+
+504
+00:38:16,320 --> 00:38:17,200
+I totally agree.
+
+505
+00:38:17,200 --> 00:38:23,760
+And actually when you said, you know, look at the two, uh, XML blobs, I was like, all right,
+
+506
+00:38:23,760 --> 00:38:25,520
+Joel, I'll look at the two XML blobs.
+
+507
+00:38:25,520 --> 00:38:31,040
+And I, and I actually realized something that I sort of missed before, which was the second blob
+
+508
+00:38:31,040 --> 00:38:33,680
+there that contains the payload that actually worked.
+
+509
+00:38:33,680 --> 00:38:39,920
+There's a percent sign right after the entity, um, uh, tag before the name of the variable.
+
+510
+00:38:39,920 --> 00:38:42,800
+And I think that, so I just quickly Googled it.
+
+511
+00:38:42,800 --> 00:38:49,440
+I think that is called a parameter entity, which, uh, the percent sign tells the XML processor to
+
+512
+00:38:49,440 --> 00:38:54,480
+look up the entity name in the DTD list of parameter entities, insert the value of the entity
+
+513
+00:38:54,480 --> 00:38:55,680
+into the DTD.
+
+514
+00:38:56,400 --> 00:39:02,000
+In the place of the entity reference and process the value of the entity as part of the DTD.
+
+515
+00:39:02,000 --> 00:39:02,480
+So it's like,
+
+516
+00:39:02,480 --> 00:39:05,360
+So I don't think you could do and be in the doc type like that.
+
+517
+00:39:05,360 --> 00:39:09,280
+I think you have to do it with percent because it's a parameter and basically referencing the entry above.
+
+518
+00:39:09,280 --> 00:39:10,240
+Exactly.
+
+519
+00:39:10,240 --> 00:39:10,480
+Yeah.
+
+520
+00:39:10,480 --> 00:39:17,040
+So it's like a way for you to dynamically create other, uh, you know, doc type definitions in,
+
+521
+00:39:17,040 --> 00:39:17,920
+in there, I think so.
+
+522
+00:39:17,920 --> 00:39:18,400
+Yeah.
+
+523
+00:39:18,400 --> 00:39:19,520
+Very, very cool idea.
+
+524
+00:39:19,920 --> 00:39:22,240
+Um, this is starting to ring some bells now.
+
+525
+00:39:22,240 --> 00:39:26,800
+I have seen something similar to this before, so I understand why, why he tried that, but it is
+
+526
+00:39:26,800 --> 00:39:32,560
+definitely concreted in my brain now as like a core core XXE must check sort of thing.
+
+527
+00:39:32,560 --> 00:39:35,200
+These sort of, uh, uh, parameter entities.
+
+528
+00:39:35,840 --> 00:39:36,640
+Yeah, absolutely.
+
+529
+00:39:36,640 --> 00:39:37,040
+Absolutely.
+
+530
+00:39:37,520 --> 00:39:38,640
+Um, okay.
+
+531
+00:39:38,640 --> 00:39:44,960
+Last one on the list before we get to today's, uh, today's prepared, uh, educational topic.
+
+532
+00:39:46,080 --> 00:39:47,600
+If you like that new, that new, uh,
+
+533
+00:39:49,120 --> 00:39:50,240
+section there, I don't know.
+
+534
+00:39:50,240 --> 00:39:50,720
+Yeah.
+
+535
+00:39:50,720 --> 00:39:51,520
+I can't, I can't, I can't, I can't apply.
+
+536
+00:39:51,840 --> 00:39:54,320
+Um, is Shazer.
+
+537
+00:39:55,520 --> 00:39:56,240
+Okay.
+
+538
+00:39:56,240 --> 00:39:56,720
+This is sick.
+
+539
+00:39:56,720 --> 00:40:00,880
+I was like, I, you put this in the doc and I was like, what the heck is this thing?
+
+540
+00:40:00,880 --> 00:40:01,600
+I look it up.
+
+541
+00:40:02,240 --> 00:40:07,440
+It's, I was like trying to find out more about it because I, I won't lie.
+
+542
+00:40:07,440 --> 00:40:12,560
+It's a cool tool, but there's like zero documentation about what this thing is or how
+
+543
+00:40:12,560 --> 00:40:14,000
+it works or anything like that.
+
+544
+00:40:14,000 --> 00:40:18,080
+And the first thing that caught my eye was there's a lot of, at the bottom of the page, it says like
+
+545
+00:40:18,080 --> 00:40:19,680
+popular users and new users.
+
+546
+00:40:19,680 --> 00:40:21,600
+And I've seen all these names of people that I knew.
+
+547
+00:40:21,600 --> 00:40:22,880
+And I was like, oh, okay.
+
+548
+00:40:22,880 --> 00:40:25,520
+I've, I've, these people know what's up.
+
+549
+00:40:25,520 --> 00:40:27,440
+So let me, let me go check this thing out.
+
+550
+00:40:27,440 --> 00:40:36,720
+And from what I gather, uh, it's basically like, um, a continuous sort of like testing,
+
+551
+00:40:36,720 --> 00:40:43,760
+fuzzing platform for little snippets of like, here's this function I want to call, or here's
+
+552
+00:40:43,760 --> 00:40:46,160
+this, this, you know, area that I can inject into.
+
+553
+00:40:46,160 --> 00:40:50,800
+What are the possible inputs that I can escape or what characters can pass through this and
+
+554
+00:40:50,800 --> 00:40:51,360
+stuff like that.
+
+555
+00:40:51,360 --> 00:40:58,480
+And this was created by none other than Mr. Gareth Hayes, uh, over at, uh, at Portswigger
+
+556
+00:40:58,480 --> 00:40:59,760
+Research, creator.
+
+557
+00:40:59,760 --> 00:41:06,640
+And, uh, when I, when I started searching this thing, I found a blog post, like announcing this
+
+558
+00:41:06,640 --> 00:41:14,400
+thing from 2012 that was like, here's this tool I created called, you know, Shazer or whatever,
+
+559
+00:41:14,400 --> 00:41:15,120
+shared fuzzer.
+
+560
+00:41:15,680 --> 00:41:18,240
+And then yeah, at the bottom, it says fuzzing browsers is 2012.
+
+561
+00:41:18,240 --> 00:41:24,640
+So this is like super old tool, 12 years old, um, been around for ages, way ahead of the curve.
+
+562
+00:41:24,640 --> 00:41:26,960
+And yeah, it's really, really interesting.
+
+563
+00:41:26,960 --> 00:41:29,200
+There's a bunch of cool things on here.
+
+564
+00:41:29,200 --> 00:41:34,560
+I think one of the cool, uh, coolest things is this little cheat sheet, um, page that's
+
+565
+00:41:34,560 --> 00:41:37,120
+underneath the vectors drop down at the top.
+
+566
+00:41:37,120 --> 00:41:42,800
+And it basically just says, uh, you know, it has a bunch of different examples of essentially
+
+567
+00:41:42,800 --> 00:41:44,560
+cheat sheets that have been generated by this tool.
+
+568
+00:41:44,560 --> 00:41:52,480
+That'll say, you know, for example, um, you've got a character, um, injection between the
+
+569
+00:41:52,480 --> 00:41:55,760
+exclamation point and the greater than in an HTML comment.
+
+570
+00:41:55,760 --> 00:41:56,640
+What can I put in there?
+
+571
+00:41:56,640 --> 00:41:57,360
+Wow.
+
+572
+00:41:57,360 --> 00:42:01,520
+And then it'll tell you, okay, the only thing you can put in there is a greater than symbol.
+
+573
+00:42:01,520 --> 00:42:10,160
+Um, or, you know, you've got, uh, a multi aligned string and there's a backslash and you can input
+
+574
+00:42:10,160 --> 00:42:12,000
+a character in there.
+
+575
+00:42:12,720 --> 00:42:14,560
+What, what, what can you put in?
+
+576
+00:42:14,560 --> 00:42:15,120
+Right.
+
+577
+00:42:15,120 --> 00:42:21,280
+Um, and CR, I don't know if that's individually C and R or if that's specifically a character
+
+578
+00:42:21,280 --> 00:42:21,520
+turn.
+
+579
+00:42:21,520 --> 00:42:22,000
+Yeah.
+
+580
+00:42:22,000 --> 00:42:26,400
+Um, yeah, but it, you know, it has this for a lot of things like ignore characters
+
+581
+00:42:26,400 --> 00:42:27,760
+in Jason property values.
+
+582
+00:42:27,760 --> 00:42:31,600
+This was something that, uh, I didn't, I didn't know, which was super interesting.
+
+583
+00:42:31,600 --> 00:42:36,160
+Um, you know, you can, you can put like spaces at the front of a value.
+
+584
+00:42:36,160 --> 00:42:39,360
+You can put a plus at the front of the value and it'll just ignore.
+
+585
+00:42:39,360 --> 00:42:39,760
+Dude.
+
+586
+00:42:39,760 --> 00:42:40,560
+Uh, these things.
+
+587
+00:42:40,560 --> 00:42:42,160
+That was crazy to me.
+
+588
+00:42:42,160 --> 00:42:42,560
+Like, and.
+
+589
+00:42:42,560 --> 00:42:43,440
+Yeah.
+
+590
+00:42:43,440 --> 00:42:50,800
+Like if you do like X colon as a string plus one, two, three, seven, and you parse it
+
+591
+00:42:50,800 --> 00:42:53,600
+as the JSON object, it'll just say X is one, two, three, seven.
+
+592
+00:42:53,600 --> 00:42:58,640
+Well, it, it will, but the caveat to that, which they don't, they didn't put in the title
+
+593
+00:42:58,640 --> 00:43:02,080
+of this one that I noticed when I was like, wait a second, there's no freaking way that
+
+594
+00:43:02,080 --> 00:43:06,080
+works is, uh, is that it's a loose comparison to an integer.
+
+595
+00:43:06,080 --> 00:43:08,000
+So it, because it's a double equals.
+
+596
+00:43:08,000 --> 00:43:09,440
+Yeah, exactly.
+
+597
+00:43:09,440 --> 00:43:11,440
+So it's not a strict comparison.
+
+598
+00:43:11,440 --> 00:43:12,000
+Exactly.
+
+599
+00:43:12,000 --> 00:43:15,200
+It's, it's implicitly converting the string into a, an integer.
+
+600
+00:43:15,200 --> 00:43:17,840
+But the, the interesting piece about that is like, wow.
+
+601
+00:43:17,840 --> 00:43:18,160
+Okay.
+
+602
+00:43:18,160 --> 00:43:24,640
+I can put plus one, three, three, seven in a string and then have that loosely compared
+
+603
+00:43:24,640 --> 00:43:29,760
+to an, you know, an integer and it will actually just drop the plus straight off the front,
+
+604
+00:43:29,760 --> 00:43:30,640
+which I thought was really good.
+
+605
+00:43:30,640 --> 00:43:31,200
+Yeah.
+
+606
+00:43:31,200 --> 00:43:31,440
+Yeah.
+
+607
+00:43:31,440 --> 00:43:32,800
+That is super interesting.
+
+608
+00:43:32,800 --> 00:43:38,320
+So essentially what this thing allows you to do is take, define some templates, define
+
+609
+00:43:38,320 --> 00:43:44,880
+some JS code that you, um, want to use to fuzz something in the browser.
+
+610
+00:43:45,360 --> 00:43:50,560
+Uh, and it will go ahead and run it against, uh, the latest versions of Chrome, uh, Firefox,
+
+611
+00:43:50,560 --> 00:43:51,520
+and Safari.
+
+612
+00:43:51,520 --> 00:43:53,120
+And you can also note the differences.
+
+613
+00:43:53,120 --> 00:43:58,080
+And I think that's a really, really cool piece of this is like, there's so many, if you go to the,
+
+614
+00:43:58,080 --> 00:44:04,880
+the shazer.co.uk website, there's like a ton of different, like most popular, most liked new
+
+615
+00:44:04,880 --> 00:44:07,360
+vectors that people have created that sort of thing.
+
+616
+00:44:07,360 --> 00:44:14,240
+Um, where you can see, uh, how different browsers parse things differently and, and understand the
+
+617
+00:44:14,240 --> 00:44:18,240
+nuances between the two, because if you need an exploit, you know, if you've got an exploit and
+
+618
+00:44:18,240 --> 00:44:21,280
+you need a specific little quirk, okay.
+
+619
+00:44:21,280 --> 00:44:23,600
+Firefox might have that or Safari might have that.
+
+620
+00:44:23,600 --> 00:44:28,160
+And we know from the episode when we talked about all the different, uh, browser market share stuff
+
+621
+00:44:28,720 --> 00:44:36,000
+that, um, Safari actually is very, is very quirky for one and has a very, uh, sizable amount of
+
+622
+00:44:36,000 --> 00:44:36,560
+the market share.
+
+623
+00:44:36,560 --> 00:44:37,040
+Yeah.
+
+624
+00:44:37,040 --> 00:44:39,200
+Uh, especially because mobile browser, right?
+
+625
+00:44:39,200 --> 00:44:39,520
+Yeah.
+
+626
+00:44:39,520 --> 00:44:42,080
+And web kit is across everything, right?
+
+627
+00:44:42,080 --> 00:44:46,240
+So it's not necessarily that it'd be a web kit bug, but if it affects Safari, it's probably going to
+
+628
+00:44:46,240 --> 00:44:51,360
+affect Safari on iOS, Mac OS, watch OS, iPad OS.
+
+629
+00:44:51,360 --> 00:44:51,600
+Right.
+
+630
+00:44:51,600 --> 00:44:55,280
+Yeah, man, popping a, popping a smartwatch over there.
+
+631
+00:44:55,280 --> 00:44:56,480
+That'd be something.
+
+632
+00:44:56,480 --> 00:44:57,680
+That'd be something interesting.
+
+633
+00:44:57,680 --> 00:44:58,320
+I'm not going to lie.
+
+634
+00:44:58,320 --> 00:45:04,160
+That has been, I, I, I've seen many of the watchOS vulnerabilities end up coming through
+
+635
+00:45:04,160 --> 00:45:05,040
+stuff like web kit.
+
+636
+00:45:05,040 --> 00:45:05,440
+Oh yeah.
+
+637
+00:45:05,440 --> 00:45:09,040
+And those shared frameworks that are on everything.
+
+638
+00:45:09,040 --> 00:45:09,600
+What was that?
+
+639
+00:45:09,600 --> 00:45:16,480
+Like, I want to say there was like some crazy iMessage bug that came out earlier this year.
+
+640
+00:45:16,480 --> 00:45:19,920
+And it was like, you know, it showed like a timeline of the bug and it was like
+
+641
+00:45:19,920 --> 00:45:22,400
+12 different bugs chained.
+
+642
+00:45:22,400 --> 00:45:28,320
+And then just at the end, like, you know, it would get like, you know, um, code execution in
+
+643
+00:45:28,320 --> 00:45:30,400
+like a, a controlled environment.
+
+644
+00:45:30,400 --> 00:45:36,240
+And then it would just pop open the browser and then just like phone the system via some sort of
+
+645
+00:45:36,800 --> 00:45:38,800
+browser exploit, which I thought was hilarious.
+
+646
+00:45:38,800 --> 00:45:39,760
+I'm trying to remember what you're talking about.
+
+647
+00:45:39,760 --> 00:45:40,800
+I know the one you're talking about.
+
+648
+00:45:40,800 --> 00:45:41,200
+Oh man.
+
+649
+00:45:41,200 --> 00:45:41,760
+What was that?
+
+650
+00:45:41,760 --> 00:45:42,320
+Yeah.
+
+651
+00:45:42,320 --> 00:45:43,600
+We'll have to look it up after.
+
+652
+00:45:43,600 --> 00:45:43,840
+Yeah.
+
+653
+00:45:44,320 --> 00:45:44,960
+Um, anyway.
+
+654
+00:45:46,240 --> 00:45:47,200
+Super cool site.
+
+655
+00:45:47,200 --> 00:45:48,240
+Go check out Shazer.
+
+656
+00:45:49,200 --> 00:45:49,760
+Very good stuff.
+
+657
+00:45:50,320 --> 00:45:50,560
+Yeah.
+
+658
+00:45:50,560 --> 00:45:51,680
+Shazer.co.uk.
+
+659
+00:45:51,680 --> 00:45:52,640
+Another Gareth Hayes.
+
+660
+00:45:52,640 --> 00:45:53,200
+Awesome tool.
+
+661
+00:45:54,800 --> 00:45:55,600
+Hey guys, real quick.
+
+662
+00:45:55,600 --> 00:45:57,840
+I just wanted to give a shout to the hacker content team.
+
+663
+00:45:57,840 --> 00:46:02,160
+They have been absolutely killing it the past couple months, taking the content from the podcast
+
+664
+00:46:02,160 --> 00:46:07,120
+and condensing it down into consumable social media posts, whether it be shorts or text posts or
+
+665
+00:46:07,120 --> 00:46:11,600
+whatever they've been rocking it. So, uh, I just wanted to give them a shout out and let you know
+
+666
+00:46:11,600 --> 00:46:16,080
+that they do all sorts of cybersecurity content as well as social media management. They do technical
+
+667
+00:46:16,080 --> 00:46:21,040
+blogs, they do a comprehensive social media management. Uh, so if your organization could
+
+668
+00:46:21,040 --> 00:46:25,360
+benefit from any of those types of services, make sure you head over to hackercontent.com,
+
+669
+00:46:25,360 --> 00:46:29,920
+drop them a line and mention the podcast when you do to get your first month of cybersecurity
+
+670
+00:46:29,920 --> 00:46:31,920
+content marketing services for free.
+
+671
+00:46:32,560 --> 00:46:34,080
+All right, that's it. Let's get back to the pod.
+
+672
+00:46:34,080 --> 00:46:42,160
+Um, all right. So, let me clear the throat really quick. Let me, uh, let me get some coffee.
+
+673
+00:46:42,720 --> 00:46:46,480
+Another certified CTPB moment of 43 minutes of news.
+
+674
+00:46:46,480 --> 00:46:51,280
+43 minutes of news. Man, you boys can yap. Can we not?
+
+675
+00:46:51,280 --> 00:46:52,560
+We can yap.
+
+676
+00:46:52,560 --> 00:46:53,600
+We are yappers. Yeah.
+
+677
+00:46:53,600 --> 00:47:00,080
+We are engaging in yapping activities. Okay. So, um, let's, let's go ahead and continue that.
+
+678
+00:47:00,080 --> 00:47:05,920
+And what I kind of wanted to talk to about today was match and replace. Okay. Match and replace is,
+
+679
+00:47:06,960 --> 00:47:14,000
+I think, severely underrated, uh, by, by top hackers in particular, because I think that there
+
+680
+00:47:14,000 --> 00:47:18,000
+is a lot of like, okay, you know, if you're just getting into bug bounty, you use the match and
+
+681
+00:47:18,000 --> 00:47:23,520
+replace, you do this and that and the other thing. But I think a lot of people stop using it. And I think
+
+682
+00:47:23,520 --> 00:47:31,440
+that's a mistake because there's, there is a lot of, there are a lot deeper layers you can go into
+
+683
+00:47:31,440 --> 00:47:37,920
+with match and replace. Um, that allows you to very quickly and easily test an application.
+
+684
+00:47:38,480 --> 00:47:45,040
+When, once you already have a deeper understanding of the application and some of, and some of these
+
+685
+00:47:45,040 --> 00:47:50,480
+things really do require a more thorough understanding of the browser than a lot of people
+
+686
+00:47:51,280 --> 00:47:55,040
+mention when they're like, Oh, beginner, go try the, you know, match and replace thing or whatever.
+
+687
+00:47:55,040 --> 00:48:00,240
+So I kind of wanted to talk about some of the, the areas where I've seen some success with this.
+
+688
+00:48:00,240 --> 00:48:04,960
+Uh, and I also wanted to try to get your thoughts on if you ever use this in a mobile hacking environment,
+
+689
+00:48:04,960 --> 00:48:10,560
+because, um, there's, I feel like there'd be some weird stuff with that since there isn't as an actual
+
+690
+00:48:10,560 --> 00:48:17,840
+client side, uh, of sorts, or I guess the client side is like Java code. Um, but let, let me start
+
+691
+00:48:17,840 --> 00:48:23,120
+out with this. So one of the cool areas that I've seen with this is actually using match and replace
+
+692
+00:48:23,120 --> 00:48:31,920
+to turn on and off feature flags and experiments and AB testing stuff. And, and you, you very often
+
+693
+00:48:31,920 --> 00:48:38,160
+see this, it could, it could be an HTTP request that gets issued from the, the JavaScript. Uh, and it
+
+694
+00:48:38,160 --> 00:48:43,040
+oftentimes it's not even too, this is the tricky part. Okay. Oftentimes it's not even in your, your
+
+695
+00:48:43,040 --> 00:48:49,760
+defined scope, right? Like it'll be reaching out to like launch darkly or like, um, some of these other
+
+696
+00:48:49,760 --> 00:48:57,200
+feature flag controlling domains. Um, and it'll be like, Hey, what features should I turn on for user XYZ?
+
+697
+00:48:57,200 --> 00:49:04,720
+And then it'll be like, here's a list, you know, super admin functionality enabled false, you know, and,
+
+698
+00:49:04,720 --> 00:49:11,200
+and just using a match and replace rule to turn on all of those will give you access to so much more
+
+699
+00:49:11,200 --> 00:49:14,960
+functionality and save you so much time because at the end of the day, we're going to find the features
+
+700
+00:49:14,960 --> 00:49:18,640
+because we're just going to parse through the JS and we're going to understand, you know, where each
+
+701
+00:49:18,640 --> 00:49:22,720
+of these endpoints are and we're going to try to recreate their quest, but man, how much easier would
+
+702
+00:49:22,720 --> 00:49:27,920
+it be if you just click the button in, in the browser and it was like, Oh, okay. You are a super admin
+
+703
+00:49:27,920 --> 00:49:32,800
+and you just get to use the interface like it's intended. Yeah. That's one of my, honestly,
+
+704
+00:49:32,800 --> 00:49:38,400
+one of my favorite things to do is just set a match in a place to replace false to true. Yeah.
+
+705
+00:49:38,400 --> 00:49:45,280
+And like nothing even specific, just false to true. Dude, that just wreaks freaking havoc on
+
+706
+00:49:45,280 --> 00:49:50,480
+the application. It does. It does. But that's my favorite thing is, you know, it, it shows you so
+
+707
+00:49:50,480 --> 00:49:55,440
+many things that generally you wouldn't see. Um, you know, sometimes it, it may end up doing the
+
+708
+00:49:55,440 --> 00:49:59,920
+opposite thing. Like, you know, maybe they have is banned false. And then you said that one's a true by
+
+709
+00:49:59,920 --> 00:50:04,080
+accident. Uh, but you know, it helps you sort of narrow down where you want to, you know, you,
+
+710
+00:50:04,080 --> 00:50:08,240
+you can narrow it down later and be more specific on, you know, which endpoints it replaces on or
+
+711
+00:50:08,240 --> 00:50:12,480
+whatever. Um, but just setting false to true is, is a great thing. I would encourage, this is a little,
+
+712
+00:50:12,480 --> 00:50:18,000
+I'll, I'll just drop this, go to hacker one and, uh, set your proxy to replace false to true.
+
+713
+00:50:19,680 --> 00:50:24,960
+Okay. So you're going to see a lot of really interesting things. Oh my gosh, Joel. Yeah. And, and,
+
+714
+00:50:24,960 --> 00:50:34,080
+and I think, I think that is a, that is one of my first, um, exposures, I think to match and replace
+
+715
+00:50:34,080 --> 00:50:41,520
+was I remember very pointedly talking to none other than Mr. Mark Litchfield himself, the king of,
+
+716
+00:50:41,520 --> 00:50:46,560
+uh, you know, finding weird little, little techniques. And, and if you, if you talk to him,
+
+717
+00:50:46,560 --> 00:50:51,840
+he's very humble, you know, he, he'll say like, he's very humble in some ways. Uh, but when I was
+
+718
+00:50:51,840 --> 00:50:56,320
+talking to him, he's very, very humble about like, okay, you know, I don't actually know that much
+
+719
+00:50:56,320 --> 00:51:02,640
+about how all this stuff works, but I found that if, uh, what he's really good at is understanding
+
+720
+00:51:02,640 --> 00:51:07,120
+the, the logic of the application, the business logic, the application and that sort of thing.
+
+721
+00:51:07,120 --> 00:51:12,560
+And he's like, if I set false to true where the match and replace role, then I see a bunch of extra
+
+722
+00:51:12,560 --> 00:51:16,400
+stuff. And then I can kind of go through here and dig through all these requests and document it
+
+723
+00:51:16,400 --> 00:51:20,480
+and that sort of thing. I was like, okay, that's weird. Why does that work that way? And then I started
+
+724
+00:51:20,480 --> 00:51:26,080
+looking deeper into it and I, and you see some of this stuff. Um, and I think setting false to true
+
+725
+00:51:26,080 --> 00:51:29,840
+is sort of the naive approach to this whole thing. And you will get some results out of this,
+
+726
+00:51:29,840 --> 00:51:34,560
+but you will get much better results. If you actually just look at the HTML page,
+
+727
+00:51:34,560 --> 00:51:39,920
+look at the API request that's turning on feature flags or, or look at, if you determine the way that
+
+728
+00:51:39,920 --> 00:51:44,320
+the app, the front end application is being informed about what role you are or what features
+
+729
+00:51:44,320 --> 00:51:49,920
+you have enabled. And then you design a custom match and replace rule to enhance that. Either you look at the
+
+730
+00:51:49,920 --> 00:51:55,040
+JavaScript and you extract all the roles and you match and replace that into the roles, um, array
+
+731
+00:51:55,040 --> 00:52:02,800
+that's coming back from, uh, uh, the API request, or you, you, um, you look at, at the request that's
+
+732
+00:52:02,800 --> 00:52:08,000
+saying, is this feature enabled? Is this feature not enabled? Then, you know, you match and replace those
+
+733
+00:52:08,000 --> 00:52:13,920
+to true. Um, you'll get a lot of good results on that. And I think just to your, to what you were saying
+
+734
+00:52:13,920 --> 00:52:20,240
+there, Joel about just changing false to true. I think this works a lot better when you use Kyto's
+
+735
+00:52:20,240 --> 00:52:26,160
+conditional match and replace, which I haven't, I, maybe I'm just not as familiar with how to do this in
+
+736
+00:52:26,160 --> 00:52:32,720
+burp, but I haven't seen a way to do this in burp where you essentially say, okay, if the request path, uh,
+
+737
+00:52:32,720 --> 00:52:40,880
+is something like this, then replace false with true. So then it becomes much more like much less, uh, destructive.
+
+738
+00:52:40,880 --> 00:52:45,760
+You're not taking your JavaScript file and then just saying every time false is in a JavaScript file,
+
+739
+00:52:45,760 --> 00:52:50,800
+turn it to true. Instead you're saying you can define a specific path and then switch false to true.
+
+740
+00:52:51,520 --> 00:52:56,560
+Yeah. So in burp, as far as I know, the only way to do is basically like an all or nothing type of way
+
+741
+00:52:56,560 --> 00:53:02,640
+where on Kyto each individual match or replace rule can have its own conditions. Burp is either,
+
+742
+00:53:03,440 --> 00:53:09,200
+you know, apply this to in scope and then you can define in scope how you want it, uh, or it just
+
+743
+00:53:09,200 --> 00:53:13,760
+doesn't apply at all to any, to anything like that. Um, or you can, I think you say like,
+
+744
+00:53:14,560 --> 00:53:18,640
+you know, it has to be the URL has to match a certain, like you can do it, but again, those rules
+
+745
+00:53:18,640 --> 00:53:24,400
+are like all or nothing. It's not, yeah, yeah. It's not like per rule. Yeah. And so I think that's
+
+746
+00:53:24,400 --> 00:53:29,120
+a really cool feature of Kyto. And I think they're also, I've been talking with the team because, uh,
+
+747
+00:53:29,120 --> 00:53:35,120
+I really want them to put extra effort into the match and replace feature. And, um, I actually wrote a,
+
+748
+00:53:35,120 --> 00:53:41,840
+uh, uh, sort of some augmentation, some, um, some things that make the match and replace stuff better.
+
+749
+00:53:41,840 --> 00:53:46,560
+And I, I put that into even better, the Kyto extension, um, where you can just sort of select
+
+750
+00:53:46,560 --> 00:53:51,920
+some texts, right click, send a match and replace, and it will auto populate the name and the matching
+
+751
+00:53:51,920 --> 00:53:57,520
+string in match and replace for you. And then you can just easily create your rule. Um, so definitely
+
+752
+00:53:57,520 --> 00:54:04,080
+some cool stuff there. I, they have also, the Kyto team has also mentioned that they will potentially
+
+753
+00:54:04,080 --> 00:54:10,320
+at some point allow for a regex plus convert workflow, um, match and replace, which would
+
+754
+00:54:10,320 --> 00:54:15,200
+be really awesome. And I think how that would work is you define a regex that matches it. And then that
+
+755
+00:54:15,200 --> 00:54:22,240
+match is then passed into a convert workflow, which is a Kyto construct where you can, um, perform sort of
+
+756
+00:54:22,240 --> 00:54:29,920
+hackverter ask, um, modifications to that data. So you can URL encode, you can basically foreign code,
+
+757
+00:54:29,920 --> 00:54:36,880
+you can do whatever. And this is the best part. You can just run JavaScript. Um, so then, you know,
+
+758
+00:54:36,880 --> 00:54:41,600
+you have access to a bunch of different things you can shell out, you can do all sorts of stuff.
+
+759
+00:54:41,600 --> 00:54:47,760
+Um, and I'm excited for that. Cause I think that will add a little bit more, um, that, that'll allow
+
+760
+00:54:47,760 --> 00:54:55,680
+for you to match things that are not static and turn them all into something that is relevant,
+
+761
+00:54:55,680 --> 00:55:01,920
+relative to what it was. So if you have some integer that needs to increase, uh, with every match or
+
+762
+00:55:01,920 --> 00:55:05,280
+something like that, then you can do that with the convert workflow. And I have run into a couple
+
+763
+00:55:05,280 --> 00:55:09,680
+scenarios where I just have to manually create a shit ton of match and replace roles to get it to
+
+764
+00:55:09,680 --> 00:55:12,800
+do what I want it to do. So I'm excited for that feature to roll out as well.
+
+765
+00:55:13,760 --> 00:55:17,120
+Yeah. Yeah. Super awesome. And I think like, that's one of the really
+
+766
+00:55:17,120 --> 00:55:24,160
+awesome things about Kyto's that it has, it has like built in flexibility, right? Where burp,
+
+767
+00:55:24,160 --> 00:55:28,560
+I think you basically to do any of this, you'd have to install some sort of extension that allows
+
+768
+00:55:28,560 --> 00:55:33,680
+you to do it where this is sort of just native functionality that's built in. And then there
+
+769
+00:55:33,680 --> 00:55:37,360
+are extensions, but usually those extensions are using the built in functionality. Yeah.
+
+770
+00:55:37,360 --> 00:55:42,400
+Um, it's not, you know, behind some SDK or something like that. Um, and even just recently,
+
+771
+00:55:42,400 --> 00:55:46,800
+I wrote a convert workflow that, uh, just made a shell command that basically likes,
+
+772
+00:55:46,800 --> 00:55:50,880
+so I could work at, you know, originally it was from, for burp, it was honestly doing the same
+
+773
+00:55:50,880 --> 00:55:54,480
+thing where it was just like calling a script. And I was like, here, let me just convert this
+
+774
+00:55:54,480 --> 00:55:59,120
+over to Kyto, um, and just turn it into a workflow that calls the same script and yeah,
+
+775
+00:55:59,120 --> 00:56:04,320
+it works great. Yeah. Yeah. It's, it's surprisingly, um, I think there's still, uh,
+
+776
+00:56:04,320 --> 00:56:08,480
+they're still working on backend plugins and stuff like that with Kyto, but there is a lot of
+
+777
+00:56:08,480 --> 00:56:14,320
+flexibility that comes along with, um, passive workflows and active workflows and convert workflows.
+
+778
+00:56:14,320 --> 00:56:20,240
+But just those, those three constructs, you can do a lot of stuff. Um, a lot of implementing your
+
+779
+00:56:20,240 --> 00:56:26,080
+ideas into automation very quickly without having to build a whole plugin, which I think is pretty rad.
+
+780
+00:56:26,720 --> 00:56:32,640
+Um, all right. So back to the match and replace stuff. Um, this is another sort of, um,
+
+781
+00:56:32,640 --> 00:56:40,720
+maybe something that isn't really often, uh, categorized with match and replace is this whole
+
+782
+00:56:40,720 --> 00:56:48,000
+ability to save yourself some time. This is such real shit to do, like to save yourself some time
+
+783
+00:56:48,000 --> 00:56:52,640
+on going down a wrong attack path, because what I'll often see is like, I'll make assumptions about
+
+784
+00:56:52,640 --> 00:56:56,080
+the application. I'll see, okay, I'm thinking of the specific scenario. So I'll just give you the
+
+785
+00:56:56,080 --> 00:57:02,480
+specific scenario. There was a, um, an input that I could provide to a front end page that would then
+
+786
+00:57:02,480 --> 00:57:09,520
+get passed into, uh, a fetch request and then be reflected in the body of the response. And then
+
+787
+00:57:09,520 --> 00:57:17,760
+that, that, um, piece of, of data would then be put directly into window.location.href. So I'm
+
+788
+00:57:17,760 --> 00:57:23,440
+thinking, okay, great. I can, if I can get it to hit a JavaScript URL and it just goes straight to
+
+789
+00:57:23,440 --> 00:57:29,120
+window.location.href, then I can get XSS. And it, you know, let me start fuzzing around with this
+
+790
+00:57:29,120 --> 00:57:32,480
+thing. And there was some really weird stuff. And I was like, ah, I'm pretty close. I think I can get
+
+791
+00:57:32,480 --> 00:57:36,720
+this. So I was like, ah, I'm going to spend some time fuzzing this, trying to like figure out what
+
+792
+00:57:36,720 --> 00:57:42,560
+characters I can put in there to get it, to accept it. And, um, and then right as I was about to go down
+
+793
+00:57:42,560 --> 00:57:47,920
+that whole, like 30 minute rabbit hole, I was like, wait a second, let me just validate this attack
+
+794
+00:57:47,920 --> 00:57:53,040
+strategy really quick without having to go and parse through like 25,000 lines of JavaScript.
+
+795
+00:57:53,600 --> 00:57:59,360
+And, um, and figure out whether this is going to work. So I just took the value. I just put in like
+
+796
+00:57:59,360 --> 00:58:06,000
+an accepted value. I matched and replaced it to a JavaScript URL. And I popped it in there and lo and
+
+797
+00:58:06,000 --> 00:58:11,600
+behold, it was not going to work. There was, there was, uh, there was some other way that it was doing
+
+798
+00:58:11,600 --> 00:58:16,720
+it that wasn't compatible with that. And, uh, and it was doing some checks along the way that was, were
+
+799
+00:58:16,720 --> 00:58:22,480
+never going to be compatible with the JavaScript URL. Um, and I could see that very quickly, uh, because I
+
+800
+00:58:22,480 --> 00:58:26,320
+just used match and replace to quickly validate whether this attack path that I was going down
+
+801
+00:58:26,320 --> 00:58:32,320
+was actually going to work in the end or not. Um, so I think this is sort of like a, a, um,
+
+802
+00:58:32,320 --> 00:58:37,600
+threat model validation or like a, um, attack vector validation method as well that can save you
+
+803
+00:58:37,600 --> 00:58:42,240
+some time is just really quickly doing a match and replace rule, validating what you're thinking about,
+
+804
+00:58:42,240 --> 00:58:44,640
+and then deciding whether to go down that path or not.
+
+805
+00:58:44,640 --> 00:58:50,320
+Yeah. Cause I think otherwise you'd probably have to set a bunch of break points and chase down stuff
+
+806
+00:58:50,320 --> 00:58:54,640
+in the JavaScript and that would also work, but it would take a lot more time and energy and effort
+
+807
+00:58:54,640 --> 00:58:58,960
+to try and find that exact thing. And sometimes your break points don't trigger and you're just like,
+
+808
+00:58:58,960 --> 00:59:01,600
+you're going to spend 30 minutes just banging your head against the wall.
+
+809
+00:59:01,600 --> 00:59:05,920
+And the freaking dev console, man, you know, I love it and I use it every day, but it's like
+
+810
+00:59:06,560 --> 00:59:10,800
+there it's, it's much nicer to just very quickly just do a little match and replace thing because it's
+
+811
+00:59:10,800 --> 00:59:15,760
+so quick and easy. You could validate your attack strategy in 20 seconds, you know? So it's
+
+812
+00:59:15,760 --> 00:59:20,800
+definitely, that's definitely another sort of underrated usage of it. I think. Um,
+
+813
+00:59:22,400 --> 00:59:31,040
+all right. So I've got three more. Let's see, let's go with, uh, okay. Another under underrated, uh,
+
+814
+00:59:31,040 --> 00:59:37,280
+implementation I think of, of match and replace is actually match and replacing JavaScript files,
+
+815
+00:59:38,000 --> 00:59:43,120
+uh, which is a little bit counterintuitive because it's like, okay, uh, normally we're just kind of
+
+816
+00:59:43,120 --> 00:59:48,800
+modifying data in HTML or an API requests. But essentially what I was able to do one time
+
+817
+00:59:48,800 --> 00:59:53,600
+was I was kind of sussing out, uh, I'll be public about this target. This was Google Bard.
+
+818
+00:59:54,080 --> 00:59:59,120
+And, uh, and I was kind of sussing out the way that they had their feature flags implemented
+
+819
+00:59:59,120 --> 01:00:03,040
+because Google Bard was under like mega rapid development, right?
+
+820
+01:00:03,040 --> 01:00:08,240
+Like they were cranking out features for that thing every single day. Like it was very important
+
+821
+01:00:08,240 --> 01:00:13,520
+to Google to get features out ASAP. Um, and so I was like, okay, well, they've got to be,
+
+822
+01:00:14,080 --> 01:00:17,760
+there's got to be some, some feature flag stuff surrounding this. So I was kind of sussing it out.
+
+823
+01:00:17,760 --> 01:00:23,840
+And I found this one function that was like, is this feature enabled? And it would return like true
+
+824
+01:00:23,840 --> 01:00:29,360
+or false. Right. And I was like, okay, wait a second. So I just match and replace, like wrote a
+
+825
+01:00:29,360 --> 01:00:34,400
+match and replace rule to just make that function always return true. So I didn't even have to do
+
+826
+01:00:34,400 --> 01:00:40,960
+this whole thing where it was like, okay, let me, let me, um, you know, match and replace enabled,
+
+827
+01:00:40,960 --> 01:00:45,440
+enabled true for like this specific one and that specific one, because they were all sort of
+
+828
+01:00:45,440 --> 01:00:51,120
+encrypted in a weird way in true Google fashion. Um, and, and so I just match and replace that one
+
+829
+01:00:51,120 --> 01:00:56,720
+thing to true. And all of a sudden, boom, like my screen just lit up with new features and I found
+
+830
+01:00:56,720 --> 01:01:00,400
+like five or six bugs from it. Um, yeah, I had a very similar thing happen just the other day,
+
+831
+01:01:00,400 --> 01:01:05,360
+actually, where, um, I was, I was looking at, again, feature feature flag type thing. There's a,
+
+832
+01:01:05,360 --> 01:01:09,040
+there was a function in the JavaScript that was being called every single time it would pass in
+
+833
+01:01:09,040 --> 01:01:13,360
+like this key for the feature name and then it would return whether or not it was enabled. And so I just
+
+834
+01:01:14,000 --> 01:01:20,400
+looked for calls of that. And instead, uh, I replaced it with, um, true, you know, just,
+
+835
+01:01:22,240 --> 01:01:26,320
+you know, I, I actually, I believe I chained it together where I did like variable
+
+836
+01:01:26,320 --> 01:01:31,840
+equals call and then I just did equals call equals true. And then, ah, there you go. Yeah. Yeah.
+
+837
+01:01:32,400 --> 01:01:38,720
+Nice. So you, so you replaced any reference to that with a, a, something that evaluated to true.
+
+838
+01:01:38,720 --> 01:01:42,160
+That's a great idea. It doesn't even call the function. It just, it just replaces it with true.
+
+839
+01:01:42,160 --> 01:01:47,920
+That's cool. Yeah. So, so I think imagine replacing JavaScript. There's, there's a couple
+
+840
+01:01:47,920 --> 01:01:53,280
+different applications of it, I think as well. Um, this was just the one that I had most fresh in my brain.
+
+841
+01:01:53,280 --> 01:02:00,000
+Um, one of the other things that I've kind of seen with this is like, there will be a weird edge case
+
+842
+01:02:00,000 --> 01:02:05,760
+sometimes with, um, web packed JavaScript where the browser is like, oh, I know, I know what this does.
+
+843
+01:02:05,760 --> 01:02:11,680
+And it'll like, try to try to expand it or whatever. And then you're trying to go through and you're
+
+844
+01:02:11,680 --> 01:02:18,320
+trying to like set break points and it won't do it. And it's like some statement call that is outside of
+
+845
+01:02:18,320 --> 01:02:23,920
+an if statement will get triggered, even though the statement isn't true or something like that.
+
+846
+01:02:23,920 --> 01:02:31,360
+And essentially what's happening is, is the browser is messing up the, the reconstruction of that,
+
+847
+01:02:31,360 --> 01:02:35,920
+that minified JavaScript file. Um, and it's showing you something that's not accurate.
+
+848
+01:02:35,920 --> 01:02:42,560
+So, so there's a little button down at the bottom of the, of the, um, dev console. That's like, uh,
+
+849
+01:02:43,760 --> 01:02:47,200
+see the source where this originally came from. I forget what, what the button actually says,
+
+850
+01:02:47,200 --> 01:02:50,400
+but it's like, you can click on it. It'll show you the location of the minified source. But then
+
+851
+01:02:50,400 --> 01:02:54,960
+if you try to do anything to that minified source, it'll just be like, you want to see the unminified
+
+852
+01:02:54,960 --> 01:03:00,000
+source, don't you? And then it'll like, send you back to the, the unminified source. And you're like,
+
+853
+01:03:01,040 --> 01:03:07,040
+so, um, so what, what I do in that scenario is I'll set up a match and replace rule to just remove the,
+
+854
+01:03:07,040 --> 01:03:12,160
+the source map, uh, and just say, like, just, just don't do it browser, please.
+
+855
+01:03:12,160 --> 01:03:13,040
+Interesting.
+
+856
+01:03:13,040 --> 01:03:16,800
+And, uh, and then, you know, you refresh it and now you're just dealing with the minified source,
+
+857
+01:03:16,800 --> 01:03:21,040
+which despite being very difficult to read is always the source of truth, right?
+
+858
+01:03:21,040 --> 01:03:24,720
+Cause that's the code that it's actually running. Um, and you can make your modification there.
+
+859
+01:03:25,440 --> 01:03:30,160
+That's interesting. I've never had to do that. Although maybe I have, and just haven't done it.
+
+860
+01:03:30,160 --> 01:03:33,120
+Yeah. Joel is sitting there like, why is this break point?
+
+861
+01:03:33,120 --> 01:03:37,680
+I'm like, I'm thinking like, you know, there's really a lot of annoying cases that where I've
+
+862
+01:03:37,680 --> 01:03:42,400
+just like given up and like done something else to get around that. Um, because I'll like set something
+
+863
+01:03:42,400 --> 01:03:44,960
+that I know should be happening. It's just not. Yeah.
+
+864
+01:03:44,960 --> 01:03:44,960
+
+
+865
+01:03:44,960 --> 01:03:50,720
+Dev tools. Dev tools can be a bitch sometime, man. It really can. So yeah, it is what it is.
+
+866
+01:03:51,360 --> 01:03:58,720
+Um, all right. Uh, of course this would not be a comprehensive match and replace, uh,
+
+867
+01:03:59,520 --> 01:04:04,720
+episode. If I didn't talk about paywall bypasses in our back testing, I did sort of mention a little
+
+868
+01:04:04,720 --> 01:04:10,560
+bit. Um, the fact that you should really try to dive into the JavaScript a little bit, try to look
+
+869
+01:04:10,560 --> 01:04:16,800
+at the API calls and figure out exactly where they're making decisions about what kind of user you
+
+870
+01:04:16,800 --> 01:04:22,080
+are. Um, and I'll, I'll share a personal little anecdote about this the other day. I've got a mentee.
+
+871
+01:04:22,960 --> 01:04:30,160
+Um, and he was, I told him, Hey, I found some bugs here with match and replace. I think there's
+
+872
+01:04:30,160 --> 01:04:36,160
+probably some more here's the place I'm busy for the next week or whatever. Try to see if you can
+
+873
+01:04:36,160 --> 01:04:40,720
+find some bugs and, uh, and you know, we'll split them because I gave you the hot lead on it and I
+
+874
+01:04:40,720 --> 01:04:45,280
+showed you exactly how to do it. And he's like, okay, great. So he gets in there and, um, he starts
+
+875
+01:04:45,280 --> 01:04:49,760
+poking around and he starts setting up these match and replace rules. And I just sort of saw the role,
+
+876
+01:04:50,320 --> 01:04:56,720
+uh, endpoint in the, in the, uh, uh, like in this sort of environment. And I was like, okay, great.
+
+877
+01:04:56,720 --> 01:05:00,320
+This is where it's happening. And I like, you know, match and placed all the roles in there.
+
+878
+01:05:00,320 --> 01:05:03,200
+And I saw my screen light up and a bunch of features turned on and I was like, great.
+
+879
+01:05:03,200 --> 01:05:08,560
+And I found some bugs and I got excited and I was like, this is the way. Right. And, but I said,
+
+880
+01:05:08,560 --> 01:05:11,840
+okay, I'm not going to tell you exactly how to do it. So you can try to figure out how to do it
+
+881
+01:05:11,840 --> 01:05:16,480
+yourself, go check it out. And so he found that, but he also found something that I didn't find,
+
+882
+01:05:16,480 --> 01:05:23,040
+which was like this little, um, Boolean that's at like the very end of a massive blob of,
+
+883
+01:05:23,040 --> 01:05:29,840
+of data inside a script tag in the HTML page that was like, is admin, you know,
+
+884
+01:05:29,840 --> 01:05:33,760
+is moderator true, false. And I'm like, oh man, of course I had seen that, you know,
+
+885
+01:05:33,760 --> 01:05:38,480
+that'd be great. And it was, it wasn't like his admin, it was actually is moderator. So it didn't
+
+886
+01:05:38,480 --> 01:05:43,280
+really, I didn't, you know, when I searched for admin, it didn't like pop up or anything, but, um,
+
+887
+01:05:44,320 --> 01:05:50,080
+turning that on gave him access to a whole nother set of, of functionality in the web app,
+
+888
+01:05:50,080 --> 01:05:54,960
+just from that one Boolean rather than having to do the whole complex, like role thing. Um,
+
+889
+01:05:54,960 --> 01:05:58,640
+so he got access to a bunch of stuff that I didn't get access to. And then I was kind of poking in
+
+890
+01:05:58,640 --> 01:06:02,720
+there around there with him. And we found like client side path traversal piece that was in there,
+
+891
+01:06:02,720 --> 01:06:07,920
+um, that would only affect the moderators. Uh, and so there's, there's definitely some,
+
+892
+01:06:07,920 --> 01:06:13,760
+some value in really being thorough about your assessment. And even if you found where you think
+
+893
+01:06:13,760 --> 01:06:20,640
+the, the application is doing those RBAC decisions or those role decisions, taking it another layer
+
+894
+01:06:20,640 --> 01:06:25,760
+deeper, really being thorough with that and trying to undercover or uncover every single little off
+
+895
+01:06:25,760 --> 01:06:29,920
+decision or, um, uh, decision on what should be displayed in the application.
+
+896
+01:06:29,920 --> 01:06:35,840
+Yeah. Yeah, for sure. I, again, this is one of the instances where it just keep it simple,
+
+897
+01:06:35,840 --> 01:06:42,720
+you know, keep, keep it simple is, uh, when you know how to, how to use so many tools, it's easy
+
+898
+01:06:42,720 --> 01:06:47,840
+to want to use those tools to fill very specific use cases. But a lot of times it's just more
+
+899
+01:06:47,840 --> 01:06:52,720
+complicated than it needs to be. Um, and you know, you're, you'll write some really complicated
+
+900
+01:06:52,720 --> 01:06:56,960
+regex or something, or you'll go and you'll set all these break points and really you should just
+
+901
+01:06:56,960 --> 01:07:00,960
+be doing a match and replace for just a single string and just keep it simple. So you can keep your
+
+902
+01:07:00,960 --> 01:07:04,960
+testing moving, um, instead of getting sidetracked and pulled away into this, this sort of
+
+903
+01:07:04,960 --> 01:07:08,640
+rabbit hole of like doing it correctly or doing it very precisely and accurately.
+
+904
+01:07:08,640 --> 01:07:14,160
+Yeah. And, and reevaluating and making sure that you are, you know, hitting all of these
+
+905
+01:07:14,160 --> 01:07:19,280
+different spots, like, cause you could make the same mistake that I did going down this route of like,
+
+906
+01:07:19,280 --> 01:07:24,240
+ah, the roles, that's the whole are back, you know, and there's actually another section that you missed.
+
+907
+01:07:24,240 --> 01:07:30,560
+Um, so that that's a good shout there. Um, the other one that I was going to mention here is
+
+908
+01:07:31,120 --> 01:07:34,160
+paywall bypasses, which, you know, I don't know, maybe,
+
+909
+01:07:34,160 --> 01:07:38,720
+am I the only one that calls them paywall bypasses? Because I feel like I, I searched this up the other
+
+910
+01:07:38,720 --> 01:07:46,640
+day and there isn't a bunch of stuff on like reading materials. Yeah. There's not like a bunch
+
+911
+01:07:46,640 --> 01:07:55,680
+of articles on this volume type. So maybe I it's under some, some other name, but I call playwall bypasses
+
+912
+01:07:55,680 --> 01:08:00,320
+essentially when there is some functionality that's behind a paywall, you need to be a premium subscriber
+
+913
+01:08:00,320 --> 01:08:09,040
+to access XYZ feature. Um, and you're able to bypass that. Um, and these are very impactful bugs,
+
+914
+01:08:09,920 --> 01:08:16,480
+because I know that I personally paid a decent chunk of money. Let's just say that for access to a software
+
+915
+01:08:16,480 --> 01:08:22,400
+that I use every day that makes my life super much better. And I love it. Uh, but I only needed one feature
+
+916
+01:08:22,400 --> 01:08:28,880
+that the premium for that, for that software was going to add. And then I found out afterwards that that software has a bug bounty program.
+
+917
+01:08:28,880 --> 01:08:34,960
+And I was like, wait a second. And I started poking at it and I was actually able to access that feature without going through the,
+
+918
+01:08:34,960 --> 01:08:39,600
+uh, without paying for it. It was a paywall bypass on that. And I reported it and it got paid and it was great.
+
+919
+01:08:39,600 --> 01:08:45,360
+And it paid for my subscription to that software for a long time. Um, but I wouldn't have, you know,
+
+920
+01:08:45,360 --> 01:08:50,880
+if I were a malicious user, I wouldn't have paid for that software, uh, because I had just accessed this feature.
+
+921
+01:08:50,880 --> 01:08:56,240
+And it was a very simple, very simple exploit too, that a non-technical user could have easily found.
+
+922
+01:08:56,240 --> 01:09:02,720
+Yeah. Um, one thing I will say is paywall bypass is often, it's very case by case. So some programs,
+
+923
+01:09:02,720 --> 01:09:06,720
+it's just an accepted risk or it's, it's, you know, it's not something that's easy to exploit at scale.
+
+924
+01:09:06,720 --> 01:09:10,960
+And so they don't, they won't really either, they'll lower the severity significantly, or it's just like,
+
+925
+01:09:11,520 --> 01:09:16,880
+um, not like a huge, like security risk for them. But a lot of times you can use those paywall
+
+926
+01:09:16,880 --> 01:09:21,920
+bypasses to test other features where you will find bugs. And then again, you can sort of like
+
+927
+01:09:21,920 --> 01:09:27,440
+chain that together. You can leverage that to, to get a more impactful exploit, um, and access that
+
+928
+01:09:27,440 --> 01:09:31,360
+attack surface without having to pay for it. Yeah. We, we often talk about just paying the price.
+
+929
+01:09:31,360 --> 01:09:36,400
+Well, wouldn't it be cool if you just didn't pay it and you still got access to the feature. So, uh,
+
+930
+01:09:36,400 --> 01:09:41,040
+I think about like paywall bypass is kind of like, you know, WAF, WAF bypasses, right? It's, it's,
+
+931
+01:09:41,040 --> 01:09:46,720
+it's more of a barrier to other things than it is like necessarily a bug by itself. It can be a
+
+932
+01:09:46,720 --> 01:09:52,960
+bug by itself, but, um, you know, I, I see it more as like a barrier to other features and other
+
+933
+01:09:52,960 --> 01:09:57,360
+functionality that you can test. It's interesting you say that because I actually have had a lot
+
+934
+01:09:57,360 --> 01:10:04,160
+of success with paywall bypasses, man. Like, like I, I think I've been like, I don't know,
+
+935
+01:10:04,160 --> 01:10:08,880
+talking about this specific bug type before and, and people are like, ah, yeah, paywall bypasses.
+
+936
+01:10:08,880 --> 01:10:12,320
+Like, yeah, sometimes they pay for those. And I'm like, what?
+
+937
+01:10:12,320 --> 01:10:16,240
+Like, I mean, it's not really a security bug, right? It's like,
+
+938
+01:10:16,240 --> 01:10:21,040
+absolutely. I mean, there is like a, uh, an access control being bypassed, but other than that,
+
+939
+01:10:21,040 --> 01:10:25,120
+it's like, it doesn't affect user data or anything like that. It's more of a business. It's more like
+
+940
+01:10:25,120 --> 01:10:30,000
+a business impact than it is. Ah, business logic error. Yeah. Or something like that.
+
+941
+01:10:30,000 --> 01:10:34,240
+Yeah. Like it, it affects like the, the revenue side of the business more than it does like any,
+
+942
+01:10:34,240 --> 01:10:40,240
+like, like, it's not like, you know what I mean? It's not like a standard security vulnerability.
+
+943
+01:10:40,240 --> 01:10:46,800
+Sort of. I think the revenue for business is pretty important.
+
+944
+01:10:47,680 --> 01:10:48,720
+It depends, right?
+
+945
+01:10:48,720 --> 01:10:53,920
+You know, and so, especially with high dollar, high dollar products, you know, if it's like,
+
+946
+01:10:53,920 --> 01:10:57,440
+you know, something that's like five bucks a month or whatever, then it's,
+
+947
+01:10:57,440 --> 01:11:00,800
+you know, they may not care. But to be honest, man, I found paywall bypasses on,
+
+948
+01:11:01,280 --> 01:11:07,360
+on like very, very nominal fee stuff on massive companies and they still paid it. And I'm like,
+
+949
+01:11:07,360 --> 01:11:14,240
+huh, let me just look at this bounty. Like this bounty is like, you know, this, this bug would
+
+950
+01:11:14,240 --> 01:11:21,680
+have had to have been exploited like 50 times for, for this bounty to actually cover the loss that they
+
+951
+01:11:21,680 --> 01:11:27,040
+made. So, you know, there, there is some sort of, um, there's some sort of nuance to it, but I also
+
+952
+01:11:27,040 --> 01:11:33,200
+think that there is a desire from these companies to be very
+
+953
+01:11:36,480 --> 01:11:40,720
+thorough with their, with their security assessments, especially companies that are
+
+954
+01:11:40,720 --> 01:11:45,840
+running bug bounty programs. Um, and so I, my experience has been that if you can show impact,
+
+955
+01:11:45,840 --> 01:11:51,360
+if you can show like a, like a pricing matrix table that says, Hey, you should not be able to configure
+
+956
+01:11:51,360 --> 01:11:58,080
+the, you know, single sign on for a non enterprise organization and you can, and it works for like
+
+957
+01:11:58,080 --> 01:12:02,480
+a pro level organization or something like that. And there's a little X in the box for pro and there's
+
+958
+01:12:02,480 --> 01:12:07,520
+a little, you know, check mark in the box for, for business. Then they're normally like,
+
+959
+01:12:07,520 --> 01:12:09,680
+The true crux of having documentation for your product is,
+
+960
+01:12:10,640 --> 01:12:11,360
+I mean, that's the real shit, right?
+
+961
+01:12:11,360 --> 01:12:15,600
+You got any kind of reading it. Like that's the, you know, and, and, and yeah.
+
+962
+01:12:15,600 --> 01:12:18,400
+If you never make documentation though, they can't call you out on it.
+
+963
+01:12:18,400 --> 01:12:23,440
+Exactly, man. I love, I love when I find documentation that's like, you know, this is,
+
+964
+01:12:23,440 --> 01:12:27,440
+it goes back to the whole Douglas Day thing where it's like, look for the nose in the application.
+
+965
+01:12:27,440 --> 01:12:32,240
+I love it when we come across some documentation that's like, X, Y, Z users should absolutely not
+
+966
+01:12:32,240 --> 01:12:39,200
+be able to do, you know, whatever. And I'm like, let me just screenshot this bad boy right here and
+
+967
+01:12:39,200 --> 01:12:43,680
+just drop them right into the report. And I don't know. I feel like that kind of makes it bulletproof
+
+968
+01:12:43,680 --> 01:12:48,720
+personally. So, well, there, there's two takes for you guys on, on the paywall bypassing thing.
+
+969
+01:12:48,720 --> 01:12:53,360
+It seems like Joel has also not had as much luck with it. I would say my paywall bypasses get
+
+970
+01:12:53,360 --> 01:12:58,880
+accepted 95% of the time. So, yeah. Yeah. I think it, yeah, it definitely depends on the business.
+
+971
+01:12:58,880 --> 01:13:05,840
+That's what I've observed. Interesting. All right. Last one before. Oh, also I do want to hear from
+
+972
+01:13:05,840 --> 01:13:10,240
+you about, well, let's just go there now. Is there, is there any applications for match and
+
+973
+01:13:10,240 --> 01:13:15,280
+replace inside of a mobile environment? I mean, obviously you've got similar sort of things where
+
+974
+01:13:15,280 --> 01:13:20,000
+like, yeah, I mean, I think a lot of the, yeah, I think like a lot of the things that we talked about
+
+975
+01:13:20,880 --> 01:13:26,160
+already apply here as well, especially with like JSON replies, you know, like hitting an endpoint to check
+
+976
+01:13:26,160 --> 01:13:30,320
+if you're this role or if you have these permissions or fetching what feature flags are turned on or off.
+
+977
+01:13:30,320 --> 01:13:36,240
+That's very, very common for mobile because like you said, it's not, um, it's not like a client side
+
+978
+01:13:36,240 --> 01:13:40,640
+application in the sense that it's using HTML and the web and JavaScript to do all that. It's making
+
+979
+01:13:40,640 --> 01:13:45,920
+individual API calls, taking those responses, parsing them, using those results to do things
+
+980
+01:13:45,920 --> 01:13:52,800
+within the client app, like to enable a debug menu or to enable some feature or whatever. So it's almost
+
+981
+01:13:52,800 --> 01:13:57,440
+a little more straightforward in the fact that you're generally going to be getting straight
+
+982
+01:13:57,440 --> 01:14:03,360
+JSON or API responses that you can modify and match, replace on those responses or requests,
+
+983
+01:14:03,360 --> 01:14:07,600
+then you would have to go and dig through a JavaScript file and find the call that's enabling
+
+984
+01:14:07,600 --> 01:14:12,240
+a feature flag. You can also do it, you know, less of a match or replace, but like with Fria, right?
+
+985
+01:14:12,240 --> 01:14:15,600
+Where you go and you find maybe there's, you know, oftentimes there's a feature flag
+
+986
+01:14:16,480 --> 01:14:21,280
+function within the Java. You go find that call, you just return true, um, for every, you know,
+
+987
+01:14:21,280 --> 01:14:26,000
+input or whatever. And it's a similar type of thing, but a little more involved than just on the API
+
+988
+01:14:26,000 --> 01:14:31,280
+level. Yeah. Yeah. No, that, that makes a lot of sense. Yeah. That you would just have to implement
+
+989
+01:14:31,280 --> 01:14:35,840
+that, I guess, at the, at the Java level, if you want to address it from a JavaScript perspective,
+
+990
+01:14:36,560 --> 01:14:40,240
+or if you wanted to actually use match and replace in an HTTP proxy, then you would, you would do it at
+
+991
+01:14:40,240 --> 01:14:47,680
+the API, API level. Um, yeah, that, that makes sense. I had, I had something else that I wanted to ask you
+
+992
+01:14:47,680 --> 01:14:53,920
+about that and it's escaping my mind right now. Whoa. Oh, that's what it was. So, so like in these mobile
+
+993
+01:14:53,920 --> 01:15:05,200
+applications, sometimes there, there is this whole piece of like client side features that I feel
+
+994
+01:15:05,200 --> 01:15:10,320
+like is a little bit more, uh, expected than in like a browser because the phone has actual
+
+995
+01:15:10,320 --> 01:15:16,160
+functionality. Like, like for example, like, oh, we can't like take a picture and like apply a certain
+
+996
+01:15:16,160 --> 01:15:21,280
+filter to it or something like that when you don't have the premium product or whatever. Right. But all
+
+997
+01:15:21,280 --> 01:15:27,520
+of that stuff is client side. So all of that is, is in the, the Java code, you know, if we're talking
+
+998
+01:15:27,520 --> 01:15:32,320
+about an Android app for this application. So, and, and I did run across this really interesting thing
+
+999
+01:15:32,320 --> 01:15:40,640
+the other day where I was like, oh, I'd kind of like to be able to, um, like proxy web, web traffic a
+
+1000
+01:15:40,640 --> 01:15:45,680
+little bit. And, and if it's doesn't have sir pinning, then what, what you can do from what I've seen is
+
+1001
+01:15:45,680 --> 01:15:57,920
+even with a non jailbroken phone, you can stand up a, um, VPN on the actual device itself on a high,
+
+1002
+01:15:57,920 --> 01:16:04,960
+high level port or a high port number, right. Then configure your, your device to go through
+
+1003
+01:16:04,960 --> 01:16:12,640
+the VPN on the device and proxy some traffic through there. And this is a non rooted thing.
+
+1004
+01:16:12,640 --> 01:16:18,080
+So I think it would be really interesting if they don't have sir pinning to, to provide
+
+1005
+01:16:18,080 --> 01:16:22,720
+that as some sort of demo, which is like, we have this app, it automatically does proxying.
+
+1006
+01:16:23,200 --> 01:16:30,880
+Um, there's no sir pinning. So it just essentially match and replaces, uh, the role to true. And now we
+
+1007
+01:16:30,880 --> 01:16:36,800
+have access to all these clients had features just from installing this, like upgrade your, you know,
+
+1008
+01:16:36,800 --> 01:16:44,080
+whatever filter app for free, you know, dot APK file. Um, and now you get access to these features.
+
+1009
+01:16:44,080 --> 01:16:47,280
+So what do you think about that sort of paywall bypass in a mobile context?
+
+1010
+01:16:47,280 --> 01:16:52,000
+Yeah. I mean, it's definitely trickier because there's going to be like system level,
+
+1011
+01:16:52,000 --> 01:16:57,840
+there's a lot of like system level protections and stuff. So, um, you know, a lack of sir pinning
+
+1012
+01:16:57,840 --> 01:17:03,520
+in the app, there still might be sir pinning on the system. You know what I mean? Like it's going to check
+
+1013
+01:17:03,520 --> 01:17:08,880
+if the certificate's valid. Um, yeah, but if you install it as a VPN, it'll trust the, the certificate
+
+1014
+01:17:08,880 --> 01:17:14,880
+that's associated with the VPN. Yeah. And then that again, like that's, you know, a whole nother
+
+1015
+01:17:14,880 --> 01:17:20,000
+level of the user has to install it as a VPN and right. So there, there are definitely like layers
+
+1016
+01:17:20,000 --> 01:17:24,560
+to it, I think. And this is what makes it challenging to have like really high impact mobile bugs.
+
+1017
+01:17:24,560 --> 01:17:30,320
+It's like, usually there's a lot of weird caveats or like system level things that are kind of in your
+
+1018
+01:17:30,320 --> 01:17:35,280
+way. Um, but I think it's still, you know, you could, if you could put together a POC for it
+
+1019
+01:17:35,280 --> 01:17:41,920
+and get it to work like cleanly, you know, I think that's, it's certainly a valid POC. Like again,
+
+1020
+01:17:41,920 --> 01:17:47,440
+I don't think it's out of the question that you could, an attacker would have control over some
+
+1021
+01:17:47,440 --> 01:17:51,920
+app on your phone, whether it's through compromising a developer account or compromising or, you know,
+
+1022
+01:17:51,920 --> 01:17:57,360
+getting you to install an APK that ends up being malicious or something, you know, it does happen.
+
+1023
+01:17:57,360 --> 01:18:03,040
+Um, one thing I was talking, I just did an episode with Greg, um, from Bob got any reports.
+
+1024
+01:18:03,040 --> 01:18:11,120
+Yeah. Yeah. And, um, he, we were, we were talking about, you know, it might be nice to see
+
+1025
+01:18:11,920 --> 01:18:19,120
+some numbers from probably Google on what they observe as this, like the frequency rate of this
+
+1026
+01:18:19,120 --> 01:18:23,200
+stuff happening. Like how often does somebody have a malicious third party app on their phone?
+
+1027
+01:18:23,200 --> 01:18:27,200
+How often does a developer account get compromised? How often does a malicious app make it through the
+
+1028
+01:18:27,200 --> 01:18:30,640
+play store? I'm sure they don't really want to talk about those numbers because it doesn't look great
+
+1029
+01:18:30,640 --> 01:18:37,120
+for them. Um, but I would be really interested to know from like a impact standpoint, trying to
+
+1030
+01:18:37,120 --> 01:18:44,560
+evaluate that, how you can sort of quantify how often it, how likely it is for a user to actually
+
+1031
+01:18:44,560 --> 01:18:49,840
+go through these scenarios, because that would make it a lot easier for hackers and programs to sort of
+
+1032
+01:18:49,840 --> 01:18:55,120
+get on the same page about, um, the likelihood of these sort of events happening. And if it's a high
+
+1033
+01:18:55,120 --> 01:18:59,920
+likelihood, okay, then, you know, programs should probably be paying more for this or, or adjusting
+
+1034
+01:18:59,920 --> 01:19:03,680
+and saying, okay, this is actually kind of likely, but if it's not something that happens all the time
+
+1035
+01:19:03,680 --> 01:19:08,720
+or rarely ever happens at all, then I think it's fair to say, you know, there's a strong mitigating
+
+1036
+01:19:08,720 --> 01:19:13,520
+factor here. There is an issue, uh, you know, to some extent that, you know, they may or may not
+
+1037
+01:19:13,520 --> 01:19:18,160
+decide to fix, but, um, you know, that overall impact might be a lot lower because of just the
+
+1038
+01:19:18,160 --> 01:19:23,120
+likelihood for exploit. Yeah, dude, that's a great, that's an awesome point. I would love to see some
+
+1039
+01:19:23,120 --> 01:19:26,480
+data on that from, from Google. And while you were talking about that, I was just scrolling through
+
+1040
+01:19:26,480 --> 01:19:31,600
+my phone, looking at all the apps and I'm, I'm just like, man, you know, like you install these
+
+1041
+01:19:31,600 --> 01:19:36,400
+like shitty little apps for like all these little edge cases, like, oh, I got to like park in Idaho,
+
+1042
+01:19:36,400 --> 01:19:43,120
+you know, like, yeah, and, and then like that, that app just sits there and then they lose the
+
+1043
+01:19:43,120 --> 01:19:47,840
+government contract and like the company goes under and they sell their little app, you know,
+
+1044
+01:19:47,840 --> 01:19:52,320
+and it's how easy would it be to just buy some of these apps that have millions of installs?
+
+1045
+01:19:52,880 --> 01:19:58,000
+Well, and it happens. And one thing I was saying to Greg, Greg was like, especially with telegram
+
+1046
+01:19:58,000 --> 01:20:02,080
+steal your list nowadays, you have to imagine that at least one app developers on there.
+
+1047
+01:20:02,080 --> 01:20:06,320
+Oh yeah. Um, it was that their, their creds gotten stolen and now you can compromise
+
+1048
+01:20:06,320 --> 01:20:11,840
+an app and all you have to do is figure out the methods that all these malware devs are figuring
+
+1049
+01:20:11,840 --> 01:20:17,760
+out to sneak stuff through, you know, the Google play store integrity, uh, scanners or whatever.
+
+1050
+01:20:17,760 --> 01:20:23,120
+And, um, you know, compromise an app. It doesn't even have to be like malware, right? It just has
+
+1051
+01:20:23,120 --> 01:20:27,600
+to do like a very specific malicious action or something like, say you're trying to exploit some
+
+1052
+01:20:27,600 --> 01:20:33,360
+specific bug on an app that might not look at like malware. Um, and you know, all they have to do
+
+1053
+01:20:33,360 --> 01:20:36,960
+is compromise the developer. So I wouldn't be surprised if that's already happening to some
+
+1054
+01:20:36,960 --> 01:20:41,920
+extent, but I would be curious again, to see what the actual numbers are on that, both from a program
+
+1055
+01:20:41,920 --> 01:20:45,600
+and a hacker perspective, just on like, what is the likelihood of this? Cause I think right now the
+
+1056
+01:20:45,600 --> 01:20:52,720
+common sort of, um, understanding is that these things do happen, but not that often. And it's hard
+
+1057
+01:20:52,720 --> 01:20:58,560
+to say how often it happens and how likely it is. Yeah, absolutely, man. I know there are some people
+
+1058
+01:20:58,560 --> 01:21:03,600
+from Google listening to this podcast. So if you're at Google, reach out to your people, try to make
+
+1059
+01:21:03,600 --> 01:21:09,200
+this happen. Um, I know Botterini I think is on the Android team at Google, so we should probably reach
+
+1060
+01:21:09,200 --> 01:21:14,320
+out to him cause he might have some introspection into that sort of thing. Yeah. Um, all right, last
+
+1061
+01:21:14,320 --> 01:21:19,760
+thing on the match and replace that is header replacements. And I think this is pretty niched and
+
+1062
+01:21:19,760 --> 01:21:26,960
+sometimes has some, some application, but, um, the two ones that I, I came down or I wrote down with
+
+1063
+01:21:27,520 --> 01:21:35,520
+was host header modification. So essentially like, this is pretty common in the world of people that
+
+1064
+01:21:36,240 --> 01:21:43,600
+do hacking based off of, um, SSL certificates. Uh, so what'll happen is like, you'll, you'll scan the
+
+1065
+01:21:43,600 --> 01:21:49,120
+whole internet for SSL certificate, you know, using something like certs.io or, or Shodan or whatever.
+
+1066
+01:21:49,120 --> 01:21:56,000
+And, um, and you'll get back this, this host that has an SSL certificate for like, you know,
+
+1067
+01:21:56,000 --> 01:22:01,280
+test one, two, three at site dot or dot site.com. Right. And you try to resolve test one, two, three
+
+1068
+01:22:01,280 --> 01:22:07,520
+dot site.com. And it doesn't resolve either that DNS record is on an internal DNS server. That's not
+
+1069
+01:22:07,520 --> 01:22:13,040
+responding to, um, sort of requests outside of the organization, uh, or they just deleted the record
+
+1070
+01:22:13,040 --> 01:22:18,880
+and left the server up. And so you're like, okay, you try to visit that IP and it's like, you know,
+
+1071
+01:22:18,880 --> 01:22:25,920
+generic four or four Apache or whatever. Right. Because it's got a, a V host set up for that specific
+
+1072
+01:22:25,920 --> 01:22:30,880
+purpose. Um, so you obviously you could go into your Etsy host file or whatever, and like static,
+
+1073
+01:22:30,880 --> 01:22:36,480
+the IP to that, or you could just say, okay, let me do a match and replace rule in Kaido and say,
+
+1074
+01:22:36,480 --> 01:22:43,760
+match host colon IP address, replace it with host colon test one, two, three dot site.com.
+
+1075
+01:22:43,760 --> 01:22:49,120
+Um, and then now you're navigating that site as if there was a DNS record that was resolving to that
+
+1076
+01:22:49,120 --> 01:22:54,960
+domain. And, um, and you're making, you're making requests, you're interfacing with the app like that.
+
+1077
+01:22:54,960 --> 01:22:59,600
+Um, yeah, I wanted to check and see if Kaido had it. I didn't see really when I looked really quickly
+
+1078
+01:22:59,600 --> 01:23:03,680
+right now, but this is one thing I do actually like about burp that, um, there's a static routing
+
+1079
+01:23:03,680 --> 01:23:08,960
+table that you can, um, add entries into it. Yeah. And you could just say this host should resolve to
+
+1080
+01:23:08,960 --> 01:23:14,720
+this IP. And so you can basically, it's like a, um, like a host file just within burp, within your
+
+1081
+01:23:14,720 --> 01:23:20,000
+proxy and you can route stuff to local hosts. You can, you know, route hosts to whatever IPs that
+
+1082
+01:23:20,000 --> 01:23:27,440
+you want. Um, and that's super helpful for doing this exact type of thing where maybe you have an
+
+1083
+01:23:27,440 --> 01:23:33,040
+IP that resolves to an, or you have a host that resolves to an internal IP or to a dead IP, or that
+
+1084
+01:23:33,040 --> 01:23:38,720
+doesn't resolve and you need it to resolve to an IP. Um, and you can configure those on a case-by-case
+
+1085
+01:23:38,720 --> 01:23:41,840
+basis without having to go and edit your host file or do a match or replace like that.
+
+1086
+01:23:41,840 --> 01:23:47,840
+Wow. That's super awesome. This is, this is a great, this is a great thing about burp. And you
+
+1087
+01:23:47,840 --> 01:23:52,480
+know, you guys know I'm a Kaido fan boy, but I will give credit where credit is due. Burp has,
+
+1088
+01:23:53,120 --> 01:23:57,520
+you know, I don't know how, how old are they? They're pretty, they're pretty old, like 15 freaking
+
+1089
+01:23:57,520 --> 01:24:06,320
+years, 20 years of features that they've integrated into burp. And it's just a lot of really niche stuff
+
+1090
+01:24:06,320 --> 01:24:11,840
+that is super helpful for mega niche situations. So, um, I think it definitely pays to still know
+
+1091
+01:24:11,840 --> 01:24:19,360
+how to use burp and, and, uh, 20 years old. Wow. Is it 20 years old? Wow. In, uh, June of 2000.
+
+1092
+01:24:19,360 --> 01:24:26,320
+Oh, it's over 20 years old. Holy cow. June of 2003, burp suite 1.0 launched. Wow. Yeah. Look at this.
+
+1093
+01:24:26,320 --> 01:24:33,200
+Okay. So if you go to proxy proxy settings, you go to the network tab under the settings and you look
+
+1094
+01:24:33,200 --> 01:24:40,320
+for connections, there's this host name resolution overrides table that you can provide, uh, host name
+
+1095
+01:24:40,320 --> 01:24:46,880
+overrides, which is your own little Etsy, Etsy hosts in the, uh, in the inside burp. That's really
+
+1096
+01:24:46,880 --> 01:24:52,560
+awesome. That's a great feature. Uh, I like, I like that because it applies it just for that specific
+
+1097
+01:24:52,560 --> 01:24:58,320
+project too. Um, and you, you don't get your Etsy host file all, all clogged up. And I'm always
+
+1098
+01:24:58,320 --> 01:25:02,880
+concerned whenever I modify my Etsy house file, I'm like, man, I'm going to leave this in here. I'm
+
+1099
+01:25:02,880 --> 01:25:07,120
+never going to go back. Just like the apps, man. And like, you said it once and forget it.
+
+1100
+01:25:07,120 --> 01:25:10,400
+And six months from now, you're going to be like, what the heck is going on with my computer?
+
+1101
+01:25:10,400 --> 01:25:15,920
+Exactly. Or like, I'm going to go to, you know, that, that host is going to like come alive again.
+
+1102
+01:25:15,920 --> 01:25:20,080
+And I'm going to have it redirected to this old IP or something like that. And it's going to be like,
+
+1103
+01:25:20,880 --> 01:25:26,880
+you know, no, no, no response from the server. And then freaking, you know, somebody in the live
+
+1104
+01:25:26,880 --> 01:25:30,720
+hacking event is going to be like, well, I went to test one, two, three dot site. And this whole website,
+
+1105
+01:25:30,720 --> 01:25:34,720
+web app popped up and then I popped 15 scripts. And you go on, you, and you're like, what the heck?
+
+1106
+01:25:34,720 --> 01:25:37,760
+I swear I looked at that. You open it on your local. It doesn't work. And that's when you find
+
+1107
+01:25:37,760 --> 01:25:42,400
+out that it was still set. That it was the Etsy host, man. It's like, ah, ah, that sort of thing
+
+1108
+01:25:42,400 --> 01:25:49,200
+happens, man. It happens. So, um, yeah. All right, cool. Well, that's, that's a wrap. I think I don't,
+
+1109
+01:25:49,200 --> 01:25:55,360
+I don't, oh, this was, um, there was one other header, Joel. Oh yeah. What's the other header?
+
+1110
+01:25:55,360 --> 01:26:02,240
+Yeah. X forwarded for this. This is one that, oh man. Um, so often there are web proxies that
+
+1111
+01:26:02,240 --> 01:26:07,520
+either incorrectly filter this out or completely allow it to go through. And especially if it's
+
+1112
+01:26:07,520 --> 01:26:12,560
+passing headers through to internal requests and stuff, maybe it's doing like a secondary context
+
+1113
+01:26:12,560 --> 01:26:17,200
+type thing where it's making us a separate request and it's taking your IP address. A lot of times,
+
+1114
+01:26:17,200 --> 01:26:21,120
+if there's a web proxy and some complicated stack, it's going to merge all those entries together.
+
+1115
+01:26:21,120 --> 01:26:25,840
+I've seen this before. We saw this very recently actually, um, where it was basically building an
+
+1116
+01:26:25,840 --> 01:26:31,040
+export for header internally and it was combining, uh, the IP addresses into one, but it was taking
+
+1117
+01:26:31,040 --> 01:26:38,000
+the export for from the request and it was using it as the first IP in the chain. Um, and case,
+
+1118
+01:26:38,000 --> 01:26:42,240
+case sensitive. Oh my goodness. This is like a, uh, this one will come bite you all the time because
+
+1119
+01:26:42,240 --> 01:26:46,000
+we found this one recently where exported for capital X, capital F, capital F
+
+1120
+01:26:46,000 --> 01:26:52,320
+F blocked doesn't work exported for with any of those three changed to a lowercase.
+
+1121
+01:26:53,440 --> 01:27:00,000
+Just one little character off. No, totally, totally fine works. IP allowed. Um, so yeah,
+
+1122
+01:27:00,000 --> 01:27:04,000
+that's a really weird one. And a lot of the time you'll find that you're fuzzing tools like buff.
+
+1123
+01:27:04,000 --> 01:27:09,680
+Um, this was an annoying one, buff auto capital. It like does title case on headers. So it, if you give
+
+1124
+01:27:09,680 --> 01:27:17,120
+it all lowercase X forwarded for it will change the X to capital X forwarded capital F for capital F
+
+1125
+01:27:17,120 --> 01:27:21,840
+and you'll get, you know, IP blocked unless you test it manually. I was testing it manually through
+
+1126
+01:27:22,480 --> 01:27:27,280
+Kaido and I found, oh yeah, sweet. This works. I go to try and fuzz it. Can't get it to fuzz because
+
+1127
+01:27:28,160 --> 01:27:33,840
+buff keeps auto title casing and I can't force it to do like, even with a raw request, it wouldn't go
+
+1128
+01:27:33,840 --> 01:27:38,480
+through. So that's just something to keep in mind. Um, you know, if you're doing a lot of like at scale
+
+1129
+01:27:38,480 --> 01:27:44,000
+scanning and stuff and you're hitting some IP blocks or anything, test it out locally first,
+
+1130
+01:27:44,000 --> 01:27:48,560
+test different cases on the X forwarded for test different spacing on the X forwarded for try like
+
+1131
+01:27:48,560 --> 01:27:55,040
+empty commas or just dummy IPs. Um, you know, it's a lot of different things you can do. Sometimes you
+
+1132
+01:27:55,040 --> 01:27:58,800
+can escape out of that value. Sometimes you can inject a new header depends on how it's being used.
+
+1133
+01:27:58,800 --> 01:28:04,480
+So, um, yeah, exported for is always a great way to try and get around some of those IP restrictions.
+
+1134
+01:28:04,480 --> 01:28:08,000
+Yeah, absolutely. And I think the scenario that we were looking at before,
+
+1135
+01:28:08,000 --> 01:28:12,400
+it gave us some nice, like super great verbose error message. It was like,
+
+1136
+01:28:12,960 --> 01:28:18,480
+you're not allowed to like IP, whatever is not allowed to access this. And we're like, okay.
+
+1137
+01:28:18,480 --> 01:28:20,720
+Yeah. Okay. Very interesting.
+
+1138
+01:28:20,720 --> 01:28:23,280
+What if I wasn't me though? Yeah.
+
+1139
+01:28:23,280 --> 01:28:30,160
+And then it was like, sure. Um, so no, that's great. But also I think this is a pretty easy thing to,
+
+1140
+01:28:30,880 --> 01:28:35,840
+to fuzz for too. You know, if you're doing, if you're just trying to find stuff that's weird at scale,
+
+1141
+01:28:35,840 --> 01:28:41,680
+you know, um, checking for exported for with various values and then checking for exported for with
+
+1142
+01:28:41,680 --> 01:28:45,600
+various casing was not something that I've, I've tried before. So I think that's, that's a great
+
+1143
+01:28:45,600 --> 01:28:47,120
+call out, Joel. Um, yeah.
+
+1144
+01:28:48,400 --> 01:28:52,160
+Oh yeah. And then the actual application for this with match and replace is like, once you
+
+1145
+01:28:52,160 --> 01:28:58,560
+find this sort of weird caveat is that you can just add the header in via match and replace,
+
+1146
+01:28:58,560 --> 01:29:03,440
+uh, just match a blank, a blank line on the header and it will just throw the header in.
+
+1147
+01:29:03,920 --> 01:29:10,560
+Um, and then you can navigate that application as if you, you know, that, that header was always there
+
+1148
+01:29:10,560 --> 01:29:15,920
+from the reverse proxy or whatever. Um, so yeah. Yeah. So match and replace, it does have a lot more
+
+1149
+01:29:15,920 --> 01:29:20,720
+use than just adding your username or that required header that's in the scope page. Uh, you know,
+
+1150
+01:29:20,720 --> 01:29:24,960
+that's a, that's the first step. I like that, that that's sort of the entry point for a lot of people
+
+1151
+01:29:24,960 --> 01:29:29,920
+to find this feature, but, um, I would encourage everybody to sort of dig deeper and try and
+
+1152
+01:29:29,920 --> 01:29:33,760
+maximize, um, the value that you can get, that you can get out of it. Cause there's, there's a lot
+
+1153
+01:29:33,760 --> 01:29:37,840
+of stuff that you can do with it. Dude, I was actually, so I was planning on ending the episode
+
+1154
+01:29:37,840 --> 01:29:44,240
+here and I know you've got to run here in a second, but I also realized that, um, this is also a pretty
+
+1155
+01:29:44,240 --> 01:29:52,400
+decent, a pretty decent way that you can use match and replace is for storing payloads as well. Uh, so let's
+
+1156
+01:29:52,400 --> 01:29:57,760
+say you've got this, like, um, you've got this sort of, uh, XSS payload or whatever. Right.
+
+1157
+01:29:57,760 --> 01:30:03,840
+And instead of typing it out every time you just kind of put like XSS payload or whatever into the
+
+1158
+01:30:03,840 --> 01:30:10,000
+thing and have it match and replace to something. Now I will, I will caveat this with the fact that,
+
+1159
+01:30:10,000 --> 01:30:17,920
+uh, it will, it is not context aware. So if you, if you, you know, say XSS payload and it,
+
+1160
+01:30:17,920 --> 01:30:19,920
+and your XSS payload. And it returns it in the response.
+
+1161
+01:30:19,920 --> 01:30:23,760
+No, no, no, no, no, no, no. In the request, in the request, you have to set it to the request.
+
+1162
+01:30:23,760 --> 01:30:29,760
+Okay. Um, uh, you have to set it to the request body or whatever, but, um, if you put it, you know,
+
+1163
+01:30:29,760 --> 01:30:34,320
+let's say you put XSS payload into like a form and you, and you press submit, and then you have a
+
+1164
+01:30:34,320 --> 01:30:38,800
+match or in place role to convert XSS payload to your, whatever access payload it is. If it's sending
+
+1165
+01:30:38,800 --> 01:30:44,960
+a JSON request out and your XSS payload contains a double quote, then it's just going to screw the whole
+
+1166
+01:30:44,960 --> 01:30:49,120
+JSON and break everything. So it's not like the best technique for this. You know,
+
+1167
+01:30:49,120 --> 01:30:54,400
+you have to be aware of how the app is actually using this, but I actually have seen it in scenarios
+
+1168
+01:30:54,400 --> 01:31:00,080
+where like, you're wanting to put a blind XSS payload in your user agent, or like, um,
+
+1169
+01:31:00,960 --> 01:31:06,320
+there's a specific set of like, um, headers and stuff like that, that you want to inject this stuff
+
+1170
+01:31:06,320 --> 01:31:12,560
+into, or, or maybe there's a specific niche payload that you would have to type a lot using a different
+
+1171
+01:31:12,560 --> 01:31:18,080
+character set on your keyboard. Wow. Very specific, uh, example there. Um, and you have to switch back
+
+1172
+01:31:18,080 --> 01:31:24,160
+and forth and your fingers hate it. Um, then you can, you can just write the match and replace rule
+
+1173
+01:31:24,160 --> 01:31:28,560
+and just have it auto insert it. So, uh, that's another, another use case that I didn't have down
+
+1174
+01:31:28,560 --> 01:31:32,960
+in the notes that I just sort of popped into my brain. Yeah. Maybe, maybe in the future with the more,
+
+1175
+01:31:32,960 --> 01:31:39,040
+um, the more complex use cases for imagine replace, um, like if, if kind of decides to go a step
+
+1176
+01:31:39,040 --> 01:31:43,600
+further than just the conditional matches, but also like having the workflows or something like that,
+
+1177
+01:31:44,320 --> 01:31:48,960
+you could do more advanced, like checking each parameter and then check the content type. And
+
+1178
+01:31:48,960 --> 01:31:53,280
+if it's JSON encoded this way, you know, that sort of thing and have it more bespoke.
+
+1179
+01:31:53,280 --> 01:31:56,880
+Yeah, that absolutely should be possible with the convert workflows, because we're,
+
+1180
+01:31:56,880 --> 01:32:00,960
+I was talking to the team as well about like, Hey, you know, we definitely with convert workflows and
+
+1181
+01:32:00,960 --> 01:32:06,480
+with, um, these other types, types of workflows too, but specifically with convert workflows,
+
+1182
+01:32:06,480 --> 01:32:12,400
+we need some way to access the core request that it came through, even if that isn't the input that's
+
+1183
+01:32:12,400 --> 01:32:19,680
+being passed in. So we can get context surrounding our, our, um, our, you know, conversion that needs
+
+1184
+01:32:19,680 --> 01:32:25,520
+to happen. Is this a conversion happening in a, you know, XWW form URL encoded environment? Is it happening
+
+1185
+01:32:25,520 --> 01:32:30,720
+in a put, put request in a J you know, what's going on? Is it a parameter or is it a body body, you know?
+
+1186
+01:32:30,720 --> 01:32:34,000
+Exactly. So I think that will also be something we'll see implemented in the future,
+
+1187
+01:32:34,000 --> 01:32:39,200
+which I think will be, which I've actually seen you do in a, in, uh, you know what I'm talking
+
+1188
+01:32:39,200 --> 01:32:42,800
+about? Yeah. Yeah. Yeah. There's, there's a, um, that one's actually public. So yeah,
+
+1189
+01:32:42,800 --> 01:32:47,680
+I have done that before. Oh yeah. Yeah. Yeah. The, yeah. You created a, a, a, a convert workflow
+
+1190
+01:32:47,680 --> 01:32:54,320
+for no AF plus from, uh, from shubs during the, the home con talk. Exactly. And, uh, it basically
+
+1191
+01:32:54,320 --> 01:32:58,480
+checks, you know, what content type is this and it will generate the payload based on that content type,
+
+1192
+01:32:58,480 --> 01:33:02,800
+whether it's should be a comment or an HTML comment or a body, you know, whatever. So yeah,
+
+1193
+01:33:02,800 --> 01:33:07,760
+that one's, that one's out there. I think that one is actually in the, let me check really quick
+
+1194
+01:33:07,760 --> 01:33:11,760
+before I say, Oh, you might need to update it actually. I think because you need to update it.
+
+1195
+01:33:12,480 --> 01:33:17,680
+Yeah. They moved over to the new plugin. Um, the, the, the workflows are now have to be in the new
+
+1196
+01:33:17,680 --> 01:33:24,800
+plugin SDK format. Yeah, actually it, it, it is compatible with that. So in, in, it is in the, um,
+
+1197
+01:33:24,800 --> 01:33:33,280
+in the, uh, it is in the even better workflow library that, that even better ads. So if you add
+
+1198
+01:33:33,280 --> 01:33:39,840
+even better plugin to your Kaido, then it will, uh, give you a list of, uh, workflows that are just
+
+1199
+01:33:39,840 --> 01:33:44,800
+linked back to this GitHub repo that you can pull requests on. And I went ahead and, and, uh, merged in
+
+1200
+01:33:44,800 --> 01:33:51,040
+the NOAAF close. I do. I see it. Yep. I've also, I've also got my color top level and iframe
+
+1201
+01:33:51,040 --> 01:33:56,160
+navigation. It's true. Uh, I've got that one turned on as well. Yeah. Just extremely helpful.
+
+1202
+01:33:56,160 --> 01:34:02,160
+Like that will absolutely be a core feature of Kaido soon. Uh, but in the meantime, definitely use
+
+1203
+01:34:02,160 --> 01:34:08,640
+that, that to keep track of where you are in your, in your page refreshes and iframe navigations and
+
+1204
+01:34:08,640 --> 01:34:14,560
+stuff like that. So, yep. All right, man. Is that a wrap? I think that's a wrap. All right, sweet.
+
+1205
+01:34:14,560 --> 01:34:20,480
+Peace y'all. Peace. And that's a wrap on this episode of critical thinking. Thanks so much for
+
+1206
+01:34:20,480 --> 01:34:25,840
+listening. And if you want more critical thinking content, head over to ctbb.show slash discord,
+
+1207
+01:34:25,840 --> 01:34:29,600
+join the discord. There's lots of great conversations and chats going on over there.
+
+1208
+01:34:29,600 --> 01:34:33,840
+And if you want to support the show, there's the discord subscriber tiers, which give you access to
+
+1209
+01:34:33,840 --> 01:34:42,480
+masterclasses, AMAs, hack alongs, exclusive scripts, and an exclusive chat channel with us. We'll see you there.
+
