@@ -40,6 +40,7 @@ DOM XSS occurs when attacker-controlled data flows from a JavaScript source (e.g
 
 - [postMessage SUMMARY](../postmessage/SUMMARY.md) — postMessage is a common DOM XSS source
 - [Prototype Pollution SUMMARY](../prototype-pollution/SUMMARY.md) — PP gadgets frequently escalate to DOM XSS sinks
+- [Deterministic Prompt-Injection → XSS via Feedback Loops](deterministic-prompt-injection-feedback-loop.md) — lifts non-deterministic LLM-based primitives to near-100% reliability
 
 ## Sub-patterns to expand
 

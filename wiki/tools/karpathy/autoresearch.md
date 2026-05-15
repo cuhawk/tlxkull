@@ -57,3 +57,8 @@ across configs. Validation metric: bits-per-byte (lower = better).
 - The "metric" isn't a clean scalar. Verdict is `{TP, FP,
   undetermined}` plus a confidence. Judge picks the best of three
   hypotheses per chain.
+
+## Related
+
+- [[js-review-cascade]] — keeps the Opus judge in budget by
+  pre-filtering hypotheses with a cheap model.

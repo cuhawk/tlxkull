@@ -76,5 +76,7 @@ Not applicable.
 - Slice tool - GitHub (referenced in episode).
 - CVE-2025-37778 - Linux kernel SMB driver.
 - Critical Thinking Podcast Ep 137 - <https://www.youtube.com/watch?v=sTG-OX5BbBc>
-- Related: [[ai-whitebox-source-review]]
+- Related: [[ai-whitebox-source-review]],
+  [[../../tools/karpathy/js-review-cascade]] — generalized
+  triage→analysis cascade for JS taint chains.
 - [Server-side SUMMARY](SUMMARY.md)

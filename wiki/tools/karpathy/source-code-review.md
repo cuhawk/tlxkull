@@ -114,6 +114,14 @@ Language), EL (Jakarta EE) — alarm should fire whenever input lands here.
 - Context injection: feed entire technique write-ups (like this file) to prime
   the model before asking it to audit a module.
 
+## Related
+
+- [[js-review-cascade]] — two-tier triage→analysis pattern to keep
+  Phase 5 affordable.
+- [[../../techniques/recon/adjacent-function-gap]] — inverse-taint
+  pattern that operationalizes root-cause class 3 ("forgotten
+  security control").
+
 ## Sources
 
 - CT Ep. 172: `../../sources/podcasts/ct/20260430_t1O7ul7Vey0_Source_Code_Review_Meta_Analysis_Ep.172.en.vtt`

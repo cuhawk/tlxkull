@@ -39,7 +39,9 @@ inbound: []
 
 - [Prototype Pollution SUMMARY](../prototype-pollution/SUMMARY.md) — server-side PP in Node.js can chain to RCE via gadgets
 - [Race Conditions SUMMARY](../race-conditions/SUMMARY.md) — SSRF + race can exfiltrate IMDS tokens before rotation
-- (none yet)
+- [AMPScript Template Injection](ampscript-template-injection.md) — SFDC Marketing Cloud SSTI with double-evaluation + `TreatAsContent` chain
+- [CBC IV Recovery via 8-Byte Null Block](cbc-iv-recovery-null-block.md) — IV-recovery primitive against unauthenticated CBC
+- [cPanel CRLF Session-File Injection](cpanel-crlf-session-injection.md) — \r\n injection into on-disk session record → auth bypass
 
 ## Sub-patterns to expand
 

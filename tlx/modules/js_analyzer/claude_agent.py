@@ -521,6 +521,165 @@ def _render_chain_for_opus(chain: dict) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# Two-tier audit cascade — Sonnet triage gate (T1.2)
+# ---------------------------------------------------------------------------
+
+_TRIAGE_SYSTEM_PROMPT = """\
+You are a security triage filter for a JavaScript taint-analysis pipeline.
+Your job is to REJECT chains that are obvious false positives so the
+flagship-model auditor (Opus) only sees chains that warrant deep review.
+
+Bias toward escalation when uncertain — false negatives are far more
+expensive than false positives. Never reject on intuition; reject only
+when one of the explicit disqualifiers fires.
+
+REJECT a chain if ANY of these disqualifiers fires:
+
+1. literal_constant_source
+   The source argument is a literal constant in every callsite of the
+   source function (no user-controlled value flows in).
+
+2. wrapped_safe_sanitizer
+   The sink is wrapped in a known-safe sanitizer call WITHIN the same
+   function body. Known-safe set:
+   - DOMPurify.sanitize
+   - encodeURIComponent (only when the sink expects URL-component context)
+   - JSON.stringify before innerHTML/outerHTML
+   - Trusted Types policy.createHTML
+
+3. pure_intermediates_only
+   Every intermediate node in the chain is a pure function: no taint
+   propagation, no side effects, no dynamic dispatch.
+
+4. short_length_gate
+   The source-to-sink path is gated by a length check `< 8` (or any
+   constant under 12) characters before reaching the sink.
+
+If NONE fire, output verdict='escalate'.
+
+Respond ONLY with a single JSON object — no markdown fences, no prose:
+{
+  "verdict": "reject" | "escalate",
+  "rubric_hits": {
+    "literal_constant_source": bool,
+    "wrapped_safe_sanitizer": bool,
+    "pure_intermediates_only": bool,
+    "short_length_gate": bool
+  },
+  "reason": "one short sentence"
+}
+"""
+
+_TRIAGE_USER_TEMPLATE = """\
+CHAIN:
+{chain_repr}
+
+TAXONOMY:
+{taxonomy}
+
+ADJACENT SNIPPETS:
+{snippets}
+"""
+
+
+def sonnet_triage(
+    *,
+    chain: dict,
+    findings: dict,
+    model: str | None = None,
+    max_tokens: int = 512,
+) -> dict:
+    """One-shot cheap-stage triage. Implements the rubric in
+    `wiki/tools/karpathy/js-review-cascade.md`.
+
+    Returns a dict with keys:
+      - verdict:       "reject" | "escalate"
+      - rubric_hits:   per-disqualifier booleans
+      - reason:        single-sentence rationale from the model
+      - cost_usd:      cost of the triage call
+      - tokens_in:     int
+      - tokens_out:    int
+      - duration_ms:   wall-clock for the call
+      - error:         present iff parse failed; verdict defaults to escalate
+    """
+    import time as _time
+
+    model = model or CLAUDE_MODEL
+    user_msg = _TRIAGE_USER_TEMPLATE.format(
+        chain_repr=_render_chain_for_opus(chain),
+        taxonomy=_gather_taxonomy_context(chain),
+        snippets=_gather_chain_snippets(findings, chain),
+    )
+
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    t0 = _time.perf_counter()
+    resp = client.messages.create(
+        model=model,
+        max_tokens=max_tokens,
+        system=[
+            {
+                "type": "text",
+                "text": _TRIAGE_SYSTEM_PROMPT,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        messages=[{"role": "user", "content": user_msg}],
+    )
+    duration_ms = int((_time.perf_counter() - t0) * 1000)
+
+    in_p, out_p = price_per_token(model)
+    in_tok = getattr(resp.usage, "input_tokens", 0)
+    out_tok = getattr(resp.usage, "output_tokens", 0)
+    cache_write = int(getattr(resp.usage, "cache_creation_input_tokens", 0) or 0)
+    cache_read = int(getattr(resp.usage, "cache_read_input_tokens", 0) or 0)
+    cost = (
+        in_tok * in_p
+        + cache_write * in_p * 1.25
+        + cache_read * in_p * 0.10
+        + out_tok * out_p
+    )
+
+    text = "\n".join(b.text for b in resp.content if hasattr(b, "text")).strip()
+    out: dict = {
+        "verdict": "escalate",
+        "rubric_hits": {
+            "literal_constant_source": False,
+            "wrapped_safe_sanitizer": False,
+            "pure_intermediates_only": False,
+            "short_length_gate": False,
+        },
+        "reason": "",
+        "cost_usd": cost,
+        "tokens_in": in_tok,
+        "tokens_out": out_tok,
+        "duration_ms": duration_ms,
+    }
+    if not text:
+        out["error"] = "empty model response; defaulting to escalate"
+        return out
+    try:
+        first = text.find("{")
+        last = text.rfind("}")
+        if first < 0 or last < first:
+            raise ValueError("no JSON object in response")
+        parsed = json.loads(text[first : last + 1])
+    except (json.JSONDecodeError, ValueError) as e:
+        out["error"] = f"parse failed ({e}); defaulting to escalate"
+        return out
+
+    verdict = parsed.get("verdict")
+    if verdict not in ("reject", "escalate"):
+        out["error"] = f"invalid verdict {verdict!r}; defaulting to escalate"
+        return out
+    out["verdict"] = verdict
+    rh = parsed.get("rubric_hits") or {}
+    for k in out["rubric_hits"]:
+        out["rubric_hits"][k] = bool(rh.get(k, False))
+    out["reason"] = (parsed.get("reason") or "")[:240]
+    return out
+
+
 def _consult_opus(
     args: dict,
     findings: dict,

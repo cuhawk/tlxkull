@@ -40,7 +40,8 @@ http_endpoints: M, subdomains: S }`.
 **Reads:** `status.json.scope`.
 **Writes:** `raw/<host>/<path>.js[.map]`.
 **Tools used:** `chrome-devtools` MCP (navigate, evaluate, network
-requests).
+requests). Also `bin/sourcemap_recon.py` (T1.5 — hidden Webpack/Vite/
+Next/Nuxt map brute + Sentry release-artifact API). Scope-checked.
 **Result block:** `{ phase: "harvest", files: N, maps_public: M,
 maps_missing: [...] }`.
 
@@ -71,11 +72,16 @@ chunks: N, model: "text-embedding-004" }`.
 ### `js-index`
 **Trigger:** `sources/` populated AND `status.json.index` missing OR
 stale (sources mtime > index mtime).
-**Tools used:** `js_index_target`.
+**Tools used:** `js_index_target`. Also `bin/run_jsluice.py` (T1.4 —
+URL skeletons + secrets as `node_tags(source='jsluice')`) and
+`bin/build_manifest_extract.py` (T2.3 — Next/Vite/Rspack/CRA route
+enumeration).
 **Writes:** `index/nodes.jsonl`, `index/edges.jsonl`,
-`index/frameworks.json`.
+`index/frameworks.json`, `index/jsluice.jsonl`,
+`index/routes.jsonl`, plus `findings/jsluice_secret_<id>/draft.json`
+per leaked-secret hit.
 **Result block:** `{ phase: "index", nodes: N, edges: E, tags: T,
-frameworks: [...] }`.
+frameworks: [...] }` plus `phases.{jsluice, build_manifest}`.
 
 ### `chain-triage`
 **Trigger:** index ready.
@@ -100,6 +106,37 @@ proposed PoC).
 **Result block:** `{ phase: "opus", chains_audited: N, tp: X, fp: Y,
 undetermined: Z, opus_cost_usd: ... }`.
 **Budget:** capped by `memory.md > opus_budget_per_target`.
+**T1.2/T1.3 (2026-05-15):** Steps 1a (long-context probe via
+`bin/source_token_count.py`) and 1b (cascade gate via
+`bin/run_cascade.py`) run before per-chain audit. Cascade Sonnet cost
+tracked separately in `status.json.cascade_cost_usd`.
+
+### `opus-gap-audit` *(2026-05-15, T1.1)*
+**Trigger:** user names a control qname (e.g. `auth.RequireRole`) AND
+js-index is complete.
+**Tools used:** `bin/run_gap_audit.py` (wraps gap_analyzer + cascade).
+**Writes:** `chains/gap_<slug>.jsonl`,
+`opus/gap_<slug>/<sibling>.md`.
+**Result block:** `{ phase: "gap_<slug>", callers_found, gaps_found,
+cascade: {...} }`.
+
+### `cspt-csrf` *(2026-05-15, T2.2)*
+**Trigger:** after `dom-xss-hunt` writes `chains/dom_reachable.jsonl`.
+**Tools used:** `bin/cspt_csrf_scan.py` (reads per-target DB for
+path-traversal tags; warns to stderr if absent).
+**Writes:** `chains/cspt_csrf.jsonl`.
+**Result block:** `{ phase: "cspt_csrf", chains_scanned,
+matched_cspt_sink, candidates_written }`.
+
+### `patch-diff` *(2026-05-15, T3.1)*
+**Trigger:** target ships an npm package version with a known fix.
+**Tools used:** `bin/npm_version_diff.py` (requires `npm`).
+**Writes:** `diffs/<package>_<old>_<new>.md` — control-call delta table.
+**Result block:** `{ phase: "patch_diff_<package>", control_changes }`.
+
+### `parser-pipeline-fuzz` *(stub — 2026-05-15, T3.3)*
+Vendored DOMPurify/parse5 fuzzing. SKILL.md scaffolded; bin/parser_fuzz/
+deferred until per-target need.
 
 ---
 
@@ -137,6 +174,16 @@ interesting_diffs: M }`.
 **Writes:** `caido/idor/<request_id>.json` + summary in
 `findings/idor-candidates.md`.
 **Result block:** `{ phase: "idor", requests_swept: N, candidates: M }`.
+
+### `caido-shift` *(stub — 2026-05-15, T3.6)*
+Shift Agents-style passive open-redirect / IDOR-rotation / asset-diff
+micro-agents inside `bin/caido-mcp.py`. SKILL.md scaffolded; per-agent
+implementations deferred.
+
+### `browser-confirm` extensions *(2026-05-15, T2.1 + T2.4)*
+Step 2a injects `bin/domlogger_payload.js` (URL/postMessage/innerHTML
+hooks); Step 2b injects `bin/eventlistener_enum.js` (inline-handler
+enumeration). Outputs to `findings/<id>/{domlogger.jsonl,event_handlers.json}`.
 
 ---
 

@@ -25,6 +25,7 @@ wiki/
 ├── targets/            # per-bounty-program intel (NOT engagement work dirs)
 ├── techniques/         # bug-class patterns
 ├── tools/              # caido, tlx, browser, karpathy
+├── people/             # researcher/hunter dossiers (blog index, handles, focus)
 └── findings/           # past confirmed findings, cross-linked
 ```
 
@@ -137,6 +138,34 @@ Cloned in-place. Treat as read-only — do not edit upstream files.
   our `techniques/` pages.
 - Cross-link FROM our techniques INTO `_external/...` using relative
   paths.
+
+### `wiki/people/<slug>.md`
+
+Researcher / hunter dossier. One page per person we track (CT podcast
+hosts + guests, PortSwigger researchers, anyone whose blog/research we
+ingest). Use real-name slug when known, else handle.
+
+Sections (in this order):
+
+1. **Identity** — real name, primary handle, role (host | hunter | researcher | vendor-eng).
+2. **Focus areas** — 2-5 bullet tags (e.g. `client-side`, `oauth`, `mobile`, `IoT`).
+3. **Online presence** — bullet list of `[label](url)`: blog, X/Twitter,
+   GitHub, talks, company. Use raw URLs only — no auth secrets.
+4. **Key research / posts** — 3-10 bullet items. Each: title + URL + 1-line takeaway.
+   Cross-link to `wiki/techniques/<class>/<pattern>.md` when the post seeded a wiki technique page.
+5. **CT podcast appearances** — bullet list `[YYYY-MM-DD Ep N — title](../sources/podcasts/ct/<file>.en.vtt)`.
+6. **Notes** — free-form: collab style, signature techniques, recurring themes.
+
+Frontmatter MUST include:
+- `handles` — list of known online handles (lowercase).
+- `role` — one of `host | hunter | researcher | vendor-eng | dual`.
+- `primary_focus` — single tag from focus areas list.
+
+Tags: `person`, `role/<role>`, plus each focus tag (`focus/client-side` etc.).
+
+Index file: `wiki/people/_index.md` — one-line-per-person table with
+slug, real name, handle, role, focus, CT-eps-count. Maintained by
+`wiki-ingest` when a new people page is added.
 
 ### `wiki/findings/<id>.md`
 

@@ -32,20 +32,48 @@ sources rather than minified bundles.
 6. Crawl follow-ups: respect a depth limit (default 2 hops on
    in-scope hosts only). Do not follow out-of-scope links — log them
    to `status.json.harvest.out_of_scope_skipped[]`.
+7. Hidden-map + Sentry recon (T1.5). Run:
+   ```
+   python3 bin/sourcemap_recon.py targets/<name>
+   ```
+   This brute-forces common Webpack/Vite/Next/Nuxt hidden-map filenames
+   next to each bundled `.js`, and pulls `.map` files from any in-scope
+   Sentry release-artifact API. Brute-list and Sentry recipe are
+   maintained in `wiki/tools/tlx/sourcemap-recon.md` (the spec). The
+   script reads scope from `status.json.scope.in` and refuses
+   out-of-scope hosts. Per-bundle attempt cap defaults to 40; 429s back
+   off automatically. Sentry phase can be skipped with `--no-sentry`.
+
+   After this phase, re-run `sourcemap-explode` to decode any newly
+   recovered `.js.map` files into `targets/<name>/sources/`.
 
 ## Outputs
 - `targets/<name>/raw/<host>/<path>.js[.map]`
 - updated `status.json.phases.harvest`
+- updated `status.json.phases.sourcemap_recon` (Step 7 only)
 
 ## Failure modes
 - chrome-devtools MCP not responding → suggest `chrome-devtools-mcp:troubleshooting`.
 - Auth-walled site (login redirect) → load Caido auth workflow first
   (`caido_login(workflow_id=...)`), then re-run.
 - Hitting rate limits → back off; log; resume.
+- `sourcemap_recon` 429-storm against a single host → script auto-pauses
+  per attempt; if persistent, raise `--rate-limit-ms` (default 200) or
+  drop `--max-attempts-per-bundle`.
+- Sentry artifact API returns 401/403 (the common case for self-hosted
+  with auth) → script silently skips; only misconfigured public
+  instances enumerate.
 
 ## Result block
 ```json
-"phases": { "harvest": { "status": "done", "ts": "<iso>",
-  "files": N, "maps_public": M, "maps_missing": K,
-  "hosts_seen": [...], "out_of_scope_skipped": [...] } }
+"phases": {
+  "harvest": { "status": "done", "ts": "<iso>",
+    "files": N, "maps_public": M, "maps_missing": K,
+    "hosts_seen": [...], "out_of_scope_skipped": [...] },
+  "sourcemap_recon": { "status": "done", "ts": "<iso>",
+    "bundles_processed": N, "maps_recovered": M, "maps_missing": K,
+    "requests_total": R, "out_of_scope_hosts_skipped": [...],
+    "sentry": { "hosts_seen": [...], "releases_enumerated": [...] },
+    "found": [{ "url": "...", "saved_to": "...", "bundle": "..." }] }
+}
 ```

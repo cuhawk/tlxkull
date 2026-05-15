@@ -63,6 +63,7 @@ async def main() -> None:
         (str(REPO / "wiki" / "techniques" / "wordpress"), "*.md"),
         (str(REPO / "wiki" / "techniques" / "xs-leaks"), "*.md"),
         (str(REPO / "wiki" / "tools"), "**/*.md"),
+        (str(REPO / "wiki" / "targets"), "*.md"),
     ]
 
     total = 0

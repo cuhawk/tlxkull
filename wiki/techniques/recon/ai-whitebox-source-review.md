@@ -61,6 +61,9 @@ Have the LLM list every place a security control is invoked, then find
 single highest-yield prompt - it pointed Justin directly to the
 vulnerable function in his Ep 137 finding.
 
+Full prompt template + TLX skill spec in
+[[adjacent-function-gap]].
+
 ## Triggering
 
 Example `GEMINI.md` skeleton:
@@ -93,4 +96,6 @@ Not applicable.
 
 - Critical Thinking Podcast Ep 137 - <https://www.youtube.com/watch?v=sTG-OX5BbBc>
 - Daniel Miessler - Fabric / context-files pattern (referenced in episode).
-- Related: [[codeql-llm-ranking]], [[threat-intel-creds-residential]]
+- Related: [[codeql-llm-ranking]], [[threat-intel-creds-residential]],
+  [[adjacent-function-gap]], [[../../tools/karpathy/js-review-cascade]],
+  [[../../tools/tlx/sourcemap-recon]]

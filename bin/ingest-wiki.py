@@ -4,6 +4,7 @@ Run with the tlx venv: `tlx/.venv/bin/python bin/ingest-wiki.py`
 Requires GOOGLE_API_KEY in env (text-embedding-004).
 """
 import asyncio
+import json
 import os
 import sys
 from pathlib import Path
@@ -27,18 +28,19 @@ async def main() -> None:
     embedder = GoogleEmbedder()
     ef = make_chroma_adapter(embedder)
 
+    # Recursive globs cover every existing + future subclass folder.
+    # _external/ is intentionally excluded (vendored OSS; license + noise).
+    # wiki root *.md kept narrow (SCHEMA only) so _lint_*.md and
+    # _ingest_log.jsonl never enter the collection.
     targets = [
         (str(REPO / "wiki" / "sources"), "*.md"),
         (str(REPO / "wiki" / "sources" / "podcasts" / "ct"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "dom-xss"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "idor"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "oauth"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "postmessage"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "prototype-pollution"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "race-conditions"), "*.md"),
-        (str(REPO / "wiki" / "techniques" / "server-side"), "*.md"),
-        (str(REPO / "wiki" / "payloads" / "dom-xss"), "*.md"),
+        (str(REPO / "wiki" / "techniques"), "**/*.md"),
+        (str(REPO / "wiki" / "payloads"), "**/*.md"),
         (str(REPO / "wiki" / "tools"), "**/*.md"),
+        (str(REPO / "wiki" / "findings"), "**/*.md"),
+        (str(REPO / "wiki" / "people"), "**/*.md"),
+        (str(REPO / "wiki" / "targets"), "**/*.md"),
         (str(REPO / "wiki"), "SCHEMA.md"),
     ]
 
@@ -48,16 +50,23 @@ async def main() -> None:
             continue
         print(f"INGEST {directory} {glob}")
         try:
-            result = await docs_ingest_dir(
+            raw = await docs_ingest_dir(
                 directory=directory,
                 glob=glob,
                 collection="wiki",
                 cfg=cfg,
                 embedding_function=ef,
             )
-            print(f"  -> {result}")
+            r = json.loads(raw)
+            if "error" in r:
+                print(f"  ERR: {r['error']}")
+                continue
+            print(
+                f"  -> files={r.get('files_processed')} "
+                f"chunks={r.get('total_chunks')}"
+            )
         except Exception as exc:
-            print(f"  ERROR: {exc}")
+            print(f"  EX: {exc}")
 
 
 if __name__ == "__main__":

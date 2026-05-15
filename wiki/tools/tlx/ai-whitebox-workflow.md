@@ -40,6 +40,15 @@ gotchas.
 > "What tests are validating a security control? That points you directly
 > to what the team cares about."
 
+## Related
+
+- [[../../techniques/recon/adjacent-function-gap]] — the killer
+  prompt above, formalized with a TLX skill spec.
+- [[../karpathy/js-review-cascade]] — Sonnet→Opus cascade to keep
+  the four-pass workflow inside the per-target Opus budget.
+- [[sourcemap-recon]] — hidden-map + Sentry recon before the
+  workflow can run (no source → no whitebox).
+
 ## Source
 
 - CT Ep 137 - <https://www.youtube.com/watch?v=sTG-OX5BbBc>

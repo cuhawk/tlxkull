@@ -91,18 +91,21 @@ job, not the skill's.
 ### Phase B — Static analysis
 | Skill | Trigger | Output |
 | --- | --- | --- |
-| `js-index` | sources ready | callgraph nodes/edges/tags + frameworks |
+| `js-index` | sources ready | callgraph nodes/edges/tags + frameworks; T1.4 jsluice tags + T2.3 routes appended |
 | `chain-triage` | index done | ranked chain list, hot subset for Opus |
-| `opus-deep-audit` | per hot chain | verdict + reasoning + proposed POC |
 | `dom-xss-hunt` | always after triage | DOM sink subset (mock_backend extract) |
+| `cspt-csrf` | dom_reachable.jsonl ready (T2.2) | CSPT-2-CSRF candidates (Doyensec playbook) |
+| `opus-deep-audit` | per hot/dom_reachable chain | T1.3 long-context probe + T1.2 cascade gate + per-chain Opus audit |
+| `opus-gap-audit` | user names a control qname (T1.1) | sibling functions missing the control, cascade-gated then Opus-audited |
 
 ### Phase C — Dynamic confirmation
 | Skill | Trigger | Output |
 | --- | --- | --- |
-| `browser-confirm` | TP-candidate chain | sink observation on real target (Playwright) |
+| `browser-confirm` | TP-candidate chain | sink observation on real target; T2.1 DOMLogger + T2.4 handler enum injected |
 | `caido-capture` | live target session start | requests captured to Caido project |
 | `caido-replay` | request of interest | modified replay + diff against baseline |
 | `caido-idor` | authn'd request captured | role-matrix fuzz + diff to detect IDOR/BAC |
+| `caido-shift` (stub) | passive proxy capture (T3.6) | open-redirect / IDOR-rotation / JS-asset-diff micro-agents |
 
 ### Phase D — Knowledge loop
 | Skill | Trigger | Output |
@@ -112,8 +115,12 @@ job, not the skill's.
 | `wiki-query` | any question Claude can't answer from current files | wiki retrieval + possibly new page |
 | `wiki-lint` | weekly / on demand | contradictions, orphans, gaps report |
 | `report-finding` | confirmed bug | SARIF + writeup + PoC bundle ready for submission |
+| `patch-diff` | target uses pinned vulnerable npm pkg (T3.1) | npm-version diff highlighting added/removed control invocations |
+| `parser-pipeline-fuzz` (stub) | DOMPurify/parse5/JSXSS pinned (T3.3) | local pipeline fuzz survivor → browser-confirm |
 
-That's **17 skills**. Index + when-to-fire matrix lives in `skills.md`.
+That's **22 skills** (17 base + 5 added 2026-05-15 by IMPL_TIER123:
+`opus-gap-audit`, `cspt-csrf`, `patch-diff`, `parser-pipeline-fuzz`,
+`caido-shift`). Index + when-to-fire matrix lives in `skills.md`.
 
 ## 5. Per-target folder shape
 

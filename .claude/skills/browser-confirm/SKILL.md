@@ -20,6 +20,23 @@ runs that final proof.
 1. Make sure chrome-devtools MCP is running with Caido proxy
    (`caido-capture` should already have set that up).
 2. `navigate_page(url=<entry_url from chain>)`.
+2a. **DOMLogger++ injection (T2.1).** Immediately after navigation,
+    inject the source/sink hook payload:
+    ```
+    evaluate_script(script=<contents of bin/domlogger_payload.js>)
+    ```
+    Hooks are idempotent (the payload guards via
+    `window.__TLX_DOMLOGGER_INSTALLED`). All source reads + sink calls
+    that fire during the rest of the run get appended to
+    `window.__TLX_DOMLOGGER_EVENTS`.
+2b. **Inline-handler enum (T2.4).** Once:
+    ```
+    evaluate_script(script=<contents of bin/eventlistener_enum.js>)
+    ```
+    Returns a JSON object — append to
+    `findings/<chain_id>/event_handlers.json`. Cross-reference with
+    the static-chain handler list to spot static-only or
+    runtime-only handlers.
 3. Inject the PoC payload via the channel the chain identifies:
    - URL parameter / fragment
    - form input + submit
@@ -29,6 +46,10 @@ runs that final proof.
    - `list_console_messages` for our canary string
    - `list_network_requests` for a callback to our beacon host
    - `evaluate_script` to read the DOM for our injected node
+   - `evaluate_script(script="JSON.stringify(window.__TLX_DOMLOGGER_EVENTS||[])")`
+     and write to `findings/<chain_id>/domlogger.jsonl` so passive
+     source/sink events are captured even when the explicit canary
+     check misses.
 5. `take_screenshot` of the moment of triggering.
 
 ### Mock mode (fallback)
@@ -43,6 +64,8 @@ runs that final proof.
 - `targets/<name>/findings/<chain_id>/confirmed.json`
 - `targets/<name>/findings/<chain_id>/screenshots/*.png`
 - `targets/<name>/findings/<chain_id>/network.har` (live mode only)
+- `targets/<name>/findings/<chain_id>/domlogger.jsonl` (live mode, T2.1)
+- `targets/<name>/findings/<chain_id>/event_handlers.json` (live mode, T2.4)
 
 ## Failure modes
 - Sink doesn't fire → demote chain to `verdict: undetermined`,
