@@ -29,8 +29,10 @@
         ▼                       ▼                              ▼
   ┌──────────────┐       ┌──────────────┐              ┌──────────────┐
   │ tlx-mcp      │       │ browser-mcp  │              │ caido-mcp    │
-  │ js_analyzer  │       │ chrome-dev / │              │ proxy + API  │
-  │ mock_backend │       │ playwright   │              │ replay / diff│
+  │ js_analyzer  │       │ chrome-dev   │              │ proxy + API  │
+  │ mock_backend │       │ (extensions: │              │ replay / diff│
+  │              │       │ DOMLogger++, │              │              │
+  │              │       │ Caido, etc.) │              │              │
   │ docs_query   │       └──────┬───────┘              └──────┬───────┘
   │ session_kv   │              │                             │
   └──────┬───────┘              │ HTTP/HTTPS                  │
@@ -201,8 +203,8 @@ default 5 min per iter (Karpathy's spec); user-tunable per target.
 | name | command | purpose |
 | --- | --- | --- |
 | `tlx` | `python -m mcp_server` (cwd: `./tlx`) | 16 tools (js_analyzer + mock_backend + docs_query + session_kv_get) |
-| `chrome-devtools` | (already installed) | live target browsing + Caido proxy host |
-| `playwright` | (already installed) | mock_confirm sink observation |
+| `chrome-devtools` | (already installed) | real Chrome — live target browsing + mock_confirm sink observation; carries installed extensions (DOMLogger++, Caido browser, Wappalyzer) into every run |
+| `playwright` | (kept but deprecated) | no skill calls it; left in settings.json for ad-hoc use |
 | `caido` | wrapper script in `./bin/caido-mcp.py` (new) | GraphQL replay + project capture |
 
 The `caido-mcp.py` wrapper is the only new MCP we write. Thin: it exposes

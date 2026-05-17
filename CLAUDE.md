@@ -4,7 +4,7 @@ You are the operator of a single-user bug-bounty cockpit. The user is a top
 H1 hunter (rank ~2500) and Synack L4. They expect **rigor over speed**;
 "late but right" beats "fast but wrong". Optimize for result quality.
 
-> **Read PLAN.md first.** Then `skills.md`, then `workflow.md`. Then start.
+> **Read `plans/PLAN.md` first.** Then `skills.md`, then `workflow.md`. Then start. All design/spec docs live under `plans/`.
 
 ---
 
@@ -35,8 +35,8 @@ LLM-maintained wiki. Every bug-bounty engagement is a subfolder of
 | MCP | Purpose | Used by skills |
 | --- | --- | --- |
 | `tlx` | js_analyzer + mock_backend + docs_query + session_kv_get (16 tools) | js-index, chain-triage, dom-xss-hunt, browser-confirm, rag-ingest, wiki-* |
-| `chrome-devtools` | live target browsing (real Chrome, DevTools protocol) | browser-confirm (live), caido-capture |
-| `playwright` | headless sink confirmation for mock_backend | browser-confirm (mock) |
+| `chrome-devtools` | real Chrome via DevTools protocol — live target + mock_backend confirmation. Carries installed Chrome extensions (DOMLogger++, Caido browser, Wappalyzer, etc.) into every run | browser-confirm (live + mock), caido-capture |
+| `playwright` | deprecated for this workflow — kept enabled but no skill calls it | _none_ |
 | `caido` | proxy capture + GraphQL replay/diff (local wrapper at `bin/caido-mcp.py`) | caido-capture, caido-replay, caido-idor |
 
 If `tlx` MCP fails to boot, run `cd tlx && python -m mcp_server` once
