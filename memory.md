@@ -23,9 +23,11 @@ durable facts; remove stale ones.
 
 ## Workflow preferences
 
-- **Default browser MCP for live targets:** `chrome-devtools` (real
-  Chrome through Caido proxy).
-- **Default browser MCP for mock confirmation:** `playwright`.
+- **Default browser MCP for ALL confirmation (live + mock):** `chrome-devtools`
+  (real Chrome through Caido proxy). Single MCP for both modes so installed
+  Chrome extensions (DOMLogger++, Caido browser, Wappalyzer, etc.) stay
+  available during mock_backend confirmation too. Playwright deprecated for
+  this workflow — kept enabled in `.claude/settings.json` but unused by skills.
 - **Default Caido mode:** proxy capture + GraphQL replay (both).
 - **Caveman intensity:** `full` for chat updates; OFF for artifacts
   (findings, reports, wiki, commits — write proper English).

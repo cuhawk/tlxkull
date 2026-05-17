@@ -54,7 +54,16 @@ def _prefix_clause(prefixes: list[str], col: str = "file", negate: bool = False)
     op = "NOT LIKE" if negate else "LIKE"
     joiner = " AND " if negate else " OR "
     parts = [f"{col} {op} ?" for _ in prefixes]
-    params = [f"{p}%" if p.endswith("/") else f"{p}/%" for p in prefixes]
+    # Originally appended "/%" when prefix lacked trailing slash, assuming nested
+    # path layout. For flat sources/ dirs (e.g. host_app_chunk.js), that breaks
+    # matching. New rule: if prefix already ends in "/" or "_" or "%", treat as
+    # raw LIKE pattern (just append "%"). Otherwise keep the original
+    # path-aware behavior so existing callers still work.
+    def _params_for(p: str) -> str:
+        if p.endswith(("/", "_", "%")):
+            return f"{p}%"
+        return f"{p}/%"
+    params = [_params_for(p) for p in prefixes]
     return "(" + joiner.join(parts) + ")", params
 
 

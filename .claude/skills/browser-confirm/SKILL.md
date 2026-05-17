@@ -1,6 +1,6 @@
 ---
 name: browser-confirm
-description: Confirm a Opus-flagged true-positive chain in a real browser, either against the live target (chrome-devtools MCP, with Caido proxy capturing) or against TLX's mock backend (playwright MCP + mock_start + mock_confirm). Run per chain that opus-deep-audit marked verdict=true_positive. Writes findings/<id>/confirmed.json + screenshots. Default mode is live; falls back to mock if rate-limited or sensitive.
+description: Confirm a Opus-flagged true-positive chain in a real browser via chrome-devtools MCP (real Chrome) — live target through Caido proxy OR TLX mock_backend localhost URL. Same MCP for both modes so installed Chrome extensions (DOMLogger++, Caido browser, Wappalyzer) load in either. Run per chain that opus-deep-audit marked verdict=true_positive. Writes findings/<id>/confirmed.json + screenshots. Default mode is live; falls back to mock if rate-limited or sensitive.
 ---
 
 # browser-confirm
@@ -53,12 +53,22 @@ runs that final proof.
 5. `take_screenshot` of the moment of triggering.
 
 ### Mock mode (fallback)
-1. `mock_start(session_id=<chain_id>, target_folder="targets/<name>/sources/")`.
-2. playwright MCP `browser_navigate` to the returned URL.
-3. Trigger the chain analogously.
-4. `mock_confirm(session_id, chain_id)` — TLX's hook observes and
-   persists.
-5. `mock_stop(session_id)`.
+Uses the SAME chrome-devtools MCP as live mode — just points at the
+mock_backend localhost URL instead of the target. Benefit: installed
+Chrome extensions (DOMLogger++, Caido browser, etc.) still load, so the
+same source/sink instrumentation runs against the mock surface.
+
+1. `mock_start(session_id=<chain_id>, target_folder="targets/<name>/sources/")`
+   → returns `http://127.0.0.1:<port>/`.
+2. chrome-devtools `new_page(url=<mock_url>)` (or `navigate_page` if a
+   tab already exists). DOMLogger++ extension fires automatically.
+3. Inject DOMLogger payload + handler enum scripts exactly as in live
+   mode (steps 2a / 2b above) — covers any DOM that the extension misses.
+4. Trigger the chain analogously (URL param, form submit, postMessage).
+5. `mock_confirm(session_id, chain_id)` — TLX hook observes server-side
+   sink calls and persists.
+6. `take_screenshot` of the trigger moment.
+7. `mock_stop(session_id)`.
 
 ## Outputs
 - `targets/<name>/findings/<chain_id>/confirmed.json`

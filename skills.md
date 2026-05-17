@@ -145,9 +145,11 @@ deferred until per-target need.
 ### `browser-confirm`
 **Trigger:** `opus/<id>.md` with `verdict: true_positive` AND no
 `findings/<id>/confirmed.json`.
-**Tools used:** `chrome-devtools` MCP (live mode) OR `playwright` MCP
-+ `mock_start` + `mock_confirm` (mock mode). Claude picks based on
-target sensitivity (asks user if unsure).
+**Tools used:** `chrome-devtools` MCP for BOTH modes — real Chrome with
+installed extensions (DOMLogger++, Caido browser, Wappalyzer) loaded.
+Live mode navigates target through Caido proxy; mock mode navigates
+the `mock_start` localhost URL and pairs with `mock_confirm`. Claude
+picks live vs mock based on target sensitivity (asks user if unsure).
 **Writes:** `findings/<id>/confirmed.json` + screenshots.
 **Result block:** `{ phase: "browser_confirm", id, mode:
 "live|mock", confirmed: bool, evidence: [...] }`.
