@@ -1,0 +1,265 @@
+[
+  {
+    "id": "document_documentURI",
+    "pattern": "\\bdocument\\.documentURI\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "document.documentURI — full URL including fragment; canonical DOM XSS source",
+    "tool": "portswigger,semgrep"
+  },
+  {
+    "id": "document_baseURI",
+    "pattern": "\\bdocument\\.baseURI\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "document.baseURI — affected by <base href> which can itself be a sink",
+    "tool": "portswigger"
+  },
+  {
+    "id": "document_URLUnencoded",
+    "pattern": "\\bdocument\\.URLUnencoded\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "document.URLUnencoded — legacy IE property; same role as document.URL but without percent-encoding",
+    "tool": "portswigger"
+  },
+  {
+    "id": "document_location_bare",
+    "pattern": "\\bdocument\\.location\\b(?!\\s*\\.(href|search|hash|pathname|protocol|host|hostname|port|origin)\\b)(?!\\s*=)",
+    "kind": "source",
+    "severity": "medium",
+    "description": "document.location read without a sub-property — PortSwigger calls this out separately. Look-aheads exclude assignments and the already-covered sub-property reads.",
+    "tool": "portswigger,semgrep"
+  },
+  {
+    "id": "window_location_bare",
+    "pattern": "\\bwindow\\.location\\b(?!\\s*\\.(href|search|hash|pathname|protocol|host|hostname|port|origin)\\b)(?!\\s*=)",
+    "kind": "source",
+    "severity": "medium",
+    "description": "window.location read without a sub-property. Same caveats as document_location_bare.",
+    "tool": "portswigger,semgrep"
+  },
+  {
+    "id": "window_name",
+    "pattern": "\\bwindow\\.name\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "window.name — cross-origin writable; an attacker can iframe the target and pre-set this. Often missed by scanners.",
+    "tool": "portswigger"
+  },
+  {
+    "id": "history_pushState",
+    "pattern": "\\bhistory\\.pushState\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "history.pushState(...) — third arg becomes part of the URL; treat reads of location.* afterwards as tainted in single-page apps",
+    "tool": "portswigger"
+  },
+  {
+    "id": "history_replaceState",
+    "pattern": "\\bhistory\\.replaceState\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "history.replaceState(...) — same reasoning as pushState",
+    "tool": "portswigger"
+  },
+  {
+    "id": "URL_ctor_with_location",
+    "pattern": "new\\s+URL\\s*\\(\\s*(?:document|window)?\\.?location",
+    "kind": "source",
+    "severity": "medium",
+    "description": "new URL(location, ...) — the parsed URL inherits taint from location",
+    "tool": "jsluice,semgrep"
+  },
+  {
+    "id": "searchParams_get",
+    "pattern": "(?:\\.searchParams|\\bsearchParams|\\bparams|\\bquery|\\busp|\\burlParams)\\.get\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "searchParams.get(name) — chained (urlObj.searchParams.get), destructured (searchParams.get), or short-name (params.get / usp.get) form. NOTE: matching \".params\" / \".query\" by name has FP risk; agent should confirm the binding came from URL/URLSearchParams.",
+    "tool": "jsluice,semgrep"
+  },
+  {
+    "id": "URLSearchParams_get",
+    "pattern": "\\bURLSearchParams\\b[^;]{0,200}\\.get\\s*\\(",
+    "kind": "source",
+    "severity": "high",
+    "description": "new URLSearchParams(...).get(...) — captures the chained call form on the same line",
+    "tool": "jsluice"
+  },
+  {
+    "id": "localStorage_bracket",
+    "pattern": "\\blocalStorage\\s*\\[",
+    "kind": "source",
+    "severity": "low",
+    "description": "localStorage[\"key\"] — bracket-access form not covered by .getItem regex"
+  },
+  {
+    "id": "sessionStorage_bracket",
+    "pattern": "\\bsessionStorage\\s*\\[",
+    "kind": "source",
+    "severity": "low",
+    "description": "sessionStorage[\"key\"] — bracket-access form"
+  },
+  {
+    "id": "storage_key_iteration",
+    "pattern": "\\b(local|session)Storage\\.key\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "localStorage.key(i) / sessionStorage.key(i) — used to enumerate; values are still attacker-influenced"
+  },
+  {
+    "id": "indexedDB_open",
+    "pattern": "\\b(indexedDB|mozIndexedDB|webkitIndexedDB|msIndexedDB)\\.open\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "IndexedDB.open(...) — values stored in IDB are persistent and attacker-influenced (stored DOM XSS vector)",
+    "tool": "portswigger"
+  },
+  {
+    "id": "message_event_data_read",
+    "pattern": "\\b(event|e|msg|message|ev)\\.data\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "event.data — payload from a postMessage / WebSocket / EventSource / BroadcastChannel callback. NOTE: high false-positive rate outside event handlers; pair with handler-registration rule.",
+    "tool": "portswigger,semgrep"
+  },
+  {
+    "id": "message_event_origin_read",
+    "pattern": "\\b(event|e|msg|message|ev)\\.origin\\b",
+    "kind": "source",
+    "severity": "low",
+    "description": "event.origin — used in postMessage origin checks; value comes from the sender, useful for finding missing origin validation"
+  },
+  {
+    "id": "websocket_onmessage",
+    "pattern": "\\bWebSocket\\b[\\s\\S]{0,200}?\\.onmessage\\s*=(?!=)",
+    "kind": "source",
+    "severity": "medium",
+    "description": "WebSocket .onmessage handler — server-pushed data is attacker-controllable when the server is compromised or speaks a third-party protocol",
+    "tool": "semgrep"
+  },
+  {
+    "id": "eventsource_onmessage",
+    "pattern": "\\bnew\\s+EventSource\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "new EventSource(url) — SSE; same reasoning as WebSocket"
+  },
+  {
+    "id": "broadcastchannel_onmessage",
+    "pattern": "\\bnew\\s+BroadcastChannel\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "new BroadcastChannel(name) — receives messages from same-origin contexts (incl. potentially compromised iframes)"
+  },
+  {
+    "id": "xhr_responseText",
+    "pattern": "\\.responseText\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "XMLHttpRequest.responseText — server response data, tainted if it ever reflected user input",
+    "tool": "semgrep"
+  },
+  {
+    "id": "xhr_responseXML",
+    "pattern": "\\.responseXML\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "XMLHttpRequest.responseXML — same reasoning as responseText"
+  },
+  {
+    "id": "xhr_response_generic",
+    "pattern": "\\bXMLHttpRequest\\b[\\s\\S]{0,300}?\\.response\\b",
+    "kind": "source",
+    "severity": "low",
+    "description": "XMLHttpRequest.response — when responseType is set; generic catch-all"
+  },
+  {
+    "id": "fetch_response_text",
+    "pattern": "\\.then\\s*\\(\\s*(?:async\\s*)?(?:\\([^)]*\\)|[a-zA-Z_$][\\w$]*)\\s*=>\\s*[a-zA-Z_$][\\w$]*\\.(?:text|json)\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "fetch(...).then(r => r.text()|r.json()) — body of a fetch response is server data that may reflect user input"
+  },
+  {
+    "id": "express_req_query",
+    "pattern": "\\breq\\.query\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Express req.query — query-string values, attacker-controlled",
+    "tool": "semgrep"
+  },
+  {
+    "id": "express_req_body",
+    "pattern": "\\breq\\.body\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Express req.body — POST/PUT body, attacker-controlled",
+    "tool": "semgrep"
+  },
+  {
+    "id": "express_req_params",
+    "pattern": "\\breq\\.params\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Express req.params — URL path params, attacker-controlled",
+    "tool": "semgrep"
+  },
+  {
+    "id": "express_req_headers",
+    "pattern": "\\breq\\.headers\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "Express req.headers — request headers, attacker-controlled (incl. Host, X-Forwarded-For)",
+    "tool": "semgrep"
+  },
+  {
+    "id": "express_req_cookies",
+    "pattern": "\\breq\\.cookies\\b",
+    "kind": "source",
+    "severity": "high",
+    "description": "Express req.cookies — cookie values, attacker-influenced",
+    "tool": "semgrep"
+  },
+  {
+    "id": "next_searchparams",
+    "pattern": "\\bsearchParams\\.get\\s*\\([^)]*\\)|\\bnextUrl\\.",
+    "kind": "source",
+    "severity": "high",
+    "description": "Next.js / App-Router searchParams or nextUrl — request URL access in server components / route handlers",
+    "tool": "semgrep"
+  },
+  {
+    "id": "node_process_env",
+    "pattern": "\\bprocess\\.env\\.[A-Z][A-Z0-9_]*\\b",
+    "kind": "source",
+    "severity": "low",
+    "description": "process.env.X — config-controlled but flagged by some rulesets when reaching dangerous sinks (Dasty paper, semgrep server-side)",
+    "tool": "semgrep"
+  },
+  {
+    "id": "node_process_argv",
+    "pattern": "\\bprocess\\.argv\\b",
+    "kind": "source",
+    "severity": "medium",
+    "description": "process.argv — CLI argument source; attacker-controlled in CLI tools",
+    "tool": "semgrep"
+  },
+  {
+    "id": "JSON_parse_call",
+    "pattern": "\\bJSON\\.parse\\s*\\(",
+    "kind": "source",
+    "severity": "low",
+    "description": "JSON.parse(...) — when fed an attacker-controlled string, the resulting object can contain a \"__proto__\" key that gets walked by recursive merge functions",
+    "tool": "portswigger,owasp"
+  },
+  {
+    "id": "qs_parse_call",
+    "pattern": "\\b(qs|querystring)\\.parse\\s*\\(",
+    "kind": "source",
+    "severity": "medium",
+    "description": "qs.parse / querystring.parse — these libraries historically created __proto__ keys from URL query strings (CVE-2017-1000048 family)",
+    "tool": "portswigger"
+  }
+]

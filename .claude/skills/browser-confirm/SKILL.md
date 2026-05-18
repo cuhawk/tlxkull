@@ -1,6 +1,6 @@
 ---
 name: browser-confirm
-description: Confirm a Opus-flagged true-positive chain in a real browser via chrome-devtools MCP (real Chrome) — live target through Caido proxy OR TLX mock_backend localhost URL. Same MCP for both modes so installed Chrome extensions (DOMLogger++, Caido browser, Wappalyzer) load in either. Run per chain that opus-deep-audit marked verdict=true_positive. Writes findings/<id>/confirmed.json + screenshots. Default mode is live; falls back to mock if rate-limited or sensitive.
+description: Confirm a Opus-flagged true-positive chain in a real browser via chrome-devtools MCP (real Chrome) — live target through Caido proxy OR TLX mock_backend localhost URL. Same MCP for both modes so installed Chrome extensions (DOMLogger++, Caido browser, Wappalyzer) load in either. Run per chain that opus-deep-audit marked verdict=true_positive OR per chain queued by cc-taint-route (findings/_queue_browser_confirm.jsonl / _queue_mock_run.jsonl). Writes findings/<id>/confirmed.json + screenshots. Default mode is live; falls back to mock if rate-limited or sensitive.
 ---
 
 # browser-confirm
@@ -12,7 +12,33 @@ runs that final proof.
 
 ## Inputs
 - `targets/<name>/opus/<chain_id>.md` with `verdict: true_positive`.
+- `targets/<name>/opus/<chain_id>.json` with
+  `triage: runtime` (cc-taint-adversarial flow).
+- `targets/<name>/findings/_queue_browser_confirm.jsonl` —
+  high-confidence runtime chains routed here by `cc-taint-route`.
+  Each line: `{chain_id, triage, confidence, chain, opus_record,
+  queued_at}`. Process top-to-bottom; treat as a worklog.
+- `targets/<name>/findings/_queue_mock_run.jsonl` —
+  medium/low-confidence runtime chains. Same schema as above. **Try
+  headless `mcp__tlx__mock_run` first** (cheaper, no real browser).
+  If `mock_run` confirms the sink fires, promote to live-mode
+  follow-up; if it doesn't, demote to `verdict: undetermined` and
+  queue for `autoresearch-loop`.
 - `memory.md` for default mode preference.
+
+## Queue processing order
+
+1. Drain `findings/_queue_browser_confirm.jsonl` in live mode (or
+   mock if memory.md / target sensitivity says so).
+2. Drain `findings/_queue_mock_run.jsonl` via `mock_run` →
+   selectively promote to live/mock browser.
+3. Pick up any remaining `opus/<id>.md verdict: true_positive`
+   chains not already in either queue (legacy advisor pipeline).
+
+After confirming each chain, append its `chain_id` to the appropriate
+`status.json.phases.browser_confirm.confirmed_ids` / `failed_ids` and
+leave the queue file in place — a future re-run that sees a
+`findings/<chain_id>/confirmed.json` should skip it.
 
 ## Modes
 

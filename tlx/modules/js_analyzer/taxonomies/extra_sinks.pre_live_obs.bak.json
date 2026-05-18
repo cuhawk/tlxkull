@@ -1,0 +1,381 @@
+[
+  {
+    "id": "document_domain_assign",
+    "pattern": "\\bdocument\\.domain\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Assignment to document.domain — relaxes same-origin policy; not direct XSS but enables it from sibling subdomains",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "event_handler_attr_assign",
+    "pattern": "\\.on(click|mouseover|mouseout|mousedown|mouseup|mousemove|load|unload|error|focus|blur|change|submit|keydown|keyup|keypress|input|drop|dragover|dragstart|toggle|animationstart|animationend|transitionend|hashchange|popstate)\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Element.on<event> = … — assigning a *string* (rather than a function) to a DOM event handler. PortSwigger calls this element.onevent. Pair with a string-literal check at the agent level to reduce noise.",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "setAttribute_dangerous_attr",
+    "pattern": "\\.setAttribute\\s*\\(\\s*['\"`](?:on\\w+|href|src|srcdoc|formaction|action|data|background|cite|codebase|profile|usemap|xlink:href|xml:base)['\"`]",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Element.setAttribute(\"on*\"|\"href\"|\"src\"|\"srcdoc\"|\"formaction\"|...) — setting a dangerous attribute via setAttribute is equivalent to direct property assignment; commonly missed because static analysers focus on direct property assignment",
+    "tool": "portswigger,semgrep",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "jquery_prepend",
+    "pattern": "\\.prepend\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "$.prepend(...) — jQuery DOM injection. Also matches DOM Element.prepend() which auto-escapes strings; agent should disambiguate.",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "jquery_replaceWith",
+    "pattern": "\\.replaceWith\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "$.replaceWith(...) — jQuery DOM injection",
+    "tool": "portswigger"
+  },
+  {
+    "id": "jquery_replaceAll",
+    "pattern": "\\.replaceAll\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "$.replaceAll(...) — jQuery DOM injection. Also matches String.prototype.replaceAll — high false-positive rate; consider context.",
+    "tool": "portswigger"
+  },
+  {
+    "id": "jquery_wrap_family",
+    "pattern": "\\.(wrap|wrapAll|wrapInner)\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "$.wrap / $.wrapAll / $.wrapInner — accept HTML string; jQuery DOM injection",
+    "tool": "portswigger"
+  },
+  {
+    "id": "jquery_insertBefore_after",
+    "pattern": "\\.(insertBefore|insertAfter)\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "$.insertBefore / $.insertAfter — jQuery DOM injection",
+    "tool": "portswigger"
+  },
+  {
+    "id": "jquery_animate",
+    "pattern": "\\.animate\\s*\\(",
+    "kind": "sink",
+    "severity": "low",
+    "description": "$.animate(...) — historic jQuery DOM XSS sink via the properties argument; low severity in modern jQuery",
+    "tool": "portswigger"
+  },
+  {
+    "id": "jquery_parseHTML",
+    "pattern": "\\b(?:\\$|jQuery)\\.parseHTML\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "$.parseHTML(str) — parses HTML and can execute scripts when the output is appended to the DOM",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "jquery_selector_with_user_input",
+    "pattern": "\\$\\s*\\(\\s*location\\.(?:hash|search|href)",
+    "kind": "sink",
+    "severity": "high",
+    "description": "$(location.hash) / $(location.search) — classic PortSwigger jQuery selector sink; older jQuery treats the leading \"<\" as HTML",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "jquery_attr_dangerous",
+    "pattern": "\\.attr\\s*\\(\\s*['\"`](?:href|src|srcdoc|action|formaction|on\\w+|data|background|usemap)['\"`]",
+    "kind": "sink",
+    "severity": "high",
+    "description": "jQuery $.attr(\"href\"|\"src\"|\"on*\"|...) with an attacker-controlled value — javascript: URLs allowed",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "angular_legacy_trustAs",
+    "pattern": "\\$sce\\.(trustAs|trustAsHtml|trustAsResourceUrl|trustAsScript|trustAsCss|trustAsUrl|getTrustedHtml)\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "AngularJS (1.x) $sce.trustAs* — explicit sanitisation bypass",
+    "tool": "semgrep",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "angular_modern_bypassSecurityTrust",
+    "pattern": "\\bbypassSecurityTrust(?:Html|Script|Style|Url|ResourceUrl)\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Angular (2+) DomSanitizer.bypassSecurityTrust* — explicit sanitisation bypass",
+    "tool": "semgrep",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "vue_compile",
+    "pattern": "\\bVue\\.compile\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Vue.compile(template) — compiles a template string; equivalent to eval for templates",
+    "tool": "semgrep",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "angular_compile",
+    "pattern": "\\$compile\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "AngularJS $compile(html) — compiles an HTML string against a scope; XSS sink",
+    "tool": "semgrep"
+  },
+  {
+    "id": "script_src_assign",
+    "pattern": "\\.src\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "element.src = … — generic .src assignment. Pair with a check that the element is a <script>, <iframe>, <embed>, <img>, <video>, <audio>, or <source>. Agent should evaluate context — high FP rate as bare regex.",
+    "tool": "portswigger,semgrep",
+    "cwe": "CWE-829"
+  },
+  {
+    "id": "script_text_assign",
+    "pattern": "\\.(?:text|innerText|textContent)\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "element.text|innerText|textContent = … — when the element is a <script>, this *executes* the assigned string. Otherwise auto-escaped (safe). Agent should check element type. NOTE: very high FP rate; only useful for taint flows that target script elements.",
+    "tool": "semgrep"
+  },
+  {
+    "id": "iframe_srcdoc_assign",
+    "pattern": "\\.srcdoc\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "high",
+    "description": "iframe.srcdoc = … — full HTML document injection",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "object_data_assign",
+    "pattern": "\\.data\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "low",
+    "description": "<object>.data = url — script equivalent for <object>; very high FP rate (matches React/Vue .data on every component); NOISY — disable by default"
+  },
+  {
+    "id": "createContextualFragment",
+    "pattern": "\\.createContextualFragment\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Range.createContextualFragment(html) — parses HTML; injecting <img src=x onerror=…> works",
+    "tool": "portswigger",
+    "cwe": "CWE-79"
+  },
+  {
+    "id": "DOMParser_parseFromString_html",
+    "pattern": "\\bDOMParser\\b[\\s\\S]{0,200}?\\.parseFromString\\s*\\([^)]+,\\s*['\"`]text/html['\"`]",
+    "kind": "sink",
+    "severity": "low",
+    "description": "new DOMParser().parseFromString(html, \"text/html\") — parses HTML in an inert document; scripts do NOT execute on parse, only when nodes are adopted into the live DOM. Low severity by itself."
+  },
+  {
+    "id": "vm_runIn_family",
+    "pattern": "\\bvm\\.(runInContext|runInNewContext|runInThisContext|compileFunction)\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Node.js vm.runIn* / vm.compileFunction — Node V8 sandbox is *not* a security boundary; equivalent to eval",
+    "tool": "semgrep",
+    "cwe": "CWE-94"
+  },
+  {
+    "id": "vm_Script_ctor",
+    "pattern": "\\bnew\\s+vm\\.(Script|SourceTextModule)\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "new vm.Script() / new vm.SourceTextModule() — same reasoning as vm.runIn*",
+    "tool": "semgrep",
+    "cwe": "CWE-94"
+  },
+  {
+    "id": "child_process_exec",
+    "pattern": "\\bchild_process\\b[\\s\\S]{0,80}?\\.(exec|execSync|execFile|execFileSync|spawn|spawnSync|fork)\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "child_process.exec / spawn / fork — command-injection sink when the command string is tainted (exec/execSync are highest risk because they go via /bin/sh -c)",
+    "tool": "semgrep",
+    "cwe": "CWE-78"
+  },
+  {
+    "id": "require_dynamic",
+    "pattern": "\\brequire\\s*\\(\\s*(?!['\"`])",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "require(<expression>) — dynamic require; if the path is user-controlled it can load arbitrary modules. Look-ahead excludes the safe require(\"...\") string-literal form.",
+    "tool": "semgrep",
+    "cwe": "CWE-829"
+  },
+  {
+    "id": "setImmediate_string",
+    "pattern": "\\bsetImmediate\\s*\\(\\s*['\"`]",
+    "kind": "sink",
+    "severity": "high",
+    "description": "setImmediate(\"code\", ...) — Node-specific; like setTimeout-with-string, executes the string as code",
+    "tool": "semgrep",
+    "cwe": "CWE-94"
+  },
+  {
+    "id": "eval_indirect",
+    "pattern": "\\(\\s*0\\s*,\\s*eval\\s*\\)|\\bglobalThis\\s*\\.\\s*eval\\b|\\bwindow\\s*\\.\\s*eval\\b",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Indirect eval forms: (0, eval)(...), globalThis.eval(...), window.eval(...) — webpack/rollup output uses these; NOT caught by a bare \\beval\\( regex",
+    "tool": "semgrep",
+    "cwe": "CWE-94"
+  },
+  {
+    "id": "execScript_legacy",
+    "pattern": "\\bexecScript\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "execScript(...) — legacy IE; same role as eval. Still appears in old code targeting older IE.",
+    "tool": "dipa96",
+    "cwe": "CWE-94"
+  },
+  {
+    "id": "location_bare_assign",
+    "pattern": "(?:^|[^.\\w])location\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "Bare `location = …` (not `location.href`) — navigates the current window. Look-behind avoids matching `*.location =`. javascript: URLs execute.",
+    "tool": "jsluice,portswigger",
+    "cwe": "CWE-601"
+  },
+  {
+    "id": "frame_location_assign",
+    "pattern": "\\b(top|parent|self|opener|window)\\.location(?:\\.href)?\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "top|parent|self|opener.location[.href] = … — navigation in an alternate frame",
+    "tool": "jsluice",
+    "cwe": "CWE-601"
+  },
+  {
+    "id": "anchor_href_assign",
+    "pattern": "\\.href\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "low",
+    "description": "element.href = … — applies to <a>, <area>, <link>, <base>. A javascript: URL on an <a> executes when clicked. Low severity by itself; high when followed by .click()",
+    "tool": "jsluice,portswigger"
+  },
+  {
+    "id": "form_action_assign",
+    "pattern": "\\.action\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "low",
+    "description": "form.action = … — open redirect on submit. NOTE: high FP rate (Redux actions, GraphQL \"action\" fields)."
+  },
+  {
+    "id": "window_navigate_legacy",
+    "pattern": "\\bwindow\\.navigate\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "window.navigate(url) — legacy IE only; rarely seen in modern code"
+  },
+  {
+    "id": "trusted_types_create_policy",
+    "pattern": "\\btrustedTypes\\.createPolicy\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "trustedTypes.createPolicy(name, {createHTML, createScript, createScriptURL}) — a custom policy that returns the input unchanged is effectively no-op. Inspect the policy body for actual sanitisation.",
+    "tool": "mdn"
+  },
+  {
+    "id": "lodash_merge_set",
+    "pattern": "\\b_(?:\\.merge|\\.mergeWith|\\.defaultsDeep|\\.set|\\.setWith|\\.update|\\.updateWith)\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "lodash _.merge / _.mergeWith / _.defaultsDeep / _.set / _.setWith — historically prototype-pollution sinks (CVE-2018-3721, CVE-2020-8203 etc.)",
+    "tool": "portswigger,owasp",
+    "cwe": "CWE-1321"
+  },
+  {
+    "id": "jquery_extend_deep",
+    "pattern": "\\b(?:\\$|jQuery)\\.extend\\s*\\(\\s*true\\b",
+    "kind": "sink",
+    "severity": "high",
+    "description": "jQuery $.extend(true, target, source) — deep mode is a prototype-pollution sink (CVE-2019-11358)",
+    "tool": "portswigger",
+    "cwe": "CWE-1321"
+  },
+  {
+    "id": "object_assign_deep",
+    "pattern": "\\bObject\\.assign\\s*\\(\\s*\\{\\s*\\}\\s*,",
+    "kind": "sink",
+    "severity": "low",
+    "description": "Object.assign({}, untrustedObj) — shallow; only an issue when followed by recursive merge into something else. Low severity standalone."
+  },
+  {
+    "id": "object_setPrototypeOf",
+    "pattern": "\\bObject\\.setPrototypeOf\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Object.setPrototypeOf(obj, p) — explicit prototype manipulation; tainted p means full pollution",
+    "tool": "mdn",
+    "cwe": "CWE-1321"
+  },
+  {
+    "id": "reflect_setPrototypeOf",
+    "pattern": "\\bReflect\\.setPrototypeOf\\s*\\(",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Reflect.setPrototypeOf(obj, p) — same as Object.setPrototypeOf"
+  },
+  {
+    "id": "computed_proto_assign",
+    "pattern": "\\[\\s*['\"`]__proto__['\"`]\\s*\\]\\s*=|\\.__proto__\\s*=(?!=)",
+    "kind": "sink",
+    "severity": "high",
+    "description": "Direct write to __proto__ via either bracket or dot access — explicit pollution. High severity, low FP.",
+    "tool": "portswigger",
+    "cwe": "CWE-1321"
+  },
+  {
+    "id": "dom_clobbering_or_fallback",
+    "pattern": "(?:var|let|const)\\s+\\w+\\s*=\\s*(?:window|document|globalThis)\\.\\w+\\s*\\|\\|",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "var X = window.X || { ... } — DOM-clobbering vulnerable pattern (PortSwigger). The OR-fallback means an HTML-injected element with id=X can replace the value.",
+    "tool": "portswigger,owasp",
+    "cwe": "CWE-1027"
+  },
+  {
+    "id": "dom_clobbering_doc_namedAccess",
+    "pattern": "\\bdocument\\.[A-Z][\\w]*\\b(?!\\s*[(=])",
+    "kind": "sink",
+    "severity": "low",
+    "description": "document.<CapitalizedName> read — named-property-access pattern; HTML-injected element with that id can shadow built-ins. Very high FP; consider only when paired with HTML injection elsewhere."
+  },
+  {
+    "id": "document_implementation_createHTMLDocument",
+    "pattern": "\\bdocument\\.implementation\\.createHTMLDocument\\s*\\(",
+    "kind": "sink",
+    "severity": "low",
+    "description": "document.implementation.createHTMLDocument(...) — parses HTML in inert doc; chains with subsequent adoption to live DOM"
+  },
+  {
+    "id": "setAttribute_dynamic_attr",
+    "pattern": "\\.setAttribute\\s*\\(",
+    "kind": "sink",
+    "severity": "medium",
+    "description": "setAttribute with a dynamic attribute name — attacker-controlled attribute names are exploitable",
+    "cwe": "CWE-79"
+  }
+]

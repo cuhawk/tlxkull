@@ -139,12 +139,13 @@ CREATE TABLE IF NOT EXISTS nodes (
     end_line       INT
 );
 CREATE TABLE IF NOT EXISTS edges (
-    caller_id     INT NOT NULL,
-    callee_id     INT,
-    line          INT,
-    raw           TEXT,
-    callee_raw    TEXT,
-    resolved_kind TEXT,
+    caller_id        INT NOT NULL,
+    callee_id        INT,
+    line             INT,
+    raw              TEXT,
+    callee_raw       TEXT,
+    resolved_kind    TEXT,
+    candidate_count  INT NOT NULL DEFAULT 1,
     PRIMARY KEY (caller_id, line, callee_raw)
 );
 CREATE TABLE IF NOT EXISTS node_tags (
@@ -154,6 +155,8 @@ CREATE TABLE IF NOT EXISTS node_tags (
     severity    TEXT NOT NULL,
     line        INT NOT NULL,
     source      TEXT NOT NULL DEFAULT 'regex',
+    confidence  REAL NOT NULL DEFAULT 1.0,
+    evidence    TEXT,
     PRIMARY KEY (node_id, taxonomy_id, line)
 );
 CREATE TABLE IF NOT EXISTS url_refs (
@@ -385,6 +388,19 @@ class CallGraph:
         if 'source' not in cols:
             self.conn.execute(
                 "ALTER TABLE node_tags ADD COLUMN source TEXT NOT NULL DEFAULT 'regex'"
+            )
+        if 'confidence' not in cols:
+            self.conn.execute(
+                "ALTER TABLE node_tags ADD COLUMN confidence REAL NOT NULL DEFAULT 1.0"
+            )
+        if 'evidence' not in cols:
+            self.conn.execute(
+                "ALTER TABLE node_tags ADD COLUMN evidence TEXT"
+            )
+        edge_cols = {r[1] for r in self.conn.execute("PRAGMA table_info(edges)")}
+        if 'candidate_count' not in edge_cols:
+            self.conn.execute(
+                "ALTER TABLE edges ADD COLUMN candidate_count INT NOT NULL DEFAULT 1"
             )
         # Phase 10 migration: original line mapping from source-map remapping
         node_cols = {r[1] for r in self.conn.execute("PRAGMA table_info(nodes)")}
@@ -623,6 +639,12 @@ class CallGraph:
                 line       = call.get("line", 0) or 0
                 raw        = call.get("raw", "") or ""
 
+                # candidate_count tracks how many same-bare-name nodes
+                # were candidates for this call. Tag is 1 for exact /
+                # this_cross_file / unresolved / dynamic; >1 only when
+                # the resolver had to pick one out of N name-shared
+                # functions. Extract_chains filters by quality = 1/N.
+                candidate_count = 1
                 if kind == "dynamic":
                     callee_id, resolved = None, "dynamic"
                 elif kind == "this":
@@ -649,15 +671,18 @@ class CallGraph:
                     else:
                         sorted_m = sorted(matches, key=lambda x: x[1])
                         callee_id, resolved = sorted_m[0][0], "name_match"
+                        candidate_count = len(sorted_m)
                         self.ambiguities.append(
                             (callee_raw, [m[1] for m in sorted_m])
                         )
 
                 cur = c.execute(
                     "INSERT OR IGNORE INTO edges "
-                    "(caller_id, callee_id, line, raw, callee_raw, resolved_kind) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
-                    (caller_id, callee_id, line, raw, callee_raw, resolved),
+                    "(caller_id, callee_id, line, raw, callee_raw, "
+                    " resolved_kind, candidate_count) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (caller_id, callee_id, line, raw, callee_raw,
+                     resolved, candidate_count),
                 )
                 if cur.rowcount > 0:
                     stats["edges"] += 1
@@ -903,6 +928,9 @@ class CallGraph:
             # ── AST path ─────────────────────────────────────────────────
             for tag in ast_tags_by_file.get(file, []):
                 tag_line = tag.get("line", 0)
+                # Bounds guard (Patch — coolblue showed 51% of historical
+                # tags had lines outside their owning fn body). Reject
+                # AST tags that don't claim a body-local line.
                 if not (start <= tag_line <= end):
                     continue
                 rule_id = tag.get("rule_id", "")
@@ -935,11 +963,28 @@ class CallGraph:
             if not slice_:
                 continue
 
+            # Skip regex pass on pathological minified-bundle slices.
+            # A slice with a single mega-line (>100KB) is a minified
+            # function body where regex backtracking can stall for
+            # minutes (Patch — coolblue expand_snippet hang) AND any
+            # match would be inside that one line, indistinguishable
+            # at line granularity from neighbouring code.
+            MAX_SLICE_LINE_LEN = 100_000
+            if any(len(l) > MAX_SLICE_LINE_LEN for l in slice_):
+                continue
             matches = taxonomy.match_lines(slice_)
             for m in matches:
                 if m.id in AST_COVERED_RULE_IDS:
                     continue
                 abs_line = (start - 1) + m.line
+                # Bounds guard — never insert a tag whose line falls
+                # outside the owning function's [start..end] body.
+                # The combination above (slice_ comes from
+                # lines[start-1:end], m.line in [1..len(slice_)]) means
+                # abs_line should always satisfy this; the explicit
+                # check defends against future indexer regressions.
+                if not (start <= abs_line <= end):
+                    continue
                 cur = c.execute(
                     "INSERT OR IGNORE INTO node_tags "
                     "(node_id, taxonomy_id, kind, severity, line, source) "

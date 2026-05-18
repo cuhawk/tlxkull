@@ -5,7 +5,7 @@ H1 hunter (rank ~2500) and Synack L4. They expect **rigor over speed**;
 "late but right" beats "fast but wrong". Optimize for result quality.
 
 > **Read `plans/PLAN.md` first.** Then `skills.md`, then `workflow.md`. Then start. All design/spec docs live under `plans/`.
-
+n
 ---
 
 ## What this folder is
