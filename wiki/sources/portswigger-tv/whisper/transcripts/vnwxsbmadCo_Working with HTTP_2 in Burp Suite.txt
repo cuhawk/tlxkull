@@ -1,0 +1,119 @@
+In this video, we'll show you how to use some of Burp's unique features for testing
+with HTTP2 requests.
+We'll also go over a couple of key things you need to understand about the protocol
+in order to use it effectively.
+Although Burp has supported HTTP2 for a while, we've added some major enhancements that
+let you work with requests in ways that are just not possible with HTTP1.
+This gives you the opportunity to explore a whole new HTTP2 attack surface which has
+barely been audited due to the complete lack of any suitable tooling until now.
+If you want to get an idea of the kind of attacks you can perform using these tools, check out
+James Kettle's HTTP2 white paper on our research page.
+I'll leave a link in the description.
+Because HTTP2 is a binary protocol, the actual requests that are sent over the wire are really
+a bit of a pain to work with directly.
+So in Burp, we've made things much easier for you by displaying two different human-readable
+representations of each request.
+We'll look at the classic message editor view in a minute because most of the exciting
+stuff is over here in the inspector panel.
+First of all, under the request attributes section you can change which protocol you want
+to use to send each request.
+This means you can effectively upgrade and downgrade requests at will, and Burp will take
+care of the details for you behind the scenes.
+But the real power of these features becomes apparent when you open the request headers section.
+Notice that I'm using HTTP1 at the moment, and the headers shown in the inspector match
+up with what you can see over in the message editor.
+But watch what happens when I switch to HTTP2.
+Most of the headers are still basically the same, but you can now also see the pseudo headers.
+In case you're not familiar with pseudo headers, these are new in HTTP2 and are used to pass
+key bits of information about the request, some of which HTTP1 doesn't provide a header
+for at all.
+The method and path pseudo headers effectively replace the old request line, for example.
+The colon prefix is just to help distinguish pseudo headers from ordinary headers.
+Other than the fact that we don't show you the binary itself, this is a very accurate view
+of what will be sent to the server.
+Crucially, any changes you make to the headers here in the inspector won't be normalised or
+cleaned up in any way by Burp, and you're not constrained by the limitations of any HTTP1
+syntax.
+This enables you to construct all kinds of advanced attacks that are exclusive to HTTP2, and currently
+only possible using Burp.
+We'll look at an example of this later.
+Here in the message editor, notice that we still provide a representation of the request
+using HTTP1 syntax.
+If you make any changes here, behind the scenes Burp essentially just maps this request to
+its HTTP2 equivalent, so the values of the method and path pseudo headers are derived from
+the request line that you see here, for example.
+Likewise, the value of the host header is used to generate the authority pseudo header, and
+so on.
+This is great if you're just using HTTP2 for the performance improvements it provides, and aren't
+really concerned with any protocol level issues like request smuggling.
+However this view is not really suitable when testing for HTTP2 specific vulnerabilities
+because of the limitations imposed by the HTTP1 syntax.
+For example, you won't be able to put a space in the request path here, even though this is
+technically possible in the path pseudo header that this points to.
+The editor also performs some lightweight normalisation to ensure that valid HTTP1 requests don't result
+in invalid HTTP2 requests.
+For example, you may have noticed that we automatically lowercase the header names, as this is required
+by the HTTP2 spec.
+We also strip the connection header and prevent you from moving the host header for the same
+reason.
+We've surfaced this normalisation in the editor to help you see what's happening behind
+the scenes, so when you send the request you'll see this taking place.
+For this reason we recommend using the inspector when you're making protocol level changes that
+are specific to HTTP2.
+This allows you to peel back that layer of abstraction and work more directly with the actual HTTP2 request
+underneath.
+As this representation is completely decoupled from HTTP1, we don't have to normalise the
+changes you make here, so you can control exactly what gets sent to the server and do things
+that are not possible via the editor.
+So what kinds of HTTP2 specific changes can you make using these features?
+Well if you've seen James' research, you'll know that one of the key differences is the
+ability to inject new lines within headers, so let's start with that.
+If you click on the arrow next to any header, you can drill down into its name and value.
+Then to add a new line, just press the shift and return keys.
+Exposing the ability to do this is fundamental for constructing many HTTP2 specific attacks.
+When I apply the changes, notice that the headers in the message editor have disappeared.
+These have been replaced by a notification telling me that the request has been kettled.
+This is the term we've coined in honour of our infamous director of research to describe
+HTTP2 requests that can no longer be accurately represented using HTTP1 syntax, at least not without
+losing information.
+This doesn't necessarily mean that the request is invalid, that all depends on the server,
+it just means that in its current state you can only work with it using the inspector.
+In this case, I've added a new line inside a header value.
+Strictly speaking, this isn't allowed in HTTP2.
+However, because these characters have no special meaning for parsers like they do in HTTP1,
+it's technically possible to inject them and some servers will just tolerate this.
+If we tried to write this using HTTP1 syntax, it would just look like two separate headers,
+even though it's not.
+This is the real power of the inspector.
+You can create and send HTTP2 requests that it's just not possible to represent in HTTP1.
+Using these features, you'll be able to find a number of bugs that are otherwise impossible
+to test for.
+Before we wrap up, I just want to point out that there are a few new repeater options that
+are specific to HTTP2 handling.
+You can find these on the repeater menu.
+I won't go over these in detail now, but you can refer to our documentation for more information.
+You can also change which protocol BURP uses by default from the project settings.
+If you deselect this checkbox, BURP will use HTTP1 unless you explicitly tell it to send
+an HTTP2 request using the toggle in the inspector.
+So that's a whistle-stop tour of BURP's HTTP2 features.
+Most of the time, using HTTP2 will just make your attacks faster.
+But now that you can work with requests in a way that's decoupled from HTTP1 completely,
+there are new possibilities for protocol-level attacks.
+Just make sure you use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.
+You can also use the right protocol for the situation.

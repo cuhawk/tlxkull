@@ -1,0 +1,102 @@
+Hi, I'm Tom from the Portswigger development team. Today I'm going to show you how easy it is to
+leverage Burp AI in your Burp Suite extensions using the Montoya API. To do this, I'm going to
+be working through a live example of how to integrate AI in the reporting extension that
+I've been writing. So I've done all of the fun swing UI part here to save you having to watch
+me fumble with that bit. We have issues, we can add some custom requirements for our report, and we
+can hit generate. But the report generation isn't yet implemented, so I'm going to show you how to do
+that now. So if we hop into our code, you can see that we've got this report generation class here.
+The first thing this does when it generates a report is it checks whether AI is enabled. AI can be turned
+off or on for extensions individually. So it's important in your extension before doing any AI
+operations to check whether it's enabled, otherwise it's not going to work. The second important thing
+we do is we move off of the swing thread onto a new thread, because what we're going to be doing with AI
+could take a long time and we don't want to hinder the user experience as it runs. So I've just got a
+little utility here I wrote that creates a service and runs any code that you give it. I've also made
+sure that my extension shuts down the executor service when it's done. So once we hopped onto a new
+thread, I've got some boilerplate here that's just generating a report class, executing the prompt,
+which is not yet implemented, rendering it to HTML, and then saving it. The reason that we're rendering to
+HTML here is that if we ask the AI to respond in HTML, it's not always going to do an amazing job. It's going
+to tend to, it prefers to respond in Markdown. So it's better to just let it do that and then do the
+conversion ourselves. The reason I even need to do the conversion is just because swing components
+can render HTML and they can't render Markdown. Otherwise it would probably would have just left
+it in Markdown. So how do we actually execute our prompt? Well, the first thing we need to do is we
+need to create some messages. A message is a what we actually send to the AI and there are three different
+types. There are system messages, user messages and assistant messages. The first thing we're going to want
+is a system message. So if we create a new message for system message and a Montoya helper for this and
+we're going to give it our content. Now I've already written out the system message so you don't have to see me
+get it wrong several times with typos and all that. But what we're effectively doing is we're
+explaining to the AI the role that we want it to provide. So we're telling it that it is a DAST
+vulnerability report writer. We're going to tell it the input we're going to give it. So a series of
+web application vulnerabilities found by Burp Suite's DAST scanner and a set of custom requirements
+given by the user. We're then explaining what its task is, which is to generate a vulnerability report.
+We're going to give it some parameters to work in. So we're going to tell it to be clear and readable,
+detailed, comprehensive, where possible. We want it to retain the original wording in the issues.
+We need it to retain or include all of the additional information requested by the client
+and also include any additional information it thinks is relevant. What we're also doing is rather
+than sending the issue evidence or the request responses to the AI for it to include, we're just
+going to tell it how to attach them. This is because we want to limit the data that we're sending
+and receiving from the AI. Each token that we send is effectively going to, so we don't want to send
+things that are unnecessary. In this case it doesn't need the evidence to construct the report so we can
+just tell it how to embed it and we'll do that afterwards. So we want to put our system message
+into our first message and we'll create a new list to put our messages in.
+And we'll put generics on it because that's how you write good java code.
+Yep, so messages add system message. So what we want to do next is actually send our content.
+So we're going to create a message for our custom requirements and this is going to be a user message.
+So this is data that the user is sending. We've set up our system message so we now want to provide
+user data and again there's a nice Montoya help for creating a user message. Now we're not just going
+to paste the custom requirements straight in because we do want to give the AI a little bit of context as
+to what data we're providing here and this really just has to take the form of custom requirements
+and then we'll add the custom requirements and that's as easy as that. So we'll add that to our
+messages. So what we want to do now and Copilot is handily giving us a hint is to create a user
+message for each of the issues that we want to send. So yeah we'll hit the right button. So for each
+issue we want to generate a new message and add it to our messages. Now obviously this issue message
+doesn't exist that's not a thing in the Montoya API because that's a custom requirement we have,
+not a general use case. So we're going to create user messages but I will go ahead and create a little
+helper here for creating a issue message and that will take an issue, an audit issue. So what we want
+to do here is effectively serialize issue data. So we'll create the issue and we want an issue type
+which will be the issue type as you'd expect. We want the issue severity. You're going to see me fumble
+with the keyboard a lot here. We want the confidence. Okay Copilot's getting the hang of this now. We want
+the issue URL. I spoke too soon. We want the detail. We want the background.
+We want the remediation if I can spell it. And we want the number of evidence items. Like I said
+we're not going to actually attach the evidence. We're just going to tell the AI how many there are
+so that it can kind of use that information. So we're going to format this with the issue type
+which I think is the name. I've called it type but it is actually name on the interface.
+There's a severity. There's a confidence. There's a base URL. There's a detail. There's a background.
+There is a remediation. Is that next? Yep remediation. And then for the evidence we want to get the request
+responses and just get the size. Cool. So we're going to return that and format it a bit better as well.
+Don't know where that came from. Don't need that. Cool. So yep we are now serializing our issues into
+something that the AI can understand. Again using kind of the minimal amount of data that we want to
+send to actually get the value that we need. So we've got all of our messages. What do we need to do now?
+So now we actually need to again copilot's jumping the gun again a bit but we want to actually
+execute our prompt. So we're going to create a new prompt object using the Montoya API's AI object
+and then we're going to execute it sending our messages. We can also provide prompt options here
+and that allows us to control the temperature of our request. The temperature is a float value between
+zero and two where the closer it gets to two the more creative the AI gets. The default value is 0.5
+which is a little bit creative but mostly sticking to kind of facts and not trying to think outside
+the box too much which is about right for what we want. So I'm just going to leave it as it is.
+So this will go and execute our prompt or our series of messages as a prompt and then we can just
+get the content which is the result. The final thing we want to do here is we want to make sure that we've
+got any error handling covered. So we are going to catch any prompt exceptions that can happen.
+Now this could be due to the AI being unreachable. It could be because the AI is disabled. It could be
+that we run out of credits. For now all that we're going to do is we're going to log these to error.
+And again this is just a little utility that I've written that wraps the Montoya logging API so that I can
+do it statically. And for now we'll just return just an empty string because it's just the easiest way
+to do for our little example here. I was wondering why that was complaining. Again generics because I'm
+trying to code live and remember how to do it. So just to summarize what we're doing is we are taking
+our system message which is our instructions for how the AI should behave. We're taking user messages which
+are an approximation for our input where each message is wrapping the input in a bit of context
+and then we're sending all of those to the AI making sure to account for any errors.
+So let's build that again and hop back in. So we'll go and reload our extension. Make sure the AI is
+turned on and send some issues. Cool. So we're going to hit generate report now and that's going to go off
+again on a new thread as we did and send our messages to the AI and we'll see what it comes back with.
+All of this code will be available in the extensions repository. I've created a branch specifically for
+this code demo. So the code in the live version of the extension is a little different because there
+are different generation modes I've added and slightly more robust error handling. But there is a branch
+specifically for this code with me demo if you want to go and check out the code that's been written.
+That will be committed there.
+There we go. So we can see that we have generated a vulnerability report for Gin and Juice Shop. We've got all of
+our issues in here with all of the data that we sent and a summary at the end. Now what I probably should
+have done is give it some custom requirements to show the actual value of doing this rather than just
+formatting what comes directly out of Burp's issues. But never mind. I'm not going to run it again and make
+everyone sit and watch that. But yeah, there we go. That was how easy it was to take all of our data from
+our extension and use Burp AI to create a powerful response. I don't know how to end this so just give
+it a go yourselves, I guess. It's that easy.

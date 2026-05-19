@@ -66,13 +66,28 @@ class JsAnalyzerConfig(BaseModel):
         "dist", "build", "out", "vendor", "bower_components",
         "coverage", ".turbo",
     ]
+    # After indexing, copy the global js_analyzer.db into
+    # target/db/js_analyzer.db and prune to only this target's files,
+    # so downstream chain extraction / audits never read another
+    # engagement's rows. Default ON. Disable via TLX_DISABLE_AUTO_ISOLATE.
+    auto_isolate: bool = True
+
+
+_JS_EXTS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
 
 
 def _walk_js_files(root: Path, exclude_dirs: list[str]) -> list[dict]:
     excludes = set(exclude_dirs)
     out: list[dict] = []
-    for p in root.rglob("*.js"):
+    for p in root.rglob("*"):
         if not p.is_file():
+            continue
+        if p.suffix.lower() not in _JS_EXTS:
+            continue
+        name = p.name
+        if name.endswith(".d.ts"):
+            continue
+        if ".min." in name:
             continue
         if any(part in excludes for part in p.parts):
             continue
@@ -691,7 +706,7 @@ def _index_target_payload(
     all_files = _walk_js_files(target, cfg.exclude_dirs)
     if not all_files:
         return {
-            "error": f"js_analyzer: no .js files under {target}",
+            "error": f"js_analyzer: no JS/TS files under {target}",
             "target": str(target),
         }
 
@@ -784,6 +799,23 @@ def _index_target_payload(
     for f in files:
         cg.record_file_hash(f["rel"], Path(f["abs"]))
 
+    _emit_progress(kernel, "js_analyzer.async_edges", "continuation discovery")
+    async_stats = _run_async_continuation(cg)
+    _emit_progress(
+        kernel,
+        "js_analyzer.async_edges",
+        f"continuations: {async_stats.get('continuations_inserted', 0)} "
+        f"({async_stats.get('handlers_wired', 0)} handlers wired)",
+    )
+
+    _emit_progress(kernel, "js_analyzer.prop_shapes", "refining dynamic edges")
+    prop_shape_stats = _run_prop_shape_refinement(cg, target)
+    _emit_progress(
+        kernel,
+        "js_analyzer.prop_shapes",
+        f"refined {prop_shape_stats.get('refined_edges', 0)} edges "
+        f"from {prop_shape_stats.get('total_dynamic_seen', 0)} dynamic",
+    )
     _emit_progress(kernel, "js_analyzer.taint_analysis", "interprocedural")
     arg_edges, itp_flows = _run_interprocedural_taint(cg)
     _emit_progress(
@@ -791,6 +823,16 @@ def _index_target_payload(
     )
 
     ct.set_callgraph(cg, base_paths=[target])
+
+    snapshot_stats: dict = {}
+    if cfg.auto_isolate:
+        _emit_progress(kernel, "js_analyzer.snapshot", "isolating per-target DB")
+        try:
+            indexed_rels = {f["rel"] for f in all_files}
+            snapshot_stats = _auto_snapshot_target(cg, target, indexed_rels)
+        except Exception:
+            _logger.warning("js_analyzer.auto_isolate_failed", exc_info=True)
+            snapshot_stats = {"error": "auto_isolate_failed"}
 
     _emit_progress(kernel, "js_analyzer.done", str(target))
     return {
@@ -800,6 +842,9 @@ def _index_target_payload(
         "tags": cg.tag_count(),
         "frameworks": fw_list,
         "itp": {"arg_edges": arg_edges, "flows": itp_flows},
+        "prop_shapes": prop_shape_stats,
+        "async": async_stats,
+        "snapshot": snapshot_stats,
         "cached_unchanged": skipped,
         "files_total": len(all_files),
     }
@@ -814,12 +859,20 @@ def _format_index_summary(payload: dict) -> str:
         return payload["error"]
     fw_str = ", ".join(payload["frameworks"]) or "none detected"
     itp = payload.get("itp", {"arg_edges": 0, "flows": 0})
+    ps = payload.get("prop_shapes") or {}
+    ps_part = ""
+    if ps:
+        ps_part = (
+            f"  |  prop_shapes: {ps.get('refined_edges', 0)} refined "
+            f"({ps.get('overflowed_callsites', 0)} overflow) "
+            f"of {ps.get('total_dynamic_seen', 0)} dynamic"
+        )
     return (
         f"js_analyzer indexed {payload['target']}: "
         f"{payload['nodes']} nodes, {payload['edges']} edges, "
         f"{payload['tags']} tags  |  frameworks: {fw_str}  |  "
         f"itp: {itp['arg_edges']} arg→param edges, "
-        f"{itp['flows']} cross-fn flows  |  "
+        f"{itp['flows']} cross-fn flows{ps_part}  |  "
         f"cached: {payload['cached_unchanged']}/"
         f"{payload['files_total']} files unchanged"
     )
@@ -834,6 +887,170 @@ def _index_target(
     )
 
 
+def _auto_snapshot_target(
+    cg: Any, target: Path, rel_paths: set[str]
+) -> dict:
+    """After-index hook: copy the global js_analyzer.db into
+    ``target/db/js_analyzer.db`` and prune rows that don't belong to
+    this target.
+
+    The global DB has no target_id column — without per-target
+    snapshots, every chain extraction reads other engagements' nodes.
+    The pruning step uses the exact set of file rel-paths just
+    indexed, so prefix mismatches (host-vs-relative) don't bite.
+
+    Disable via ``TLX_DISABLE_AUTO_ISOLATE=1``. Failures are
+    surfaced as an ``error`` field but never abort indexing.
+    """
+    import os
+    import shutil
+    import sqlite3 as _sqlite3
+    if os.environ.get("TLX_DISABLE_AUTO_ISOLATE"):
+        return {"skipped": "TLX_DISABLE_AUTO_ISOLATE"}
+    if not rel_paths:
+        return {"skipped": "no files indexed"}
+
+    out_dir = target / "db"
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:
+        return {"error": f"mkdir failed: {exc}"}
+    snap_path = out_dir / "js_analyzer.db"
+
+    # VACUUM INTO writes a consistent copy even while the source DB is
+    # held open by the live CallGraph. Fall back to shutil.copyfile if
+    # VACUUM INTO is unavailable (very old SQLite).
+    try:
+        if snap_path.exists():
+            snap_path.unlink()
+        cg.conn.execute(f"VACUUM INTO ?", (str(snap_path),))
+    except _sqlite3.OperationalError:
+        try:
+            shutil.copyfile(cg.db_path, snap_path)
+        except Exception as exc:
+            return {"error": f"copy failed: {exc}"}
+    except Exception as exc:
+        return {"error": f"vacuum_into failed: {exc}"}
+
+    # Prune the snapshot to just this target's files. SQLite parameter
+    # lists have a 999-element default cap, so chunk through the set.
+    snap_conn = _sqlite3.connect(str(snap_path))
+    counts = {"nodes_kept": 0, "nodes_dropped": 0}
+    try:
+        snap_conn.execute("PRAGMA foreign_keys = OFF;")
+        snap_conn.execute(
+            "CREATE TEMP TABLE _keep_files (file TEXT PRIMARY KEY)"
+        )
+        with snap_conn:
+            snap_conn.executemany(
+                "INSERT OR IGNORE INTO _keep_files (file) VALUES (?)",
+                [(p,) for p in rel_paths],
+            )
+        drop_node_ids = (
+            "SELECT id FROM nodes "
+            "WHERE file NOT IN (SELECT file FROM _keep_files)"
+        )
+        cur = snap_conn.cursor()
+        # Cascade in FK order. Each statement is a fresh DELETE keyed on
+        # the same drop set; SQLite re-evaluates per statement so we
+        # always see live row count.
+        cascade = [
+            ("dataflow_edges",
+             f"DELETE FROM dataflow_edges WHERE from_var IN "
+             f"(SELECT id FROM variables WHERE node_id IN ({drop_node_ids})) "
+             f"OR to_var IN (SELECT id FROM variables WHERE node_id IN ({drop_node_ids}))"),
+            ("variables",
+             f"DELETE FROM variables WHERE node_id IN ({drop_node_ids})"),
+            ("node_taint_flows",
+             f"DELETE FROM node_taint_flows WHERE node_id IN ({drop_node_ids})"),
+            ("node_sanitizers",
+             f"DELETE FROM node_sanitizers WHERE node_id IN ({drop_node_ids})"),
+            ("node_tags",
+             f"DELETE FROM node_tags WHERE node_id IN ({drop_node_ids})"),
+            ("edges",
+             f"DELETE FROM edges WHERE caller_id IN ({drop_node_ids}) "
+             f"OR callee_id IN ({drop_node_ids})"),
+            ("import_edges",
+             "DELETE FROM import_edges WHERE file NOT IN "
+             "(SELECT file FROM _keep_files)"),
+            ("url_refs",
+             "DELETE FROM url_refs WHERE file NOT IN "
+             "(SELECT file FROM _keep_files)"),
+            ("file_hashes",
+             "DELETE FROM file_hashes WHERE file NOT IN "
+             "(SELECT file FROM _keep_files)"),
+        ]
+        for tbl, sql in cascade:
+            try:
+                cur.execute(sql)
+                counts[tbl] = cur.rowcount
+            except _sqlite3.OperationalError as exc:
+                # Table may be absent on legacy DBs (e.g. node_taint_flows).
+                counts[tbl] = f"skip: {exc}"
+        # Final node delete + bookkeeping.
+        cur.execute(
+            "DELETE FROM nodes WHERE file NOT IN (SELECT file FROM _keep_files)"
+        )
+        counts["nodes_dropped"] = cur.rowcount
+        kept = snap_conn.execute(
+            "SELECT COUNT(*) FROM nodes"
+        ).fetchone()
+        counts["nodes_kept"] = kept[0] if kept else 0
+        snap_conn.commit()
+        try:
+            snap_conn.execute("VACUUM;")
+        except _sqlite3.OperationalError:
+            pass
+    finally:
+        snap_conn.close()
+    counts["snapshot_path"] = str(snap_path)
+    return counts
+
+
+def _run_async_continuation(cg: Any) -> dict:
+    """Detect async continuations, persist edges, inject continuation
+    source tags, and wire param-taint dataflow into handler locals.
+
+    Closes the audit gap where async_graph wrote edges but the taint
+    solver could not propagate ``event.data`` through them. Failures
+    are demoted so indexing never aborts.
+    """
+    from modules.js_analyzer import async_graph
+    out: dict = {}
+    try:
+        out.update(async_graph.discover_and_persist(cg.conn))
+    except Exception:
+        _logger.warning("js_analyzer.async_discover_failed", exc_info=True)
+        return out
+    try:
+        out.update(async_graph.inject_continuation_sources(cg.conn))
+    except Exception:
+        _logger.warning("js_analyzer.async_inject_sources_failed", exc_info=True)
+    try:
+        out.update(async_graph.wire_continuation_param_dataflow(cg.conn))
+    except Exception:
+        _logger.warning("js_analyzer.async_param_dataflow_failed", exc_info=True)
+    return out
+
+
+def _run_prop_shape_refinement(cg: Any, target: Path) -> dict:
+    """Refine dynamic edges via prop_shapes + string lattice.
+
+    Wires plans/ARCHITECTURE_EVOLUTION.md §2 into the default pipeline.
+    Lazily applies the V2 schema so prop_shapes / string_facts tables
+    exist on legacy DBs. Failures are demoted to {} so indexing never
+    aborts on a refinement issue.
+    """
+    from modules.js_analyzer import prop_shapes, v2_schema
+    try:
+        v2_schema.apply(cg.conn)
+        cg.conn.commit()
+        return prop_shapes.run(cg.conn, target_dir=str(target))
+    except Exception:
+        _logger.warning("js_analyzer.prop_shape_refine_failed", exc_info=True)
+        return {}
+
+
 def _run_interprocedural_taint(cg: Any) -> tuple[int, int]:
     """Post-index pass: build arg→param edges, solve cross-function taint.
 
@@ -841,6 +1058,7 @@ def _run_interprocedural_taint(cg: Any) -> tuple[int, int]:
     so an indexing run never aborts on solver issues.
     """
     from modules.js_analyzer.interprocedural_taint import (
+        InterproceduralTaintBudgetExceeded,
         build_arg_to_param_edges,
         solve_interprocedural_taint,
     )
@@ -851,6 +1069,16 @@ def _run_interprocedural_taint(cg: Any) -> tuple[int, int]:
         return 0, 0
     try:
         flows = solve_interprocedural_taint(cg.conn)
+    except InterproceduralTaintBudgetExceeded as exc:
+        # Budget hit. Partial flows are already committed; surface count.
+        _logger.warning(
+            "js_analyzer.itp_budget_exceeded",
+            reason=exc.reason,
+            elapsed_s=exc.elapsed_s,
+            iterations=exc.iterations,
+            flows_emitted=exc.flows_emitted,
+        )
+        return arg_edges, exc.flows_emitted
     except Exception:
         _logger.warning("js_analyzer.itp_solver_failed", exc_info=True)
         return arg_edges, 0

@@ -1,0 +1,144 @@
+1
+00:00:00,000 --> 00:00:13,560
+Hey there, in this video, I'm going to show you how to use ParamWiner to find a fat get
+
+2
+00:00:13,560 --> 00:00:19,960
+cache poisoning vulnerability, as documented in my recent web cache entanglement research.
+
+3
+00:00:21,180 --> 00:00:27,520
+So for our target, I'm using an application I built myself. So it's very simple. But the
+
+4
+00:00:27,520 --> 00:00:32,960
+reason it's vulnerable is because I'm using the rack cache module. At the time I'm recording this,
+
+5
+00:00:32,960 --> 00:00:40,080
+this is currently a zero date. So anyone using rack cache is vulnerable. So I've just loaded this
+
+6
+00:00:40,080 --> 00:00:47,020
+homepage, it's triggered a few requests, which we can see and I'm going to select everything in scope,
+
+7
+00:00:47,780 --> 00:00:54,480
+right click, go to bulk scan and choose fat get which is going to tell ParamWiner to scan for fat
+
+8
+00:00:54,480 --> 00:01:02,000
+get poisoning. We get loads of options just stick with the default ones. If you can't see the confirm
+
+9
+00:01:02,000 --> 00:01:10,480
+button because your screen is too small like mine, then just press Ctrl Enter. So if you check over on
+
+10
+00:01:10,480 --> 00:01:17,600
+the extender tab, you'll see we've got some information telling us this attack has been launched
+
+11
+00:01:17,600 --> 00:01:24,080
+and completed. And if you're using the community version of Burp rather than Pro, then any findings
+
+12
+00:01:24,080 --> 00:01:32,000
+will appear over here as well. But because we're using Pro, we should instead find this find the
+
+13
+00:01:32,000 --> 00:01:43,840
+findings appear on our dashboard, such as over here. So if we take a look at this, we'll see it's found
+
+14
+00:01:43,840 --> 00:01:50,720
+that it's taken this callback parameter from the query string and it's put it in the body of the
+
+15
+00:01:50,720 --> 00:01:57,200
+request and it's stuck a canary on the end of the base value. And this has been reflected back in the
+
+16
+00:01:57,200 --> 00:02:04,320
+response. So we'll see we get a hit for it. And then it's recent the request as is but without our
+
+17
+00:02:04,320 --> 00:02:12,080
+canary in the request. And the response still contains our canary showing that we've poisoned the cache
+
+18
+00:02:12,080 --> 00:02:22,080
+on this page. You can see it's done so using a cache buster. So it probably hasn't affected any real
+
+19
+00:02:22,080 --> 00:02:29,600
+users, but we've demonstrated that the vulnerability is there. So now let's just have a go at seeing if
+
+20
+00:02:29,600 --> 00:02:35,200
+we can replicate this issue and exploit a real web browser. So we're going to take the request
+
+21
+00:02:35,200 --> 00:02:44,880
+request and send it to the repeater. And if you look in the proxy, you'll see the URL that our victim's
+
+22
+00:02:44,880 --> 00:02:52,640
+going to load is the one referenced on the homepage over here. So that's what we want to poison
+
+23
+00:02:54,080 --> 00:02:57,200
+this URL. So I'm going to grab that.
+
+24
+00:02:57,200 --> 00:03:10,320
+That's our target. And we're going to change the callback to just to alert. And hopefully
+
+25
+00:03:12,080 --> 00:03:17,920
+that will do the job. Okay, you can see our alert thing hasn't come back, it just says load. And
+
+26
+00:03:17,920 --> 00:03:23,680
+that's because we've got a cache hit. As you can kind of tell from the headers here. So I'm going to send a
+
+27
+00:03:23,680 --> 00:03:29,680
+purge request, which is going to helpfully delete this cache entry. And now you can see we do have
+
+28
+00:03:30,560 --> 00:03:36,720
+alert coming back. If we change it to get, we've still got alert coming back and we have a cache hit.
+
+29
+00:03:37,600 --> 00:03:41,680
+And if we take this and get rid of the body, so now we're sending what a browser would send,
+
+30
+00:03:43,040 --> 00:03:48,640
+we still get alert coming back. And so finally, if I take that URL, copy it,
+
+31
+00:03:48,640 --> 00:03:54,320
+paste it into the browser. No, I'm sorry, if I load the homepage in the browser,
+
+32
+00:03:54,960 --> 00:03:59,680
+the browser will fetch that URL, get poisoned and alert will pop up, hopefully.
+
+33
+00:04:01,280 --> 00:04:04,960
+Oh, dear. So why hasn't this worked? Well, it's probably because
+
+34
+00:04:06,800 --> 00:04:13,920
+no, I'm not sure. Why hasn't this worked? Let's have a look at what the browser sent. Okay, it's because
+
+35
+00:04:13,920 --> 00:04:20,400
+the browser has cached this JavaScript file itself in its client side cache. So if I had a force reload
+
+36
+00:04:21,520 --> 00:04:24,400
+the exploit files, fantastic.
+

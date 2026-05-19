@@ -1,0 +1,1003 @@
+Hello everybody, welcome to digging for XSS Gold, unearthing browser quirks with Shazza.
+Shazza is a fuzzing tool built on a simple but powerful principle.
+Don't look for bugs, look for differences.
+Use the differences to find bugs.
+Shazza helps you reveal security vulnerabilities by analysing deviations and unexpected behaviours.
+So what exactly is fuzzing?
+Well, fuzzing automates the process of asking millions of questions and receiving millions of answers.
+Fuzzing typically involves generating a large number of inputs, either randomly or systematically,
+and applying them to a target program, template, or system to detect unexpected behaviours or vulnerabilities.
+Shazza is a tool designed to streamline the fuzzing process for web browsers by automating several tedious tasks.
+Fuzzing typically involves generating loops, replacing data in templates, and storing results for different browsers.
+Shazza simplifies this by handling browser detection, data storage, template generation, and placeholder insertion.
+The name Shazza is derived from combining shared and fuzzer, reflecting on its goal to make fuzzing easier and shareable.
+So now we know what Shazza is, let's focus on the fuzzing types.
+What are the fuzzing types in Shazza?
+Shazza has three fuzzing types, HTML, JS, and XSS.
+The HTML type is used to understand how HTML is parsed.
+For instance, if you need to determine what character can close a HTML comment, you would use the HTML fuz type.
+It's more suitable when JavaScript execution is not required.
+The JS type is used when JavaScript execution needs to be analysed.
+The XSS type is needed when you need a combination of HTML and JavaScript.
+One good example of this is when you need to know what characters are allowed before a HTML attribute.
+The first example is a HTML fuzze template with placeholders for a character and the found tag.
+Since the HTML fuzze type doesn't support JavaScript, the found tag is used to log the tag results.
+If the fuzze character is greater than, for example, it will close the HTML comment, which exposes the found tag.
+This specter helps you identify characters which close a HTML comment.
+The second JavaScript example, we want to know what characters are allowed before an identifier.
+The first placeholder is the character to fuzz.
+And the second one is the iteration number of the fuzz or the character code.
+The last example shows how you can check what characters are allowed before an on error event.
+And those are the three fuzzing types in Shazza.
+When I approach fuzzing, there's usually two approaches that I take.
+It's useful to have a question in mind.
+So, for example, what characters are allowed before the greater than that will still close the HTML comment?
+Once you have that question in mind, you can tailor the template to answer that question.
+Another way is to fuzz for existing behavior.
+Let's imagine that the browser silently adds support for a new attribute quote using backticks.
+You can find this behavior by fuzzing for the existing quote behavior.
+So, the browser might accidentally add support for this character or it might be unspecked.
+In this example, we place the placeholder before the greater than character.
+And if this comment is successfully closed, the found tag will be found and it will log the results.
+You might be thinking, well, this isn't going to happen.
+But actually, it did happen on Firefox.
+And I found multiple bugs where you could use new lines and it will still close the HTML comment using this trick.
+In this example, I create a title attribute with two character placeholders.
+Only if the characters act as an attribute quote will the on error event fire.
+When running this vector, the single quotes and double quotes will be logged, confirming this quote behavior.
+But hypothetically, if a browser introduced a new character that behaved in the same way,
+you would see results for that browser.
+So, if a browser accidentally added a certain character, you would see the results for those characters.
+So, this is a new approach of fuzzing.
+You fuzz for existing behavior as well as answering questions.
+So, now we've covered the basics of Shazza, let's look at finding interesting browser behavior.
+So, just a quick recap on URL credentials.
+A URL can include credentials where the username and password are separated by a column and followed by an art symbol.
+In Chrome, this is completely hidden from the user.
+So, the credentials are there, but you can't see them.
+And you can access these credentials client-side by using document.url, document.baseURI, or the URL constructor.
+So, I recently researched hiding payloads in the credentials part of a URL by testing characters that don't URL encode.
+So, to create a template, I first created an anchor tag, assigned a URL, and then fuzzed the username with different characters.
+Then, I checked if the browser encoded them, revealing which characters are allowed.
+So, in this example, I use code before the fuzz.
+So, this creates the element.
+And then, the template is used to do the actual fuzzing.
+Whilst researching DOM XSS, I aim to identify what characters' browsers don't URL encode in the URL.
+So, I used the DOM again, and I used a JavaScript fuzz type.
+But this time, I assigned to the anchor hash, and then checked that property to see if it had been URL encoded by the browser.
+So, this would put up interesting results if the browser wasn't URL encoded.
+So, so far, we've covered fuzzing single characters.
+But Shazza can do more than that.
+A template can also fuzz data, like HTML tags, attributes, entities.
+You basically define your own data that you want to fuzz.
+Choose it from the select menu.
+So, you choose the data1 or data2 placeholder to fuzz.
+And then, when you create that vector, you can use those placeholders to fuzz that data.
+So, you could be fuzzing attributes.
+You could be fuzzing HTML tags.
+You could be looking for crashes.
+You could be looking for interesting behavior.
+But you can use the data in Shazza to enumerate on that data.
+In this vector, I create a div element and assign an anchor tag.
+I then use the placeholder data1 to insert various entities for fuzzing.
+So, after each iteration, I check the host property of the anchor.
+And if it differs from example.com, it will allow me to detect if the injected entity has altered the intended URL.
+So, I use the data1 placeholder to insert the entity.
+So, in the example, I use code before the fuzz to create the div.
+Then, I assign the anchor to the div.
+And then, I use the data1 placeholder to insert the entity.
+And then, after the code, after each fuzz, I check the host property and then log the results.
+In this vector, I enumerate all entities, checking which ones convert to the greater man character.
+An iframe is created with an entity assigned via the data1 placeholder to the src doc.
+After each fuzz iteration, the src doc attribute is checked using the include function to determine if the character was decoded.
+This was cool because it would find you any entities that convert to a greater man.
+After you've fuzzed your vectors, you can view the vector on the vector overview page.
+So, let's check out the last vector results.
+Shazer will generate some sample payloads based on the data that it's found.
+So, in our fuzzing process, we targeted entities that convert to greater than.
+In this sample, you can see that both ampersandGT and ampersandNVGT meet this condition.
+So, this is just a sample of data, which Shazer will show you what entities or what data is being converted.
+Shazer will show you what entities are being converted to the data.
+So, after the sample payloads, then we have the actual fuzz results for the browser.
+What Shazer does is only expand the browser results if they differ.
+So, it'll contract all the other browsers unless they have a different behavior than another one.
+In this example, it shows the data in the form of entities.
+And you can sort the data by filtering out alphanumerics and show only the differences.
+So, I don't know if you can see, but in this example, I show ampersandGT, ampersandGT in uppercase, and ampersandNVGT.
+All these create the greater than character, which can be used for XSS on some obscure system.
+When fuzzing characters, Shazer will generate a table with the decimal number of each character, the hex representation of it, and the character itself.
+In this sample, it's highlighted 39, which is the character code for a single quote.
+And this is because at least one browser had different behavior.
+So, it will highlight in red when one browser differs out of all the browsers that have been tested.
+And this is really useful for finding deviations and unexpected behavior.
+So, when building Shazer, I faced a bit of a challenge, sharing vectors with others.
+To make this possible, I needed to eliminate XSS risks on the Shazer domain.
+Without this, a malicious vector could compromise somebody else's account.
+This next section covers how I tackled this problem.
+So, when designing Shazer, I followed a few core principles.
+First of all, all the data is public, eliminating private vectors that could be targeted for theft.
+Second, there's no private data stored.
+By removing all private information like email addresses, the system holds no sensitive information to steal.
+Lastly, I chose GitHub as the SSO provider, ensuring there are no passwords to steal on the system at any point.
+So, by designing the system without any data that you can steal, even in a compromise, there'll be a lot less damage than a normal website.
+All vectors are executed within an iframe sandbox configured with allow scripts and allow form flags.
+To enable scripts and forms will prevent an attacker from breaking out of the frame.
+The SRC dock attribute is used to assign the template and the fuzzing architecture,
+ensuring that everything runs securely within the sandbox environment.
+I also use CSP to prevent excessive server requests, such as laws that may occur with image resources.
+Once fuzzing is complete, a web message is sent to the parent page.
+The parent then validates this message by comparing the message source property with the iframe's content window.
+After a valid message has been received, the SRC of the iframe is cleared, and then that will remove any residual content.
+So, the source property is really important here because if you use the origin, the origin will be null.
+So, by using the source property, you can verify the iframe's window is the expected window that you're expecting.
+So, here's how it works.
+The user presses the fuzz button.
+The template and architecture is assigned to the SRC dock attribute.
+The sandbox iframe is then rendered, showed here in red.
+It blocks access to cookies and the alerts and prompts and stuff.
+And then the fuzz results are then sent to the parent page.
+So, this is the main Shazam window.
+It receives that message.
+The parent page receives a message, validates it, comes from the sandbox iframe, and then the fuzz results are stored.
+So, all you do is you look at the web message, use the event source property, and compare it with the iframe content window.
+And this verifies that the message is genuine.
+Now, you might get a problem, what I encountered, where you've got an extension installed, and it'll send a message to the event listener.
+So, if you do this, then you won't get that problem.
+So, like, for example, Reacts dev tools, they will send messages to listeners on the page.
+And then by comparing the source property, you can remove that.
+So, this is the main reason why I validate the messages.
+And obviously, it also validates malicious messages too.
+So, in this section, I'll explore some more advanced vectors and demonstrate how you can leverage advanced placeholders.
+So, this vector detects which tags consume HTML, and it could be used to bypass a HTML filter.
+I think Masato Kinogawa used this technique to get XSS on Google, for example.
+So, in this example, the found tag will only be detected if the fuzz tag consumes the HTML and the image is not rendered.
+So, I've given an example of the text area because everybody can understand that.
+It's quite simple.
+You use a text area, and unless you get a closing text area, it will just treat the resulting text as text, not as HTML.
+So, you can use this with a text area, but it also works with other tags, such as no embed, no script, etc.
+So, you can use Shazer to detect this sort of behavior.
+And that's really important because finding this sort of behavior can lead to a filter bypass, XSS, etc.
+So, here, the two examples show the text area and the no embed tag.
+But I've fuzzed other tags, and there are many other tags that have this behavior.
+Another thing to look for when fuzzing is that some tags will prevent other tags from rendering.
+And you can find this behavior by using the not found placeholder.
+This will only log data if the not found tag isn't found, as the name suggests.
+So, in this example, the script will not execute because the style neutralizes it.
+This is really good for finding HTML parsing quirks.
+For example, you get different behavior if you use an SVG tag with style, and if you use XML with style, or if you use HTML with style.
+So, this is really interesting to find because it can lead to bypasses and unexpected parsing quirks.
+So, in HTML attributes, entities get decoded.
+Meaning, if you use the log function, the entity will be decoded before being passed to it.
+So, this is a problem.
+So, to solve this, you need to use an advanced placeholder that escapes the entity before logging it.
+I'll demonstrate how you do this on the next slide.
+To identify which entities can be used as a JavaScript variable,
+first, you can assign the entity with the placeholder data1 to the shazer log function like here.
+When calling the function, the HTML data1 placeholder to encode the entity before passing it to the function.
+So, you use the entity in three places.
+One, to define the variable name.
+One, when calling the actual variable as a function, and then storing the data.
+One, to define the entity in three places.
+
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+!
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+!
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+One, to define the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity.
+If the entity.
+
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity in three places.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+
+
+
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+If the entity.
+
+
+If the entity.
+Is it possible.
+To fuzz.
+More than two.
+Data sets.
+At a time.
+The answer is.
+No.
+Not the minute.
+You can.
+You have a maximum.
+Data sets.
+Of.
+Two separate.
+Data sets.
+You can't.
+Go all about.
+At the minute.
+And the reason.
+For that is.
+It's going to take.
+A long time.
+Because.
+The amount.
+Of data.
+You've got.
+Per data set.
+It's like.
+Times that.
+By the other data set.
+And then times it again.
+For another data set.
+And that's only three levels.
+So it's on log data.
+So that's the reason.
+Why I don't really do that.
+At the minute.
+Um.
+Um.
+Uh.
+Someone's asked.
+Uh.
+So this is in.
+So this is.
+In.
+
+In.
+
+In.
+So this is.
+
+So this is.
+
+So this is.
+
+So this is.
+In.
+So this is.
+Do you.
+Do you still have.
+Up the database.
+Of all.
+The old.
+Yes I do.
+And I can get.
+Your specific.
+Vectors.
+If you want.
+Them.
+
+But obviously.
+I can't.
+Sure.
+Anybody else's.
+Fuzzing.
+To your email research.
+Yes I have.
+
+I did.
+An SNTP.
+Fuzzer.
+Um.
+That was really useful.
+In finding.
+Behaviour.
+In.
+Postfix.
+And send mail.
+Um.
+Like.
+The backslash.
+Stuff.
+Um.
+Yeah.
+The presentation.
+Will be recorded.
+Um.
+Sorry.
+If you missed it.
+Um.
+Somebody.
+Asked.
+There's a specific.
+Case of.
+HTML injection.
+Where.
+You've got.
+The.
+HTTPS protocol.
+Before.
+The JavaScript.
+URL.
+Uh.
+Don't think.
+XSS.
+Will be possible.
+Unless you can.
+Break out.
+The attribute.
+Unfortunately.
+Um.
+And.
+Um.
+And.
+Um.
+And.
+Um.
+And.
+Um.
+Is there.
+Any.
+Methodology.
+We can.
+Follow.
+To do.
+This.
+Kind.
+Of.
+Fuzzing.
+Yeah.
+
+I believe.
+I touched.
+On.
+That.
+In.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+
+The.
+The.
+The.
+
+The.
+
+The.
+The.
+
+The.
+The.
+
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+
+The.
+The.
+The.
+The.
+The.
+
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+
+The.
+The.
+
+The.
+The.
+
+The.
+
+The.
+
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+The.
+
+The.
+The.
+
+The.
+The.
+
+The.
+The.
+
+The.
+The.
+The.
+The.
+
+The.
+The.
+
+The.
+
+The.
+
+
+The.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

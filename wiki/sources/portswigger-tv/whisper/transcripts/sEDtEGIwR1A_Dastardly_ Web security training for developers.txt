@@ -1,0 +1,231 @@
+all right welcome everyone thank you for joining us today and we really appreciate you joining our
+web security training for developers session we have some exciting content to share with you
+my name is craig i'm a java developer here at port swigger i work on our bub suite enterprise
+products i have mark with me as well who is a c sharp.net developer who works on our web team
+part of our internal engineering team and before we get started just to let you know we do have a
+team working in the background who are standing by to answer your questions if you do have a question
+you can use the q a facility which is separate to the chat box just pop your question in there
+the team will pick them up and answer them for you we are going to try and answer all of the questions
+throughout the session if we get a bit inundated and we don't quite get around to it don't worry
+we'll follow up with you after the session and we'll also be making all the questions available
+as a document afterwards and we'll be sending you a copy of the slides with all the links in
+for further information so you should be able to just sit back enjoy and ask as you go as we go along
+um we're actually going to cover today um is talk through what dastardly is and how it can help you
+as a developer um we'll talk you through how to deploy dastardly into your ci cd pipelines and
+mark's going to give us a demo of doing that with um github actions and we'll talk through a couple of
+security issues uh that data they can find out of the seven key security issues that it is possible for
+it to find um so dastardly is port swigger's latest offering and it's the first one that same
+specifically at helping developers produce more secure software by introducing security testing
+into your build pipelines some of you might already be using static application security testing tools
+or sast tools like semgrep in your pipelines and or you might be familiar with running other static
+analysis tools like check style or style cop and static analysis tools work by examining your source
+code and looking for real violations in the case of check style or style cop those rules are your
+coding standards in the case of sast tools like semgrep they look for patterns that could lead to
+security vulnerabilities and dastardly is different um dastardly is a dynamic application security
+testing tool or a dast tool hence dastardly and that means that it runs against your deployed site or
+application and attempts to prove that exploitable security vulnerabilities actually exist in your
+application rather than just being a pattern that could lead to a vulnerability and dastardly uses the
+same industry-leading browser-powered scanning engine that our commercial products do but we've
+packaged it up in a way that makes it easier to integrate into your cicd pipelines that can give you
+results within 10 minutes or less like that we'll find seven different kinds of security issue
+most importantly it's completely free so there's no restrictions on how many apps you can scan
+or how many scans you can run with it and the advantages of dastardly are that it's platform
+agnostic you can run it anywhere that you can run a container so it's not tied to any specific cicd
+pipeline or tool it's programming language and technology stack agnostic as well so it because
+they just got it because it scans your deployed web application it doesn't care how you built that
+application or what language or framework you used for it and it only requires the bare minimum of
+configuration basically you tell us what to scan which url you want us to start at and that's what
+you need to do the results are presented in j unit format which most ci tooling can render into a nice
+report for you the findings are typically reproducible and actionable and we have remediation advice
+provided directly in the report itself the advantage of running this type of scan in your pipelines is
+that you then can find vulnerabilities close to the point at which they're actually injected
+and just like with unit testing or any other kind of pipeline testing that reduces the amount of time
+you need to spend investigating and remediating the issues because you've got a much better idea of the
+point at which those defects were injected and because it's using the same engine as your security
+team or your external pen tester are likely to be using you're going to be able to find and fix issues
+long before they begin their testing which frees them up to find and remediate more critical bugs
+they might be trickier to find so i'll hand you over to mark so you can actually see dastardly in action
+using github actions thank you craig hi everybody uh my name is mark i'm a dotnet developer and i work
+in the web team here at port swigger so we have responsibility for the public website that you'll
+find at portswigger.net and also some web endpoints like uh registration and updates for the burp suite
+tools as well as a whole host of internal tools that we use here within ports we get to kind of power
+the business um so what that means is unlike craig and his colleagues on the burp suite product teams
+i'm not a security specialist by trade my background is all dotnet web development um so i was excited to
+have a try of dastardly um see what it could teach me about vulnerabilities in my website and figure out
+how to integrate it into my cicd pipeline um i like the thought that it would fail the build if it
+finds a vulnerability in exactly the same way as i'm used to a failing unit test or integration test
+failing the build and therefore would kind of alert me to problems a bit sooner um you know typically
+you in my background i've worked in situations where application security is not really the concern
+of the development team it maybe belongs further downstream with a dedicated appsec team or as part
+of the qa function so what i've got to show you today is a very simple application that has some
+deliberate vulnerabilities in it um there's a uh that the site is hosted in github and it's built
+with a github actions workflow so we'll take a look at the code that's had to be written in order to
+integrate dastardly into that we'll take a look at the site and see what it does and demonstrate what
+vulnerabilities we're looking for when we scan it and then we'll take a look at the results of a build
+and show you what dastardly is able to find for us and how it displays that to us um so let me switch
+over to uh here i'm going to actually start in github so here's my github project for the website
+this happens to be written in dotnet with c sharp but as craig has already mentioned dastardly is um
+language agnostic so um that we're not going to be looking at anything c sharp or dotnet specific in
+this session this would everything we're showing you today is equally applicable uh whatever stack
+or language you're using um and likewise although i'm using github actions to build this the techniques
+that you're seeing today work well across a full range of ci um frameworks so the first thing i will
+do is make a small change to the site um let's just add the word here into the readme file and that will
+trigger a build um so we can go and take a look at the github actions tab and we should find a build
+has been queued up there it is so that's going to start running in the next few seconds and so while
+that's busy i'll demonstrate the site to you and show you um show you what that site does so as you
+can see it's a very very basic website it's got two pages apart from this welcome page the first page
+has across site scripting or xss vulnerability the second page has a cross origin resource sharing or
+cause vulnerability um craig's going to go into a lot more detail later on after the demo about what
+those what those are um the cause page is fairly basic and kind of hard to demonstrate visually
+um but much easier to demonstrate in this session is the cross-site scripting vulnerability so we've
+got a very simple page here with a text input and a submit button and when we add a message to the page
+if the demo gods are smiling there you go the message just gets added to a list of messages at the
+bottom of the page but the problem here is that we're not sanitizing that input and we're just
+adding it to the page as raw html so if i had an html tag in there and submit again we should see
+that we had some bold text added to the bottom of the page it's decided to stop behaving itself for a
+minute this did happen when we practiced earlier as well so don't worry about that there it is but now
+let's take a look at what happens if we add some javascript into there and submit that and that is
+the vulnerability that this website um suffers from and what we're hoping that dastardly can find for us
+so instead of just adding plain text to the website it's injected some javascript into the page and run
+it in the browser and obviously it's a very trivial example here but you could very easily imagine that
+technique being used to steal some customer session details or um you know other other sensitive
+information so let's switch back to github and we'll take a look at what we had to do in order to
+integrate dastardly into this build um i'm using github actions if you're not familiar with github actions
+um it uses yaml syntax to declare the build steps that you want to carry out on your repo
+um very very similar looking to a range of other ci pipelines that you might be familiar with like
+circle ci and things like that so even if you haven't seen github actions before um everything
+you're seeing here will be pretty applicable to to whatever you're using um there's three sections to
+this build the three uh parts to the build which are known as jobs in github actions the first one
+starting there at line 10 is the build and test step so this is using the dotnet command line tools to
+build the project and publish it into a um a sort of deployable package the second step which starts
+down here on line 38 the second job is to deploy that to microsoft azure and we're just deploying to
+a simple free web app um for for the purposes of this demo uh but then the third and you might notice
+the smallest section down here at the bottom is the part that scans with dastardly um so there's about
+17 lines of fairly simple to follow yaml in there and in fact the four lines in the middle there the
+core of it is these four lines here 67 to 70. so what those lines are doing is getting the dastardly
+github action from the github marketplace so that's a pre-packaged um action provided by ports figure
+and executing it with one input which is the url of the site that we want to scan
+so that's actually all you need to run dastardly those four lines at the bottom there um that will
+introduce dastardly to your build pipeline it will cause the build to fail if dastardly finds a problem
+in it the the extra bit we've got below that is just kind of an added extra really um and this is
+recommended in the documentation for dastardly which you'll find on our website and on on the github
+marketplace it's just adding us a nicely formatted j unit test report um as an output to that step so
+it gives you a lot more information about what dastardly finds and it formats in a really nice
+readable fashion so we'll see that in a couple of minutes so that is it literally those um 17 lines
+of code were all i needed to add to this project to add a dastardly scan um there's nothing to install
+nothing to license there are no uh environment variables or secrets need to be declared elsewhere
+in the project it's literally exactly what you're seeing highlighted on the screen there um so that's
+all the code we're going to look at we'll just switch back now to the actions tab and yes fortunately
+our build has completed you see that it took exactly four minutes um and the builders failed
+and it's interesting to note on this page this is showing a history of builds run on this repo back
+when the repo was first created and we only had one job in the workflow which was to build and run all my
+tests the build passed and we got a green build there and likewise when i added the next step to deploy to
+azure we were still getting green builds have a quick look at that you can see that build and test and
+deploy to azure both working fine um so it's only when we added dastardly to the pipeline that we
+started getting problems reported and i think it's fair to say for a lot of web developers um those steps
+of building running our tests and deploying tends to be the extent of our build pipeline at times
+so let's see what dastardly has added to that by clicking into this latest build and we can see
+immediately there's a third step in the build there the first two steps have passed again the build
+has worked the tests have passed the deployment to azure has been successful but now we've got a
+problem found by dastardly and there's a little bit of information at the bottom of the screen of
+what it's found it's found though the vulnerabilities on both those pages on the site and if we click
+through into the build step we can see the raw build log and let's not scroll straight past that
+because apart from some absolutely beautiful ascii art at the top there to delight you with every build
+we've got details of the arrow down at the bottom there um it's fairly short it's fairly terse it
+doesn't tell us a great deal but it does tell us that it found vulnerabilities and it's enough to fail
+the build and cause it to go red um but up here on the left you can see a different representation of our
+build steps and we'll take a look now at this fourth step and this is going to correspond to
+that additional optional uh chunk of config right at the bottom of our yaml file so this is the kind of
+nicely formatted j unit test that craig and i both mentioned and you can see it's run some tests so nine of
+its checks have passed but three have failed we've got a sort of dashboard view of those three problems
+and if we click on raw output under there and take a look in at the the full output that dastardy's
+produced you can see some real added value in here apart from this summary uh section at the top where
+it tells us what vulnerability it found how severe that vulnerability is and whereabouts on the site
+it found it it adds a whole load of detail below that which for me particularly as a web developer was
+was really valuable and and uh you know kind of very useful to me it's giving me a load of detail
+about the issue it's found the background of that issue um what makes it so severe and also a
+recommended remediation for fixing that kind of problem so um this is the kind of information you'll
+find for free also on our web security academy over at the ports figure website but here it's kind of
+they're writing our build so um when we see a build has failed and we we step into that to investigate why
+it's giving us i'm sure you agree quite a lot more information than you your average build failure
+so it's kind of educating us as web developers on application security issues and hopefully kind of
+helping us to become better developers as a result uh so that's it that's all i had to demonstrate to
+you today we've seen dastardly in action on a site where we can all see there's a demonstrable
+problem and we've seen the results that dastardly is able to produce for us um just to remind you that
+the q a function um which is separate to the chat function in zoom is still active and we've got a
+whole support team uh taking your questions so if there are any questions off the back of that demo
+please do share them on the q a and someone will get back to you and for now i'll just hand you
+straight back over to craig to uh carry us on with the presentation thanks mark so as we saw in mark's
+demo xss and cores are two of the uh security issues found by dastardly in our vulnerable website so some
+of you may already be familiar with what xss and cores are but for those who who aren't already familiar
+we're going to give you a quick high-level overview of what they are and what impact they can have
+on users of your web applications so we start out with cross-site scripting and this allows an
+attacker to execute arbitrary javascript in a victim's browser as mark demonstrated this potentially
+allows the attacker to carry out actions that their victim is able to perform and to access their data
+so we're specifically looking at reflected xss in this case and these exploits occur when an attacker
+creates a malicious url that we have up here and then uses email or social engineering tricks typically
+to lure the victims into visiting that url when the victim clicks the link they unwittingly reflect
+their malicious content through the vulnerable web application back onto their own computers and then
+the malicious script can perform actions as that user as the victim and that allows them to potentially
+access the user's personal information such as card details or other things like that or to take over
+their account by stealing session cookies so if you have a quick look at how you might uh inject one of
+these vulnerabilities into your application by accident we've got a little bit of template code here that
+takes an employee id number from the request and then reflects it back into the page and it does so
+without doing any kind of escaping or sanitization so some web frameworks will automatically escape or
+sanitize that for you but not everyone's using those frameworks and there are cases where that escaping
+can be disabled or it can fail without us as developers even knowing that somebody else somewhere else
+has done that so just relying on the fact that he's going to do that for you automatically is obviously
+not as good as testing that it is happening correctly in your pipelines so if an attacker was
+able to inject some javascript into the page like this and then they'd be able to siphon off session
+cookies which then allows them access to the victim's authenticated session and that's how they can
+perform actions as if they were that particular user um cross-site scripting is extremely common in the
+wild in 2020 it accounted for more bug bounties than any other security vulnerability and it comes under
+uh injection on the oas top 10 vulnerabilities and injections currently number three in that list so
+again it's very high high profile and high priority um when they tested websites found 94 of websites
+they tested were vulnerable to some form of injection and three percent of those sites had been exploited in
+that manner and there's a list of household names underneath of companies that have publicly disclosed
+access vulnerabilities in the past so it's not just uh also you know we think we might be um in a smaller
+development team or a smaller company i think we might get these things wrong even the big guys get
+it wrong from time to time so testing and making sure that you're not vulnerable is obviously the way to go
+and so the other um issue that we found in the vulnerable app was across origin resource sharing or
+cause vulnerability a cause is a browser mechanism that allows controlled access to resources that are
+located outside of a given domain so it's useful or it's needed for um interacting with subdomains or
+with third-party sites but it does provide the potential for cross-domain attacks if a website's cause
+policy is poorly configured or poorly implemented so if you have a look at this example we've got an
+application that needs to provide access to other domains um the sort of right way to do this would
+be to maintain a list of allowed domains but then you need to maintain that list and you need to make
+sure that if you want to give access to another site you've got to add things if a domain changes you
+need to make sure that you update the list to do that so what the developers have done in this case
+is they've taken the easy route and effectively allowed access from any domain by reflecting the origin
+header back into the response so here we can see that we're allowing the origin from our malicious
+websites uh worse still they have also set the allowed credentials header to true and that means
+that those cross origin requests or requests from the malicious website uh can also include cookies and
+be processed in session so armed with this knowledge an attacker can exfiltrate any sensitive
+information such as api keys or csrf tokens from the response using a little bit of javascript like we
+have here and then go on to kind it caused all kinds of havoc um if you want to know more about these and
+other web security vulnerabilities you can check out the web security academy as mark mentioned before
+it's another free resource that portswigger offer with loads of information and advice about web security
+and all these types of vulnerabilities and there's also a bunch of free sandbox labs on there that you can
+experiment with to get yourself more familiar with what these kind of vulnerabilities are and how attackers
+use them and so hopefully that's given you some insight into what dastardly does and how what it can
+provide to you um if you want to give it a go um definitely we have a whole bunch of deployment
+instructions not just for github actions but also for team city and for uh jenkins as you mentioned
+earlier on is platform agnostic it's basically on a container so anywhere you can run a container you
+can run this um hopefully you have enough information to go on to deploy uh dastardly into your pipelines
+both from the presentation which will send you a copy of and also um from the resources that are linked
+and we have a little uh dare for you a little challenge for you to take on so as uh mark demoed it is
+really quick and easy to to integrate so there's no specific um required platform requirements for
+this what we'd like you to do is see how quickly you can deploy dastardly into your ci cd pipeline
+whatever that is whether it's one of the ones we have um deployment instructions for or something else
+and if you could record and send in a video of how quickly it takes you and you can post a view the
+video on youtube if you like and send us the link to it we'll then review these and the fastest
+implementations will win some free dastardly swag so hopefully that's been useful for you all and
+just before we close out today we have a couple of poll questions that we would like you to answer
+uh so we'll give you a few minutes to answer those and then we will close out
+you
+you
+okay that's great thank you for your uh feedback we'll obviously take that on board like we said
+we will send out a copy of the slides and a copy of the q a and we're going to hold the question and
+answer session open for the next 10 minutes so if you still have a question you haven't had a chance to
+ask yet feel free to uh chuck that in there and our amazing colleagues will be more than happy to
+answer them for you and we'll see you again soon and let us know how you get on with dastardly thanks very much

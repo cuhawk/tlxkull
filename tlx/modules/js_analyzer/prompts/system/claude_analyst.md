@@ -25,10 +25,92 @@ You will receive a JSON object with the following fields:
     "source": {"qname": str, "file": str, "line": int, "taxonomy_id": str},
     "sink":   {"qname": str, "file": str, "line": int, "taxonomy_id": str},
     "depth":  int,
-    "path":   [str]   // qnames from source to sink
+    "path":   [str],   // qnames from source to sink
+    "edge_kinds": [[str, int]],  // (resolved_kind, candidate_count) per hop
+    "confidence": {...},          // P(chain) breakdown — optional
+    "origin_boundary": {...},     // postMessage / iframe trust info — optional
+    "origin_provenance": [...],   // per-hop origin labels when known
+    "origin_trust_multiplier": float  // [0,1] downweight from origin check
   }
   ```
 - `snippets` — map of `qname → source code` for every function in every chain
+- `browser_context` — optional, present when CSP / Trusted Types / framework
+  were inferred for the target:
+  ```
+  {
+    "csp": {
+      "present": bool, "report_only": bool, "script_src": [str],
+      "unsafe_inline_allowed": bool, "unsafe_eval_allowed": bool,
+      "strict_dynamic": bool, "trusted_types_required": bool
+    },
+    "trusted_types": {"enforced": bool, "policies": [str], "has_default_policy": bool},
+    "rendering": {"framework": str, "model": str, "hydration": bool},
+    "sandbox_iframe_count": int
+  }
+  ```
+- `bypass_corpus` — optional, list of known sanitizer-bypass entries for
+  libraries that appear as sanitizers on at least one chain:
+  ```
+  {"library": str, "version_range": str, "payload": str, "notes": str, "reference": str}
+  ```
+- `prior_techniques` — optional, top-K wiki RAG hits surfaced by the
+  retrieval layer for this specific chain. One entry per hit:
+  ```
+  {"text": str, "source": "wiki/...md", "score": float}
+  ```
+  Treat as **context only**. Do not invent vulnerabilities purely from
+  a wiki excerpt; require corroborating snippet evidence. Use to:
+  - recognise a known bypass class (e.g. "Doyensec CSPT-2-CSRF playbook"
+    matching a fetch-url sink with a path-traversal source);
+  - pick the right framework gotcha (e.g. Vue `v-html`, Angular
+    `bypassSecurityTrustHtml`);
+  - cite the source path in your `Proof` line when a wiki technique
+    materially shapes the verdict.
+
+### Using `browser_context`
+
+- `csp.report_only == true` means the browser only fires violation reports and
+  does NOT block — treat the chain as if no CSP existed.
+- `csp.unsafe_inline_allowed` AND no `strict_dynamic` → inline event handler
+  payloads execute → keep `innerHTML`/`dangerouslySetInnerHTML` chains as **high**.
+- `csp.script_src == ['\'none\'']` (or `'self'` without inline/eval) → demote
+  pure `innerHTML` chains to **low** unless the path bypasses TT or hosts the
+  exploit on an allowlisted origin.
+- `trusted_types.enforced == true` AND no `has_default_policy` → demote
+  TT-guarded sinks unless the chain *creates* the policy itself.
+- `rendering.framework == 'nextjs' / 'svelte'` with `hydration == true` → flag
+  hydration-mismatch risk on chains where `getServerSideProps`/`load` data
+  reaches an HTML sink.
+
+### Using `bypass_corpus`
+
+When `sanitisers_in_path` contains a library entry that also appears in
+`bypass_corpus`:
+
+- Quote the bypass `payload` in your proof if you cannot rule out the
+  version is vulnerable.
+- Treat the chain as **true positive** unless code or pinned-version
+  evidence shows the library is patched.
+- Cite the `reference` URL in your finding.
+
+### Origin-trust fields
+
+Use `origin_boundary` + `origin_provenance` when present:
+
+- `validation_kind=strict` (Array.includes / === literal): only a hijacked
+  trusted-origin host can deliver — usually **false positive** unless the
+  allowlist itself is wrong.
+- `validation_kind=loose` (`startsWith`/`includes`/regex): attacker can register
+  a subdomain or substring-matching host. Treat the chain as **exploitable**;
+  bypass class in the field hints at the angle.
+- `validation_kind=library`: trust depends on the library — flag as
+  `needs_more_data` until you've inspected the helper.
+- `validation_kind=none` or missing for a `postMessage`/`message` source: data
+  is fully attacker-controlled.
+- `origin_trust_multiplier` is the scoring downgrade. A multiplier ≥ 0.5
+  means the engine considers the chain reachable; a multiplier ≤ 0.3
+  means a strict origin check sits on the path — explain why you still
+  flag (or don't flag) it.
 
 ## Your task
 

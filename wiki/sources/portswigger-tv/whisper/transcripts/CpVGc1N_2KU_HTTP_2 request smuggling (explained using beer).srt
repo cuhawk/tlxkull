@@ -1,0 +1,456 @@
+1
+00:00:00,000 --> 00:00:18,040
+So, hello. This past OKR, the Academy team, that's me and Adam, have been working on some
+
+2
+00:00:18,040 --> 00:00:26,860
+new HTTP2 labs based on James's new research on the topic. So the Web Security Academy
+
+3
+00:00:26,860 --> 00:00:36,920
+is basically a free online resource that you can use to learn about vulnerabilities that you can find in websites.
+
+4
+00:00:36,920 --> 00:00:45,220
+So you can bring up a small little sandbox website, which is vulnerable to one little thing, which you can learn to exploit
+
+5
+00:00:45,220 --> 00:00:50,260
+and learn how these vulnerabilities come about. So it's a really useful tool.
+
+6
+00:00:50,260 --> 00:01:02,320
+And basically, we've created six new labs which are going to be added soon to be released to the Academy,
+
+7
+00:01:02,320 --> 00:01:11,320
+which are eagerly awaited in anticipation of James's Black Hat talk three months ago.
+
+8
+00:01:11,320 --> 00:01:19,380
+So to get an understanding of this, I'm going to first off talk about what HTTP is in general.
+
+9
+00:01:19,380 --> 00:01:31,380
+So when you make a request to a website, your browser sends a request over HTTP to the web server and it sends you a response.
+
+10
+00:01:31,380 --> 00:01:37,380
+So if you're looking at HTTP 1, I'm going to show you a quick example.
+
+11
+00:01:37,380 --> 00:01:41,220
+So let's imagine this is you in a bar.
+
+12
+00:01:41,320 --> 00:01:50,380
+You go up to the bar keeper and you send a request. So you want the website up there.
+
+13
+00:01:50,380 --> 00:01:57,380
+They process the request and then sends it back to you. That's fine. It works well.
+
+14
+00:01:57,380 --> 00:02:07,380
+So this bar, they've heard about HTTP 2. It's meant to be faster than HTTP 1, the predecessor.
+
+15
+00:02:07,380 --> 00:02:18,440
+So they want to implement it. The only problem is they don't really want to go and teach their bar keeps how to understand this new protocol.
+
+16
+00:02:18,440 --> 00:02:27,500
+So they go and hire a waiter or they have a front end which can understand this new protocol.
+
+17
+00:02:27,500 --> 00:02:35,560
+They can understand it and then translate it to HTTP 1 so the bartender can understand what's going on.
+
+18
+00:02:35,560 --> 00:02:39,560
+So now you can send an HTTP 2 request to the waiter.
+
+19
+00:02:39,560 --> 00:02:44,620
+The waiter will translate this to HTTP 1.
+
+20
+00:02:44,620 --> 00:02:51,620
+The bar keep will process your order, give that to the waiter and then the waiter forwards it back to you.
+
+21
+00:02:51,620 --> 00:02:57,680
+So it basically looks like the website supports HTTP 2.
+
+22
+00:02:57,680 --> 00:03:06,680
+The problem happens though when there's an opportunity for misunderstanding between the front end and the back end.
+
+23
+00:03:06,680 --> 00:03:15,740
+So let's say you notice that when translating from HTTP 2 to HTTP 1 something can go wrong.
+
+24
+00:03:15,740 --> 00:03:20,740
+So you decide to send a really messy request to the waiter.
+
+25
+00:03:20,740 --> 00:03:24,800
+Like you want lots of sides, lots of substitutions.
+
+26
+00:03:24,800 --> 00:03:31,800
+The waiter, he takes that request and tries to tell the bartender what you want.
+
+27
+00:03:31,800 --> 00:03:36,800
+The bartender, he gets a little bit confused by this request.
+
+28
+00:03:36,800 --> 00:03:41,800
+So he sees the first thing there, beer, gives that to the waiter and the waiter's like,
+
+29
+00:03:41,800 --> 00:03:44,860
+alright sure, and then gives that back to you.
+
+30
+00:03:44,860 --> 00:03:52,860
+So then this other patron of the bar comes along and makes a request to the waiter.
+
+31
+00:03:52,860 --> 00:03:55,860
+The waiter forwards that on to the bartender.
+
+32
+00:03:55,860 --> 00:03:59,860
+The bartender, he's a bit muddled at the moment.
+
+33
+00:03:59,860 --> 00:04:06,860
+So he just sees what's in front of them from your last request because he's still trying to deal with that.
+
+34
+00:04:06,860 --> 00:04:13,860
+So he just hands that to the waiter and the waiter's like, alright sure, and gives that to Elon.
+
+35
+00:04:13,860 --> 00:04:18,920
+Elon asked for beer unfortunately, so he's not very happy with what he got back.
+
+36
+00:04:18,920 --> 00:04:26,920
+So this is basically how HTTP vulnerabilities can come along.
+
+37
+00:04:26,920 --> 00:04:43,920
+You can essentially smuggle a request and confuse the backend in a way that they'll serve the wrong request to the wrong responses to the wrong people essentially.
+
+38
+00:04:43,920 --> 00:04:51,920
+So the Academy Labs originally, well, they only supported HTTP 1 previously.
+
+39
+00:04:51,920 --> 00:04:56,860
+HTTP 2, I'm not going to go into the details, but it's a very complicated,
+
+40
+00:04:56,920 --> 00:05:01,920
+complicated protocol to implement or support rather.
+
+41
+00:05:01,920 --> 00:05:14,920
+So in order to support it, we looked at some third party support like Apache and Netty that we could use instead of implementing it ourselves.
+
+42
+00:05:14,920 --> 00:05:28,920
+The only problem with that is they're meant to be secure by default, meant to be, and they're not easily configurable in a way that we could emulate the vulnerabilities that we wanted to.
+
+43
+00:05:28,920 --> 00:05:41,920
+Thankfully, the pro team were kind enough to use burps HTTP 2 stack to create a little library for us that we could use to support the protocol.
+
+44
+00:05:41,920 --> 00:05:54,920
+And after we got that, and a lot of back and forth, trying to get the labs working, we've finally got the six labs ready, and they should be released relatively soon.
+
+45
+00:05:54,920 --> 00:06:04,920
+So to give you a little taste, I'm going to play a clip of me solving one for labs.
+
+46
+00:06:04,920 --> 00:06:17,920
+In this website, there's an admin of the site that goes there, that tries to log in every so often, and we can confuse the website in a way that will send the response to their login to us.
+
+47
+00:06:17,920 --> 00:06:33,920
+So we can steal their login and then delete one of the users of the site.
+
+48
+00:06:33,920 --> 00:06:38,920
+This is what hacking really looks like.
+
+49
+00:06:38,920 --> 00:06:39,920
+This is what hacking really looks like.
+
+50
+00:06:39,920 --> 00:06:40,920
+This is what hacking really looks like.
+
+51
+00:06:40,920 --> 00:06:41,920
+This is what hacking really looks like.
+
+52
+00:06:41,920 --> 00:06:42,920
+This is what hacking really looks like.
+
+53
+00:06:42,920 --> 00:06:43,920
+This is what hacking really looks like.
+
+54
+00:06:43,920 --> 00:06:44,920
+This is what hacking really looks like.
+
+55
+00:06:44,920 --> 00:06:45,920
+This is what hacking really looks like.
+
+56
+00:06:45,920 --> 00:06:46,920
+This is what hacking really looks like.
+
+57
+00:06:46,920 --> 00:06:47,920
+This is what hacking really looks like.
+
+58
+00:06:47,920 --> 00:06:48,920
+This is what hacking really looks like.
+
+59
+00:06:48,920 --> 00:06:49,920
+This is what hacking really looks like.
+
+60
+00:06:49,920 --> 00:06:50,920
+This is what hacking really looks like.
+
+61
+00:06:50,920 --> 00:06:51,920
+This is what hacking really looks like.
+
+62
+00:06:51,920 --> 00:06:52,920
+This is what hacking really looks like.
+
+63
+00:06:52,920 --> 00:06:53,920
+This is what hacking really looks like.
+
+64
+00:06:53,920 --> 00:06:54,920
+This is what hacking really looks like.
+
+65
+00:06:54,920 --> 00:06:55,920
+This is what hacking really looks like.
+
+66
+00:06:55,920 --> 00:06:56,920
+This is what hacking really looks like.
+
+67
+00:06:56,920 --> 00:06:57,920
+This is what hacking really looks like.
+
+68
+00:06:57,920 --> 00:06:58,920
+This is what hacking really looks like.
+
+69
+00:06:58,920 --> 00:06:59,920
+This is what hacking really looks like.
+
+70
+00:06:59,920 --> 00:07:00,920
+This is what hacking really looks like.
+
+71
+00:07:00,920 --> 00:07:01,920
+This is what hacking really looks like.
+
+72
+00:07:01,920 --> 00:07:02,920
+This is what hacking really looks like.
+
+73
+00:07:02,920 --> 00:07:03,920
+This is what hacking really looks like.
+
+74
+00:07:03,920 --> 00:07:04,920
+This is what hacking really looks like.
+
+75
+00:07:04,920 --> 00:07:05,920
+This is what hacking really looks like.
+
+76
+00:07:05,920 --> 00:07:06,920
+This is what hacking really looks like.
+
+77
+00:07:06,920 --> 00:07:07,920
+This is what hacking really looks like.
+
+78
+00:07:07,920 --> 00:07:08,920
+This is what hacking really looks like.
+
+79
+00:07:08,920 --> 00:07:09,920
+This is what hacking really looks like.
+
+80
+00:07:09,920 --> 00:07:10,920
+This is what hacking really looks like.
+
+81
+00:07:10,920 --> 00:07:11,920
+This is what hacking really looks like.
+
+82
+00:07:11,920 --> 00:07:12,920
+This is what hacking really looks like.
+
+83
+00:07:12,920 --> 00:07:13,920
+This is what hacking really looks like.
+
+84
+00:07:13,920 --> 00:07:14,920
+This is what hacking really looks like.
+
+85
+00:07:14,920 --> 00:07:15,920
+This is what hacking really looks like.
+
+86
+00:07:15,920 --> 00:07:16,920
+This is what hacking really looks like.
+
+87
+00:07:16,920 --> 00:07:17,920
+This is what hacking really looks like.
+
+88
+00:07:17,920 --> 00:07:18,920
+This is what hacking really looks like.
+
+89
+00:07:18,920 --> 00:07:19,920
+This is what hacking really looks like.
+
+90
+00:07:19,920 --> 00:07:20,920
+This is what hacking really looks like.
+
+91
+00:07:20,920 --> 00:07:21,920
+This is what hacking really looks like.
+
+92
+00:07:21,920 --> 00:07:22,920
+This is what hacking really looks like.
+
+93
+00:07:22,920 --> 00:07:23,920
+This is what hacking really looks like.
+
+94
+00:07:23,920 --> 00:07:24,920
+This is what hacking really looks like.
+
+95
+00:07:24,920 --> 00:07:25,920
+This is what hacking really looks like.
+
+96
+00:07:25,920 --> 00:07:26,920
+This is what hacking really looks like.
+
+97
+00:07:26,920 --> 00:07:27,920
+This is what hacking really looks like.
+
+98
+00:07:27,920 --> 00:07:28,920
+This is what hacking really looks like.
+
+99
+00:07:28,920 --> 00:07:29,920
+This is what hacking really looks like.
+
+100
+00:07:29,920 --> 00:07:30,920
+This is what hacking really looks like.
+
+101
+00:07:30,920 --> 00:07:31,920
+This is what hacking really looks like.
+
+102
+00:07:31,920 --> 00:07:32,920
+This is what hacking really looks like.
+
+103
+00:07:32,920 --> 00:07:33,920
+This is what hacking really looks like.
+
+104
+00:07:33,920 --> 00:07:34,920
+This is what hacking really looks like.
+
+105
+00:07:34,920 --> 00:07:35,920
+This is what hacking really looks like.
+
+106
+00:07:35,920 --> 00:07:36,920
+This is what hacking really looks like.
+
+107
+00:07:36,920 --> 00:07:37,920
+This is what hacking really looks like.
+
+108
+00:07:37,920 --> 00:07:38,920
+This is what hacking really looks like.
+
+109
+00:07:38,920 --> 00:07:39,920
+This is what hacking really looks like.
+
+110
+00:07:39,920 --> 00:07:41,920
+This is what hacking really looks like.
+
+111
+00:07:41,920 --> 00:07:42,920
+This is what hacking really looks like.
+
+112
+00:07:42,920 --> 00:07:43,920
+This is what hacking really looks like.
+
+113
+00:07:43,920 --> 00:07:44,920
+This is what hacking really looks like.
+
+114
+00:07:44,920 --> 00:07:45,920
+!
+

@@ -34,6 +34,9 @@ import sqlite3
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+_CONT_PARAM_EDGE_KIND = "continuation_param_taint"
+
+
 __all__ = [
     "ProducerMatch",
     "ContinuationEdge",
@@ -455,6 +458,83 @@ def inject_continuation_sources(conn: sqlite3.Connection) -> dict:
         "continuation_source_tags_cleared": before,
         "continuation_source_tags_inserted": inserted,
         "by_taxonomy": by_taxonomy,
+    }
+
+
+def wire_continuation_param_dataflow(conn: sqlite3.Connection) -> dict:
+    """Propagate continuation taint from the handler's first parameter
+    into every other local variable of the handler.
+
+    The interprocedural taint solver seeds every variable inside a
+    source-tagged node, but the AST extractor often does NOT emit
+    property-access variables for ``event.data`` / ``event.origin``.
+    Without explicit dataflow edges, downstream uses of ``e.data`` are
+    treated as untainted because no ``variables`` row exists for them
+    and no ``dataflow_edges`` row links the param to its property
+    reads.
+
+    This function inserts ``continuation_param_taint`` dataflow edges
+    from the handler's first param variable (heuristically the one
+    named ``__param0__`` or the variable with the smallest id within
+    the node) to every other variable in the same handler. Idempotent
+    via ``INSERT OR IGNORE``. Closes the audit's "async edges exist;
+    taint does not propagate through them" gap.
+
+    Skips continuations whose producer does not carry attacker-
+    controlled data (``taint_through = 0``).
+    """
+    # Clear prior continuation_param_taint edges so re-runs stay clean.
+    before = conn.execute(
+        "SELECT COUNT(*) FROM dataflow_edges WHERE edge_kind = ?",
+        (_CONT_PARAM_EDGE_KIND,),
+    ).fetchone()[0]
+    conn.execute(
+        "DELETE FROM dataflow_edges WHERE edge_kind = ?",
+        (_CONT_PARAM_EDGE_KIND,),
+    )
+
+    callee_rows = conn.execute(
+        "SELECT DISTINCT callee_id FROM continuations WHERE taint_through = 1"
+    ).fetchall()
+
+    inserted = 0
+    handler_count = 0
+    for (callee_id,) in callee_rows:
+        if callee_id is None:
+            continue
+        var_rows = conn.execute(
+            "SELECT id, name FROM variables WHERE node_id = ? ORDER BY id",
+            (callee_id,),
+        ).fetchall()
+        if len(var_rows) < 2:
+            # Nothing to taint into.
+            continue
+        # Prefer the conventional __param0__ row; otherwise smallest id
+        # (variables get written in arrival order during indexing).
+        param_id = None
+        for vid, name in var_rows:
+            if name == "__param0__":
+                param_id = vid
+                break
+        if param_id is None:
+            param_id = var_rows[0][0]
+        handler_count += 1
+        for vid, _ in var_rows:
+            if vid == param_id:
+                continue
+            cur = conn.execute(
+                "INSERT OR IGNORE INTO dataflow_edges "
+                "(from_var, to_var, edge_kind, line, sanitiser) "
+                "VALUES (?, ?, ?, 0, NULL)",
+                (param_id, vid, _CONT_PARAM_EDGE_KIND),
+            )
+            if cur.rowcount > 0:
+                inserted += 1
+    conn.commit()
+    return {
+        "continuation_param_edges_cleared": before,
+        "continuation_param_edges_inserted": inserted,
+        "handlers_wired": handler_count,
     }
 
 

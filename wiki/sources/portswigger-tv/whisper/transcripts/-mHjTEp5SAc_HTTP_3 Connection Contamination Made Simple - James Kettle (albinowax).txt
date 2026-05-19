@@ -1,0 +1,57 @@
+All right, so on the research blog earlier this week we published an article about a
+new web threat called HTTP3 connection contamination.
+And I was trying to think of some kind of beer analogy to make this make sense and nothing
+really stuck.
+And then I realized actually this attack is so simple it doesn't need an analogy I can
+just explain it in the full technical details in one slide in four minutes and it will make
+perfect sense to everybody.
+So we're going to start off with a HTTP history lesson.
+HTTP is the language that BIRP and also web browsers like Chrome and Firefox speak to
+websites.
+And every HTTP message is sent over a connection.
+You don't really need to worry about what a connection actually is.
+You only need to know one thing, which is that creating a connection is slow.
+So the original standardized version of HTTP was called 1.0.
+It came out in 96 and each message was sent over its own unique connection.
+And everything was nice and secure and wonderful.
+But then people were like, well, this is too slow.
+We want to make this go faster.
+And so they thought, well, what if we start sending multiple messages over each connection,
+provided that all the messages are going to the same website.
+And that was formalized in HTTP 1.1 in 96.
+And it definitely made things faster.
+And it also introduced a terrible vulnerability called request smuggling, which has been making
+hackers happy ever since.
+And well, we've been using HTTP 1.1 for a long time.
+A large portion of the web still uses 1.1 and is still vulnerable to request smuggling.
+But eventually they figured out how to stop request smuggling and they put it in HTTP 2.
+And that solved request smuggling more or less.
+But they couldn't resist also trying to make things a little bit faster.
+And they said, OK, why don't we start using a single connection for multiple different websites,
+as long as those websites are closely related to each other?
+And yep, sure enough, that made things faster.
+But it also introduced a new vulnerability called HP connection contamination.
+The reason that this happens is that ever since 97 or earlier, websites have been able to assume
+that all the requests sent over a single connection were intended for the same website.
+And some of them just started taking that for granted.
+And so now the browsers have started suddenly sending messages for different websites down the same
+connection. The end result is the server doesn't realize this and it ends up going to the wrong website.
+Now, you might be thinking, well, if we just publish this technique and that change happened in 2015,
+why is there that big gap?
+And the answer is, well, because the websites have to be closely related to each other,
+this issue doesn't happen very much in practice.
+It does happen sometimes. That's how I found it, because someone blew up their website by accident
+with this and made an angry forum post. And I was like, hang on, there's a security issue here.
+But the story doesn't end there.
+Because, well, what's going to happen next? We're going to get HTTP 3, aren't we?
+And, well, guess what it says in the specification for our for HTTP 3? It says, you know, we love connection reuse so much.
+We're going to relax this requirement so that the websites that we will speak to over one connection no longer need to share an IP.
+In other words, they no longer need to be closely related.
+And basically, it could happen to any two websites hosted by the same company.
+And what does that mean?
+Well, it means this issue that is currently extremely rare is just going to get worse in the near future.
+What's the real life impact of this?
+Well, basically, if you try and speak to a secure website owned by a company, someone may have hacked one of their insecure websites,
+and you may end up speaking to the one that's been hacked, and bad things are going to happen.
+And that is HTTP 3 connection contamination.
+Thanks for listening.

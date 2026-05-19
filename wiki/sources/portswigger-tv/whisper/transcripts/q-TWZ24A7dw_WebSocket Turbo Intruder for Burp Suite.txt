@@ -1,0 +1,206 @@
+Hi, my name is Zach and I'm a security associate at Portzviga.
+Let's be honest, when most of us see WebSocket in a target, it gets less attention than the rest of the application.
+But what if we treated it as any other attack service? What cool vulnerabilities you might have uncovered?
+Today I'm super excited to introduce you the new version of WebSocket Turbo Intruder
+and show you how its new cool features helps you to find new vulnerabilities.
+The reason why WebSocket testing is so hard is not because our traditional tools are poorly designed.
+They do an excellent job for HTTP. But WebSocket, in a nutshell, is a different kind.
+It uses stateful connection, whereas in HTTP you send a request and get a response.
+Of course, if you're not using the connection keep alive.
+You also should take care about all of the protocol messages like PIN, PONG, CLOSED MESSAGE, etc.
+So, let's dive into the WebSocket protocol itself.
+It all starts with the HTTP handshake. After that, the connection keeps alive and the protocol itself switches to an entire different framework.
+So, there are a couple of the frame types, including the ping-pongs.
+But what's different with WebSocket is that the client and the server can send the messages anytime.
+And if your tool can't pair these messages, you will miss the important vulnerabilities.
+To handle this problem, WebSocket Turbo Intruder introduced the simple integer counter that counts all outgoing and incoming frames.
+However, this simple approach has one big limitation. All the WebSocket services have broadcast messages.
+And if your tool is not able to filter out the boring content, your testing will fail.
+To help you with that, we introduce the new Python decorators that will help you to match the outgoing and ongoing messages.
+We also allow you to use a new engine that will help you to exploit unknown vulnerabilities.
+So, under the hood, you can right now download the WebSocket Turbo Intruder through the B App Store or through the source code and build if you really want to.
+As the original tool created by the James Kettle, WebSocket Turbo Intruder uses the same approach.
+We put all the chunks frames into the big chunk of the messages and send them as soon as possible to the web server.
+And we never wait the reply. That makes it so extremely fast.
+We also use the filter tools to filter out all the boring contexts.
+It also inherits all the black-slash-powered scanners to filter out the repeated contents.
+You also can use any advanced features like HTTP adapter to use the vulnerability scanning.
+It also comes with the command line interface. I will talk about it later.
+If you are not familiar with Turbo Intruder, it uses the Python 2 script that allows you to create literally any attack.
+You should identify three main functions.
+First, QWebSockets allows you to create the connection using one of three supported engines.
+First is Burp, RockSolid engine that you usually use during your pen test using the Burp Suite.
+Second one is Turbo that we just released for this tool.
+It allows you to craft any WebSocket frame, including the male-formed one.
+I will show you later on how we can craft the WebSocket frames that will cause the denial of the service.
+And also it supports the threaded engine, perfect for the large-scale and fuzzing attacks, including the password brute force.
+The two other functions, HandleOutgoingMessage and HandleIncomingMessage,
+is pretty simple functions that are responsible for adding results to the table.
+So that's pretty much it of the theory. Let's have a look how we're gonna use it.
+For the demo, I will use the Avasp Dem-Vulnerable WebSocket labs.
+We will start with the brute force attack and the threaded engine.
+The lab itself is pretty simple.
+We will go to the brute force lab and try to login with invalid credentials for the admin user.
+As we might see, we're not able to identify the password.
+But if you go to the WebSocket history, you will see that it uses the basic CFO encoding to send the password attempts.
+Then you right-click on any WebSocket message in our case, login, and send it to the intruder tool.
+On the left side, you will see the message we highlight that will be replaced with the placeholder.
+On the right side, you see the initial handshake.
+And then you choose it from the library.
+I will use the brute force example for that case.
+As I said, we will use the threaded engine to open 10 simultaneously WebSocket connections to the target
+and basics if I encode the passwords.
+I will add all the outgoing messages to the table and only interesting one to the results.
+That's pretty easy.
+You can do with the tool.
+Then you just click the attack button and it will do all the hard work for you.
+On the left side, you can see the results table.
+As I said, it will add all the outgoing frames to this.
+It will show you the outgoing frame or the so-called request pane.
+That's of course not the real request, it's just outgoing frame.
+And response is incoming frame.
+Also, the tool supports any useful metadata like ID, direction, message length, time, etc.
+You can sort all of the columns right now.
+On the button of the pane, you can see the progress bar where all our frames shown was already been sent.
+If we scroll down to the button, you will see only one incoming message.
+That is really interesting for us because it has different response that is saying we were able successfully identify the password.
+It's still Base64 encoded so we can decode it and see this is just an admin.
+Next, I want to show you something that's almost impossible with traditional tools.
+Race conditions.
+Race conditions often occurs when multiple clients try to change the same data.
+We will explore today the time to check, time to use vulnerability in a race condition.
+Don't be afraid if you're not familiar with the Python.
+With the built-in race condition example, you barely need to change this to exploit the vulnerability.
+First, you specify the interval where all our messages should be sent, the number of threads.
+Of course, you want to use the ping to warm up the connection so they land as close as possible.
+And use the chunks to hit at the same time.
+Let's go for the example.
+For the demo, I created the Java WebSocket implementation that uses the ID that restricts us to update the data with a different ID.
+First, I will show you how it should work.
+We reset the ID to the 0 and then send the status update request.
+As you might see, it was successfully updated with the ID 0.
+But what if we will send the same request using the multiple simultaneous connections?
+Let's give it a try.
+We will reset our ID and open the race condition example.
+As I said, it's barely need to be changed.
+So you just select from the library
+and click the attack button.
+And then we will see the same response.
+All scripts include the documentation.
+If you would like to, you can read inside of the GitHub repo.
+So I'm using the same approach like sending 10ms timeframe of the 10 threads simultaneously to the target.
+You just click the attack button and observe the discrepancies.
+Right now, because we don't use the interesting response, we will see all the incoming frames.
+If you will pay close attention, you will see the ID changed unpredictably.
+It might be 1, 3, 5, etc.
+As a pen tester, when you see such a discrepancy,
+it highlights that the server might be vulnerable to this time to use race condition.
+You can exploit such kind of vulnerabilities for the password reset or coupon redeem in our academy labs.
+While preparing for the race condition, I discovered an interesting denial of service vulnerability in Java WebSocket implementation.
+What if you really want to go wild and exploit low-level vulnerabilities inside the WebSocket?
+I mean send any WebSocket frame, including the mail-formed one.
+According to the RFC, WebSocket frame starts with the header, specifying the opcode and payload length and only then followed by the payload itself.
+With Turbo Engine, you can send any frame time, including text one, and then empty body and really huge payload length.
+That value is so huge that it won't fit inside the Python.
+That's why I'm using the string literals to be parsed for the long value.
+But instead of sending the gigabytes data to the server, we will just send one small tiny packet and see how it will work on the Java Web implementation.
+So we will start with the same lab because it's using the Java Web.
+And instead of running the race conditions, we will send this tiny mail-formed frame to the server.
+You go to the intruder, select the ping of death script and send it to the server.
+So what's happened under the hood?
+Java reads the opcode and then follow up the payload length.
+The payload length is so huge that the Java failed to allocate the buffer and failed, crushing the virtual machine.
+If you will click the attack button, the server won't reply for any further questions.
+WebSocket Turbo Intruder allows you to see the all closed error frames too, so it won't get you unnoticed.
+Now let's try to reconnect to the server.
+We won't be able to do this anymore because server crashed.
+What if you want to use Burp Suite Scanner or any other HTTP Web tool to test your Web circuits?
+Traditionally, it's not possible.
+You need to manually translate messages or write a custom plugin.
+With HTTP middleware, you can now use the WebSocket Turbo Intruder to wrap all your WebSocket connections into the HTTP post messages.
+It's using the same approach and same three functions.
+First, create the connection.
+You create connection using one of the supported engines.
+And then handle incoming messages.
+You also can use the filters to highlight only interesting responses.
+Let's give it an action.
+For the demo, I will use the SQL injection vulnerability from the Demn Vulnerable WebSocket Labs.
+We will go to the error SQL injection and try to send quotes to the server.
+Sending the quote and single quote will return two different error messages.
+One showing the incorrect password and second one showing the error on the server side.
+As I said, all of them will be Base64 encoded.
+This highlights that the server might be vulnerable to the SQL injection.
+To exploit it, we will use the HTTP middleware.
+You right-click, select extension and HTTP middleware.
+In most cases, you will need just a simple server example that will wrap the WebSocket connection.
+You can select any URL you select and the upgrade request.
+That's pretty it.
+You just click the start of the server.
+It will listen for the 9000 port and all the incoming post messages will be wrapped into the WebSocket and sent to the server.
+On the right pane, you see the table of requests.
+Then we will select the first post request and send it to the repeater to reproduce the normal connection.
+Now we can see that the WebSocket replies.
+I will use the SQL map to test for the SQL injection vulnerabilities and Base64 temper script to Base64 encode all our payloads.
+As soon as the extension finds the vulnerability, you will see them in the issue map.
+I will use the last one that will turn our error SQL injection into the message.
+Once again, it should be Base64 encoded to successfully reproduce the issue.
+You can send to the repeater, pass it into the password and encode.
+Then we send to the server and observe this. Vulnerability was confirmed.
+What if your target requires advanced client configuration?
+WebSocket Turbo Intruder can help with that too.
+For the demo, we will take a look on Socket.io.
+Socket.io is a JavaScript framework.
+It uses WebSocket as just the network layer.
+Above of it, it uses the Engine.io.
+And above of that, it's using the Socket.io.
+That's a huge stack of technologies creates the real big difficulties to test this kind of web servers.
+To help you with that, I create a special sample script that will handle all the Socket.io discrepancies.
+It also automatically hand all the pin and pawn messages using the decorators,
+so you don't have to worry about all the reconnection.
+It will allow you to keep the state and exploit more complex vulnerabilities.
+To demo the vulnerability, I will use a really nice gadget.
+For those of you who are not familiar with the Gareth research on exploiting server-side prototype pollution,
+I really recommend you to take a look on the original blog post.
+We will be using the same approach.
+Because of the server-side prototype pollution nature,
+it's usually really hard to identify that vulnerability literally works.
+To work up this limitation, we will use the initial packet.
+So, how it works?
+When the client connects to the server,
+the server will reply with the initial packet
+if it was specified under the options.
+Using the server-side prototype pollution,
+we will inject this initial packet into our prototype object.
+This will help us to identify the vulnerability.
+Let's see its connection.
+First, you have to send the 4-0 message to the server to say that the connection was established.
+To do this, we will just go to the HTTP middleware and paste the socket.io script.
+It will do all the hard work for us, including the switching to the engine.io level 4.
+That won't require us to do all the hard work.
+And then, you just send the post messages and observe that it tries to parse the JSON.
+The Turbo Intruder also includes the logger capabilities, so you will be able to debug all your sessions.
+Let's go back to the repeater and try to exploit the server-side prototype pollution.
+As I said, if the server incorrectly merge two objects and pollute the Proto object, we won't be able to observe the result.
+But when we reconnect, we will see the initial message saying that it was successfully polluted.
+WebSocket Turbo Intruder also includes a standalone Scylla-i tool, ideal for automation and scripting.
+For the demo, I will use the us command injection from the DemVulverable WebSocket Labs.
+It has a pretty basic support right now, so if you would like to test more sophisticated attacks, I would recommend to use the Burpsuite interface.
+But if you just want to run a really long attack, it might be better to use the standalone tool.
+First, you specify the script.py, the Python script file, then request, the target, and the placeholder.
+Let's see in an action.
+Command-injection lab is a pretty simple one.
+It uses pin command to ping any host you specify on the target.
+So for the demo, we will use the localhost, confirm that the lab works correctly.
+Then we will go to the Scylla-i and try to exploit using the list of webroot.
+Let's take a look on basic example.
+We will send ampersand sign and then the list directory.
+You hit the start button and when the new frame will come, you will see the results.
+It will also save all the results to the results.json file, so you won't miss an incoming frame.
+The incoming frames will be base64 encoded, so you can decode them using one of the tools.
+In our case, we'll go to the Burpsuite, decode, and see the root directory.
+I hope today's demo inspires you to start giving WebSocket the attention they deserve.
+With WebSocket Burntruder, you can extend your attack surface and detect previously unknown vulnerabilities.
+That's the end of our today's demo.
+Download the extension from the GitHub or the B-App Store.
+If you find a really cool use case or create a nice server script example, share it with using the pull request or create a new issue.
+Thank you very much. If you have any feedback, feel free to share it with me using the Google Forms.

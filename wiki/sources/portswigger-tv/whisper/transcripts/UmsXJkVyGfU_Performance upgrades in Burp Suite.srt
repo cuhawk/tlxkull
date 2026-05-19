@@ -1,0 +1,1172 @@
+1
+00:00:00,000 --> 00:00:09,060
+All right. So, yeah, we're here to talk about burp performance and the recent sort of improvement drive that we've been doing on performance in burp.
+
+2
+00:00:09,200 --> 00:00:10,220
+So here we go.
+
+3
+00:00:11,060 --> 00:00:16,180
+So as we all know, performance has been a hot topic in the burp community for quite a while now.
+
+4
+00:00:16,560 --> 00:00:23,020
+People have expressed frustration with large projects and less powerful equipment having trouble running burp.
+
+5
+00:00:23,160 --> 00:00:29,900
+And in order to address this, we now have the performance squad focused on making burp lag-free and fun to use.
+
+6
+00:00:30,000 --> 00:00:40,080
+So we have been working on improving burp's performance while measuring progress and trying to prevent future regressions.
+
+7
+00:00:40,660 --> 00:00:47,060
+In order to do this, we've made regression tests and Grafana dashboards to monitor the state of burp performance.
+
+8
+00:00:47,500 --> 00:00:54,800
+We've also been adding some telemetry and collecting data to help us identify potential performance bottlenecks to target next.
+
+9
+00:00:54,800 --> 00:01:07,140
+And we also want to make sure that there are visual indications when longer running tasks are happening so that users can know that burp hasn't just given up and frozen.
+
+10
+00:01:07,860 --> 00:01:15,380
+So we've already made many improvements, such as sitemap filtering speed and lazy extension loading for performance.
+
+11
+00:01:15,380 --> 00:01:20,340
+So table sorting was the first one we looked at.
+
+12
+00:01:21,740 --> 00:01:25,280
+It was one of the first performance challenges we took on.
+
+13
+00:01:25,740 --> 00:01:31,980
+So in some very large proxy history tables, some columns could take up to minutes to sort.
+
+14
+00:01:31,980 --> 00:01:39,680
+And it was made worse by the fact that all of the sorting happened on the swing thread, locking the UI for the entire duration of the sort.
+
+15
+00:01:41,380 --> 00:01:51,180
+And this was compounded by having the ability to sort by multiple columns at once, meaning that there could be up to three times as many data retrievals as there were for a single column.
+
+16
+00:01:51,180 --> 00:01:58,180
+So the first and potentially most obvious thing to address was the speed of the sorting itself.
+
+17
+00:01:58,180 --> 00:02:06,180
+Java's built-in sorting algorithm is pretty well optimized, so instead of looking at that, we address the more problematic speed of data retrieval.
+
+18
+00:02:06,180 --> 00:02:11,180
+Often the same piece of data would have to be retrieved multiple times in order to complete a sort.
+
+19
+00:02:11,180 --> 00:02:15,980
+When this is happening from a project file, this can be very slow.
+
+20
+00:02:15,980 --> 00:02:22,180
+Pre-loading a temporary cache of the data into memory led to much faster access and overall sort durations.
+
+21
+00:02:23,380 --> 00:02:29,920
+Even though we were able to make the sort operation faster, we still don't want to lock the UI for its duration.
+
+22
+00:02:30,720 --> 00:02:39,100
+So in order to do this, we had to figure out a way to move the most intensive tasks off the UI thread, which is quite the challenge when you're trying to preserve data integrity on a table.
+
+23
+00:02:39,100 --> 00:02:48,260
+And finally, we want to let users know that sorting is in progress and that burp hasn't just crashed or given up while it is doing the processing.
+
+24
+00:02:48,260 --> 00:02:51,580
+So we had to come up with something for that.
+
+25
+00:02:51,580 --> 00:02:53,700
+So on to the actual solution.
+
+26
+00:02:53,700 --> 00:03:02,400
+We created a custom implementation of a row sorter, which takes a snapshot of the data to be sorted and pulls it into memory.
+
+27
+00:03:02,400 --> 00:03:12,200
+We then sort it and apply the calculated indices to the table view and use read-write locking to control access to the table.
+
+28
+00:03:14,000 --> 00:03:19,000
+The write operations are queued to apply in a batch after the sorting is completed.
+
+29
+00:03:19,000 --> 00:03:31,200
+And to ensure the reliability of these changes, we wrote quite a suite of like multi-threaded stress tests and specific event orderings to test edge cases.
+
+30
+00:03:31,200 --> 00:03:38,200
+Finally, we also surfaced the actual sorting operation in the UI using spinners in the column headers.
+
+31
+00:03:38,200 --> 00:03:44,800
+So this is a regression test plot of the sorting test.
+
+32
+00:03:44,800 --> 00:03:50,200
+We're sorting by multiple fields in a very large proxy history file, like hundreds of thousands of items.
+
+33
+00:03:50,200 --> 00:03:56,800
+And you can see there's a precipitous drop in the amount of duration it took down to like two seconds or less.
+
+34
+00:03:56,800 --> 00:04:00,800
+So on to repeater.
+
+35
+00:04:00,800 --> 00:04:02,800
+I'm going to pass over to my colleague, Jay.
+
+36
+00:04:02,800 --> 00:04:03,800
+Hey guys.
+
+37
+00:04:03,800 --> 00:04:04,800
+Okay.
+
+38
+00:04:04,800 --> 00:04:09,800
+So within repeater tool, you're able to make your own HTTP requests.
+
+39
+00:04:09,800 --> 00:04:14,800
+And this is probably the place within Burp a lot of pen testers are going to sink their hours into.
+
+40
+00:04:14,800 --> 00:04:17,800
+You can also send data to the repeater from other tools.
+
+41
+00:04:17,800 --> 00:04:22,800
+And a problem a lot of people run into is just like browser tags, tabs,
+
+42
+00:04:22,800 --> 00:04:27,800
+because a lot of these can build up over time.
+
+43
+00:04:27,800 --> 00:04:33,800
+Organizer was released last year as a way to help people to keep their workflows a bit less chaotic.
+
+44
+00:04:33,800 --> 00:04:37,800
+But people still have a lot of repeater tabs sitting around.
+
+45
+00:04:37,800 --> 00:04:42,800
+Unfortunately, we weren't dealing with these in the best way.
+
+46
+00:04:42,800 --> 00:04:49,800
+Repeater contains lots of UI elements, fundamentally the request view, the response view and the inspector.
+
+47
+00:04:49,800 --> 00:04:54,800
+Can you hear okay?
+
+48
+00:04:54,800 --> 00:04:59,800
+Yeah, I can hear.
+
+49
+00:04:59,800 --> 00:05:00,800
+Cool, thank you.
+
+50
+00:05:00,800 --> 00:05:02,800
+Each of these components are quite heavy weight.
+
+51
+00:05:02,800 --> 00:05:05,800
+The message editors have rich editors supporting syntax highlighting,
+
+52
+00:05:05,800 --> 00:05:09,800
+and the inspector contains a number of nested table and text area components.
+
+53
+00:05:09,800 --> 00:05:16,800
+Up to now, repeater tabs have been implemented by creating one set of these UI components per tab.
+
+54
+00:05:16,800 --> 00:05:21,800
+This makes a lot of sense conceptually, but as a drawback that it can eat up a lot of memory per tab.
+
+55
+00:05:21,800 --> 00:05:25,800
+We could attempt to optimise memory used by the UI, but the problem still remains.
+
+56
+00:05:25,800 --> 00:05:28,800
+The more tabs you have, the worse performance gets.
+
+57
+00:05:28,800 --> 00:05:32,800
+Even if you aren't using repeater at the moment, if your project file has repeater data,
+
+58
+00:05:32,800 --> 00:05:35,800
+then it will always be eating memory in the background.
+
+59
+00:05:35,800 --> 00:05:37,800
+This has led to the single repeater work.
+
+60
+00:05:37,800 --> 00:05:42,800
+So the main goal is to retain the existing behaviour, but do it in a much more memory efficient way.
+
+61
+00:05:42,800 --> 00:05:46,800
+In this case, by only using one set of UI components.
+
+62
+00:05:46,800 --> 00:05:51,800
+Before delving into the code, we spent a lot of time planning out how we were actually going to measure
+
+63
+00:05:51,800 --> 00:05:53,800
+if we had achieved our objectives.
+
+64
+00:05:53,800 --> 00:05:56,800
+We've done a lot of work previously with creating performance tests.
+
+65
+00:05:56,800 --> 00:06:01,800
+These are our automated processes where robots control and stress test burp,
+
+66
+00:06:01,800 --> 00:06:05,800
+to ensure that we catch any cases where we introduce performance regression,
+
+67
+00:06:05,800 --> 00:06:08,800
+including testing both memory usage and time taken.
+
+68
+00:06:08,800 --> 00:06:14,800
+We started by expanding our coverage for repeater, attempting to benchmark a lot of common scenarios,
+
+69
+00:06:14,800 --> 00:06:19,800
+such as multi-megabyte JavaScript responses and operations involving group tests.
+
+70
+00:06:19,800 --> 00:06:26,800
+We then started to plot our regression tests onto graphs so we could see over time easily
+
+71
+00:06:26,800 --> 00:06:29,800
+if we were accidentally introducing performance issues into burp.
+
+72
+00:06:29,800 --> 00:06:34,800
+With our regression test data, we could then start to carry out the work.
+
+73
+00:06:34,800 --> 00:06:37,800
+We had a very simple problem with our approach.
+
+74
+00:06:37,800 --> 00:06:41,800
+If we're making everything use the same UI component, then everything will have the same content.
+
+75
+00:06:41,800 --> 00:06:43,800
+That's not ideal.
+
+76
+00:06:43,800 --> 00:06:48,800
+What's more, you'd also lose any state of any fine-grained settings that you have configured per tab,
+
+77
+00:06:48,800 --> 00:06:55,800
+such as the line-wrap toggle, or setting to hide uninterested headers.
+
+78
+00:06:55,800 --> 00:06:58,800
+In fact, there's quite a lot of state we need to look after.
+
+79
+00:06:58,800 --> 00:07:03,800
+Not just the request response, but things such as edit history, what your search is,
+
+80
+00:07:03,800 --> 00:07:07,800
+what text you have selected, the scroll position and your view mode.
+
+81
+00:07:07,800 --> 00:07:11,800
+There are other places in burp which we use the same editor for different items,
+
+82
+00:07:11,800 --> 00:07:13,800
+such as logger and organiser.
+
+83
+00:07:13,800 --> 00:07:16,800
+However, in those cases you can't edit each item,
+
+84
+00:07:16,800 --> 00:07:19,800
+so it's a lot less important to have such granular settings.
+
+85
+00:07:19,800 --> 00:07:21,800
+It wouldn't work well for us.
+
+86
+00:07:21,800 --> 00:07:25,800
+So we needed a way to hold onto certain bits of state for each tab,
+
+87
+00:07:25,800 --> 00:07:27,800
+whilst being as memory efficient as we can.
+
+88
+00:07:27,800 --> 00:07:30,800
+So we introduced the concept of a checkpoint.
+
+89
+00:07:30,800 --> 00:07:35,800
+Let's say you have some repeater tabs which you've opened before.
+
+90
+00:07:35,800 --> 00:07:42,800
+If you click onto tab 1, then as we switch to it, we look at a checkpoint which is stored for that tab,
+
+91
+00:07:42,800 --> 00:07:45,800
+and it's basically a snapshot of the state of the UI for that tab,
+
+92
+00:07:45,800 --> 00:07:48,800
+stored with as little memory usage as possible.
+
+93
+00:07:48,800 --> 00:07:52,800
+We tell the UI to restore itself to the state represented by the checkpoint,
+
+94
+00:07:52,800 --> 00:07:59,800
+and that causes a lot of calls into the UI to set properties to get it to how it was before.
+
+95
+00:07:59,800 --> 00:08:02,800
+Now let's say I make some modifications within tab 1,
+
+96
+00:08:02,800 --> 00:08:05,800
+and then want to switch to tab 2.
+
+97
+00:08:05,800 --> 00:08:09,800
+As soon as I click switch, we first capture our state into a checkpoint,
+
+98
+00:08:09,800 --> 00:08:12,800
+and replace our old checkpoint with this new one.
+
+99
+00:08:12,800 --> 00:08:15,800
+Then we restore the checkpoint for tab 2 on top of the current UI.
+
+100
+00:08:15,800 --> 00:08:20,800
+And if we've done everything correctly, everything is looking exactly as it should.
+
+101
+00:08:20,800 --> 00:08:23,800
+In reality, this process should be almost instant.
+
+102
+00:08:23,800 --> 00:08:26,800
+And then finally, if we create a new tab,
+
+103
+00:08:26,800 --> 00:08:30,800
+we create a checkpoint of tab 2 to start with,
+
+104
+00:08:30,800 --> 00:08:33,800
+then run an initialization step for the UI,
+
+105
+00:08:33,800 --> 00:08:36,800
+which will restore it to a default state.
+
+106
+00:08:36,800 --> 00:08:40,800
+That way no current tab data leaks across into this new empty tab.
+
+107
+00:08:40,800 --> 00:08:45,800
+Each tab contains a much more lightweight representation of its content.
+
+108
+00:08:45,800 --> 00:08:56,800
+The UI doesn't hold any non-UI related state,
+
+109
+00:08:56,800 --> 00:09:02,800
+and tabs are lazily initialized and only populated when clicked on.
+
+110
+00:09:02,800 --> 00:09:06,800
+So, the outcomes of the work were positive.
+
+111
+00:09:06,800 --> 00:09:09,800
+The changes were able to quite dramatically decrease
+
+112
+00:09:09,800 --> 00:09:12,800
+some time taken and memory measurement measurements.
+
+113
+00:09:12,800 --> 00:09:14,800
+We've also updated our red regression threshold line,
+
+114
+00:09:14,800 --> 00:09:18,800
+which means our builds fail if we lose any performance gains we've made.
+
+115
+00:09:18,800 --> 00:09:20,800
+We posted one of the graphs on our Twitter,
+
+116
+00:09:20,800 --> 00:09:23,800
+which got some good engagement, which was nice to see.
+
+117
+00:09:23,800 --> 00:09:31,800
+We also saw a downward trend with a lot of other performance tests too.
+
+118
+00:09:31,800 --> 00:09:33,800
+So, what do the actual changes look like in reality?
+
+119
+00:09:33,800 --> 00:09:44,800
+In this scenario, we're loading up Perp with the same project file,
+
+120
+00:09:44,800 --> 00:09:50,800
+which contains 250 repeated tabs, each holding a GET request to the JIN and JUICE homepage.
+
+121
+00:09:50,800 --> 00:09:55,800
+We're able to save 10 seconds on the project load and decrease the memory usage tenfold,
+
+122
+00:09:55,800 --> 00:10:01,800
+down from 1.5 GB to around 130 MB.
+
+123
+00:10:01,800 --> 00:10:02,800
+We've got a lot of data.
+
+124
+00:10:02,800 --> 00:10:09,800
+Right, in this next scenario, we've got a tab group with 250 tabs,
+
+125
+00:10:09,800 --> 00:10:12,800
+all with the same request to the JIN and JUICE homepage.
+
+126
+00:10:12,800 --> 00:10:15,800
+The requests are issued on a single connection for all the tabs,
+
+127
+00:10:15,800 --> 00:10:19,800
+and you'll notice a speed improvement for how long it takes until the request group is done.
+
+128
+00:10:19,800 --> 00:10:22,800
+This is because it needs to do much less UI work,
+
+129
+00:10:22,800 --> 00:10:26,800
+which impacts how long requests take to be processed outside of the network layer.
+
+130
+00:10:26,800 --> 00:10:31,800
+You'll notice a dramatically larger difference for requests containing bigger messages as well.
+
+131
+00:10:31,800 --> 00:10:38,800
+Right, and the final example is a scenario where we're cycling between 100 repeated tabs.
+
+132
+00:10:38,800 --> 00:10:43,800
+We had this test because the main trade-off of having a single set of UI components
+
+133
+00:10:43,800 --> 00:10:46,800
+is that it means that you need to do extra work when you switch tabs,
+
+134
+00:10:46,800 --> 00:10:50,800
+and we tried to keep this degradation as small as possible.
+
+135
+00:10:50,800 --> 00:10:53,800
+Unfortunately, it's largely unnoticeable.
+
+136
+00:10:53,800 --> 00:10:55,800
+I'm not sure those timings are correct.
+
+137
+00:10:55,800 --> 00:10:56,800
+No, they are the same.
+
+138
+00:10:56,800 --> 00:10:57,800
+Are they?
+
+139
+00:10:57,800 --> 00:10:58,800
+Yeah.
+
+140
+00:10:58,800 --> 00:10:59,800
+To the millisecond.
+
+141
+00:10:59,800 --> 00:11:00,800
+Love it.
+
+142
+00:11:00,800 --> 00:11:05,800
+Right, and then I think Dan's going to go back onto the performance mode.
+
+143
+00:11:05,800 --> 00:11:12,800
+Yeah, so, yeah, I'm just going to talk about what's sort of like on our minds in the performance team
+
+144
+00:11:12,800 --> 00:11:17,800
+and what you can expect as a user in which BIRT versions.
+
+145
+00:11:17,800 --> 00:11:20,800
+So, when will you get access to these performance improvements?
+
+146
+00:11:20,800 --> 00:11:30,800
+So, in 2024.5, which is already live as stable, we have the table performance improvements and the lazy load extension tabs.
+
+147
+00:11:30,800 --> 00:11:39,800
+In 2024.6, we have the sitemap filtering improvements, which brings down the sitemap filtering speed quite significantly.
+
+148
+00:11:39,800 --> 00:11:44,800
+And 2024.7 is going to be my favorite release.
+
+149
+00:11:44,800 --> 00:11:47,800
+It has a huge amount of performance stuff coming.
+
+150
+00:11:47,800 --> 00:11:54,800
+So, we have single repeater, which is going to drastically reduce the memory usage for people with a lot of repeater tabs.
+
+151
+00:11:54,800 --> 00:12:02,800
+Message analyzer improvements, so large messages will load much quicker and not cause as much UI lag.
+
+152
+00:12:02,800 --> 00:12:07,800
+And we're also looking at some improvements to intruder.
+
+153
+00:12:07,800 --> 00:12:14,800
+So, our roadmap is pretty flexible and we're taking input from a variety of sources, including our existing telemetry,
+
+154
+00:12:14,800 --> 00:12:20,800
+in-product questionnaires, and social media to determine what are the most important things for you guys.
+
+155
+00:12:20,800 --> 00:12:32,800
+Some items that we're already considering are table filtering, large intruder attacks, and further improvements to sitemap filtering, and searching and large responses.
+
+156
+00:12:32,800 --> 00:12:36,800
+So, now it's over to you guys.
+
+157
+00:12:36,800 --> 00:12:40,800
+Sorry about all the AV issues.
+
+158
+00:12:40,800 --> 00:12:43,800
+The Wi-Fi was not cooperating with me today.
+
+159
+00:12:43,800 --> 00:12:50,800
+But, yeah, if you have any questions or any suggestions for performance and burp, I'd be super happy to hear them.
+
+160
+00:12:50,800 --> 00:12:54,800
+And we have our message analyzer expert here as well right now.
+
+161
+00:12:54,800 --> 00:12:57,800
+So, he can also answer a couple.
+
+162
+00:13:01,800 --> 00:13:04,800
+Let me just stop sharing my screen.
+
+163
+00:13:04,800 --> 00:13:09,800
+Oh, nice. Perfect.
+
+164
+00:13:09,800 --> 00:13:13,800
+Cool.
+
+165
+00:13:13,800 --> 00:13:15,800
+Enthusiast.
+
+166
+00:13:15,800 --> 00:13:18,800
+Ah, minor technical issues. Yeah.
+
+167
+00:13:18,800 --> 00:13:21,800
+Which chat? Oh, and the voice chat one. Yeah.
+
+168
+00:13:21,800 --> 00:13:22,800
+Cool.
+
+169
+00:13:24,800 --> 00:13:26,800
+Getting ready.
+
+170
+00:13:26,800 --> 00:13:27,800
+Different application.
+
+171
+00:13:27,800 --> 00:13:28,800
+Oh.
+
+172
+00:13:31,800 --> 00:13:33,800
+How large is the history which took?
+
+173
+00:13:33,800 --> 00:13:34,800
+Yes.
+
+174
+00:13:34,800 --> 00:13:43,800
+Uh, that history was, I believe, around 300,000 items of varying sizes. Some were very large.
+
+175
+00:13:43,800 --> 00:13:44,800
+Um, but yeah.
+
+176
+00:13:44,800 --> 00:13:47,800
+That's about the size of it.
+
+177
+00:13:47,800 --> 00:13:48,800
+Uh, message analyzers. Yes.
+
+178
+00:13:48,800 --> 00:13:49,800
+Actually, I should give you some context.
+
+179
+00:13:49,800 --> 00:14:02,800
+Uh, as a developer, it's basically those, anything that you see the request response in is probably the main thing that you'd, uh, see the message analyzer as.
+
+180
+00:14:02,800 --> 00:14:14,800
+So, as you scroll through proxy history or something, if you open up a large response, um, that's, uh, basically what's lagging is those message analyzers trying to do the tokenization and line breaks.
+
+181
+00:14:14,800 --> 00:14:15,800
+Uh, yeah.
+
+182
+00:14:15,800 --> 00:14:16,800
+Yeah.
+
+183
+00:14:16,800 --> 00:14:24,800
+Have I considered, yeah, sorry, I'll get to that one.
+
+184
+00:14:24,800 --> 00:14:29,800
+Uh, are, are there any improvements that are, uh, that I'm planning to sitemap filtering?
+
+185
+00:14:29,800 --> 00:14:32,800
+Uh, I find that it's one of the slower things these days.
+
+186
+00:14:32,800 --> 00:14:34,800
+Yeah, it definitely is, uh, quite slow.
+
+187
+00:14:34,800 --> 00:14:37,800
+Uh, we've done sort of one stage of the sitemap filtering.
+
+188
+00:14:37,800 --> 00:14:40,800
+Actually, Andrew over here, uh, was the one that did it.
+
+189
+00:14:40,800 --> 00:14:41,800
+Yeah, yeah.
+
+190
+00:14:41,800 --> 00:14:42,800
+Yeah, yeah.
+
+191
+00:14:42,800 --> 00:14:49,800
+Yeah, so, um, in, I think, two releases ago, we did a change that basically reduced the worst of the lag.
+
+192
+00:14:49,800 --> 00:14:56,800
+Um, it basically prevented it from, like, lagging the UI to an insane degree that it took hours to complete filters.
+
+193
+00:14:56,800 --> 00:15:00,800
+Um, so, at the moment, you shouldn't really get ones that take longer than minutes.
+
+194
+00:15:00,800 --> 00:15:05,800
+And we have further changes scheduled that should basically bring it in line with table, like, table filtering.
+
+195
+00:15:05,800 --> 00:15:08,800
+And remove all the, like, remaining bits.
+
+196
+00:15:08,800 --> 00:15:11,800
+Okay, yeah.
+
+197
+00:15:11,800 --> 00:15:14,800
+So, yeah, that's, that's on the roadmap as well.
+
+198
+00:15:14,800 --> 00:15:18,800
+Um, Burp and Rust is not on the roadmap, uh, at the moment.
+
+199
+00:15:18,800 --> 00:15:21,800
+Uh, it seems like a large undertaking, but I'm open to anything.
+
+200
+00:15:21,800 --> 00:15:25,800
+Uh, I'd have to get a bit more buy-in, I think.
+
+201
+00:15:25,800 --> 00:15:32,800
+Um, yeah, uh, what else is there?
+
+202
+00:15:32,800 --> 00:15:33,800
+Okay.
+
+203
+00:15:33,800 --> 00:15:35,800
+Yes, uh, a detailed blog post.
+
+204
+00:15:35,800 --> 00:15:38,800
+Actually, we are working on a performance blog post at the moment.
+
+205
+00:15:38,800 --> 00:15:42,800
+Um, it's gonna probably come out around when .7 comes out.
+
+206
+00:15:42,800 --> 00:15:44,800
+Uh, so, yeah.
+
+207
+00:15:44,800 --> 00:15:45,800
+Um, so, yeah.
+
+208
+00:15:45,800 --> 00:15:54,800
+And it's gonna be probably targeted mostly towards extension devs on, uh, what you can do to sort of improve the performance of your extensions as well.
+
+209
+00:15:54,800 --> 00:15:58,800
+Uh, what is a large response?
+
+210
+00:15:58,800 --> 00:16:01,800
+I guess, um, yeah, quite, like...
+
+211
+00:16:01,800 --> 00:16:02,800
+Normally minified JS.
+
+212
+00:16:02,800 --> 00:16:03,800
+Yeah.
+
+213
+00:16:03,800 --> 00:16:07,800
+If you get one that's got, like, a few megabytes of minified JS, that would be considered large.
+
+214
+00:16:07,800 --> 00:16:08,800
+Yeah.
+
+215
+00:16:08,800 --> 00:16:09,800
+Yeah.
+
+216
+00:16:09,800 --> 00:16:15,800
+Also, when it has to deal with stuff like minified JS, it has to do a different tokenization process.
+
+217
+00:16:15,800 --> 00:16:16,800
+It's not great.
+
+218
+00:16:16,800 --> 00:16:17,800
+Yeah.
+
+219
+00:16:17,800 --> 00:16:22,800
+It's much better now, but it was, it was difficult in the past.
+
+220
+00:16:22,800 --> 00:16:23,800
+Um, yeah.
+
+221
+00:16:23,800 --> 00:16:30,800
+So, yes, uh, swing worker thread versus virtual threads.
+
+222
+00:16:30,800 --> 00:16:34,800
+So, that's really a case-by-case basis, uh, thing.
+
+223
+00:16:34,800 --> 00:16:40,800
+Um, I can probably give you, oh, well, I, I think with performance in general, as you can
+
+224
+00:16:40,800 --> 00:16:45,800
+see from all our graphs, the first thing to do is measure, don't guess, um, and make sure
+
+225
+00:16:45,800 --> 00:16:47,800
+that you're actually seeing an improvement.
+
+226
+00:16:47,800 --> 00:16:48,800
+Uh, yeah.
+
+227
+00:16:48,800 --> 00:16:49,800
+Uh, yeah.
+
+228
+00:16:49,800 --> 00:16:58,800
+Um, so, we should avoid pretty view for large minified JS, correct?
+
+229
+00:16:58,800 --> 00:17:02,800
+Uh, no, you shouldn't need to, uh, anymore, hopefully.
+
+230
+00:17:02,800 --> 00:17:03,800
+Yeah.
+
+231
+00:17:03,800 --> 00:17:04,800
+Yeah.
+
+232
+00:17:04,800 --> 00:17:08,800
+It's like, it's about evenly as bad, because the token, a lot of the stuff that's awkward
+
+233
+00:17:08,800 --> 00:17:14,800
+goes on in both, um, which is the tokenization, tokenization for the actual syntax highlighting
+
+234
+00:17:14,800 --> 00:17:16,800
+is the kicker for it.
+
+235
+00:17:16,800 --> 00:17:21,800
+Um, but that's one of the things we've focused on improving for the next release.
+
+236
+00:17:21,800 --> 00:17:22,800
+Yeah.
+
+237
+00:17:22,800 --> 00:17:23,800
+See ya.
+
+238
+00:17:23,800 --> 00:17:30,800
+Um, so, yeah, one of the sources for slow UI I found with Hayek Berger was the syntax highlighting.
+
+239
+00:17:30,800 --> 00:17:33,800
+Not sure if you're using this verb itself.
+
+240
+00:17:33,800 --> 00:17:39,800
+Yeah, you could disable it, but we're also hoping to, uh, improve that as well.
+
+241
+00:17:39,800 --> 00:17:40,800
+So, yeah.
+
+242
+00:17:40,800 --> 00:17:45,800
+Uh, yeah, but right now we don't have it as, like, an option, I don't think, to disable.
+
+243
+00:17:45,800 --> 00:17:46,800
+We do.
+
+244
+00:17:46,800 --> 00:17:47,800
+Oh, do we?
+
+245
+00:17:47,800 --> 00:17:48,800
+We do.
+
+246
+00:17:48,800 --> 00:17:49,800
+Oh!
+
+247
+00:17:49,800 --> 00:17:50,800
+Talking about the call.
+
+248
+00:17:50,800 --> 00:17:51,800
+Okay.
+
+249
+00:17:51,800 --> 00:17:52,800
+Very cool.
+
+250
+00:17:52,800 --> 00:17:54,800
+See, this is why we need support.
+
+251
+00:17:54,800 --> 00:17:56,800
+Knows more than the devs on the options.
+
+252
+00:17:56,800 --> 00:18:26,800
+Ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha
+
+253
+00:18:26,800 --> 00:18:28,660
+There it is.
+
+254
+00:18:31,660 --> 00:18:32,060
+Yeah.
+
+255
+00:18:32,540 --> 00:18:47,980
+Yeah, no, I'm so excited for people to get these performance improvements because I feel like for the people that are running these large responses or they have like tons of repeater tabs or massive proxy histories, it's going to make a massive difference for their workflows.
+
+256
+00:18:48,660 --> 00:18:55,200
+Just being able to use Burp without having to be frustrated with any sort of like freezes on the things that we've addressed so far.
+
+257
+00:18:55,200 --> 00:19:01,780
+Yeah, just general memory usage when you've got lots of repeat types, it's just, it's reducing it so much, it's crazy.
+
+258
+00:19:04,960 --> 00:19:05,940
+Yeah, interesting.
+
+259
+00:19:09,040 --> 00:19:09,440
+Cool.
+
+260
+00:19:09,920 --> 00:19:10,320
+All right.
+
+261
+00:19:11,260 --> 00:19:12,480
+Are there any more questions?
+
+262
+00:19:12,600 --> 00:19:13,480
+Oh, yeah, someone's typing.
+
+263
+00:19:13,720 --> 00:19:14,200
+There we go.
+
+264
+00:19:25,200 --> 00:19:25,700
+Yeah.
+
+265
+00:19:31,340 --> 00:19:31,560
+Yeah.
+
+266
+00:19:31,880 --> 00:19:41,320
+On, yeah, 55k entries is, uh, yeah, it should do much quicker now, especially on some of the columns, especially we've done extra improvements on.
+
+267
+00:19:41,320 --> 00:19:48,740
+So if you had like lots of notes, um, in, in like your 55k entries, that should sort much faster now.
+
+268
+00:19:48,740 --> 00:19:49,240
+Yeah.
+
+269
+00:19:49,240 --> 00:19:49,240
+
+
+270
+00:19:49,240 --> 00:20:16,720
+Oh, and the other thing to mention about table sorting is that if you have a sort applied to a large table, um, this will sort of happen when you get items inserted.
+
+271
+00:20:16,720 --> 00:20:19,180
+So it's actually going to speed up your browsing as well.
+
+272
+00:20:21,920 --> 00:20:23,600
+Uh, sorting BAMDA columns.
+
+273
+00:20:23,940 --> 00:20:37,580
+Uh, the only thing with custom columns and BAMDAs is that before the sorting changes, it would have been, uh, kind of a pain because it actually had to calculate the entire column for the custom column BAMDAs.
+
+274
+00:20:37,580 --> 00:20:45,320
+We have sort of like a little trick where, um, the, the values of the custom column won't actually calculate until they're needed.
+
+275
+00:20:45,660 --> 00:20:52,720
+Um, so the thing is, is when you sort a column, you need every single value in that column to be sure that it's sorted.
+
+276
+00:20:52,720 --> 00:20:57,480
+So before it would have frozen the UI a bit to get through the BAMDAs.
+
+277
+00:20:57,600 --> 00:21:02,140
+Um, but now it's, uh, yeah, it's should be much quicker.
+
+278
+00:21:06,840 --> 00:21:08,420
+Especially when I have to run out of VM.
+
+279
+00:21:08,420 --> 00:21:10,980
+Yeah, no, absolutely.
+
+280
+00:21:11,220 --> 00:21:11,380
+Yeah.
+
+281
+00:21:11,500 --> 00:21:20,120
+Like for like someone running on maybe some crazy power desktop with 64 gigs of memory or something, uh, maybe it doesn't matter as much.
+
+282
+00:21:20,120 --> 00:21:25,580
+But if you're on a VM with maybe like a gig or something, this is going to help a lot, right?
+
+283
+00:21:25,580 --> 00:21:33,720
+Because when you're pushing the memory in Java, it starts, uh, doing stop the world GC and stuff and that's, uh, no fun.
+
+284
+00:21:46,460 --> 00:21:46,980
+Cool.
+
+285
+00:21:47,680 --> 00:21:48,380
+All right.
+
+286
+00:21:48,560 --> 00:21:51,600
+I think that might be probably all the questions.
+
+287
+00:21:52,100 --> 00:21:55,440
+Um, if you have any more, uh, super happy to answer them.
+
+288
+00:21:55,440 --> 00:22:08,060
+Um, or if you have any performance suggestions yourself, uh, we've put up a little post in the bugs and support, uh, forum on the discord or just, uh, contact support or, uh, raising the discord.
+
+289
+00:22:08,060 --> 00:22:16,060
+Um, we're super excited to hear any, any sort of improvements that you feel or if you have encountered any issues yourself.
+
+290
+00:22:16,060 --> 00:22:18,940
+So, yeah, thanks for coming everyone.
+
+291
+00:22:19,280 --> 00:22:21,620
+And, uh, yeah, see you later.
+
+292
+00:22:22,080 --> 00:22:22,620
+Thank you.
+
+293
+00:22:22,800 --> 00:22:23,280
+Thank you.
+

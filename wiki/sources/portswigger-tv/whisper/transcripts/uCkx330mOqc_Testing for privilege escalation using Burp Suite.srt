@@ -1,0 +1,384 @@
+1
+00:00:00,000 --> 00:00:11,760
+Hi. In this video, we'll look at how you can use Burp to test for privilege escalation.
+
+2
+00:00:11,760 --> 00:00:16,240
+When a user logs into an application, they usually only have access to the parts of the
+
+3
+00:00:16,240 --> 00:00:19,780
+application they need to perform their specific tasks.
+
+4
+00:00:19,780 --> 00:00:24,400
+If access controls are incorrectly set, a user can gain access to functionality that
+
+5
+00:00:24,400 --> 00:00:27,880
+should only be available to higher privileged users.
+
+6
+00:00:27,880 --> 00:00:32,820
+If you have credentials for both high and low privileged accounts, you can test the effectiveness
+
+7
+00:00:32,820 --> 00:00:38,820
+of an application's access controls by accessing the application using different accounts.
+
+8
+00:00:38,820 --> 00:00:44,320
+You can use Burp to send ad hoc requests to compare access, or automate the steps for sending
+
+9
+00:00:44,320 --> 00:00:47,320
+multiple requests as a different user.
+
+10
+00:00:47,320 --> 00:00:53,000
+If you'd like to follow along, you can use the lab Method-Based Access Control can be circumvented
+
+11
+00:00:53,000 --> 00:00:55,580
+from our Web Security Academy.
+
+12
+00:00:55,580 --> 00:00:59,940
+Before you start, make sure you have credentials for both a high privileged or admin account,
+
+13
+00:00:59,940 --> 00:01:02,340
+and a low privileged user.
+
+14
+00:01:02,340 --> 00:01:08,020
+Once we have this, we can use Burp to send ad hoc requests to a specific endpoint.
+
+15
+00:01:08,020 --> 00:01:14,520
+So first, log in as the administrator, visit the admin page, and log out.
+
+16
+00:01:14,520 --> 00:01:23,160
+Now, go back to the login page, and log in again as the low privileged user.
+
+17
+00:01:23,160 --> 00:01:29,280
+To test a specific endpoint, we'll head to the proxy HTTP history tab.
+
+18
+00:01:29,280 --> 00:01:34,600
+Find the admin panel request sent by the high privileged user, right click, and send it to
+
+19
+00:01:34,600 --> 00:01:36,560
+the repeater tab.
+
+20
+00:01:36,560 --> 00:01:41,800
+Before we switch over to the repeater tab, find the low privileged user's most recent request,
+
+21
+00:01:41,800 --> 00:01:44,920
+and copy the session cookie.
+
+22
+00:01:44,920 --> 00:01:48,100
+Now it's time to switch to the repeater tab.
+
+23
+00:01:48,100 --> 00:01:52,760
+We can edit the request we sent to the tab earlier, and paste in the low privileged user's
+
+24
+00:01:52,760 --> 00:01:55,920
+cookie to replace the original session cookie.
+
+25
+00:01:55,920 --> 00:01:57,320
+Click send.
+
+26
+00:01:57,320 --> 00:02:02,560
+Now, review the response to identify if privilege escalation was possible.
+
+27
+00:02:02,560 --> 00:02:07,740
+In this case, we're getting a 401 unauthorized response, so we have not been able to escalate
+
+28
+00:02:07,740 --> 00:02:09,820
+the privileges.
+
+29
+00:02:09,820 --> 00:02:13,940
+If we needed to do this for a large number of requests, this could be time consuming.
+
+30
+00:02:13,940 --> 00:02:19,480
+So we can use Burp to automate this process across all requests in the current sitemap.
+
+31
+00:02:19,480 --> 00:02:23,320
+The first step is to make sure you have mapped the application as a high privileged user.
+
+32
+00:02:23,320 --> 00:02:34,740
+If you're using the lab, make sure you visit the admin page.
+
+33
+00:02:34,740 --> 00:02:39,200
+Once you've mapped the application, log out and log back in again as the low privileged
+
+34
+00:02:39,200 --> 00:02:43,720
+user to obtain their session cookie.
+
+35
+00:02:43,720 --> 00:02:51,220
+Find this user's most recent request in the proxy HTTP history tab and copy the session cookie.
+
+36
+00:02:51,220 --> 00:02:55,060
+Now we can create a session handling rule to add the low privileged user's session cookie
+
+37
+00:02:55,060 --> 00:02:58,720
+to all requests sent from the target tool.
+
+38
+00:02:58,720 --> 00:03:05,600
+To do this, go to Settings, then to Sessions, Session Handling Rules, and click Add.
+
+39
+00:03:05,600 --> 00:03:12,220
+Go to the Scope tab, and under the Tools scope, select Target and deselect all other tools.
+
+40
+00:03:12,220 --> 00:03:19,460
+Next, under URL scope, select Use custom scope, and click Add or Paste URL to add your target
+
+41
+00:03:19,460 --> 00:03:20,980
+URL.
+
+42
+00:03:20,980 --> 00:03:25,640
+Now switch back to the Details tab to define the rule.
+
+43
+00:03:25,640 --> 00:03:33,220
+Under Rule Actions, click Add, then select Set a specific cookie or parameter value.
+
+44
+00:03:33,220 --> 00:03:39,060
+Add in the cookie name, and in value, paste in the cookie you copied from your low privileged
+
+45
+00:03:39,060 --> 00:03:42,460
+user's request.
+
+46
+00:03:42,460 --> 00:03:46,020
+Keep clicking OK to close all open dialogs.
+
+47
+00:03:46,020 --> 00:03:49,860
+The rule will be added to the list of session handling rules.
+
+48
+00:03:49,860 --> 00:03:55,540
+We can now easily re-request the entire site map as a low privileged user.
+
+49
+00:03:55,540 --> 00:04:04,120
+Go to Target, Sitemap, right click the target host, and select Compare sitemaps.
+
+50
+00:04:04,120 --> 00:04:09,480
+Select Use current sitemap, and click Next.
+
+51
+00:04:09,480 --> 00:04:12,700
+Select Use only selected branches.
+
+52
+00:04:12,700 --> 00:04:18,720
+And then choose Select request map 1 again in a different session context.
+
+53
+00:04:18,720 --> 00:04:25,160
+We can then keep the default settings for each of the remaining steps.
+
+54
+00:04:25,160 --> 00:04:27,020
+Review the two sitemaps.
+
+55
+00:04:27,020 --> 00:04:29,700
+Any differences are highlighted.
+
+56
+00:04:29,700 --> 00:04:34,220
+Pay close attention to the admin panel requests.
+
+57
+00:04:34,220 --> 00:04:38,640
+Notice that the high privileged user was able to access the admin panel, but the low privileged
+
+58
+00:04:38,640 --> 00:04:43,880
+user received a 401 unauthorized, confirming that this endpoint is not vulnerable in this
+
+59
+00:04:43,880 --> 00:04:45,600
+case.
+
+60
+00:04:45,600 --> 00:04:46,600
+There are alternative methods.
+
+61
+00:04:46,600 --> 00:04:53,420
+For example, you can also use the authorize extension from the BAP store to compare requests.
+
+62
+00:04:53,420 --> 00:04:57,600
+This lets you browse as a high privileged user, and mirrors the requests as a low privileged
+
+63
+00:04:57,600 --> 00:04:57,600
+
+
+64
+00:04:57,600 --> 00:04:58,600
+user.
+
+65
+00:04:58,600 --> 00:04:58,600
+
+
+66
+00:04:58,600 --> 00:04:58,600
+
+
+67
+00:04:58,600 --> 00:04:58,600
+
+
+68
+00:04:58,600 --> 00:04:58,600
+
+
+69
+00:04:58,600 --> 00:04:59,600
+Let's see.
+
+70
+00:04:59,600 --> 00:04:59,600
+
+
+71
+00:04:59,600 --> 00:05:00,600
+Let's see.
+
+72
+00:05:00,600 --> 00:05:00,600
+
+
+73
+00:05:00,600 --> 00:05:01,600
+Let's see.
+
+74
+00:05:01,600 --> 00:05:02,600
+Let's see.
+
+75
+00:05:02,600 --> 00:05:03,600
+Let's see.
+
+76
+00:05:03,600 --> 00:05:04,600
+Let's see.
+
+77
+00:05:04,600 --> 00:05:05,600
+Let's see.
+
+78
+00:05:05,600 --> 00:05:06,600
+Let's see.
+
+79
+00:05:06,600 --> 00:05:07,600
+Let's see.
+
+80
+00:05:07,600 --> 00:05:08,600
+Let's see.
+
+81
+00:05:08,600 --> 00:05:09,600
+Let's see.
+
+82
+00:05:09,600 --> 00:05:10,600
+Let's see.
+
+83
+00:05:10,600 --> 00:05:11,600
+Let's see.
+
+84
+00:05:11,600 --> 00:05:12,600
+Let's see.
+
+85
+00:05:12,600 --> 00:05:13,600
+Let's see.
+
+86
+00:05:13,600 --> 00:05:14,600
+Let's see.
+
+87
+00:05:14,600 --> 00:05:15,600
+Let's see.
+
+88
+00:05:15,600 --> 00:05:16,600
+Let's see.
+
+89
+00:05:16,600 --> 00:05:17,600
+Let's see.
+
+90
+00:05:17,600 --> 00:05:18,600
+Let's see.
+
+91
+00:05:18,600 --> 00:05:19,600
+Let's see.
+
+92
+00:05:19,600 --> 00:05:20,600
+Let's see.
+
+93
+00:05:20,600 --> 00:05:21,600
+Let's see.
+
+94
+00:05:21,600 --> 00:05:22,600
+Let's see.
+
+95
+00:05:22,600 --> 00:05:23,600
+Let's see.
+
+96
+00:05:23,600 --> 00:05:24,600
+Let's see.
+

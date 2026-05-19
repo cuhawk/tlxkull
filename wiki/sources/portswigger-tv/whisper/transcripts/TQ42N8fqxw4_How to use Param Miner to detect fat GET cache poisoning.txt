@@ -1,0 +1,36 @@
+Hey there, in this video, I'm going to show you how to use ParamWiner to find a fat get
+cache poisoning vulnerability, as documented in my recent web cache entanglement research.
+So for our target, I'm using an application I built myself. So it's very simple. But the
+reason it's vulnerable is because I'm using the rack cache module. At the time I'm recording this,
+this is currently a zero date. So anyone using rack cache is vulnerable. So I've just loaded this
+homepage, it's triggered a few requests, which we can see and I'm going to select everything in scope,
+right click, go to bulk scan and choose fat get which is going to tell ParamWiner to scan for fat
+get poisoning. We get loads of options just stick with the default ones. If you can't see the confirm
+button because your screen is too small like mine, then just press Ctrl Enter. So if you check over on
+the extender tab, you'll see we've got some information telling us this attack has been launched
+and completed. And if you're using the community version of Burp rather than Pro, then any findings
+will appear over here as well. But because we're using Pro, we should instead find this find the
+findings appear on our dashboard, such as over here. So if we take a look at this, we'll see it's found
+that it's taken this callback parameter from the query string and it's put it in the body of the
+request and it's stuck a canary on the end of the base value. And this has been reflected back in the
+response. So we'll see we get a hit for it. And then it's recent the request as is but without our
+canary in the request. And the response still contains our canary showing that we've poisoned the cache
+on this page. You can see it's done so using a cache buster. So it probably hasn't affected any real
+users, but we've demonstrated that the vulnerability is there. So now let's just have a go at seeing if
+we can replicate this issue and exploit a real web browser. So we're going to take the request
+request and send it to the repeater. And if you look in the proxy, you'll see the URL that our victim's
+going to load is the one referenced on the homepage over here. So that's what we want to poison
+this URL. So I'm going to grab that.
+That's our target. And we're going to change the callback to just to alert. And hopefully
+that will do the job. Okay, you can see our alert thing hasn't come back, it just says load. And
+that's because we've got a cache hit. As you can kind of tell from the headers here. So I'm going to send a
+purge request, which is going to helpfully delete this cache entry. And now you can see we do have
+alert coming back. If we change it to get, we've still got alert coming back and we have a cache hit.
+And if we take this and get rid of the body, so now we're sending what a browser would send,
+we still get alert coming back. And so finally, if I take that URL, copy it,
+paste it into the browser. No, I'm sorry, if I load the homepage in the browser,
+the browser will fetch that URL, get poisoned and alert will pop up, hopefully.
+Oh, dear. So why hasn't this worked? Well, it's probably because
+no, I'm not sure. Why hasn't this worked? Let's have a look at what the browser sent. Okay, it's because
+the browser has cached this JavaScript file itself in its client side cache. So if I had a force reload
+the exploit files, fantastic.

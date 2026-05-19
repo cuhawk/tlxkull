@@ -165,6 +165,7 @@ def trace_to_sink(
                     "terminal_tag":       p.tag,
                     "depth":              p.depth,
                     "sanitisers_in_path": p.sanitisers_in_path,
+                    "edge_kinds":         list(p.edge_kinds or []),
                 }
                 for p in items
             ],

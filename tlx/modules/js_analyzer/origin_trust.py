@@ -35,6 +35,7 @@ __all__ = [
     "categorize_handler",
     "ingest",
     "trust_score",
+    "lookup_chain_provenance",
     "ValidationKind",
     "HandlerCategory",
 ]
@@ -224,6 +225,48 @@ _TRUST_MULTIPLIER = {
     "strict":  0.20,
     "send":    1.00,    # send-sites don't gate inbound trust
 }
+
+
+def lookup_chain_provenance(
+    conn: sqlite3.Connection,
+    qnames: Iterable[str],
+) -> list[dict | None]:
+    """Return per-hop origin-provenance metadata for ``qnames``.
+
+    For each qname, returns either ``None`` (no provenance recorded) or
+    a dict ``{node_id, origin_label, channel, validation_kind,
+    bypass_classes}``. Use this in reporter.extract_findings to attach
+    the origin boundary to the chain JSON so the LLM triage prompt
+    can see it (origin labels were computed but stripped before LLM
+    serialization — fixes the audit's "load-bearing FN" item).
+
+    Cheap: one IN-clause SELECT, hashed lookup. Tolerates missing
+    ``node_provenance`` table (returns Nones).
+    """
+    qnames = list(qnames)
+    if not qnames:
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT n.qualified_name, p.node_id, p.origin_label, p.channel, "
+            "       p.validation_kind, p.bypass_classes "
+            "FROM nodes n "
+            "JOIN node_provenance p ON p.node_id = n.id "
+            f"WHERE n.qualified_name IN ({','.join('?' * len(qnames))})",
+            qnames,
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return [None] * len(qnames)
+    by_qname: dict[str, dict] = {}
+    for qn, nid, orig, ch, vk, bp in rows:
+        by_qname[qn] = {
+            "node_id": nid,
+            "origin_label": orig,
+            "channel": ch,
+            "validation_kind": vk,
+            "bypass_classes": (bp or "").split(",") if bp else [],
+        }
+    return [by_qname.get(q) for q in qnames]
 
 
 def trust_score(

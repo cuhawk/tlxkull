@@ -1,0 +1,28 @@
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+stored input detection in Burp Scanner. So stored input detection is the process of finding places
+in an application where we can submit data that will then be stored by the application,
+and then linking that to other places in the application where we can retrieve that data.
+This is different from something like reflected input detection, which is just finding data which
+is reflected in the immediate response to a request. So stored data detection is really
+important because stored or second order vulnerabilities tend to have on average a
+lot higher severity than their reflected or first order counterparts. This is because an attacker can
+just plant payloads in the application and wait for victims to find them rather than having to rely on
+a separate delivery mechanism. So how does Burp Scanner do stored input detection? If we hop into Burp here
+I've got a scan that I've already run so that we don't have to sit and watch it. If I go ahead and
+open up the view details tab and head over to the audit items we can see here that there are multiple
+active phases. So in the first phase we do all of our first order checks. In the second phase we
+generate unique payloads and send them to every insertion point and every request. In the third
+phase we send every request again and look for those unique payloads from phase two in all of the responses.
+In phase four we do all of our second order checks. So in a lot of cases these are functionally identical to
+our first order checks. We just hide the fact that there's more going on between the request and response
+to the scan check that's doing the scan checking. In the fifth phase we send all of our
+collaborative collaborator based blind XSS payloads to every insertion point. So phases two and three are what make of our
+stored input detection and phase four uses these stored data paths. There is one caveat or limitation
+to our stored input detection currently and that's multi-step processes. So this would be something
+like an order form that's collecting information across multiple pages and then reflecting all of
+your choices back at the end. Because currently we're linking single requests to single responses
+and we're not sending all of the requests in that in that process, if we just do step one or two in
+isolation and then look at the final step, it's probably going to say something like you've not
+done everything required and it's not going to reflect our data back to us. This is something
+that's been on our backlog for a very long time. We just haven't come up with a way of doing it that
+isn't kind of combinatorial explosive on the number of requests that we'd have to send. So we're working on it and we'll get there.

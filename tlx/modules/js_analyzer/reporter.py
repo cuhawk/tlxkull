@@ -60,6 +60,154 @@ def _collect_sink_meta(sinks: list[dict]) -> dict[str, dict]:
     return {s["qname"]: s for s in sinks}
 
 
+# Patterns that strip variable suffixes injected by bundlers / minifiers
+# so two chains that differ only in those suffixes collapse to one.
+_MIN_SUFFIX_RE = re.compile(
+    r"(?:\$\d+|__\d+(?=$|[.:])|_0x[a-f0-9]{2,}|@\d+)$"
+)
+
+
+# Per-sanitizer-taxonomy effective-confidence floor used by the chain-
+# probability aggregator when ``node_sanitizers`` rows do not carry an
+# explicit per-instance confidence (the current pathfind layer attaches
+# none). Treating every detected sanitizer as P=1.0 zeros out P(chain)
+# via ``Π (1 − P_sanitizer)`` and silently filters every chain that
+# touches one — including the true-positive bypass cases. These
+# values express the *nominal* effectiveness before version / config
+# evidence; sanitizer_registry.evaluate downgrades further when
+# library_versions.json or a config-flag heuristic triggers.
+_SANITIZER_NOMINAL_CONFIDENCE: dict[str, float] = {
+    "sanitizer_dompurify":              0.85,
+    "sanitizer_dompurify_namespaced":   0.55,  # generic ".sanitize(" — high FP
+    "sanitizer_xss_lib":                0.80,
+    "sanitizer_sanitize_html":          0.80,
+    "sanitizer_lodash_escape":          0.70,
+    "sanitizer_he_encode":              0.85,
+    "sanitizer_encodeURIComponent":     0.55,  # URI-context only
+    "sanitizer_Number_coerce":          0.95,
+    "sanitizer_parseInt_parseFloat":    0.90,
+    "sanitizer_textContent_assign":     0.95,
+    "sanitizer_createTextNode":         0.95,
+    "sanitizer_event_origin_check":     0.40,  # see origin_trust for refinement
+    "sanitizer_trustedtypes_createHTML": 0.50,  # depends on policy body
+}
+_SANITIZER_DEFAULT_CONFIDENCE = 0.65
+
+
+def _resolve_sanitizer_confidence(entry: dict) -> float:
+    """Return effective sanitizer confidence for a sanitisers_in_path entry.
+
+    Prefers an explicit per-instance value; otherwise falls back to the
+    per-taxonomy nominal table; finally to a partial default. Never
+    returns 1.0 unless the caller explicitly stored it — this keeps
+    sanitizer detection from becoming a binary chain-killer.
+    """
+    val = entry.get("confidence")
+    if isinstance(val, (int, float)):
+        return max(0.0, min(1.0, float(val)))
+    tx = entry.get("taxonomy_id") or ""
+    if tx in _SANITIZER_NOMINAL_CONFIDENCE:
+        return _SANITIZER_NOMINAL_CONFIDENCE[tx]
+    return _SANITIZER_DEFAULT_CONFIDENCE
+
+
+# Bypass-corpus library ids do not map 1:1 to sanitizer taxonomy ids
+# (e.g. ``sanitizer_dompurify_namespaced`` is still DOMPurify; the
+# bypass corpus only carries ``library="dompurify"``). The previous
+# ``tx[len("sanitizer_"):].replace("_", "-")`` heuristic failed for the
+# namespaced and xss_lib ids, dropping their bypass entries from the
+# LLM prompt. This table is the single source of truth.
+_TAXONOMY_TO_BYPASS_LIB: dict[str, str] = {
+    "sanitizer_dompurify":              "dompurify",
+    "sanitizer_dompurify_namespaced":   "dompurify",
+    "sanitizer_xss_lib":                "xss",
+    "sanitizer_sanitize_html":          "sanitize-html",
+}
+
+
+def _canonical_qname(qname: str) -> str:
+    """Strip bundler/minifier suffixes from each ``::``-segment of a qname.
+
+    Examples::
+
+        "app.js::renderHTML$1"       → "app.js::renderHTML"
+        "chunk.js::Renderer.foo_0x9" → "chunk.js::Renderer.foo"
+        "app.js::__0__"              → "app.js::"
+
+    Pure / stateless. Reversible only if no information was stripped.
+    """
+    if not qname:
+        return qname
+    parts = qname.split("::")
+    out_parts: list[str] = []
+    for seg in parts:
+        if not seg:
+            out_parts.append(seg)
+            continue
+        # Apply at the trailing identifier of each dotted name only.
+        dotted = seg.split(".")
+        dotted = [_MIN_SUFFIX_RE.sub("", piece) for piece in dotted]
+        out_parts.append(".".join(dotted))
+    return "::".join(out_parts)
+
+
+def _chain_canonical_key(chain: dict) -> tuple:
+    """Return a hashable canonical signature for ``chain``.
+
+    Chains that share (source taxonomy + file + line, sink taxonomy +
+    file + line, canonical path) collapse together. Length is part of
+    the key so a 2-hop chain and a 5-hop chain are kept distinct.
+    """
+    src = chain.get("source") or {}
+    snk = chain.get("sink") or {}
+    path = chain.get("path") or []
+    canonical_path = tuple(_canonical_qname(q) for q in path)
+    return (
+        src.get("taxonomy_id") or "",
+        src.get("file") or "",
+        int(src.get("line") or 0),
+        snk.get("taxonomy_id") or "",
+        snk.get("file") or "",
+        int(snk.get("line") or 0),
+        canonical_path,
+    )
+
+
+def _chain_confidence_score(chain: dict) -> float:
+    cc = chain.get("confidence")
+    if isinstance(cc, dict):
+        for k in ("p_calibrated", "p_raw"):
+            v = cc.get(k)
+            if isinstance(v, (int, float)) and v is not None:
+                return float(v)
+    return 0.0
+
+
+def _dedup_chains(chains: list[dict]) -> list[dict]:
+    """Collapse canonically-equivalent chains, retaining the highest
+    confidence representative. Records the dropped chain ids in the
+    surviving chain's ``duplicates`` list for traceability.
+
+    Returns a new list ordered by the original chain id of each
+    surviving representative.
+    """
+    by_key: dict[tuple, dict] = {}
+    for c in chains:
+        key = _chain_canonical_key(c)
+        kept = by_key.get(key)
+        if kept is None:
+            by_key[key] = c
+            continue
+        if _chain_confidence_score(c) > _chain_confidence_score(kept):
+            c.setdefault("duplicates", []).extend(kept.get("duplicates", []))
+            c["duplicates"].append(kept.get("id"))
+            by_key[key] = c
+        else:
+            kept.setdefault("duplicates", []).extend(c.get("duplicates", []))
+            kept["duplicates"].append(c.get("id"))
+    return sorted(by_key.values(), key=lambda c: c.get("id", 0))
+
+
 def _extract_qnames_from_gemini_reply(reply: str) -> set[str]:
     """Best-effort extraction of qnames mentioned in Gemini's text reply.
 
@@ -335,6 +483,21 @@ def extract_findings(
     chains: list[dict] = []
     chain_id = 0
 
+    try:
+        from modules.js_analyzer.chain_confidence import compute_partial
+    except Exception:  # pragma: no cover - import guard
+        compute_partial = None  # type: ignore[assignment]
+
+    try:
+        from modules.js_analyzer.origin_trust import (
+            lookup_chain_provenance, trust_score,
+        )
+    except Exception:  # pragma: no cover - import guard
+        lookup_chain_provenance = None  # type: ignore[assignment]
+        trust_score = None  # type: ignore[assignment]
+
+    cg_conn = getattr(callgraph, "conn", None)
+
     for src_qname, src_meta in sources_by_qname.items():
         result = trace_to_sink(from_qname=src_qname, severity=severity)
         for path_obj in result.get("paths", []):
@@ -345,8 +508,67 @@ def extract_findings(
             sink_qname = nodes[-1]
             sink_meta  = sinks_by_qname.get(sink_qname, {})
 
+            edge_kinds_raw = path_obj.get("edge_kinds") or []
+            edge_kinds = [
+                (str(rk), int(c) if c is not None else 1)
+                for rk, c in edge_kinds_raw
+            ]
+            confidence_dict = None
+            if compute_partial is not None:
+                try:
+                    sanitizer_confidences = [
+                        _resolve_sanitizer_confidence(s)
+                        for s in path_obj.get("sanitisers_in_path", []) or []
+                        if isinstance(s, dict)
+                    ]
+                    cc = compute_partial(
+                        source_taxonomy_id=src_meta.get("taxonomy_id", ""),
+                        source_tag_confidence=float(
+                            src_meta.get("confidence", 1.0) or 1.0
+                        ),
+                        edge_kinds=edge_kinds,
+                        sanitizer_confidences=sanitizer_confidences,
+                    )
+                    confidence_dict = cc.to_dict()
+                except Exception as exc:
+                    logger.warning(
+                        "chain_confidence_compute_failed",
+                        chain_id=chain_id + 1,
+                        error=str(exc),
+                    )
+
+            origin_provenance = None
+            origin_multiplier = None
+            origin_boundary = None
+            if lookup_chain_provenance is not None and cg_conn is not None:
+                try:
+                    per_hop = lookup_chain_provenance(cg_conn, nodes)
+                    if any(per_hop):
+                        origin_provenance = [
+                            {"qname": q, **(p or {})}
+                            for q, p in zip(nodes, per_hop)
+                        ]
+                        for p in per_hop:
+                            if p and p.get("validation_kind"):
+                                origin_boundary = {
+                                    "validation_kind": p["validation_kind"],
+                                    "origin_label": p.get("origin_label"),
+                                    "bypass_classes": p.get("bypass_classes") or [],
+                                }
+                                break
+                        if trust_score is not None and per_hop:
+                            origin_multiplier = trust_score(
+                                [p for p in per_hop if p] or [],
+                            )
+                except Exception as exc:
+                    logger.warning(
+                        "origin_provenance_lookup_failed",
+                        chain_id=chain_id + 1,
+                        error=str(exc),
+                    )
+
             chain_id += 1
-            chains.append({
+            chain_entry = {
                 "id":     chain_id,
                 "source": {
                     "qname":       src_qname,
@@ -363,7 +585,17 @@ def extract_findings(
                 "depth": path_obj.get("depth", len(nodes) - 1),
                 "path":  nodes,
                 "sanitisers_in_path": path_obj.get("sanitisers_in_path", []),
-            })
+                "edge_kinds": edge_kinds,
+            }
+            if confidence_dict is not None:
+                chain_entry["confidence"] = confidence_dict
+            if origin_boundary is not None:
+                chain_entry["origin_boundary"] = origin_boundary
+            if origin_provenance is not None:
+                chain_entry["origin_provenance"] = origin_provenance
+            if origin_multiplier is not None:
+                chain_entry["origin_trust_multiplier"] = origin_multiplier
+            chains.append(chain_entry)
 
     # ── 2b. Merge prototype-pollution gadget chains ──────────────────────
     pp_result = find_pp_chains_tool(max_depth=8)
@@ -379,6 +611,13 @@ def extract_findings(
 
     if not chains:
         return None
+
+    # ── 2c. Canonicalize + dedup ────────────────────────────────────────
+    # Equivalent chains differing only in minified local-name suffixes
+    # (e.g. ``foo$1``, ``__0xabc``) were previously emitted as distinct
+    # rows, inflating audit volume. Canonicalize each path qname and
+    # collapse duplicates, keeping the highest-confidence representative.
+    chains = _dedup_chains(chains)
 
     # ── 3. Fetch snippets for every unique qname ─────────────────────────
     all_qnames: set[str] = set()
@@ -466,7 +705,93 @@ def extract_findings(
             lowest=round(chains[-1]["score"], 1),
         )
 
-    return build_payload(target_folder, index_stats, chains, snippets)
+    return build_payload(
+        target_folder,
+        index_stats,
+        chains,
+        snippets,
+        browser_context=browser_context,
+    )
+
+
+def _browser_context_digest(bctx: Any) -> dict | None:
+    """Compact serialization of BrowserContext for LLM injection.
+
+    Drops verbose evidence + raw HTML to keep token cost low.
+    """
+    if bctx is None:
+        return None
+    csp = getattr(bctx, "csp", None)
+    tt = getattr(bctx, "trusted_types", None)
+    rd = getattr(bctx, "rendering", None)
+    sandbox_iframes = getattr(bctx, "sandbox_iframes", []) or []
+    return {
+        "csp": {
+            "present": bool(csp and csp.raw),
+            "report_only": bool(csp and csp.report_only),
+            "script_src": list(csp.script_src) if csp else [],
+            "unsafe_inline_allowed": bool(csp and csp.unsafe_inline_allowed),
+            "unsafe_eval_allowed": bool(csp and csp.unsafe_eval_allowed),
+            "strict_dynamic": bool(csp and csp.strict_dynamic),
+            "nonce_required": bool(csp and csp.nonce_required),
+            "trusted_types_required": bool(csp and csp.trusted_types_required),
+            "source": csp.source if csp else "",
+            "confidence": csp.confidence if csp else 0.0,
+        } if csp else None,
+        "trusted_types": {
+            "enforced": bool(tt and tt.enforced),
+            "policies": list(tt.policies) if tt else [],
+            "has_default_policy": bool(tt and tt.has_default_policy),
+        } if tt else None,
+        "rendering": {
+            "framework": rd.framework if rd else "",
+            "model": rd.model if rd else "",
+            "hydration": bool(rd and rd.hydration),
+        } if rd else None,
+        "sandbox_iframe_count": len(sandbox_iframes),
+    }
+
+
+def _bypass_corpus_for_chains(chains: list[dict]) -> list[dict]:
+    """Return the bypass-corpus entries relevant to libraries that
+    actually appear in this target's chains.
+
+    Closes the "bypass corpus exists but never reaches the LLM" gap.
+    Each entry is a small dict with library, version_range, payload,
+    notes, reference. Token cost ≈ 200B per entry; capped at 16 entries.
+    """
+    try:
+        from modules.js_analyzer.sanitizer_bypass_corpus import ALL_BYPASSES
+    except Exception:
+        return []
+    libs_seen: set[str] = set()
+    for c in chains:
+        for s in c.get("sanitisers_in_path") or []:
+            if not isinstance(s, dict):
+                continue
+            tx = s.get("taxonomy_id") or ""
+            mapped = _TAXONOMY_TO_BYPASS_LIB.get(tx)
+            if mapped:
+                libs_seen.add(mapped)
+                continue
+            tx_l = tx.lower()
+            if tx_l.startswith("sanitizer_"):
+                libs_seen.add(tx_l[len("sanitizer_"):].replace("_", "-"))
+    if not libs_seen:
+        return []
+    out: list[dict] = []
+    for b in ALL_BYPASSES:
+        if b.library in libs_seen:
+            out.append({
+                "library": b.library,
+                "version_range": b.version_range,
+                "payload": b.payload,
+                "notes": b.notes,
+                "reference": b.reference,
+            })
+            if len(out) >= 16:
+                break
+    return out
 
 
 def build_payload(
@@ -474,17 +799,29 @@ def build_payload(
     index_stats: dict,
     chains: list[dict],
     snippets: dict[str, str],
+    *,
+    browser_context: Any = None,
 ) -> dict:
     """Construct the data-contract payload (pure, no side-effects).
 
     The payload shape matches CLAUDE.md §Data contract (Gemini → Claude).
+    ``browser_context`` and ``bypass_corpus`` are injected so the LLM
+    triage prompt sees CSP / Trusted-Types posture and known sanitizer
+    bypasses for libraries present in the chains.
     """
-    return {
+    payload: dict = {
         "target_folder": target_folder,
         "index_stats":   index_stats,
         "chains":        chains,
         "snippets":      snippets,
     }
+    bctx_digest = _browser_context_digest(browser_context)
+    if bctx_digest is not None:
+        payload["browser_context"] = bctx_digest
+    bypasses = _bypass_corpus_for_chains(chains)
+    if bypasses:
+        payload["bypass_corpus"] = bypasses
+    return payload
 
 
 async def handoff_to_claude_async(findings: dict, kernel: Any) -> str:

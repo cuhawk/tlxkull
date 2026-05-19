@@ -1,0 +1,65 @@
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+automatic session handling in Burp Scanner. Now this is something I've talked about previously
+regarding the crawl, but today I'm going to focus a little bit more on how the audit
+automatically maintains session. So let's dive straight in with an example app that shows why
+this is so important. So I've just created a little application here that has two pages.
+First we're given a page with a greet me link and if we click on that we're given a page with some
+pretty obvious reflection. However through some pretty basic cookie usage this page will only
+allow five visits. So just keep refreshing it before eventually it says no. It gives me a 400 and says
+please stop. So that means that if we go and actively scan this page, so if we do an active scan,
+we're not going to find the reflection because when we start sending payloads to the page,
+we've already used up our session for that page and we start getting 400s. Now if you're getting
+400s, if you're not hitting the application proper, your payloads aren't reaching the attack surface and
+you're unlikely to find any bugs and this is why session handling is so important. Now we could set
+up a manual session handling rule here or what we could do is we could crawl and audit our application.
+So if I open this up and I don't want HTTPS, I just want HTTP and I go to localhost,
+8000 and I scan that. So what's going to happen here is Burp Crawler is going to explore the
+application and it's going to find our vulnerable page and not only is it going to find it, it's
+also going to figure out what steps it has to take to get back there again should it no longer be in
+session. This information will be handed off to the audit and the audit will then try to find the
+shortest viable path that still gets us there. So in this case, nine times out of ten or I guess
+five times out of six, actually just hitting the same page over and again will work and it will
+figure out, the audit will figure out that for the most part it could just keep sending the base
+request and sending payloads in there. However, as those payload containing requests start to get
+versions of the page that doesn't recognize, that it doesn't see as matching how it originally saw the
+response when it was crawling, what it will do is it will stop and say, hmm, am I out of session?
+The way it works this out is we go back to sending an unmodified base request. We want to work out
+whether it's the payload that's causing an unexpected response or whether our session has died. So we will
+send an unmodified base request. We will check to see if we're still in session. If we are, we'll go,
+okay, well it's maybe just that our payloads are causing the application to hand us back different
+responses, which is totally expected. If we're instead out of session, what we'll do is we'll go
+back to the full path to get back to that location and we will re-walk it so that we go and get a
+brand new session. After that we can go back to doing our simple path and keep sending our base
+requests, keep putting payloads in it until it happens again. And in this way Burp Scanner will
+continually make sure that all of the payloads it sends are in session. If it ever works out that it
+has lost session, it will roll back to the last time it saw a successful session, last time
+it saw a payload being sent and getting a correct response and it will rerun any scan checks that
+have been seeing unsuccessful responses since then, just to make sure that we're getting maximum
+coverage. So as we can see here from our crawler and audit, we found our reflection and we found
+the cross-site scripting that goes along with it. Now this was a topic that was requested a lot by the
+community because it's not something that we talk about a great deal. If you have any more
+suggestions for things you'd like me to cover, just let us know.
+Thank you.
+
+
+
+
+
+Thank you.
+
+Thank you.
+
+Thank you.
+
+
+Thank you.
+
+Thank you.
+
+
+Thank you.
+Thank you.
+
+Thank you.
+
+Thank you.

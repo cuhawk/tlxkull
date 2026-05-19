@@ -2,7 +2,7 @@
 title: Gareth Heyes
 slug: gareth-heyes
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [garethheyes, hackvertor]
 role: researcher
 primary_focus: client-side
@@ -69,3 +69,13 @@ inbound: []
 - **Book — *JavaScript for Hackers*.** Self-published via Leanpub (2022, expanded 2024). Covers fuzzing, DOM hacking, SOP bypass, prototype pollution, and his canonical XSS playbook. The closest thing to a textbook for our `techniques/dom-xss/` folder.
 - **Cadence.** Roughly 1-2 major PortSwigger research posts per year, plus continuous additions to the XSS Cheat Sheet and Hackvertor tag library. Each major paper ships with a Burp Scanner / DOM Invader check.
 - **Recurring themes to watch for in his posts:** parser differentials (mail, URL, HTML), CSS as a Turing-complete exfil channel, restricted-character JS, framework sandbox internals.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/portswigger-research/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

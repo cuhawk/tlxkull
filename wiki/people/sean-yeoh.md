@@ -2,7 +2,7 @@
 title: Sean Yeoh
 slug: sean-yeoh
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [seanyeoh, sean-yeoh]
 role: vendor-eng
 primary_focus: recon
@@ -125,3 +125,13 @@ Adam Kues, and Dylan Pindur — see
   acquisition, Sean's work now feeds Searchlight's CTEM platform;
   Assetnote's Brisbane team joined Searchlight intact. Research
   output continues under the Assetnote brand.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/assetnote/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

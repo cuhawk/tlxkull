@@ -1,0 +1,905 @@
+Hello, I'm the Director of Research at Portswiga, the makers of Burbsweet, and I'm here to share
+with you today some research that I've done in the last six months on new approaches to
+webcash poisoning.
+So welcome to Webcash Entanglement, novel pathways to poisoning.
+Have you ever thought that you understood something and then realised that what you understand
+is actually only 1% of the total?
+Or have you ever found a vulnerability that wasn't quite exploitable, an exploit chain with
+a missing link?
+During this session, I'm going to share with you advanced techniques to expose some seriously
+esoteric cash behaviours and weave them into high impact exploit chains to turn junk vulnerabilities
+into criticals.
+I used to think that I understood most of what there is to know about how caches work and
+how to poison them, until I stumbled on a small information leak that made me realise just
+how little I actually knew.
+I found that on any Akamai system, if you send a particular pragma value, then the response
+contains the cache key that was generated from your request.
+And actually, it doesn't just contain one cache key, it actually contains two that don't quite
+match.
+And if you add an extra pragma value, you get a third cache key.
+But that's okay, right?
+I'm sure there's a reasonable explanation.
+We just need to identify which one of these keys is actually correct.
+Is it the humble cache key?
+Is it the extended cache key for internal use only?
+Or is it the true cache key?
+Well, after extensive research, I can tell you that the answer is none of them.
+Not one of these keys is actually entirely correct.
+But if we assume that there's an element of truth in these values, then they still leave
+us with certain important questions.
+Like where did the parameter in my request go?
+Why is it not in any of the keys?
+And where did the Akamai transform parameter come from?
+Because that's not in my request, but it is in the keys.
+But why is it in some of the keys, but not in other keys?
+What's this whole double underscore thing about?
+That looks a bit shifty to me.
+And finally, are other caching systems this quirky?
+Every one of these questions led me to an exploitable scenario that I'm going to share with
+you in this presentation.
+First, I'm going to recap the basic cache poisoning concept as introduced in my talk,
+Practical Webcache Poisoning two years ago.
+And then I'm going to show how this research diverges from it.
+Then I'll have a look at two broad approaches to novel cache poisoning exploits.
+Then I'll talk about the tooling I'm releasing to help find these issues, talk about how to
+prevent these issues and wrap up with the conclusion.
+So, first, a very quick recap of caching.
+This is going to be fast.
+If you find it's too fast, then please just check out the presentation I did two years ago,
+Practical Webcache Poisoning.
+It has a slow explanation of these concepts.
+So, caches work by saving copies of web pages in order to reduce load on the backend system.
+And web cache poisoning is simply where you trick a cache into saving a harmful page and
+serving it up to other users.
+How do you do that?
+Well, caches map requests to responses using something called a cache key, which is a value
+that's generated from selected components of the request.
+Normally, the host header and the request line and maybe one or two other headers.
+So the key to basic cache poisoning is simply to edit a value that's not in the cache key.
+For example, any of the values highlighted in orange in this request.
+And if you can use those to coax the application into giving a harmful response, then the cache
+will save that and it will serve it up to other users.
+So that's basic cache poisoning.
+But this approach only goes so far because most websites take most of their input from
+the path and the query stream, which are generally included in the cache key and thereby can't
+be used for cache poisoning.
+Or so I thought.
+Actually they can't be used for cache poisoning unless someone decides that analytics parameters
+are hurting performance.
+So they need to rewrite the query string before putting it in the key.
+Or the cache decides it's going to normalize keys because, you know, normalization is great.
+Nothing ever goes wrong there.
+Or cache key components are stored next to each other as unescaped strings.
+Or there simply is no cache key.
+Any of these is going to cause problems.
+So how do we find these problems?
+Well, because the way these problems arise is through implementation and configuration issues,
+they're different on every single target caching site.
+So the first step is to understand how the particular site that we're trying to exploit actually works.
+And to achieve that, what we need to do is to pick a cache oracle.
+This is a page or endpoint on the target site that we're going to ask a series of questions
+to in order to understand how the cache works.
+This page needs to be cacheable and it needs to have some way of us knowing whether we've
+got a cache hit or a cache miss.
+That could be something really obvious, like a response header that tells us that we had
+a hit.
+Or it could be inferred based on values being reflected back or dynamic content.
+Or it could be based on inference through the length of time that the server takes to respond
+to our request.
+Because if a response comes from a cache, typically it will come back much faster.
+And in theory, if a page has those qualities, that is good enough to be your cache oracle.
+But it will make our life a lot easier if this page also reflects the whole URL and reflects
+at least one specific parameter.
+So having chosen our cache oracle, the next step is to get any bonus information that we
+can grab hold of.
+Like for example, you might be able to find the source code for the cache, some documentation
+that tells you what the cache key is, or you might find some pragma headers like those
+ones we saw on Akamai that just make them tell you the cache key.
+And if you haven't gathered any extra info, the next step is to ask a series of questions
+to this oracle to understand how the cache is working.
+You ask a question to an oracle by issuing two requests to the cache which are very similar
+and seeing if the second one gets a cache hit with the first one.
+So that tells us whether there are two requests were issued with the same key or not.
+The things you want to be looking out for are things like are they transforming my request
+in any way to make this key?
+Maybe they're doing a URL decode.
+Or maybe they're escaping certain characters.
+Maybe they're removing particular segments.
+Or maybe they're doing some kind of URL parsing in order to make those transformations.
+After sending a whole bunch of questions and hopefully finding a few interesting quirks in
+how the cache key is generated.
+The next step to building a high severity exploit is to take that behavior and then find a gadget
+on the target site to combine it with.
+The gadget is the general term I'm going to use for something that can be combined with
+cache poisoning.
+So it could be an existing vulnerability like reflected excess where you take that and you
+combine it with cache poisoning and it becomes much more serious.
+Or it could be something that's actually completely harmless by itself but becomes quite serious
+when chained with cache poisoning.
+And that is the methodology.
+Fairly simple.
+Fairly simple.
+So that's all the theory.
+Now I'm going to show the kinds of things you might run into in the real world when you
+apply this methodology.
+So as usual all the examples in this section are derived from bug bounty sites that I've
+tested.
+I've had to adapt quite a few unfortunately.
+I've included some of the bounty amounts that I got.
+As usual half of every bounty has gone to a local charity.
+And yeah that's it.
+I'm going to start out with some simple scenarios and then things are going to get progressively
+crazier towards the end of the presentation.
+First off a really simple example just to make it clear how to apply the methodology.
+So on this site we're going to use their homepage as our cache oracle because it reflects the
+host header which is what we're going to be looking at.
+And it has a header that tells us if we got a cache hit or a cache miss.
+We're going to ask the question is the port included in the cache key.
+So to do that we're going to put a port in the header.
+We're going to send it.
+We see it comes back to us in the location header.
+And then we're going to resend the request without the port.
+And as you can see we have got a cache hit from the previous request.
+Even though these two requests are slightly different.
+So that confirms that the port is not included in the cache key.
+So I'm just going to highlight it in orange.
+I'm going to use that standard on every slide just for clarity.
+And so wait we've confirmed the port isn't in the cache key.
+And also as a bonus with this one request we've just persistently taken down their homepage.
+Because if anyone tries to load this page they're now going to get this cached response which
+redirects them to a dud port that isn't being used by the server and thereby their browser will
+time out.
+Now who does this technique work on?
+Well it works on Cloudflare.
+It works on Fastly and it also works on some fancy WAF vendors that are supposed to make
+you more secure.
+I've reported this to various companies.
+Fastly have got a patch in progress but notably Cloudflare have said no they're not going to
+patch this you're on your own.
+So what that means is if you're using Cloudflare you should be really careful that you never
+use the port part of the host header or cache poisoning is going to happen.
+The other point worth mentioning is if you're a bug bounty hunter and you find something
+like this on a target then you might be tempted to just report it to the target straight as
+is as just as a single request denial of service issue.
+If you do that you're going to get a mixed reception.
+With this type of vulnerability on different targets I've had outcomes ranging from the
+company saying no we don't care in the slightest we're not even going to fix it to other companies
+paying me 10 grand for it.
+It's a bit of a lucky dip.
+If you want a reliable bounty then you need to find a gadget to chain its behaviour with.
+Now, one of the most common transformations that sites do is they exclude the entire query
+string from the cache key.
+And I'm definitely not the first person to notice this happening but this is massively underappreciated.
+And you might be wondering why because you would expect such a major transformation to be really
+obvious but actually it's incredibly easy to miss because the effect of this is that it disguises
+dynamic pages as being static.
+On a normal dynamic page if you change a query parameter you'll see a difference in the response.
+But if they have their cache configured like this you'll just get a cache hit and it won't
+even tell you that you've got a cache hit so no matter what changes you make to any query parameters
+even if you add an extra cache buster you're just going to get the same response and it's really easy
+to accidentally think that that response is static because you think you're talking to the back-end
+server but you're actually just talking to the cache.
+So, how do you find these pages? Well, one approach is to put cache busters in a whole bunch of headers that
+might be included in the cache key. So, in this example here I've selected headers where I can put a value in
+in a way that's probably not going to change the behavior of the endpoint.
+And as of today's update, the tool I'm releasing will do this by default.
+This approach works really well on some systems. For example, on every Cloudflare system the origin
+is included in the cache key by default. However, there's a couple of issues with it. One is that
+on other systems changing the origin will change the application's behavior which is not what we want.
+And also some caches just don't bother including any of those headers in the key.
+So even with all these fancy cache busters and headers you're still going to get a cache hit.
+How do you deal with that? Well, there's one approach we can take which is kind of to cheat
+and that is to use the purge or fastly purge method. We'll never guess who fastly purge works on.
+What this does is this HTTP method lets us delete entries from the target's cache with no authentication.
+It's fantastic for cache poisoning. It's surprisingly widely supported and it lets us punch holes in the
+cache and find out whether the backend page is dynamic or not. However, there's obviously a bit of a
+race condition when you use that method because you have to send your follow-up request immediately
+afterwards and if someone else gets in there you'll get their cache response. So it's not ideal for
+automation. And as usual, it doesn't always work. It doesn't work on every system out there. That would
+be too easy. So another approach you can take is to take advantage of normalization. So caches generally
+don't do much or any normalization on the path that they see in the request and the path is virtually
+always included in the key. But backend servers typically do do a bit of processing on the path.
+And that means you can have a few requests where the cache regards every request is going to a different
+path. But actually once the backend server finishes normalizing it, they all hit the same endpoint on the
+target. The only catch with this strategy is that the normalization done by the backend is obviously
+highly dependent on the backend system in question. So what happens if you go hunting with these
+techniques? Well, you're going to find some really obvious vulnerabilities. For example, on an online
+newspaper that had a bug bounty program, I found reflected cross-site scripting via the URL on every
+single page. And normally a vulnerability like that wouldn't last five minutes on a site that had a
+bug bounty program because someone else would find it. But in this case, the cache had effectively masked
+the vulnerability from every from everybody else. It was only visible to me due to my use of a path-based
+cache buster. Not only that, but the cache behavior made it much more serious because having sent this
+request here from that point onwards, if anyone else hit the homepage, because the query string isn't in
+the cache key, they would end up getting my malicious JavaScript coming back to them. So thanks to this
+reflected XSS and the cache behavior, I had full control over every page on the site. Now, at this
+point, some of you might be thinking, well, okay, that's pretty bad. But that company clearly is kind of a
+soft target, they don't really know what they're doing. There's no way a vulnerability like this
+would happen to anyone who really understands caching. And that's why for my next target, I'm going
+to exploit the main website of a caching vendor. We're going to use cloudflare.com. So on on Cloudflare,
+there's quite a few links to the login page, and some of them go via this redirect at slash login.
+And all the redirect does is it puts a forward slash on the end of the path, which is pretty harmless,
+right? But they're excluding the query string from the cache key. And we're going to take advantage of
+that by sending a request to trigger this redirect with a really long query string such that the request
+line that's the path and the query string and the method taken together, all fill up the maximum
+allowable length of request line that server will tolerate. So what happens after we send that? Well,
+as long as that response gets cached, which Cloudflare is happy to do, when someone else tries to access the
+login page, they're going to get this redirect. And they're going to follow the redirect. But in the
+process of following it, because the server sticking this extra forward slash on the end of the path,
+the request line gets one byte longer. And that puts it over the maximum length that the server
+supports and it will just reject the request. So with one request, we've persistently blocked access
+to Cloudflare's login page. It's worth mentioning here that we couldn't simply get that get that final
+414 response cache directly because Cloudflare would refuse to cache a response that has an error
+status code like that. It's the redirect that gives this attack a layer of indirection that makes it
+possible. Another benefit of cacheable redirects is that they let you inject poisoned parameters onto the
+redirect destination, even if the redirect destination itself is not cacheable. So local redirects are
+really useful in general with cache poisoning. So I reported this to Cloudflare and it actually gave them
+a bit of an interesting problem because they could easily fix it on their own site just by changing the
+redirects behavior, right? But what about all of Cloudflare's clients? Because this is a common redirect
+style. So Cloudflare could patch it for themselves, but all their clients would still be vulnerable. So they
+had to come up with a general purpose mitigation. And that's what they did. They wrote something that's
+basically said, if the query string is not included in the cache key, and we get a redirect response where
+the query string in the redirect matches exactly the query string in the request, then don't cache
+that redirect. And unfortunately, I was able to bypass that by URL encoding one character
+in the query string, thereby meaning that the query string didn't match the query string in the response.
+And Cloudflare have now fixed that. But obviously, if there's any other transformations happening in
+between the query string, the request, and the query string in the response, you'll be able to once again,
+bypass this mitigation and take stuff down. Now, at this point, we've seen how some quite simple
+transformations can have major unexpected side effects. But we'll also find that in some cases,
+the transformations themselves can get really quite messy, especially with a bit of encouragement from a
+hacker. And the main reason this happens is because the site's decided to exclude a specific query parameter
+from the cache key. I've seen this happen most often with analytics parameters like UTM content.
+So you can see the reasoning here, right? Something like UTM content is not intended to be used by the
+backend server. It's only intended to be used by client-side JavaScript. So surely it's harmless
+to exclude it from the key. Well, obviously, if you've got a full URL reflection based vulnerability,
+you can use it to exploit that with cache poisoning, which is wonderful. But what if you want to exploit
+a gadget in a different parameter? Say the target is excluding UTM content from the cache key, and you
+want to put a payload in the term parameter. Is that possible? Well, in theory, it's not. But as usual,
+in practice, things go wrong, and you'll find it often is. It all depends how things get implemented.
+And well, you'll generally find some people will take my approach to implementing things.
+They'll Google it, land on Stack Overflow, and end up using a regex. Given a regex like this,
+that tries to exclude the query parameter called underscore from the cache key, how can we place a
+payload in the queue parameter here? Well, the regex isn't anchored properly. There's an assumption
+that there's no equals in the query string, other than the one that starts the query string. So we
+can just kind of squeeze the payload in like so. Now, with this specific regex, because they're doing
+a substitution and inserting this query string where the matched parameter was, we can actually
+only inject our payload to anywhere in the URL where there's already a question mark. These kind of
+substitutions can make this type of issue really hard to find and also put some interesting caveats
+on what you can and can't exploit. And here, once again, I've targeted a soft target to begin with,
+but it also works on some more serious players. For example, Akamai. Remember how we got Akamai to show
+us its cache keys earlier, and some of them had this Akamai transform parameter, and some of them didn't.
+That made me think, well, maybe they're excluding this parameter from the key. And sure enough, if we
+specify this parameter on a request to any Akamai site, you'll find it doesn't get reflected back to
+you in the X true cache key header. And if you change the value, you'll get a cache hit. So it's clearly
+being excluded from the key. And thanks to Akamai's suboptimal URL parsing, you can actually change the
+ampersand in that request to a question mark and thereby append a cloaked value to an arbitrary
+parameter in the request. And that will not appear in the key. So you can use this to append arbitrary
+malicious values to arbitrary parameters on Akamai systems. However, there is a catch, which is that
+there's an invisible cache key bit, which is not in any of the cache keys that get shown to you. But you can
+tell it's there from the behavior. And the bit is set if the initial request contains the Akamai
+transform parameter. So what that means is, this technique is really powerful, but it only works
+on sites that have already either already using Akamai transform. I've reported this to Akamai and
+they'd like me to tell you that they are working on a fix. Now, on a different target, something was
+behaving really weird and I couldn't find a cache key oracle that was any good. So instead, I managed
+to get hold of the code for the cache. And on their homepage, they suggest filtering out parameters for
+where the name starts with the UTM underscore. So this is a great candidate for cache parameter cloaking,
+as long as we can bypass their query parsing. So if we look at their query parsing,
+I found that they're, they're splitting parameters, they're splitting the query, they're splitting
+parameters on semicolons, as well as ampersands. And obviously everyone knows you're only meant to
+split parameters on ampersand. So I thought, great, I'll use this for my live demo, I'll have an exploit that
+looks something like this, and I'll be able to poison arbitrary values. And I set it up for my demo. And then I tested it,
+and it didn't work. And it turns out the reason it doesn't work is because this cache is a plugin for Rails and Rails itself
+also splits parameters on semicolons, as well as ampersands. Now this is great news for Rack cache, although I still exploit it in a different way later.
+But it's bad news for Rails. Because what it means is that if you use Rails with any normal caching system, like
+Varnish or Akamai or whatever, and you eliminate any parameter from the cache key, then an attacker can exploit that
+to make arbitrary changes to arbitrary parameters. So taking this JSONP example here, if the target cache is
+excluding the UTM content parameter, as far as the cache is concerned, there's one parameter, and that's called
+callback. And the value of that is whatever the attacker chooses. But when Rails parses this, they see
+three parameters, they see callback, they see UTM content, which is not relevant, and they see an extra
+callback parameter. And because that one's last, they prioritize it. So an attacker can put some malicious
+JavaScript in there. And as a result, take full control over every page that uses this particular JSONP
+gadget.
+Another way of hiding parameters from the cache key is simply to send a post request. This is a bit
+ridiculous. I didn't really think this was going to work, but it does. So hey, here we are. So I found an
+online mapping service where they had XSS via a post parameter, and you had to bypass a WAF, but it wasn't
+that hard. And the cool thing was, yeah, the query, the method wasn't in the cache key. So having sent this
+request, if someone then fetched that page, which is what you're meant to do with that page, then my
+payload would come back. And once again, I had control over every site, every page on that site, persistently.
+Interestingly, I actually got a research collision with someone else with this topic. So he found this
+technique independently at around the same time as me. And he's just published a blog post on it. So
+please go check that out as well. Now, with a small tweak, we can take that approach and make it work
+on loads more systems. How can you do that? Well, there's a clue in the varnish documentation.
+It says, if it gets a request with the body, it will pass the body onto the backend. And the default
+configuration file removes the body for get requests, because get requests because it's
+questionable. If a get with the body is valid, but some applications use it. So what happens if you
+don't have this snippet that removes the body from get requests in your varnish config, and you're using
+a framework like Rails, which supports parameters in the body of get requests? Well, GitHub found out.
+Thanks to this behavior, I could poison arbitrary parameters with arbitrary values on every cacheable
+page on GitHub. With this example payload here, what I'm doing is I'm poisoning the report abuse page.
+So if you try and report abuse on my profile, it ends up reporting somebody else. Also by poisoning
+other pages, I could do things like apply arbitrary filters to searches, completely disable access to
+topics on any pages that I don't like. I disable access to static files in any repositories that I don't like,
+and so on. This got a seven and a half K bounty off GitHub, which was pretty cool. I've decided so
+because the term get request with a body is quite cumbersome, I've decided to name that type of request a fat get
+request. Now this technique actually works on quite a few systems. In addition to working on varnish systems
+that don't have that little snippet that deletes the body, it also works on quite a few people using
+Cloudflare because because Cloudflare will always pass the body of fat get requests onto the backend.
+And I told Cloudflare about this. And they updated their documentation to say do not trust get request bodies,
+which seems quite strange to me because what they're saying is we're always going to give you this value,
+but you should never use this value under any circumstances because it's dangerous.
+So I went, okay, great. Now I can exploit lots of sites using Cloudflare. And one of the sites I can exploit is the very
+site where this documentation was hosted because this is hosted on support.cloudflare.com. And that is built on Zendesk.
+And Zendesk supports, it's in Zendesk users Cloudflare and supports fat get requests. So by issuing this request to anyone using Zendesk, I can poison their login page. So that if a user
+browsers to the login page and presses login, they go through an invisible series of redirects that logs them out and then effectively logs them back into my account invisibly.
+So if they then happen to file a support ticket on the target that's filed in my account, and I can just log in and retrieve it later.
+Obviously, you can also take down most of the site as well as usual. And well, yeah, so that's cool. And that works on that core issue will work on basically everything that uses rails behind Cloudflare, as well as various other frameworks.
+There's an interesting side point here, though, you might have noticed that although this fat get parameter, this fat get approach to parameter cloaking is really powerful, lets us make arbitrary changes to arbitrary parameters.
+The impact of the two examples I've shown you on Zendesk and GitHub has not been as bad as some of the earlier vulnerabilities.
+And the reason for that is that basically the impact comes down to what gadgets you can find on the target site.
+And on those sites in the time constraints I had, I found that were quite hardened, and it was difficult to find a gadget that could prove a really high impact like full site takeover.
+So identifying useful gadgets is the key to high impact cash poisoning exploits with these techniques.
+So what other gadgets are available to us? Well, we've kind of seen that JSONP is useful, but in general, any dynamic content in a JavaScript file or in a CSS file.
+Normally, these are both completely harmless because if you point a browser at those directly, then the browser won't execute it.
+But with this, but with cache poisoning, dynamic content in resource files becomes extremely powerful and generally lets us take over any pages that reference those resource files.
+With JavaScript, obviously you get full page takeover and with CSS, you can exfiltrate arbitrary content from the page, including invisible content like cross-site request forgery tokens.
+In fact, if the page importing a CSS file doesn't have a doc type, then the CSS file doesn't even need to be real CSS.
+And because the content type doesn't need to be text slash CSS.
+What you can potentially do in this scenario is you can send a long query or one with a payload in some kind of manner that makes the server give you a server error or a WAF message back that reflects your input.
+And because of the lack of the doctype, the browser will just parse this whole HTML response, will just walk through it until it finds valid CSS and then execute it.
+So using that, you can potentially even exploit static CSS files.
+Now, I use Firefox for almost all my testing and almost every year I seem to find some kind of issue in Firefox's infrastructure and this year is no different.
+So here we're going to see how something as simple and common as normalization can actually be quite harmful.
+If you take a look at the Nginx config used on download.mozilla.org, it looks more or less okay.
+They've got caching, but the proxy cache key is very similar to the default proxy cache key in Nginx.
+So you'd think it would be fairly secure.
+But if you look at the documentation for proxy pass, there's a kind of a tiny clue that there might be something wrong here.
+It says if you use proxy pass without a URI, like Mozilla has done, then the request URI is passed to the server in the same form as sent by a client.
+So what that means is it's passed to the backend without any normalization.
+And the value stored in the proxy cache key is normalized.
+So this can cause problems.
+Whenever you open Firefox and periodically thereafter, one of the most important things it does is it checks to see if there's any updates available for itself,
+because these might be critical security updates that you need to stay safe.
+And it does so by issuing a request that looks like this.
+And if there is an update, it'll get a redirect to an installer.
+It'll run that and you'll be safe. Everything will be fine.
+But what if I take that request and I issue it exactly as is, but I URL encode the question mark?
+Well, when Nginx generates the cache key, it does a URL decode as part of its normalization.
+So this request has the same cache key as the previous one, as any legitimate request to the site.
+But because the un-normalized version is passed through to the backend, when the backend receives this and tries to parse it,
+there's no query stream, right?
+Because I've encoded the question mark.
+So that whole thing is the path.
+It's basically just a broken request and it triggers a broken, useless redirect, which Firefox silently ignores.
+So if I issue that request and I time it right, the cache gets poisoned and from that point onwards, no one gets any security updates for Firefox anymore.
+This got a 5k bounty off Mozilla, and I think it's my favorite denial of service vulnerability ever.
+So at this point, we've seen a whole load of different web cache poisoning attacks that all fire on people who are just normally browsing a web cache.
+But there's another type of cache poisoning technique that lets you exploit people by sending them specific crafted links.
+So, for example, let's start with one that uses normalization.
+Any pen tester will be familiar with a scenario where you find an XSS vulnerability in burp repeater.
+It might be in the path or more recently, this can happen in the query stream.
+And it looks great, but you try it in a browser and it doesn't work because the browser is URL encoding certain characters that are critical for the payload to file.
+And these days you find something like that.
+Well, that's basically useless.
+You can exploit Internet Explorer, but who cares about that?
+But if they're using a cache like Nginx, well, that does a URL decode.
+And that means these two requests shown here have the same cache key.
+So if I send my request with burp just before the victim browsers to that link, then they're going to get a cache hit and get exploited.
+Another example of an issue that should be unexploitable is when you find XSS in a HTTP header that a browser won't send and is included in the cache key.
+For example, the origin header here.
+No browser is going to put a payload in the origin header like that.
+And because it's in the key, this should be completely unexploitable.
+But on Akamai, they take query parameters and headers on some systems and they bundle them into this CID parameter that you can see in the key.
+And they separate them using underscores and they don't escape underscores.
+So what that means is these two requests shown here have exactly the same cache key.
+And the first one is a crazy request that the browser won't send.
+But as an attacker, I can easily send this and the response will get saved in the cache.
+And then when when the victim visits that second URL that has origin in the request line, that will get a cache hit and the exploit will get served up to them.
+Once again, I have notified Akamai about this and they are working on fixing it.
+Now, after seeing how easy that was on Akamai, I thought, OK, great, let's see if Cloudflare are vulnerable as well.
+And they don't have a handy header that tells you what their cache key is, but their documentation says it looks like this.
+And that means that these two requests should have the same cache key.
+Unfortunately, I tried this. It didn't work. I tried it 10,000 times and it didn't work at all.
+And I tried some variations and those didn't work either.
+And at this point, I only really had one option, which was to send an email to Cloudflare to complain that their documentation was inaccurate.
+And one thing led to another and I had to explain why I was so interested in their cache key documentation to their security team.
+And they sent a response that said basically the documentation does appear to be wrong.
+The attack you're describing, the concept is theoretically possible on Cloudflare.
+But you're doing it wrong and we're not going to tell you why.
+And yeah, they've now patched this, but I never knew how this attack was actually possible.
+We'll never know. But at least I got a T-shirt out of it.
+Hey. On the opposite end of the spectrum, some attacks are so practical that it's not possible to do them safely.
+I found this out in quite an unpleasant manner.
+I was testing a classic cache poisoning technique with a potentially unkeyed header on a specific blog post on Adobe's blog.
+And I suddenly got a flood of a large amount of traffic coming to my collaborator server, like really a lot of traffic.
+And this didn't make much sense because I was targeting an obscure blog post and I had a URL query based cache buster as well.
+And it looked like the query stream was in the cache key.
+What it turned out was, yeah, the query stream wasn't the cache key, but they had multiple layers of caching.
+And they also had an internal cache.
+And the internal cache was saving fragments of responses.
+And basically I'd poisoned every fragment.
+And so if you loaded any page on this site, then you would get all your resource loads would come from my server.
+And every link to every one of their blog posts on that page would also point to my server.
+And this was on every page on their site, including their homepage.
+So in effect, I was just getting all of the traffic from everyone on their entire site.
+And I couldn't undo it. There was no way to disable, to unpoison their cache.
+So I panicked a little bit.
+I turned off the collaborator server.
+So at least I wasn't getting any traffic exactly.
+And I notified their security team who were able to fix it in 20 minutes.
+And luckily for me, they were quite understanding.
+But you can see this kind of outcome is really not great.
+It makes the distinction between a legitimate-ish researcher and an attacker really quite blurry.
+So I think it's worth seriously asking if you go looking for this type of vulnerability deliberately.
+Are you actually doing a service to the company or are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+Are you not?
+
+Are you not?
+Cache busters during your manual testing, which should also come in useful.
+Also, as usual, all the techniques in this presentation that are relevant have been integrated into Burp Suite Scanner.
+So if you're just using Burp Pro or Burp Enterprise, if you run a scan, you should see some of these issues starting to appear.
+As far as the fence goes, if you're, I mean, don't rewrite the requests, that's the easy solution.
+Or don't use caching.
+But if you're not.
+
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+
+
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+
+
+If you're not.
+If you're not.
+If you're not.
+
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.
+If you're not.

@@ -2,7 +2,7 @@
 title: Shubham Shah (infosec_au)
 slug: shubham-shah
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [infosec_au, shubham_shah]
 role: researcher
 primary_focus: server-side
@@ -162,3 +162,13 @@ Related (Assetnote teammate):
   WAF-bypass extension, `wordlists` (Assetnote daily-rotating
   wordlists), `blind-ssrf-chains` — the bug-hunter side leaks into
   open source frequently.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/assetnote/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

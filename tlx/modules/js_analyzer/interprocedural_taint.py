@@ -17,7 +17,9 @@ Two entry points:
 """
 
 import json
+import os
 import sqlite3
+import time
 
 # ── Part A ───────────────────────────────────────────────────────────────────
 
@@ -101,6 +103,37 @@ CREATE INDEX IF NOT EXISTS idx_itp_sink   ON interprocedural_taint_flows(sink_no
 
 MAX_ITERATIONS = 50_000
 
+# Wall-clock budget caps total solver time. Iteration cap alone could
+# spend 5+ minutes on dense graphs because each iter does several
+# SQLite reads; this floor stops the index pipeline from hanging.
+# Override via TLX_ITP_WALL_BUDGET_SECONDS (float seconds, 0 = disabled).
+DEFAULT_WALL_BUDGET_SECONDS = 120.0
+
+
+def _wall_budget_seconds() -> float:
+    raw = os.environ.get("TLX_ITP_WALL_BUDGET_SECONDS")
+    if raw is None:
+        return DEFAULT_WALL_BUDGET_SECONDS
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):
+        return DEFAULT_WALL_BUDGET_SECONDS
+
+
+class InterproceduralTaintBudgetExceeded(RuntimeError):
+    """Raised when solver hits wall-clock or iteration budget.
+
+    Carries partial flow count so callers can decide whether to commit
+    progress or roll back.
+    """
+    def __init__(self, message: str, *, flows_emitted: int, elapsed_s: float,
+                 iterations: int, reason: str):
+        super().__init__(message)
+        self.flows_emitted = flows_emitted
+        self.elapsed_s = elapsed_s
+        self.iterations = iterations
+        self.reason = reason  # 'iterations' | 'wall_clock'
+
 
 def solve_interprocedural_taint(conn: sqlite3.Connection) -> list[dict]:
     """Worklist solver: propagates taint across function boundaries.
@@ -110,11 +143,15 @@ def solve_interprocedural_taint(conn: sqlite3.Connection) -> list[dict]:
        via_var_ids: [int], sanitised_by: str|None}
 
     Idempotent: clears interprocedural_taint_flows before re-inserting.
-    Raises RuntimeError if worklist exceeds MAX_ITERATIONS.
+    Raises InterproceduralTaintBudgetExceeded if worklist exceeds
+    MAX_ITERATIONS or wall-clock budget. Already-persisted partial flows
+    remain committed for inspection.
     """
     conn.executescript(_CREATE_FLOWS_TABLE)
     conn.execute("DELETE FROM interprocedural_taint_flows")
     conn.commit()
+    started = time.monotonic()
+    wall_budget = _wall_budget_seconds()
 
     worklist: list[tuple[int, str]] = []
     taint_state: dict[int, dict[str, dict]] = {}
@@ -157,11 +194,31 @@ def solve_interprocedural_taint(conn: sqlite3.Connection) -> list[dict]:
     while worklist:
         iterations += 1
         if iterations > MAX_ITERATIONS:
-            raise RuntimeError(
+            conn.commit()
+            elapsed = time.monotonic() - started
+            raise InterproceduralTaintBudgetExceeded(
                 f"Interprocedural taint solver exceeded {MAX_ITERATIONS} "
-                f"iterations. Codebase may be too large or contain a cycle "
-                f"the visited-set did not catch."
+                f"iterations ({len(flows)} flows emitted in {elapsed:.1f}s).",
+                flows_emitted=len(flows),
+                elapsed_s=elapsed,
+                iterations=iterations,
+                reason="iterations",
             )
+        # Wall-clock check only every 256 iters — time.monotonic is cheap
+        # but unbounded calls still show up at high iteration counts.
+        if wall_budget and (iterations & 0xFF) == 0:
+            elapsed = time.monotonic() - started
+            if elapsed > wall_budget:
+                conn.commit()
+                raise InterproceduralTaintBudgetExceeded(
+                    f"Interprocedural taint solver exceeded "
+                    f"{wall_budget:.0f}s wall-clock budget "
+                    f"({len(flows)} flows emitted, {iterations} iters).",
+                    flows_emitted=len(flows),
+                    elapsed_s=elapsed,
+                    iterations=iterations,
+                    reason="wall_clock",
+                )
 
         var_id, label = worklist.pop(0)
         state = taint_state.get(var_id, {}).get(label)

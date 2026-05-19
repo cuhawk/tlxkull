@@ -1,0 +1,2198 @@
+Hello, I'm a researcher at Portswigger, the makers of Burp Suite, and I'd like to share
+with you today some of the research that I've been working on.
+So welcome to Portable Data Exfiltration, XSS for PDFs.
+In this talk, I'm going to show you how to booby trap a PDF document, track when a PDF
+was opened and closed even when loaded from a file system, and exfiltrate the contents
+of an unknown PDF on both Chrome and Acrobat.
+All these techniques use a PDF injection.
+My colleague, James Kettle, was watching a Black Hat talk about PDFs, and he was looking
+at the code and thought to himself, this looks injectable.
+And he got back to the office and we had the following conversation.
+He said, PDF code is totally injectable.
+And I responded, I think it's impossible.
+You wouldn't know the structure of a PDF.
+The XRF table would break, the objects would break.
+How could this be possible?
+But that didn't stop me there.
+I then began to test for PDF injection.
+So we're going to cover injection theory, how user input can get inside PDFs, why you just
+can't inject arbitrary content.
+I'll talk about my methodology, the vulnerable libraries that I encountered, and then we'll
+go on to exploiting injections in Chrome and Acrobat as well as a hybrid injection.
+Then I'll wrap up with defense, leaving five minutes for questions.
+Server side PDF generation is everywhere.
+It's in invoices, in receipts, in e-tickets, in payslips, in boarding passes.
+The list is endless.
+So there's plenty of opportunity to get user input inside a PDF document.
+If you imagine a PDF injection as an XSS injection, and imagine you're injecting inside parentheses,
+this is very similar to what happens when you're injecting inside PDF code.
+Like JavaScript, you have to ensure that the syntax is valid.
+This means repairing the parentheses before your injection, as well as the parentheses after
+the injection.
+So, the PDF is structured into objects, XRF table and trailer.
+There are more parts to it, but just for the purposes of this talk, I'm going to focus on
+these three parts.
+So the objects allow you to define text streams and images, for example.
+The XRF table contains a list of all the objects in the document.
+And the trailer appears at the end of the document that defines the root object.
+So this is what an object looks like, very simplified in a PDF document.
+So this is the first object indicated by number one.
+And the revision is zero.
+And the OBJ is the start object marker.
+Then we have the start of a new dictionary.
+And we have a dictionary key here, in this case, pages.
+And the value of the dictionary key, in this instance, is 2 space 0 space R.
+This indicates it's a reference.
+So it's looking for the second object, revision number zero, somewhere in that document.
+So the pages dictionary key allows you to define the amount of pages in the document.
+And in this instance, we're using a reference to the second object, which will define that
+information.
+And that's the end of the dictionary here.
+This is the XRF table.
+It begins with the XRF keyword.
+This is the first object in the XRF table.
+And that begins at position number 10.
+So at the 10th position in the document is where the first object begins.
+And using the start XRF keyword, this will tell you where in the document the XRF table begins.
+In this instance, it's at 413.
+So I'm going to talk about parsing briefly, just so you can understand how the PDF document is parsed.
+This doesn't contain the whole thing, just enough information for the talk.
+So first the start XRF is read and it points to the XRF table.
+Each of the objects is then read in the XRF table.
+And then all the references are followed.
+Our most likely injection point might occur in the objects themselves.
+And then the payload is executed inside the object.
+And then the document is rendered.
+So one likely injection point is in a text stream.
+So here we define an object, which is object number four, the length.
+And it's a stream and BT indicates the begin text.
+We define the fonts and the font size.
+And then we define the text itself, which is hello world.
+So an injection could occur here.
+So you can inject here.
+You could inject a closing parenthesis, for example, break out of that code and allow you to define a new object.
+But the problem we have here is we can inject a new object, but the XRF table wouldn't be updated.
+So that object would never get rendered.
+So you could see why I thought it was impossible to do PDF injection.
+But this is annotations and annotations are great.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So you could see why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So why I'm going to use the text.
+So I was testing around eight different libraries.
+And I came up with the following methodology.
+To test them.
+Identify construct and exploit.
+So first you identify.
+Can you inject parentheses or backslashes?
+So a library should escape.
+Parenthesis and backslashes.
+In URI dictionaries or text streams.
+If they don't escape any of those characters.
+Or one of those characters.
+Then there could be PDF injection in the library.
+I also tried multiby characters.
+For example, 5C29.
+Which is the backslash.
+And the closing parenthesis.
+So the idea here would be.
+To inject a multiby character.
+The library would then convert them.
+To single byte characters.
+Which then may allow those.
+Dangerous characters to cause PDF injection.
+I also tried things like.
+Ascii range overflow.
+So adding a character.
+Over the Ascii range.
+That might get converted.
+Into another character.
+Like parenthesis or backslash.
+I also tried.
+Causing errors.
+In the.
+PDF rendering process.
+By injecting nulls.
+Or end of file markers.
+Or comments.
+Once you've identified.
+The library is vulnerable.
+Then you can try.
+And find a site.
+That uses this library.
+So then you need to construct a PDF.
+From the.
+Injection.
+That.
+Has.
+A callback.
+By either.
+Calling alert one.
+If you know the structure of the PDF.
+And you can render it.
+Or a callback.
+By using the.
+Submit form function.
+Which would.
+Post to external URL.
+This would be useful.
+In blind situations.
+Where you.
+Don't know the structure.
+Or content of the PDF.
+But you can still cause an injection.
+Also.
+With clients.
+That do not support.
+JavaScript.
+You can use the.
+Submit form action.
+And also.
+Do a callback.
+So once you've identified.
+That your PDF is rendered.
+And you've.
+Got a callback.
+Then you can.
+Exploit it.
+And you can.
+Exploit it.
+By stealing the contents.
+Of the PDF.
+Using JavaScript.
+Or without JavaScript.
+Using.
+Submit form actions.
+So I tested.
+Around eight.
+Different vulnerable.
+Eight different.
+PDF libraries.
+And the first one.
+That I encountered.
+Is.
+I encountered.
+The first one.
+That I encountered.
+Is.
+The first one.
+That I encountered.
+Is.
+The first one.
+That I encountered.
+That was vulnerable.
+Was.
+PDF.
+High from lib.
+This has.
+Over 52,000.
+Weekly downloads.
+And they made.
+A crucial mistake.
+So.
+This job.
+Generates.
+A PDF.
+Document.
+Using their library.
+And.
+They made a mistake.
+In the PDF.
+String helper.
+So if we zoom in.
+The URI.
+Of the annotation.
+Is defined here.
+And.
+The first one.
+That I encountered.
+That was vulnerable.
+Was.
+Is defined here.
+And.
+The.
+It uses the PDF.
+String.
+Of helper.
+And.
+We can inject.
+Into.
+This helper.
+And.
+You can inject.
+Parenthesis.
+And the.
+Parenthesis.
+Aren't escaped.
+So this allows you to.
+Inject code.
+Into the annotation.
+And.
+Define your own.
+Annotations.
+And.
+The next library.
+I encountered.
+Was.
+The.
+JS PDF.
+Library.
+This.
+Has.
+Over.
+A quarter.
+Of a million.
+Weekly.
+Downloads.
+So it's quite popular.
+And they.
+Made.
+A similar mistake.
+So.
+Here.
+We define.
+That annotation.
+Has.
+A URL.
+Property.
+When you.
+Create.
+The annotation.
+And.
+That URL.
+Property.
+Is also.
+Vulnerable.
+Similar to.
+The.
+Other library.
+That showed you.
+So you can.
+Inject.
+Parenthesis.
+And inject.
+Your own.
+PDF.
+Code.
+So.
+Now.
+I'm going to.
+Talk about.
+Exploiting.
+Injections.
+Injection.
+So.
+First.
+We.
+Break out.
+Of.
+The.
+PDF.
+String.
+The.
+Gray.
+Code.
+Is.
+The.
+Black.
+Code.
+Is.
+Actually.
+Our.
+Injection.
+So.
+We.
+Break out.
+The.
+New.
+Action.
+In this.
+Case.
+Which.
+
+Call.
+And.
+Then.
+We.
+Repair.
+The.
+Existing.
+Action.
+Using.
+Slash.
+Parenthesis.
+Which.
+Allows.
+You.
+To.
+Create.
+Valid.
+Syntax.
+In PDF.
+And.
+Doesn't.
+Cause.
+It's a.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+
+
+To.
+To.
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+
+To.
+To.
+
+
+To.
+
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+
+
+To.
+To.
+
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+
+To.
+
+To.
+
+To.
+To.
+
+
+To.
+To.
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+
+To.
+
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+To.
+
+To.
+
+To.
+
+To.
+To.
+
+
+To.
+
+To.
+
+To.
+To.
+
+

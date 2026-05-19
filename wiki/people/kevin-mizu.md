@@ -2,7 +2,7 @@
 title: Kévin Gervot (Mizu)
 slug: kevin-mizu
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [kevin_mizu, kevin-mizu, mizu]
 role: researcher
 primary_focus: client-side
@@ -70,3 +70,13 @@ inbound: []
 - **Tooling-first temperament** — every research stream has a companion tool (`domloggerpp` for sink discovery, `GMSGadget` for the gadget catalog, `bot-ctf-template` for the harness). Treat the tools as primary artifacts, not afterthoughts.
 - **Collaborators** — works inside the CTBB research lab orbit; Justin Gardner is the most visible bridge. No confirmed Sonar / SonarSource staff affiliation in public sources at time of writing despite topical overlap with the SonarSource mXSS cheatsheet.
 - **Cross-refs** — research and tooling feed `../techniques/dom-xss/dompurify-pi-bypass.md`, `../techniques/dom-xss/dompurify-namespace-hijack-getbyid.md`, `../techniques/dom-xss/dompurify-allowed-uri-regex-anchor.md`, `../techniques/dom-xss/dompurify-post-output-replace.md`, `../techniques/dom-xss/dom-clobbering-to-xss.md`, `../techniques/dom-xss/htmx-csp-bypass.md`, and the gadget side of `../techniques/prototype-pollution/client-side-pp-gadget.md`.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/kevin-mizu/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

@@ -1,0 +1,293 @@
+All right. So, yeah, we're here to talk about burp performance and the recent sort of improvement drive that we've been doing on performance in burp.
+So here we go.
+So as we all know, performance has been a hot topic in the burp community for quite a while now.
+People have expressed frustration with large projects and less powerful equipment having trouble running burp.
+And in order to address this, we now have the performance squad focused on making burp lag-free and fun to use.
+So we have been working on improving burp's performance while measuring progress and trying to prevent future regressions.
+In order to do this, we've made regression tests and Grafana dashboards to monitor the state of burp performance.
+We've also been adding some telemetry and collecting data to help us identify potential performance bottlenecks to target next.
+And we also want to make sure that there are visual indications when longer running tasks are happening so that users can know that burp hasn't just given up and frozen.
+So we've already made many improvements, such as sitemap filtering speed and lazy extension loading for performance.
+So table sorting was the first one we looked at.
+It was one of the first performance challenges we took on.
+So in some very large proxy history tables, some columns could take up to minutes to sort.
+And it was made worse by the fact that all of the sorting happened on the swing thread, locking the UI for the entire duration of the sort.
+And this was compounded by having the ability to sort by multiple columns at once, meaning that there could be up to three times as many data retrievals as there were for a single column.
+So the first and potentially most obvious thing to address was the speed of the sorting itself.
+Java's built-in sorting algorithm is pretty well optimized, so instead of looking at that, we address the more problematic speed of data retrieval.
+Often the same piece of data would have to be retrieved multiple times in order to complete a sort.
+When this is happening from a project file, this can be very slow.
+Pre-loading a temporary cache of the data into memory led to much faster access and overall sort durations.
+Even though we were able to make the sort operation faster, we still don't want to lock the UI for its duration.
+So in order to do this, we had to figure out a way to move the most intensive tasks off the UI thread, which is quite the challenge when you're trying to preserve data integrity on a table.
+And finally, we want to let users know that sorting is in progress and that burp hasn't just crashed or given up while it is doing the processing.
+So we had to come up with something for that.
+So on to the actual solution.
+We created a custom implementation of a row sorter, which takes a snapshot of the data to be sorted and pulls it into memory.
+We then sort it and apply the calculated indices to the table view and use read-write locking to control access to the table.
+The write operations are queued to apply in a batch after the sorting is completed.
+And to ensure the reliability of these changes, we wrote quite a suite of like multi-threaded stress tests and specific event orderings to test edge cases.
+Finally, we also surfaced the actual sorting operation in the UI using spinners in the column headers.
+So this is a regression test plot of the sorting test.
+We're sorting by multiple fields in a very large proxy history file, like hundreds of thousands of items.
+And you can see there's a precipitous drop in the amount of duration it took down to like two seconds or less.
+So on to repeater.
+I'm going to pass over to my colleague, Jay.
+Hey guys.
+Okay.
+So within repeater tool, you're able to make your own HTTP requests.
+And this is probably the place within Burp a lot of pen testers are going to sink their hours into.
+You can also send data to the repeater from other tools.
+And a problem a lot of people run into is just like browser tags, tabs,
+because a lot of these can build up over time.
+Organizer was released last year as a way to help people to keep their workflows a bit less chaotic.
+But people still have a lot of repeater tabs sitting around.
+Unfortunately, we weren't dealing with these in the best way.
+Repeater contains lots of UI elements, fundamentally the request view, the response view and the inspector.
+Can you hear okay?
+Yeah, I can hear.
+Cool, thank you.
+Each of these components are quite heavy weight.
+The message editors have rich editors supporting syntax highlighting,
+and the inspector contains a number of nested table and text area components.
+Up to now, repeater tabs have been implemented by creating one set of these UI components per tab.
+This makes a lot of sense conceptually, but as a drawback that it can eat up a lot of memory per tab.
+We could attempt to optimise memory used by the UI, but the problem still remains.
+The more tabs you have, the worse performance gets.
+Even if you aren't using repeater at the moment, if your project file has repeater data,
+then it will always be eating memory in the background.
+This has led to the single repeater work.
+So the main goal is to retain the existing behaviour, but do it in a much more memory efficient way.
+In this case, by only using one set of UI components.
+Before delving into the code, we spent a lot of time planning out how we were actually going to measure
+if we had achieved our objectives.
+We've done a lot of work previously with creating performance tests.
+These are our automated processes where robots control and stress test burp,
+to ensure that we catch any cases where we introduce performance regression,
+including testing both memory usage and time taken.
+We started by expanding our coverage for repeater, attempting to benchmark a lot of common scenarios,
+such as multi-megabyte JavaScript responses and operations involving group tests.
+We then started to plot our regression tests onto graphs so we could see over time easily
+if we were accidentally introducing performance issues into burp.
+With our regression test data, we could then start to carry out the work.
+We had a very simple problem with our approach.
+If we're making everything use the same UI component, then everything will have the same content.
+That's not ideal.
+What's more, you'd also lose any state of any fine-grained settings that you have configured per tab,
+such as the line-wrap toggle, or setting to hide uninterested headers.
+In fact, there's quite a lot of state we need to look after.
+Not just the request response, but things such as edit history, what your search is,
+what text you have selected, the scroll position and your view mode.
+There are other places in burp which we use the same editor for different items,
+such as logger and organiser.
+However, in those cases you can't edit each item,
+so it's a lot less important to have such granular settings.
+It wouldn't work well for us.
+So we needed a way to hold onto certain bits of state for each tab,
+whilst being as memory efficient as we can.
+So we introduced the concept of a checkpoint.
+Let's say you have some repeater tabs which you've opened before.
+If you click onto tab 1, then as we switch to it, we look at a checkpoint which is stored for that tab,
+and it's basically a snapshot of the state of the UI for that tab,
+stored with as little memory usage as possible.
+We tell the UI to restore itself to the state represented by the checkpoint,
+and that causes a lot of calls into the UI to set properties to get it to how it was before.
+Now let's say I make some modifications within tab 1,
+and then want to switch to tab 2.
+As soon as I click switch, we first capture our state into a checkpoint,
+and replace our old checkpoint with this new one.
+Then we restore the checkpoint for tab 2 on top of the current UI.
+And if we've done everything correctly, everything is looking exactly as it should.
+In reality, this process should be almost instant.
+And then finally, if we create a new tab,
+we create a checkpoint of tab 2 to start with,
+then run an initialization step for the UI,
+which will restore it to a default state.
+That way no current tab data leaks across into this new empty tab.
+Each tab contains a much more lightweight representation of its content.
+The UI doesn't hold any non-UI related state,
+and tabs are lazily initialized and only populated when clicked on.
+So, the outcomes of the work were positive.
+The changes were able to quite dramatically decrease
+some time taken and memory measurement measurements.
+We've also updated our red regression threshold line,
+which means our builds fail if we lose any performance gains we've made.
+We posted one of the graphs on our Twitter,
+which got some good engagement, which was nice to see.
+We also saw a downward trend with a lot of other performance tests too.
+So, what do the actual changes look like in reality?
+In this scenario, we're loading up Perp with the same project file,
+which contains 250 repeated tabs, each holding a GET request to the JIN and JUICE homepage.
+We're able to save 10 seconds on the project load and decrease the memory usage tenfold,
+down from 1.5 GB to around 130 MB.
+We've got a lot of data.
+Right, in this next scenario, we've got a tab group with 250 tabs,
+all with the same request to the JIN and JUICE homepage.
+The requests are issued on a single connection for all the tabs,
+and you'll notice a speed improvement for how long it takes until the request group is done.
+This is because it needs to do much less UI work,
+which impacts how long requests take to be processed outside of the network layer.
+You'll notice a dramatically larger difference for requests containing bigger messages as well.
+Right, and the final example is a scenario where we're cycling between 100 repeated tabs.
+We had this test because the main trade-off of having a single set of UI components
+is that it means that you need to do extra work when you switch tabs,
+and we tried to keep this degradation as small as possible.
+Unfortunately, it's largely unnoticeable.
+I'm not sure those timings are correct.
+No, they are the same.
+Are they?
+Yeah.
+To the millisecond.
+Love it.
+Right, and then I think Dan's going to go back onto the performance mode.
+Yeah, so, yeah, I'm just going to talk about what's sort of like on our minds in the performance team
+and what you can expect as a user in which BIRT versions.
+So, when will you get access to these performance improvements?
+So, in 2024.5, which is already live as stable, we have the table performance improvements and the lazy load extension tabs.
+In 2024.6, we have the sitemap filtering improvements, which brings down the sitemap filtering speed quite significantly.
+And 2024.7 is going to be my favorite release.
+It has a huge amount of performance stuff coming.
+So, we have single repeater, which is going to drastically reduce the memory usage for people with a lot of repeater tabs.
+Message analyzer improvements, so large messages will load much quicker and not cause as much UI lag.
+And we're also looking at some improvements to intruder.
+So, our roadmap is pretty flexible and we're taking input from a variety of sources, including our existing telemetry,
+in-product questionnaires, and social media to determine what are the most important things for you guys.
+Some items that we're already considering are table filtering, large intruder attacks, and further improvements to sitemap filtering, and searching and large responses.
+So, now it's over to you guys.
+Sorry about all the AV issues.
+The Wi-Fi was not cooperating with me today.
+But, yeah, if you have any questions or any suggestions for performance and burp, I'd be super happy to hear them.
+And we have our message analyzer expert here as well right now.
+So, he can also answer a couple.
+Let me just stop sharing my screen.
+Oh, nice. Perfect.
+Cool.
+Enthusiast.
+Ah, minor technical issues. Yeah.
+Which chat? Oh, and the voice chat one. Yeah.
+Cool.
+Getting ready.
+Different application.
+Oh.
+How large is the history which took?
+Yes.
+Uh, that history was, I believe, around 300,000 items of varying sizes. Some were very large.
+Um, but yeah.
+That's about the size of it.
+Uh, message analyzers. Yes.
+Actually, I should give you some context.
+Uh, as a developer, it's basically those, anything that you see the request response in is probably the main thing that you'd, uh, see the message analyzer as.
+So, as you scroll through proxy history or something, if you open up a large response, um, that's, uh, basically what's lagging is those message analyzers trying to do the tokenization and line breaks.
+Uh, yeah.
+Yeah.
+Have I considered, yeah, sorry, I'll get to that one.
+Uh, are, are there any improvements that are, uh, that I'm planning to sitemap filtering?
+Uh, I find that it's one of the slower things these days.
+Yeah, it definitely is, uh, quite slow.
+Uh, we've done sort of one stage of the sitemap filtering.
+Actually, Andrew over here, uh, was the one that did it.
+Yeah, yeah.
+Yeah, yeah.
+Yeah, so, um, in, I think, two releases ago, we did a change that basically reduced the worst of the lag.
+Um, it basically prevented it from, like, lagging the UI to an insane degree that it took hours to complete filters.
+Um, so, at the moment, you shouldn't really get ones that take longer than minutes.
+And we have further changes scheduled that should basically bring it in line with table, like, table filtering.
+And remove all the, like, remaining bits.
+Okay, yeah.
+So, yeah, that's, that's on the roadmap as well.
+Um, Burp and Rust is not on the roadmap, uh, at the moment.
+Uh, it seems like a large undertaking, but I'm open to anything.
+Uh, I'd have to get a bit more buy-in, I think.
+Um, yeah, uh, what else is there?
+Okay.
+Yes, uh, a detailed blog post.
+Actually, we are working on a performance blog post at the moment.
+Um, it's gonna probably come out around when .7 comes out.
+Uh, so, yeah.
+Um, so, yeah.
+And it's gonna be probably targeted mostly towards extension devs on, uh, what you can do to sort of improve the performance of your extensions as well.
+Uh, what is a large response?
+I guess, um, yeah, quite, like...
+Normally minified JS.
+Yeah.
+If you get one that's got, like, a few megabytes of minified JS, that would be considered large.
+Yeah.
+Yeah.
+Also, when it has to deal with stuff like minified JS, it has to do a different tokenization process.
+It's not great.
+Yeah.
+It's much better now, but it was, it was difficult in the past.
+Um, yeah.
+So, yes, uh, swing worker thread versus virtual threads.
+So, that's really a case-by-case basis, uh, thing.
+Um, I can probably give you, oh, well, I, I think with performance in general, as you can
+see from all our graphs, the first thing to do is measure, don't guess, um, and make sure
+that you're actually seeing an improvement.
+Uh, yeah.
+Uh, yeah.
+Um, so, we should avoid pretty view for large minified JS, correct?
+Uh, no, you shouldn't need to, uh, anymore, hopefully.
+Yeah.
+Yeah.
+It's like, it's about evenly as bad, because the token, a lot of the stuff that's awkward
+goes on in both, um, which is the tokenization, tokenization for the actual syntax highlighting
+is the kicker for it.
+Um, but that's one of the things we've focused on improving for the next release.
+Yeah.
+See ya.
+Um, so, yeah, one of the sources for slow UI I found with Hayek Berger was the syntax highlighting.
+Not sure if you're using this verb itself.
+Yeah, you could disable it, but we're also hoping to, uh, improve that as well.
+So, yeah.
+Uh, yeah, but right now we don't have it as, like, an option, I don't think, to disable.
+We do.
+Oh, do we?
+We do.
+Oh!
+Talking about the call.
+Okay.
+Very cool.
+See, this is why we need support.
+Knows more than the devs on the options.
+Ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha, ha
+There it is.
+Yeah.
+Yeah, no, I'm so excited for people to get these performance improvements because I feel like for the people that are running these large responses or they have like tons of repeater tabs or massive proxy histories, it's going to make a massive difference for their workflows.
+Just being able to use Burp without having to be frustrated with any sort of like freezes on the things that we've addressed so far.
+Yeah, just general memory usage when you've got lots of repeat types, it's just, it's reducing it so much, it's crazy.
+Yeah, interesting.
+Cool.
+All right.
+Are there any more questions?
+Oh, yeah, someone's typing.
+There we go.
+Yeah.
+Yeah.
+On, yeah, 55k entries is, uh, yeah, it should do much quicker now, especially on some of the columns, especially we've done extra improvements on.
+So if you had like lots of notes, um, in, in like your 55k entries, that should sort much faster now.
+Yeah.
+
+Oh, and the other thing to mention about table sorting is that if you have a sort applied to a large table, um, this will sort of happen when you get items inserted.
+So it's actually going to speed up your browsing as well.
+Uh, sorting BAMDA columns.
+Uh, the only thing with custom columns and BAMDAs is that before the sorting changes, it would have been, uh, kind of a pain because it actually had to calculate the entire column for the custom column BAMDAs.
+We have sort of like a little trick where, um, the, the values of the custom column won't actually calculate until they're needed.
+Um, so the thing is, is when you sort a column, you need every single value in that column to be sure that it's sorted.
+So before it would have frozen the UI a bit to get through the BAMDAs.
+Um, but now it's, uh, yeah, it's should be much quicker.
+Especially when I have to run out of VM.
+Yeah, no, absolutely.
+Yeah.
+Like for like someone running on maybe some crazy power desktop with 64 gigs of memory or something, uh, maybe it doesn't matter as much.
+But if you're on a VM with maybe like a gig or something, this is going to help a lot, right?
+Because when you're pushing the memory in Java, it starts, uh, doing stop the world GC and stuff and that's, uh, no fun.
+Cool.
+All right.
+I think that might be probably all the questions.
+Um, if you have any more, uh, super happy to answer them.
+Um, or if you have any performance suggestions yourself, uh, we've put up a little post in the bugs and support, uh, forum on the discord or just, uh, contact support or, uh, raising the discord.
+Um, we're super excited to hear any, any sort of improvements that you feel or if you have encountered any issues yourself.
+So, yeah, thanks for coming everyone.
+And, uh, yeah, see you later.
+Thank you.
+Thank you.

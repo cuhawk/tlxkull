@@ -1,0 +1,384 @@
+HTTP 2.0
+Good afternoon and welcome to HTTP 2.0 The SQL is always worse. Have you ever seen something
+that was so complex it just had to be hackable if only you had time to understand it? HTTP
+2.0 is a beautiful beast but it is complex and where there's complexity people take shortcuts
+and things go wrong. In this session I'm going to show you how you can use new features in
+H2 for a range of high impact attacks and I'll also show how those shed light on a type of
+request smuggling that has always existed but nobody really noticed. Complexity causes
+trouble for me too. When I first looked at the H2 specification it was during my HTTP
+D-Sync attacks research back in 2019 and I loaded up the spec, looked at the size of the browser
+scroll bar and then proceeded to skim read it so fast that I didn't even read the security
+considerations. My second encounter with H2 was after I delivered that presentation at
+the black hat and an audience member asked me did those requests smuggling attacks work
+on H2 and my answer was no, it's completely secure against that kind of thing. My third
+encounter was later that same day at a party in Vegas after a few drinks someone else asked
+me the same question and I gave them the same answer and then they proceeded to explain to
+me exactly how you could use HTTP 2 for request smuggling attacks. However, at the time I
+just spent nine months exploiting request smuggling. So the prospect of immediately going on to
+additional request smuggling exploitation didn't exactly fill me with joy and instead I went off
+and spent a year researching web cache poisoning. One year later I came back, tried the idea out
+and found it really worked. I could have loads of systems with it. And there was only one fly in the
+ointment and that was bitbucket. Every holistic that I used suggested that this website should be
+vulnerable, but every technique that I tried reliably failed. Normally when I encounter something like
+this, I'll spend a bit of time on it and then give up and move on. But I previously encountered scenarios
+just like this in my original research and I'd failed to ever crack any of them and I did not want to let
+this one escape me again. So I continued exploiting other targets and I kept coming back to bitbucket
+over and over month after month until finally in January had an accidental breakthrough that proved that this
+target was definitely vulnerable to request smuggling. However, it was a weird variation and I couldn't
+actually come up with an exploit that had any real security impact and even after spending a bunch more
+time on it decided to give up and move on. Other than that though, everything was going really well until
+March. Until March, AirMove published the research that he'd been doing at the same time as me on the same topic.
+This meant that my presentation as I had it planned would lack anything truly groundbreaking because his
+presentation had already shared all the groundbreaking information. I really needed to find something new
+to give my presentation an edge and naturally I went back to bitbucket. And this time I finally cracked it.
+This led to a cascade of findings including a new more powerful type of desynchronization mechanism,
+an entire class of issue that was more or less useless becoming exploitable, Atlassian logging everyone out of
+Jira worldwide, the Computer Emergency Response Team being involved leading to additional advisories from
+third parties, and Atlassian awarding me triple their maximum bounty. Out of all that mess, I've managed to extract some
+information that I hope you'll find really quite useful regardless of whether you've watched Emil's
+presentation or not. I'm not going to be explaining this in chronological order because looking back on it,
+it doesn't really make sense even to me. Instead, I'm going to first focus on how to use HTTP 2 for
+request modeling. Then I'll talk about request tunneling and show how to confirm and exploit this underrated type of vulnerability.
+Then I'll share four or five new HTTP 2 exploit primitives, share some practical considerations and pitfalls and talk about tooling and effects.
+After that, I'll answer some questions. Also, if you have any other questions, just tag me on Twitter live and I'll try and answer it there.
+Although H2 is complex, there's only actually four key things that you need to understand in order to effectively wield it as a weapon.
+Here you can see an identical request represented as a H1 request and as a H2 request.
+The first key difference is pretty obvious. You can see that H1 has the request line containing the method and the path,
+whereas H2 has done away with this concept. Instead, they have pseudo headers, which are represented just like normal headers, but the name of them always begins with a colon.
+And there's just a few of these predefined in the H2 specification. You can see they use the colon method pseudo header to define the method and colon path to tell the server the path.
+And there's also colon authority, which is kind of a replacement for the host head.
+The second key difference is that H1 is a plain text protocol, which means that server parsing is done with string operations.
+For example, server needs to look for new lines to know when one header ends and the next header starts.
+H2 meanwhile is a binary protocol mostly built using key value pairs.
+So what I'm showing you when I represent H2 on any of these slides is an abstraction.
+It's not what it looks like on the wire. For example, pseudo headers don't actually start with a colon for real.
+The name colon method is just the human readable name and it's actually mapped to a byte like one.
+The third key difference is that H1 relies on the user sending a content length or a transfer encoding chunked header in order to tell the server what the length of the messages.
+H2 meanwhile doesn't require either of these headers. Instead, the length is built in to the frame layer.
+So it's at a slightly lower level that isn't represented by any headers.
+And also as a result, it's more or less impossible as far as I know to send a H2 message that is ambiguous about what its length is.
+The final key difference is the way they handle multiple requests.
+With H1, you send your your send your request down the socket, you read the response and then you just send your next request down the same socket basically by concatenating on the end.
+And then you read the response straight back down the same socket.
+And so you're completely relying on the server sending you the responses in the order that you sent the requests.
+Otherwise, you wouldn't be able to effectively match them up.
+H2 makes things a bit more flexible by introducing this concept of streams.
+A stream is simply a request response pair and every frame, which is the underlying data type of H2, contains a stream ID.
+So the so the browser can just use the stream ID to know which request it should be attaching a response to, which means the responses don't need to come back in the order that the requests were sent in and generally makes things flexible and faster and less likely to go disastrously wrong in the way that we're going to see shortly.
+And yeah, that's pretty much it.
+So now we understand H2, let's take a look at what damage we can do.
+As usual, in this section, I've targeted a bunch of real websites and all these vulnerabilities were found using an automated open source tool that I'm releasing later on.
+And of the bounties earned, half have been donated to local charities and the other half will be spent on beer when that's allowed.
+Why is HP2 request muggling possible?
+Because unfortunately, the majority of servers that speak HP2 to the client actually rewrite requests as H1 in order to talk to the backend server.
+This behavior is ridiculously common. For example, with Amazon's application load balancer, it's enabled whenever you enable H2 and it can't be disabled.
+You can't make Amazon's application load balancer speak H2 to the backend server.
+What this approach, which I'm going to refer to as H2 downgrading does, is it effectively dodges all the security benefits that you should be getting from using H2.
+In fact, it arguably makes things worse.
+Classic desynchronization using H1 happens because the front end and the backend disagree about whether to use the content length or the transfer and coding header to know the length of the message.
+But when you're doing H2 downgrading, it's not possible to have true agreement because the two servers are speaking different protocols.
+The front end server is basically guaranteed to be using the H2 to frame length.
+That's fine. But then the backend isn't speaking H2.
+So it has to use the content length header or the transfer encoding header.
+If that sounds like a mess, that's because it absolutely is.
+If you take your front end server and turn on H2 support and do downgrading, congratulations, you've just doubled the number of ways that you may be vulnerable to request smuggling.
+Let's have a look at what goes wrong.
+We're going to start with an extremely simple case study targeting Netflix.
+The H2 RFC says that although the content length header is not required in H2 because we already have this frame length, you're actually allowed to send content length header provided it's correct.
+What could possibly go wrong with that?
+Well, Netflix was using the netty Java library for their H2 support and that library forgot to verify that the content length was correct.
+So if we send a request like the one you can see here, it would get downgraded to H2 and H1 and forwarded it on with the incorrect content length that you can see on the right.
+This would result in the data shown in orange being treated as a separate additional request by the backend server.
+And then when the next user's request was sent, that would complete the second fake request and result in the victim user being redirected to my own website.
+This could be used to redirect attempts to load JavaScript files, giving persistent JavaScript execution on Netflix's core website.
+And just by running this in a loop, I could hijack people's accounts in real time with no user interactions, potentially stealing passwords, credit card numbers and the like.
+For that, I got a 20K bounty off Netflix.
+After that motivating stuff, let's move on to something slightly more complex.
+The H2 RFC says that any message containing connection specific header fields must be cheated as malformed.
+But it's a little bit vague about what happens if you don't do this.
+So let's find out quite a few major well known servers failed to obey this line of the specification.
+And one such server was Amazon's application load balancer.
+As a result of this, I could get request smuggling using H2 on pretty much every single site that used Amazon's application load balancer and hadn't disabled HTTP 2.
+So let's take a look at this in detail.
+So for this example, I'm targeting Oath's law enforcement portal.
+And here you can see I'm sending a request that contains the transfer encoding chunked connection specific header field.
+So it should be rejected, but it hasn't.
+It's been incorrectly forwarded onto the backend.
+And this has resulted in the backend giving priority to the transfer encoding chunked header over the content length, which is the one that's actually correct in this case.
+Letting me once again prepend content to the start of the next request to hit the server.
+When I reported this to Oath, they wanted to see me prove that this was a serious vulnerability.
+They weren't entirely convinced.
+So I just started running this attack in real time and seeing who I redirected.
+And what I found was quite a few people that got redirected were in the middle of an OWARTH login flow.
+And so they ended up leaking their OWARTH secret codes to me via the referral header, giving me persistent access to their account.
+As well as working on Amazon's application load balancer and various other targets.
+This also worked on the encapsular web application firewall, which is always good because that file was meant to make your website more secure, not less.
+For that, I got a $7,000 bounty off Oath.
+I reported this to both encapsular and Amazon, and they both fixed it, but neither of them awarded me with any bounty showing a kind of interesting split between who it is who causes these vulnerabilities and who it is who actually bothers to incentivize people to have the vulnerabilities discovered and fixed.
+I actually found another target using the same technique also Amazon's application load balancer and figured, you know, why not exploit these guys too.
+So this was a system controlling a CMS owned by AOL that was used for various news websites, I believe.
+And once again, I could trigger a redirect and once again, they didn't believe me that this was a very serious security issue.
+So I had to put some time into proving the impact.
+I just started triggering redirects from people and I found quite a few requests hitting my server that said, hey there, I'd like to have permission to send you my credentials.
+And I wasn't expecting that. So after that, nothing really happened until I set my server up.
+So it said, yeah, sure, absolutely. Send me your credits. And then sure enough, they did.
+I've got a brilliant video taken with TCP dump that shows a fantastic stream of different credentials from live users arriving on my server in real time.
+But unfortunately it proved near impossible to redact. So I can't share it publicly.
+So for that, I got another 10k off AOL.
+That was the basic stuff. Now things are going to get a bit more interesting.
+One cool thing about H2 is that being a binary protocol, it lets you put arbitrary characters wherever you like.
+And it relies on additional server logic to say things like, no, actually you really shouldn't be putting that character in that position.
+Firefox is start page at start.mozilla.org was powered by the Netlify CDN and Netlify forgot to say that you can't put new lines in HTTP headers.
+This led to a request header injection vulnerability, which you can see me using here to smuggle a transfer encoding header, thereby causing the front end and the back end to disagree about the length of the message and letting me apply a malicious prefix to requests that hit the server after my payload does.
+In this example here, because Netlify is a CDN, I've taken advantage of that by registering my own malicious site with Netlify and I've just changed the host header that I'm sending there so that the second request, although Netlify think it's being sent to Mozilla's start page, is actually going to my website and serving up arbitrary content that I control.
+The really cool thing here is that Netlify also comes with a built in cache.
+So once this is served up once, it will get saved and effectively using this technique, I get a persistent control over every page over every on every site using the Netlify CDN.
+I reported this issue to both Netlify and Mozilla and Got2k off both.
+When I tried the same technique on Atlassian's Jira, something really quite interesting and unexpected happened.
+I expected to see two different responses coming back to me, the normal response and the poison response.
+But what I actually saw, which is you probably can't see because the text is too small, but you'll get the gist, is a huge range of responses that were clearly coming from different Jira deployments,
+clearly intended for different people and contained a huge variety of different bits of sensitive information.
+This left me wondering what exactly had happened. And eventually I managed to figure it out.
+My mistake was I had realised that with this ability to put new lines in headers, I didn't actually need to send a body.
+I didn't need to send the transfer encoding chunks header. Instead, I could use multiple new lines to split the request in the header
+and then put the additional malicious prefix inside the header.
+In doing this, I thought that I'd found a really smart way of sending my normal 1.5 requests.
+That meant that I didn't have to use the post method and could therefore potentially exploit a bunch of extra targets.
+What I completely failed to account for was that the front end, when it does a downgrade,
+is naturally going to terminate the HTTP headers with a couple of new lines.
+So I thought I was sending 1.5 requests, but actually I was sending exactly two requests to the back end.
+And that meant that I got the response to the first request as usual.
+The next user got the second response, which is fine.
+But then the next user got the response intended for that user and so on.
+Basically, you send one request like this and the front end persistently lost track of which responses it should be sending to which people.
+It ends up sending random responses to random users.
+And thanks to some of these responses having a set cookie header,
+it ended up persistently logging random users into random accounts on Jira.
+So that's why Atlassian had to log everyone out and expire everyone's sessions worldwide to just just to mitigate that.
+So if you find some request smuggling and someone demands to see real impact and you're struggling to prove it,
+then smuggling exactly two requests should get them the evidence that they're looking for.
+The root cause of this vulnerability was Atlassian using the Pulse Secure Virtual Traffic Manager product,
+which should not be confused with their VPN.
+We also already saw that Netlify was vulnerable and also needless to say Imperva's WAF was once again vulnerable.
+They haven't patched it yet, but hopefully they will have by the time you watch this.
+And I believe it works on some other targets as well, but those haven't been announced at the time of recording.
+So while they were waiting for Pulse Secure's fix, Atlassian decided to try out a few hotfix and run into a few more examples of what can go wrong when you're trying to patch these issues.
+The first issue was they were filtering header values, but not filtering header names.
+Just putting new lines in header names isn't directly useful, but you can also put colons in header names,
+resulting in a valid HTTP one of requests going to the back end and letting you successfully exploit.
+Another issue was that although they were filtering header names and values at this point, they weren't filtering pseudo headers.
+So you could even put new lines in the method of the request.
+And once again, this will let you cause desynchronization on the back end, provided you think about the format of the H1 request that you'll be generating.
+So here you have to put a valid request line before injecting your new line or the attack will fail.
+Finally, there was one last error, which is a classic one really.
+In the path pseudo header only, they were blocking the sequence slash R slash N, but they weren't blocking slash N by itself.
+And on almost all servers, you can use slash N by itself to cause desynchronization.
+So in summary, we've just seen a range of techniques that you can use to exploit H2 downgrades and achieve request smuggling, all demonstrated on live targets.
+Now I'm going to take a look at something less flashy and less obvious, but still really quite dangerous.
+When you find a request smuggling vulnerability, the possible attacks are affected by how the front end decides whether to reuse an existing connection to the back end or whether to create a new one.
+In a normal scenario, this is just done using a pool of connections and you can exploit other people with no issues.
+But sometimes you'll find you've got requests smuggling, but you can only poison the response to requests coming from your own IP.
+When you see that, that's because the front end has decided it's going to establish one connection to the back end per client IP that talks to it.
+This scenario makes direct cross user attacks less plausible, but it's still completely exploitable via cache poisoning.
+And it's easy to leak internal headers of your own requests.
+And so life is a bit trickier, but it's not that bad.
+And you can have a similar thing happening on a connection basis instead of a per IP basis.
+The most extreme scenario is when the front end just refuses to ever reuse connections with the back end.
+And this is what I encountered on Bitbucket.
+So I'm going to show you how to prove this even exists.
+And I'm going to share some new exploit paths that make it a lot more exploitable.
+Let's visualize what's happening here.
+In this example here, we've successfully smuggled 1.5 requests to the back end.
+But the front end is only sending one request down each socket.
+And that means that although we're poisoning a socket, the poison socket is being discarded.
+And any follow up requests, regardless of whether they're sent by the attacker or the victim,
+are going down a different socket and thereby being unaffected.
+You'll find this configuration happens naturally sometimes.
+And also Amazon's HDB Decent Guardian deliberately triggers this behavior whenever it sees a suspicious looking request.
+It's worth noting that Decent Guardian Spectacl clearly failed to use any mitigations against HDB2 powered attacks.
+But I imagine they'll be fixing that at some point.
+So when we encounter this, it causes numerous practical problems.
+And I'm going to show how to tackle some of them.
+The first problem is that although the normal request smuggling detection technique that's based on timeouts works absolutely fine.
+And we'll flag the systems as being vulnerable.
+The normal confirmation technique of sending a bunch of requests and then observing whether an initial requests affects a later one will fail.
+So when you fail to confirm it, it's very easy to mistake it for a false positive.
+With the understanding that I've just given you of how this is working, you might think it's actually quite easy to detect.
+Just smuggle a request and see if you get two responses.
+However, the response here doesn't actually show that this target is vulnerable because as we saw way back at the start, this is just how HDB1 keep alive works.
+There's no evidence this is vulnerable because we can't answer the question.
+Does the front end think it's sending us one response or two?
+HDB2 neatly fixes this problem for us.
+If you see HDB1 headers coming back in the body of HDB2 request, that clearly shows that you've successfully achieved requests model.
+The second problem is often even worse.
+This problem happens because a bunch of front end servers look at the content length that's coming back towards them from the back end in order to know how many bytes they should read and pass on to the end user.
+So this means you'll be able to trigger two responses from the back end, but you'll only ever see the first response, which is the less interesting one, making this extremely difficult to detect and exploit.
+And this was the scenario that occurred on Bitbucket.
+I didn't know this was what was happening and I certainly didn't have any particular solution in mind for this.
+But with research, if you spend long enough on a target, you can basically achieve a kind of brute force attack whereby you find the solution without having any idea what you're doing simply by spending a lot of time on it.
+And this is what happened to me.
+I was dealing with a particularly large response on Bitbucket and the file was so large that it was making Burp's UI lag slightly.
+And eventually this lag began to annoy me.
+So I thought, you know what?
+I don't even care about the response body.
+All I'm looking at is the response headers.
+So why don't I just change the method from post ahead and thereby only ask the back end to send me the request headers?
+As soon as I did this, I saw that I was actually getting multiple responses from the back end in one go.
+This is because the head method only asks for the headers, but the back end server still decided to send the content left header on the front end.
+And so it's all okay.
+I'd better read that many bites and ended up over reading into the next response, which was also intended for me.
+Thereby showing me both responses in one go.
+So through this completely accidental discovery, I found out a way that you can a technique you can use if you find blind request tunneling in order to make it non blind.
+It won't work on every service.
+Some front end service will have special casing for the head method, but it does work a decent proportion of the time.
+So let's say you found your request tunneling vulnerability.
+Maybe it's blind.
+Maybe it isn't.
+How are you going to exploit it?
+Well, because of the reconnection reuse behavior, we can't directly attack other users.
+But one thing you can do is take advantage of internal headers.
+Front ends often put secret headers on every request that are trusted by the back end server for critical functions like telling who the user is logged in as.
+And some of these are standards, so you can just guess the value of them.
+And I've just released an update for for prevent minor that supports nest mining the values of headers on internal requests like this.
+But often these will have custom names.
+And so you really need a way to find out what they're called in order to exploit.
+Normal header leaking techniques don't work when the front end isn't reusing the connection with the back end.
+But if you can inject new lines and headers, you can cause a different type of desynchronization that lets you disclose header names.
+Normal desynchronization techniques result in the front end and the back end disagreeing about where the message body ends.
+But if you look at what we're doing here, we're smuggling an extra start of a body inside a header.
+So both the front end and the back end view this as being one request.
+Even if this is a blind request underline vulnerability, we'll still see this response coming back to us.
+The desynchronization is happening because the two servers disagree about where the body of the request starts.
+This means that when the front end tries to put some internal headers on the end of the headers.
+It actually puts those internal headers in the body of the request on the S parameter.
+And all you need is a single reflected parameter like the search parameter that I used on the Bitbucket on the WordPress back end for Bitbucket in order to leak a whole bunch of internal headers.
+I also found just by changing the path and method that I used, I could trigger different request routing rules, hit completely different back end servers and leak different internal headers, including some which contain secret keys.
+This was juicy enough for me to report this issue to Bitbucket as is.
+But if you'd like a more detailed case study of exploitation of internal headers, check out the new relic example from my HDB desync attacks presentation.
+So finally, if the stars are aligned, you might be able to use tunneling for cash poisoning.
+If the target has a cash and the head technique works and you can put new lines in headers, then what you'll find is you have a unique and extra powerful variety of cash poisoning at your disposal.
+What you can do is mix and match response headers and response bodies.
+Here I've chosen a simple for four response for the headers, which has the content type of text HTML.
+And then I've chosen a different response, which simply reflects some user input in the location header without HTML encoding it.
+Now that behavior by itself is completely secure.
+You don't need to HTML encode data that's going in the location header, but because I've spliced it together with this other response, I've effectively injected arbitrary malicious JavaScript.
+And using this for cash poisoning, I could take full control over, I believe, every page on Bitbucket's website.
+For this, I got 15K, which was triple their maximum bounty.
+Now I'm going to take you on a tour of a few HDB2 exploit primitives.
+These are all using HDB2 features to give you some kind of hold on the target.
+And they're all based on behaviors that I've observed on real systems.
+Firstly, in HDB1, duplicate headers can be used for all kinds of attacks, but there's no way of specifying a duplicate path or a duplicate method.
+But in HDB2, you can, thanks to pseudo-headers.
+And I've verified a bunch of servers let you specify duplicate pseudo-headers, and they vary in terms of which ones they give priority to.
+So this could potentially enable some quite powerful attacks if you're willing to put the time in.
+Another issue is that in H2, in the specification, as I understand it, both the authority pseudo-header and the host-header are allowed, and they're both optional.
+This sets the scene for a whole variety of host-header attacks, because they're both meant to specify the same thing.
+So host-header attacks can be expected to live on in HDB2.
+You just need to tweak how you launch them slightly.
+Another issue with H2 is that they've introduced this scheme pseudo-header.
+I don't think this has a direct equivalent in H1.
+It's basically a fresh new piece of attack surface.
+And the value of the scheme is meant to be HTTP or HTPS.
+But of course, we can put whatever value we like in there.
+And unsurprisingly, a bunch of servers fail to verify it.
+For example, Netlify use the scheme to build a URL without verifying this value.
+And so you can make them get extremely confused about which path and endpoint you're talking to by putting the full URL in there.
+On a different target, you could trigger server-side request forgery because they use the scheme to build a URL and then route the request to that URL.
+It's worth mentioning.
+All the attacks I've shown you up to this point, recall, only work on targets that are doing HTTP2 downgrading.
+But this exploit works even if they're speaking H2 end to end.
+Now, something else you can do in H2 that works when downgrading is happening is you can put colons in header names.
+Now, sometimes you can use this for request smuggling, provided the backend server doesn't mind having a trailing colon in the transfer encoding header.
+However, a bunch of times this won't work.
+So what I would suggest is falling back to using it for host header attacks because the host header is expected to have a colon in it.
+And a whole bunch of servers just ignore everything after the colon because they think that must be the port.
+Now, I did get request smuggling on one server using this transfer encoding colon based technique.
+And I got halfway through exploitation and then I got bored and decided to take a break and come back later.
+And when I came back, I found the vulnerability had disappeared.
+And the server banner was reporting that they'd updated their version of Apache.
+So I went looking to see if Apache had an advisory relating to H2 power request smuggling.
+And they didn't. There wasn't anything that could conceivably be this issue.
+So I thought maybe they'd accidentally fixed this vulnerability.
+And I figured, I know, I'll just install the version of Apache locally, replicate the vulnerability and get a CV issued for it.
+So I set it up.
+It took a while, unfortunately.
+But when I got there, I found I couldn't replicate the vulnerability.
+I'd have no idea what was going on there.
+But I thought, well, since I've installed it, I might as well just give it a bit more testing.
+And what I found was a zero day that works just as well on the latest version of Apache.
+If you take Apache 2 and you use mod proxy to do HTTP to downgrading, then you'll find that it lets you put spaces in the method pseudo.
+This effectively gives you a request line injection vulnerability and provided that your back end server is tolerant and ignores trailing junk in the request line, which some of them definitely do.
+Then you can use this to bypass front end rules trying to block access to certain folders or trying to trap you in certain folders on the back end.
+I reported to that that to Apache straight away and then it's going to be patched in the next version of Apache, which hasn't come out yet.
+So this is a zero day right now. But hopefully by the time that you're watching this, it will have been fixed.
+Finally, a few practicalities.
+HP one and H two are spoken on the same port.
+So a client needs to know which protocol it should be speaking.
+And what it does is it relies on the server advertising the fact that it supports H two via a field during the TLS handshake, which occurs before any HTTP messages are set.
+However, some servers do support H two, but they forget to advertise this fact to the client.
+And this results in no clients actually speaking H two with them by default and can result in you missing out on some really juicy attack surface.
+Fortunately, this is extremely easy to detect.
+You can even just use curl if you want to.
+I found one vulnerable server where they they had this feature.
+H two wasn't visible, but I could exploit H two power requests smuggling on them.
+But there was a catch there, which is that due to their connection reuse style, I could only exploit other people that were using HTTP two, which was nobody.
+So it wasn't actually much use.
+There's another potential trap, which is although H two is supposed to have amazing request encapsulation, you'll often find a couple of bits of behavior that kind of failed to follow that line of thought.
+One is sometimes you'll send a request and all subsequent requests on that connection will fail, even though the server hasn't actually explicitly closed the connection.
+Another issue is that sometimes servers will just apply different rules to the first request that they receive on any given connection.
+So I've made sure in both burp suite and my own turbo intruder, you can control both of these properties to try and understand what's going on here and take advantage of whichever way the server happens to be doing things that I would go on this as an interesting topic.
+And I'm definitely going to be doing more research on it myself pretty much immediately.
+The tooling situation for HP two is not amazing.
+I think that's why aside from it, Emily was research, I almost got away with waiting a year before starting to work on this topic.
+Firstly, but virtual H two libraries refused to send the kind of mouthful requests that we rely on for this research.
+And because H two is a binary protocol, you it's completely extremely difficult to use things like Nick can open SSL to do these attacks manually.
+But you do have a few options.
+You've got HP two smuggle, which is in those tools based on the Golang H two stack, which he's made some patches to.
+There's also the HP two library built into turbo intruder, which I coded from scratch using socket.
+So if you want something really powerful that you can hack up, I'd recommend trying that.
+That works as a burp extension, but it can also be used as a completely standalone thing via the command line or even hooked as a library.
+However, I coded it.
+It's not the most viable thing in the world.
+So you may just prefer to use burp suite.
+We've done an update release today to the repeater and to the extended API so that you can take advantage of burp suite H two stack and still send these mouthful requests, which other libraries won't let you set.
+Finally, as far as detection of these vulnerabilities goes, a simple variation of the standard timeout technique works fine.
+And that's been implemented in burp scanner and in HP request smuggler, my open source burp suite extension.
+So I've just released a major update which adds support for all these techniques.
+And it was that tool that I used to find all the case studies for this presentation.
+I've also added support for finding for finding request smuggling vulnerabilities using that head technique that I showed.
+So although it's a bit less reliable in terms of it may miss out on vulnerabilities, sometimes it has the advantage of it has virtually no false positives.
+As far as the fence goes, the single best option is simply to speak HP two end to end instead of doing downgrade.
+If you do that, then almost all the attacks mentioned in this presentation will be more or less impossible.
+As far as other points go, well, if you're a server vendor, try and enforce HP one limitations.
+Totally let people put spaces in the method, new lines and headers, colons and header names, etc.
+Finally, if you're a developer, I think over time you'll just need to drop assumptions that it was safe to make in the world of HP one.
+Don't assume that header values aren't multiline.
+So for example, that means that it's no longer safe to take a header value and put it in an SMTP header, which is separated by new lines because you might have just created a head of injection vulnerability.
+Whereas in HP one, that would have been completely safe.
+Also, please, everybody don't trust the scheme pseudo header.
+I honestly think including this was a mistake.
+You should just be looking at the scheme that they're actually using and not the scheme that they claim they're using.
+If you have to use this, just use a whitelist.
+It should be HP or HPS.
+Anything else is simply an attack.
+There's a lot of further reading available.
+I do check out the white paper for this research.
+It will cover all this techniques, but from a written perspective, so it might make more sense.
+Also, we will be releasing a bunch of online labs.
+These may be available right now.
+And on these, they're accessible free and will spin up vulnerable servers for you.
+So you can practice applying all these techniques on real systems and get real practical experience with them.
+You can also grab the tool from GitHub.
+Emile's HP2 research is also worth checking out.
+You can watch the video there.
+And there's an upcoming DEFCON presentation called Response Smuggling Pwning HP 1.1 Connections that I've heard a little bit about and sounds really quite promising from an exploitation point of view.
+And I think a lot of it will work against HP 2 as well.
+So do check that out.
+And finally, the primary sources for this presentation are my only search predictably and also DEFCON's presentation linked there gives a better and more detailed explanation of response cue poisoning, which is the attack that we saw happening on Jira.
+So do check that out.
+The three key things to take away are that HP 2 breaks assumptions at multiple layers of the stack.
+HP 2 downgrading is extremely hazardous and should be avoided wherever possible.
+And request tunneling, regardless of how difficult it is to do, is a real threat to your website.
+If you have any questions, please just send them to me on Twitter or send me an email.
+Don't forget to follow me on Twitter.
+Thank you for listening.

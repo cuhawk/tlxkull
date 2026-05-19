@@ -1,0 +1,242 @@
+Last year we made it significantly easier to find DOMXSS with a new tool called DOMInvader.
+This year we've improved DOMInvader to make finding client-side prototype pollution as easy as a couple of clicks.
+So what exactly is client-side prototype pollution?
+It is a vulnerability that occurs when you merge an object with a user-controlled JSON object or an object generated from the query or hash parameters.
+And the merge operation doesn't sanitize the keys.
+This enables the attacker to use property keys like underscore underscore proto underscore underscore,
+which allows them to create arbitrary assignments to the object prototype or other global prototypes.
+When this happens, it's referred to as a prototype pollution source.
+The following sample code demonstrates this.
+The snippet of code looks through all the parameters in the query string.
+URL decodes the parameter name, creates an object and assigns a property name that an attacker can control as well as a property value.
+And that's the basis of how prototype pollution sources occur.
+In order to exploit prototype pollution, you need both a source and a gadget.
+A prototype pollution gadget occurs when the property is used in a dangerous way without filtering.
+For example, a site might do the following.
+At first glance, it might not look like there's a problem here.
+The object doesn't contain any properties, but the JavaScript engine will look at the object prototype for the HTML property if it doesn't exist on the current object.
+Then this leads to a prototype pollution gadget called HTML.
+Let's see what happens when we modify the object prototype.
+This results in the object prototype dot HTML property being used instead of the HTML property of the my object object literal.
+A developer will assume such properties are not user controlled and thus leads to XSS.
+DomInvader can help find both a prototype pollution source and gadget for you.
+Let's see how we can find them.
+By default, client-side prototype pollution scanning is turned off.
+This is because it can cause site breakage.
+However, if you want to find some prototype pollution sources, we need to switch it on.
+So, head over to the DomInvader icon and switch on prototype pollution.
+And hit reload.
+Once you've switched it on, we need a site to test it on.
+Luckily, we've prepared some test cases that can help demonstrate common bugs.
+Visit portswigger-labs.net slash dom-invader-prototype-pollution and then choose the query string gadget test case.
+So, let's scroll down and click on the query string gadget test case.
+If everything goes well, you should see the icon change.
+This is a new feature in DomInvader and it will show you how many syncs or messages it finds in the icon.
+The icon will also change colour if it's found something interesting.
+In this case, it seems to have found something interesting.
+We need to open DevTools.
+So, just hit right click.
+And then inspect.
+Or you can use F12.
+And then click on the DomInvader tab.
+And then the Dom Augmented Dom view.
+You can see DomInvader has found two client-side prototype pollution sources.
+Both occur within the query string because the source name says in search.
+And there are two separate techniques.
+This specifies what is required to inject the query string to cause prototype pollution.
+And that's how you find prototype pollution sources.
+So, you found client-side prototype pollution.
+Now, what should you do?
+Well, you might want to confirm that the site is actually vulnerable by doing a test yourself.
+DomInvader makes this easy.
+When a source has been found, simply click on the test button.
+And it will open a new window with a test injection.
+Let's click the button to see what happens.
+Let's click the button to see what happens.
+So, DomInvader has injected a test string in the query string.
+Which includes a prototype pollution source.
+So, if we open DevTools.
+And look at the console.
+You can see DomInvader has logged the object prototype in the console.
+And you can see the test property is actually there.
+So, DomInvader has injected this test property as a prototype pollution source.
+And you can see the value that DomInvader has injected.
+Now, you can confirm this yourself just by typing object.prototype.
+If I can spell it.
+And you can see the test property has been injected into the object prototype.
+And you can confirm that this site is indeed vulnerable to prototype pollution.
+You can find gadgets in two different ways.
+The first is to use the scan for gadgets button.
+This button appears on the source tree when you've found a prototype pollution source.
+The advantage of using this button is that DomInvader combines the source and the gadget when producing an exploit.
+So, let's click on the scan for gadgets button on the prototype pollution source we found earlier.
+You'll notice when clicking on the button, DomInvader will open a new window and show a progress bar.
+When the scan is complete, DomInvader will report the gadgets it's found and the icon will change.
+Let's open up DevTools and the DomInvader tab.
+As you can see, DomInvader has found an inner HTML sink.
+And in between the canaries injected, you'll see there is a number.
+This number is used to pair the prototype pollution source with the gadget to produce a more accurate exploit.
+The string prototype pollution follows a number and identifies that the value came from a prototype pollution source.
+After that, the actual gadget name in this case is called HTML.
+The second way that you can scan for gadgets is to change the settings.
+This is useful when you might not have a prototype pollution source, but you want to ensure your site doesn't have any gadgets.
+Let's head over to the DomInvader settings in the top right of the screen and let's switch it on.
+So here we need to click the prototype pollution settings cog here, which will show you additional options.
+And we need to choose scan for gadgets.
+So let's click the scan for gadgets checkbox.
+And what DomInvader does is it shows you the optimal settings for that selection.
+So for example, it will try to remove the CSP and X-Frame options headers by default because iFrames are used to scan for gadgets.
+You can change the defaults if you wish.
+But now when you refresh the page by clicking on the reload button, after you've clicked save,
+DomInvader will then scan for just gadgets.
+Now we know how to find gadgets, let's try and exploit them.
+First we need to follow the steps in the finding gadgets video to find our gadget.
+Once you have your gadget, we simply need to click the green exploit button.
+So let's click the exploit button.
+The exploit button will open a new window and attempt to match up the prototype pollution source with the gadget and sync
+and create a prototype pollution payload.
+If successful, you should see an alert.
+We've successfully exploited prototype pollution with just a couple of clicks.
+Some sites might not work correctly if you inject certain parts of the URL.
+Perhaps they have a redirect when the hash is modified, which can break an injection.
+For this reason, DomInvader allows you to customise where prototype pollution gets injected.
+So let's head over to the DomInvader settings by clicking on the icon.
+And then we need to click on the prototype pollution settings cog here.
+You can see there are three different checkboxes to control prototype pollution injection.
+We have query string injection, hash injection and JSON injection.
+Turning off the query string injection will prevent DomInvader for injecting in the query string.
+Hash injection will do the same but in the hash portion of the URL.
+And finally, switching off JSON injection will prevent DomInvader for injecting the prototype pollution inside of web messages.
+To confirm these settings, you just need to click on the save button.
+And now DomInvader will only inject in the places that you've selected.
+You might encounter a site where prototype pollution fails if all prototype pollution techniques are attempted.
+DomInvader allows you to choose which techniques are used.
+If you go to the settings icon and click the prototype pollution settings cog, you'll notice there's a techniques button.
+Clicking on this button will open a dialog which allows you to switch off prototype pollution techniques.
+Once you are done, click save to save your changes and hit reload.
+Now DomInvader will only try a single technique.
+DomInvader, by default, will scan for prototype pollution in the top frame.
+We found whilst testing that this offered the best performance and worked on most sites.
+However, you might encounter situations where a site might block a certain technique but might be vulnerable to a different one.
+In this case, DomInvader can scan every technique selected in a separate frame.
+To do this, click on the DomInvader icon and the prototype pollution cog.
+Then check the scan each technique in separate frame option.
+And hit save.
+Now, when DomInvader scans for prototype pollution, it will use iframes for each of the techniques, allowing you to scan them independently.
+Let's try running the scan.
+You'll notice now a progress bar appears showing DomInvader scanning for sources.
+On completion, it will inform you how many prototype pollution sources it has found.
+By default, DomInvader will scale the amount of properties scanned automatically.
+This produces faster performance but can miss gadgets if an injected property causes an exception.
+For this reason, we allow you to customise how many properties per frame when scanning.
+So, head over to the DomInvader settings and the prototype pollution settings cog.
+Auto scale amount of properties per frame.
+So, we need to switch that off.
+And this allows you to customise how many properties per frame we want to scan.
+So, if you drag it right, that's faster but less accurate.
+And if you drag it left, it's slower but more accurate.
+And we need to select scan for gadgets.
+And if you click save, that will enable you to change the amount of properties per frame DomInvader uses to scan.
+Whilst testing DomInvader on real world size,
+we noticed that we weren't really using the sources like location much.
+And we found when scanning for gadgets,
+we were getting a lot of noise from non-interesting syncs such as JSON.parse.
+We decided it would be a good idea to allow the user to customise which sources or syncs are instrumented.
+We decided to switch off all sources and non-interesting syncs by default.
+If you want to customise which sources or syncs DomInvader instruments,
+then head over to the general settings.
+Click the DomInvader icon.
+Click the cog next to the DomInvader on-off switch.
+Click the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link.
+You can also use the buttons below to select all, non or interesting syncs.
+Make sure you click the save button to save your choices.
+You can also do the same with sources.
+So if we open up the cog again and click on the sources tab in the general settings,
+you can then switch on and off the various sources that you wish DomInvader to instrument.
+And all you need to do is click save.
+And that's how you customise the sources and syncs in DomInvader.
+When using DomInvader to scan at scale,
+we quickly realised we needed a way to get vulnerabilities out of DomInvader.
+The solution we came up with was to use callbacks.
+A callback allows you to call a custom JavaScript function when a source, sync or message is found.
+You can use this callback to log the results or whatever you decide to do.
+Returning true or false in the callback enables you to instruct DomInvader to log the results or not.
+Here's how to add a callback.
+Click the DomInvader icon.
+And then the general settings cog.
+Then click the sync callback configuration button.
+This should then show you a deactivated callback because it's greyed out.
+Click inside the text box.
+By default, it logs all the data to the console and returns true.
+Once you are done, click save.
+And now the callback is active.
+So if we visit a test case such as the augmented DOM eval test case.
+And we click on the link to inject the canary into the query string.
+And you'll notice DomInvader finds an issue.
+So if we open up DevTools.
+Click on DomInvader.
+As you can see, the source, the canary has hit the sync.
+So what we can do now is click over to the console.
+And you can see our callback has been executed.
+And all the data has been printed to the console.
+So if you wanted to deactivate your callback.
+Then you just need to click on the DomInvader icon.
+Go to the general settings cog again.
+Click on the sync callback configuration button.
+And just hit reset.
+And then when you hit reload.
+DomInvader will stop using that callback.
+You might have noticed that there is some new information in the augmented DOM and message tabs.
+DomInvader now shows you the outer HTML of the element.
+Which is truncated.
+The frame path will show you which frame a message or sync is coming from.
+So if you head over to post-swigger-labs.net slash dom-invader.
+And choose the post-message eval iframe test case.
+We can demonstrate them.
+So if we scroll down to the post-message eval iframe test case.
+And click on it.
+So then head over to the DOMInvader icon.
+And turn on post-message interception.
+And reload the page.
+And if we open up dev tools.
+And the DOMInvader tab.
+It shows an eval sync and the frame path.
+So in this instance the sync occurs within an iframe.
+You might notice there is an event column.
+This tells you which event is being used at the time the canary reached the sync.
+In this case it is coming from a message event.
+Let's click the message tab to view the messages.
+You can see DOMInvader shows which frame the message comes from.
+And which frame it's posting to.
+You might notice that the frame is posting to itself.
+The reason for this is DOMInvader attempts to automatically post messages to the event listener.
+To see the true origin of the message.
+We need to switch off generate automated messages.
+So click on the DOMInvader icon.
+Turn off generate automated messages.
+Hit reload.
+And now you can see the message origin is coming from the top frame to the child frame.
+And that's how you can view frame path information in DOMInvader.
+So.
+And now you can see the message.
+
+
+
+
+
+And now you can see the message.
+And now you can see the message.
+
+And now you can see the message.
+And now you can see the message.
+And now you can see the message.
+And now you can see the message.
+And now you can see the message.
+And now you can see the message.
+
+And now you can see the message.
+And now you can see the message.
+
+And now you can see the message.
+And now you can see the message.
+

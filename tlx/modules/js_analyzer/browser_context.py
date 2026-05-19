@@ -431,8 +431,10 @@ def infer(
     if conn is not None:
         conn.close()
 
-    # Cross-link CSP enforcement → TT info (header drives enforced flag).
-    if bctx.csp.trusted_types_required:
+    # Cross-link CSP enforcement → TT info. Report-only CSPs publish
+    # violations but never block, so Trusted Types are not actually
+    # enforced even though the directive parses.
+    if bctx.csp.trusted_types_required and not bctx.csp.report_only:
         bctx.trusted_types.enforced = True
 
     # 6. Rendering / framework.

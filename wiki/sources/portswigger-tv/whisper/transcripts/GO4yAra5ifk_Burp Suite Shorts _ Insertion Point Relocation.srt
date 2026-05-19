@@ -1,0 +1,156 @@
+1
+00:00:00,000 --> 00:00:06,120
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+
+2
+00:00:06,120 --> 00:00:11,280
+insertion point relocation. So Burp Scanner during the crawl is trying to find paths through an
+
+3
+00:00:11,280 --> 00:00:15,240
+application to each request that it will then want to audit so that when we go back to that
+
+4
+00:00:15,240 --> 00:00:19,560
+request it's valid, everything's up to date, it's all in session, sort of like automatic session
+
+5
+00:00:19,560 --> 00:00:24,160
+handling. This means that when we are resending our base requests during the audit they might
+
+6
+00:00:24,160 --> 00:00:32,040
+change slightly. Things like cookies or session tokens or cash busters might update with each
+
+7
+00:00:32,040 --> 00:00:37,240
+time we send the request and if anything we kind of expect them to. That's why we're doing our
+
+8
+00:00:37,240 --> 00:00:41,840
+automatic session handling to make sure they're valid and fresh and up to date each time. The
+
+9
+00:00:41,840 --> 00:00:46,780
+problem with this is that as that request changes the part of the request that we're actually trying
+
+10
+00:00:46,780 --> 00:00:55,960
+to put our payload in might need to move slightly. So for example this foo parameter here is after
+
+11
+00:00:55,960 --> 00:01:02,560
+this token parameter here with the value x. If this value changed length each time this base request was
+
+12
+00:01:02,560 --> 00:01:08,860
+resubmitted then the foo parameter would kind of move slightly to the right each time its offsets would
+
+13
+00:01:08,860 --> 00:01:13,820
+change. If we just use hard-coded offsets for our insertion points then we could end up placing our
+
+14
+00:01:13,820 --> 00:01:19,520
+payload in completely the wrong place resulting in a malformed request. Instead, Burp Scanner understands
+
+15
+00:01:19,520 --> 00:01:24,860
+the features of the insertion point it's using and can dynamically relocate each time. So to
+
+16
+00:01:24,860 --> 00:01:32,180
+demonstrate this I've put together this really simple web application. It's got two pages. A first page
+
+17
+00:01:32,180 --> 00:01:38,940
+that has a single form on it. This form each time we visit it has this hidden token parameter with the value
+
+18
+00:01:38,940 --> 00:01:46,440
+of x and with each visit this parameter value gets slightly longer. When the form is submitted that
+
+19
+00:01:46,440 --> 00:01:52,720
+parameter is validated and if it's not of the right length we reject the form submission. So if I send this
+
+20
+00:01:52,720 --> 00:01:59,320
+to repeater because I've already done a scan of this that length isn't valid anymore. So I previously run a
+
+21
+00:01:59,320 --> 00:02:05,960
+scan of this application and if we head over to the logger we can see that each request has a payload
+
+22
+00:02:05,960 --> 00:02:11,080
+in the place in the correct spot for the value of the parameter we're attacking. So with each of these
+
+23
+00:02:11,640 --> 00:02:18,840
+even though the parameter is moving we're putting our payload in the correct place. Burp Scanner can
+
+24
+00:02:18,840 --> 00:02:24,040
+also handle insertion point index changing. So for example if those two parameters swapped order and it
+
+25
+00:02:24,040 --> 00:02:29,720
+can also handle insertion point name changes. I wanted to keep the demo nice and simple so I didn't cover
+
+26
+00:02:29,720 --> 00:02:34,520
+either of those. So you'll just have to take my word for it or you could try it out yourself.
+
+27
+00:02:35,960 --> 00:02:39,640
+So you can see that.
+
+28
+00:02:39,640 --> 00:02:41,640
+So you can see that.
+
+29
+00:02:41,640 --> 00:02:42,840
+So you can see that.
+
+30
+00:02:42,840 --> 00:02:44,840
+So you can see that.
+
+31
+00:02:44,840 --> 00:02:46,840
+So you can see that.
+
+32
+00:02:46,840 --> 00:02:48,840
+So you can see that.
+
+33
+00:02:48,840 --> 00:02:50,840
+So you can see that.
+
+34
+00:02:50,840 --> 00:02:52,840
+So you can see that.
+
+35
+00:02:52,840 --> 00:02:54,840
+So you can see that.
+
+36
+00:02:54,840 --> 00:02:56,840
+So you can see that.
+
+37
+00:02:56,840 --> 00:02:58,840
+So you can see that.
+
+38
+00:02:58,840 --> 00:03:00,840
+So you can see that.
+
+39
+00:03:00,840 --> 00:03:02,840
+So you can see that.
+

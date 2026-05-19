@@ -1,0 +1,228 @@
+1
+00:00:00,000 --> 00:00:11,880
+All right, so on the research blog earlier this week we published an article about a
+
+2
+00:00:11,880 --> 00:00:17,160
+new web threat called HTTP3 connection contamination.
+
+3
+00:00:17,160 --> 00:00:24,280
+And I was trying to think of some kind of beer analogy to make this make sense and nothing
+
+4
+00:00:24,280 --> 00:00:25,280
+really stuck.
+
+5
+00:00:25,280 --> 00:00:31,000
+And then I realized actually this attack is so simple it doesn't need an analogy I can
+
+6
+00:00:31,000 --> 00:00:35,960
+just explain it in the full technical details in one slide in four minutes and it will make
+
+7
+00:00:35,960 --> 00:00:39,380
+perfect sense to everybody.
+
+8
+00:00:39,380 --> 00:00:43,520
+So we're going to start off with a HTTP history lesson.
+
+9
+00:00:43,520 --> 00:00:50,980
+HTTP is the language that BIRP and also web browsers like Chrome and Firefox speak to
+
+10
+00:00:50,980 --> 00:00:53,320
+websites.
+
+11
+00:00:53,320 --> 00:00:57,880
+And every HTTP message is sent over a connection.
+
+12
+00:00:57,880 --> 00:01:01,600
+You don't really need to worry about what a connection actually is.
+
+13
+00:01:01,600 --> 00:01:08,080
+You only need to know one thing, which is that creating a connection is slow.
+
+14
+00:01:08,080 --> 00:01:14,160
+So the original standardized version of HTTP was called 1.0.
+
+15
+00:01:14,160 --> 00:01:20,640
+It came out in 96 and each message was sent over its own unique connection.
+
+16
+00:01:20,640 --> 00:01:24,520
+And everything was nice and secure and wonderful.
+
+17
+00:01:24,520 --> 00:01:27,760
+But then people were like, well, this is too slow.
+
+18
+00:01:27,760 --> 00:01:29,960
+We want to make this go faster.
+
+19
+00:01:29,960 --> 00:01:38,200
+And so they thought, well, what if we start sending multiple messages over each connection,
+
+20
+00:01:38,200 --> 00:01:42,740
+provided that all the messages are going to the same website.
+
+21
+00:01:42,740 --> 00:01:47,300
+And that was formalized in HTTP 1.1 in 96.
+
+22
+00:01:47,300 --> 00:01:50,420
+And it definitely made things faster.
+
+23
+00:01:50,420 --> 00:01:54,700
+And it also introduced a terrible vulnerability called request smuggling, which has been making
+
+24
+00:01:54,700 --> 00:01:57,300
+hackers happy ever since.
+
+25
+00:01:57,300 --> 00:02:04,860
+And well, we've been using HTTP 1.1 for a long time.
+
+26
+00:02:04,860 --> 00:02:10,860
+A large portion of the web still uses 1.1 and is still vulnerable to request smuggling.
+
+27
+00:02:10,860 --> 00:02:20,900
+But eventually they figured out how to stop request smuggling and they put it in HTTP 2.
+
+28
+00:02:20,900 --> 00:02:23,740
+And that solved request smuggling more or less.
+
+29
+00:02:23,740 --> 00:02:28,900
+But they couldn't resist also trying to make things a little bit faster.
+
+30
+00:02:28,900 --> 00:02:35,940
+And they said, OK, why don't we start using a single connection for multiple different websites,
+
+31
+00:02:35,940 --> 00:02:40,340
+as long as those websites are closely related to each other?
+
+32
+00:02:40,340 --> 00:02:43,060
+And yep, sure enough, that made things faster.
+
+33
+00:02:43,060 --> 00:02:50,340
+But it also introduced a new vulnerability called HP connection contamination.
+
+34
+00:02:52,340 --> 00:03:01,380
+The reason that this happens is that ever since 97 or earlier, websites have been able to assume
+
+35
+00:03:01,380 --> 00:03:06,500
+that all the requests sent over a single connection were intended for the same website.
+
+36
+00:03:07,620 --> 00:03:10,100
+And some of them just started taking that for granted.
+
+37
+00:03:10,100 --> 00:03:17,140
+And so now the browsers have started suddenly sending messages for different websites down the same
+
+38
+00:03:17,700 --> 00:03:23,060
+connection. The end result is the server doesn't realize this and it ends up going to the wrong website.
+
+39
+00:03:24,660 --> 00:03:29,780
+Now, you might be thinking, well, if we just publish this technique and that change happened in 2015,
+
+40
+00:03:29,780 --> 00:03:31,380
+why is there that big gap?
+
+41
+00:03:32,180 --> 00:03:38,100
+And the answer is, well, because the websites have to be closely related to each other,
+
+42
+00:03:38,100 --> 00:03:43,060
+this issue doesn't happen very much in practice.
+
+43
+00:03:43,060 --> 00:03:47,780
+It does happen sometimes. That's how I found it, because someone blew up their website by accident
+
+44
+00:03:47,780 --> 00:03:52,020
+with this and made an angry forum post. And I was like, hang on, there's a security issue here.
+
+45
+00:03:53,620 --> 00:03:55,620
+But the story doesn't end there.
+
+46
+00:03:56,740 --> 00:04:00,900
+Because, well, what's going to happen next? We're going to get HTTP 3, aren't we?
+
+47
+00:04:00,900 --> 00:04:07,700
+And, well, guess what it says in the specification for our for HTTP 3? It says, you know, we love connection reuse so much.
+
+48
+00:04:08,740 --> 00:04:17,300
+We're going to relax this requirement so that the websites that we will speak to over one connection no longer need to share an IP.
+
+49
+00:04:17,860 --> 00:04:21,140
+In other words, they no longer need to be closely related.
+
+50
+00:04:21,140 --> 00:04:26,020
+And basically, it could happen to any two websites hosted by the same company.
+
+51
+00:04:26,820 --> 00:04:28,100
+And what does that mean?
+
+52
+00:04:28,100 --> 00:04:35,540
+Well, it means this issue that is currently extremely rare is just going to get worse in the near future.
+
+53
+00:04:36,660 --> 00:04:38,580
+What's the real life impact of this?
+
+54
+00:04:38,580 --> 00:04:48,900
+Well, basically, if you try and speak to a secure website owned by a company, someone may have hacked one of their insecure websites,
+
+55
+00:04:49,540 --> 00:04:55,140
+and you may end up speaking to the one that's been hacked, and bad things are going to happen.
+
+56
+00:04:55,780 --> 00:04:59,060
+And that is HTTP 3 connection contamination.
+
+57
+00:04:59,060 --> 00:05:00,100
+Thanks for listening.
+

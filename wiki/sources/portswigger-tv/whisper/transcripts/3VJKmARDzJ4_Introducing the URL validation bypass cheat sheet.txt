@@ -1,0 +1,211 @@
+Hello and welcome to our URL validation bypass cheat sheet. We are really proud of making it
+live. It was a long journey of three months of developing the tool. I hope you really enjoy it.
+So today we're gonna talk about the cheat sheet itself, the real case scenarios. We have found
+the vulnerabilities on live bug bounty programs using the cheat sheet wordless. And I would like
+to show you some real-life use cases how to use the tool so you will better understand what real
+functionality hides behind it because it might sometimes be a little bit obscure for end-user.
+So if you haven't tried yet, I recommend you to give it a try and go to our website, web security
+service site request forgery web page and there you will find a lot of links or you can just click
+on this one and go straight to the URL validation bypass cheat itself. Let's go. So if you haven't seen,
+here it is. This standalone application, the most beautiful thing of it, it never sends the information
+to the NES server. It's fully JavaScript application that works inside your browser. Of course, it might
+cause some problems if you will create a huge, really, really huge wordless, but we will talk
+about it later on when I will show you the full potential of the tool. So what is the main reason
+why we designed this cheat sheet itself? The URL validation bypasses unknown vulnerabilities for decades
+and the biggest problem of it is that there are billions of sources of information. There are different
+types of information that you can find out. There are different types of information that you can
+find out. There are different types of information that you can find out. There are different types of
+information that you can find out. There are different types of information that you can find out.
+There are different types of information that you can find out. There are different types of
+types of payloads for your particular case. So that's why we decided to split all the URL validation payloads
+payloads and techniques to the big groups of the known vulnerabilities. And we call them the arbitrary URL,
+and the host header, and the course origin. So fully qualified absolute URL is useful when you have the
+full string. Usually it might be request parameter or maybe refer header or any other type of headers.
+Host name speaks to itself. It's just usually host header or where you can submit the domain name. And
+course is type of payloads that only will be valid course origin value. So you can't send anything that
+browser won't send through this one. We have a couple of encodings. It was a huge challenge to me to
+implement the different kind of encodings to be supported with the burp suite itself. If you might know,
+there is a couple of special unicode symbols that can be sent through the burp suite intruder
+because of the technical issues we have. Sometimes the sequence of bytes cannot be identified the valid
+encoding of these sequences of bytes because of the nature of encoding. You never know is it UTF-8 or UTF-16,
+etc. And the intruder itself cannot predict this. To somehow mitigate this problem,
+we designed this intruder's personal encoding to be intruder's least friendly tool. So you don't have to
+worry about it if you are working with something that supports personal encoding. If you're not sure
+what kind of payload, it's better to use encode everything or special characters if you know for
+sure what kind of payload you would like to send. And speaking about the modern applications like all of
+these JSON, GraphQL, etc. We also introduce Unicode escape. This is literally the JSON-like escape sequence
+where you are using the slash U and four digits that represent any kind of UTF-8 symbol.
+The payload structure itself. Under the hood, the cheat sheet itself is driven by the number of JSON files. Each of
+these JSON files contains the payload string, prefix, suffix, and the ID. ID is the hash sum of the
+concatenation strings of prefix, payload, and suffix. So we will be sure that there is no duplicates inside of
+all of these different kinds of word lists inside the JSON string. And the payload itself supports special
+templates like attacker domain name and allowed domain name. We will talk about it later on, but long
+story short, it allows you to replace this template with any string you would like to be changeable during
+your word list generation. We also have a couple of advanced settings that allows you to set up schema paths
+or any different kind of modification of the payload. It's really useful when you work with different kind of
+cloud metadata. For instance, by default, it's override your payload with the HTTP schema. Even you are working with HTTPS
+because usually the metadata schema works through the plain text HTTP protocol. But if you would like,
+you can disable this behavior by changing this checkbox. And now we are heading to the most interesting part of it.
+So the results of our internal research, we got six different word lists. You can see them on the
+screen right now, and we will talk about each of them in details later on.
+Cloud metadata endpoint. Right now we support this magic AWS, you know, AP address, metadata, AP address,
+and a couple of more taken from the official documentation of the AWS Amazon. So if you would like,
+you can just select only this word list, particularly for their known vulnerabilities,
+if your target is working on the cloud infrastructure.
+Also, you can use the AP address modification and achieve the same results of the AWS metadata
+by entering this IP address to the attacker domain name. As you might see right now on the screenshot,
+the IP address will be represented in multiple ways, like binary, hexadecimal,
+or overflow, dword, dword with overflow, truncated IP version, etc, etc.
+Domain allow list bypass. This is a huge, huge subject. There are, I would say, we can talk about it
+more than 14 minutes talking about different kinds of payloads. I was trying to collect
+all known working payloads and try to reduce all non-up-to-date payloads known in the wild. It's
+really a good question what kind of these domain allow bypasses we should include, but we decided to
+stop only on the working examples and not spend a lot of time on the patched vulnerabilities.
+As an example, let's say the teaser, I would like to show you the most interesting ones, like this
+particular one, when you can use the node.js or browser to treat the string like example.com and Python and Perl
+like AWS Smith's data point. I will show you later on in the demo how it all works.
+Another interesting one submitted by our great community example is when your payload starts with
+a loud string and then after the dot you can put anything. It will not only works for the different
+kind of course vulnerabilities, so you can abuse the different kind of prefix vulnerabilities,
+but also inside the Python URL lib parse library.
+Fake relative URLs. This word list designed to collect all known
+funny payloads that might be incorrectly treated by client-side code, for example, JavaScript, as
+just a pure string or relative URL, but when it will be sent to the browser, will interpret it like the
+full absolute URL.
+JSON is an example. As you might know, inside the absolute URL you allow to put any kind of newline characters
+literally everywhere. It can be inside the host, inside the schema, between the slashers, etc.
+etc. If you haven't seen, the Gareth did amazing research about HTML entities. So, this funny string will be
+treated like the fully URL, even it contains the ampersand symbols, etc. It's all done because of these
+named HTML entities. That's a pretty, pretty amazing research. If you haven't seen it, I do really recommend
+you to go to the Shazer and take a look at all entities allowed type of fuzzer results.
+IPv6. It not only includes different kinds of IPv4 inside IPv6 type of bypasses, but also a really nice,
+amazing payload that allows you to use different kinds of interfaces inside IPv6 after the person sign.
+So, you can embed your attacker domain inside the interface name or even use the person
+encoding sign of the person itself or IPv4 future.
+So, look back. We decided to extract this wordlist to separate wordlist because usually this is the magic
+IP address that you would like to test this out because it's always available in 99% and we did a lot of funny
+mutations like on this screenshot. Localhost, Lowcalorieshost, etc. In different scenarios, it might be normalized back to the localhost string.
+Speaking about the normalization, we also did a really nice wordlist. It's called the URL splitting
+unicode characters based on the special research that shows that some unicode normalization strings might be interpreted as special significance
+characters inside the protocol like dot slash, hashtag, add question mark, etc.
+So, in our example, for example, webattacker.ca, the funky utf8 symbol a.ca will be normalized to the webattacker.ca.
+Once again, if you haven't seen, the shatter also supports the different kind of utf normalization tricks.
+So, in this particular example, browser will normalize the brackets to the IPv6 address and will open the URL.
+I will show you this example later on. We also support different kind of circled alpha digits.
+It's really a wide-known type of bypasses for the different kind of application firewalls.
+Also, we support the full-width unicode characters and segmented digits. It's not a mistake.
+This particular string won't be rendered inside your browser, but it should be 127.0.0.1.
+And it will work inside the latest Chromium too.
+The new release, we just released it today, is a special regex bypass validation attack.
+Whenever you enter inside the allowed domain, the string that contains dots, it will create for you a special word list
+that will try different kind of bypass techniques inside the dot.
+And now we go into the most interesting part, taken from the live huge amount of bug bounty programs.
+So, the most popular bypass these days is still the prefix and suffix validation errors,
+when you can attach your attacker domain, in my example is d4d.1, to the allowed domain name,
+and you can bypass the course origin checks.
+As always, as I mentioned, you can spot these types of vulnerabilities, where the dot itself might be
+incorrectly interpreter, and you can register the new domain name, like prodxexample.com, and get access to the domain.
+Another really cool example.
+If you're not familiar, the Firefox in Safari allows special characters inside the origin and host header name.
+So, if you are lucky enough, and can afford yourself the wildcard domain name, and can register it,
+you can use the dollar sign as a split character, and split the prodxample.com,
+so the parser behind the scenes will interpret it like prodxample.com, while the browser will send
+prodxample.com, dollar sign, d4d.1.
+And we go into the demo.
+I hope it works, otherwise I have the preview got it, so we don't have to worry about it.
+So, let's see.
+It's pretty simple course in all checks library in our Web Security Academy.
+The main goal for today's session is not to show how to solve the Web Academy library itself,
+it's how to use the tool.
+As I said, you can put anything inside the allow domain name, and will be automatically created the
+word list for you.
+We can do it, like as I said, for A, B, C, D, etc.
+And it will replace any dot with X and try to use it as exploit if you will click copy to the payload list.
+And of course it won't work because it's not a valid example, but it's just a demo.
+And if you would like to try the real one,
+And of course we'll solve the library.
+And here we go.
+Now we'll return.
+And now we're heading to the most interesting part of the G-Shit.
+As I said, we can create the different circle digits payloads,
+we can create the full width payloads,
+and even the signature digits.
+Unfortunately, our lab itself won't contain a lot of digits.
+Yeah, but anyway, it's funny to try it out.
+If you want to give it a try...
+...
+...
+...
+...
+...
+...
+
+
+...
+...
+...
+
+...
+
+...
+
+...
+
+
+
+...
+
+
+
+
+...
+
+
+
+
+
+
+...
+
+
+
+
+...
+
+
+
+
+...
+
+
+
+
+
+...
+
+
+
+
+
+...
+
+
+
+
+
+
+
+...
+
+
+
+
+
+
+
+
+
+
+
+
+

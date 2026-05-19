@@ -2,7 +2,7 @@
 title: SSRF allowlist bypass via IP-format encoding
 slug: octal-ip-ssrf
 created_utc: 2026-05-13T00:00:00Z
-updated_utc: 2026-05-13T00:00:00Z
+updated_utc: 2026-05-19T00:00:00Z
 tags: [technique/ssrf, technique/url-parsing]
 inbound: []
 ---
@@ -48,6 +48,7 @@ GET /fetch?url=http://[::ffff:127.0.0.1]/admin
 
 ## Seen in the wild
 - Recurring across SSRF-fix bypasses in 2023 (Eps 34, 37).
+- **2026-03-31 — `ssrf_filter` v1.3.0 NAT64 bypass** (arkadiyt-projects / tipsen, H1 #3634400, High): The `ssrf_filter` Ruby gem failed to block `64:ff9b:1::/48` (RFC 8215 NAT64 local-use prefix), treating those IPv6 addresses as public. Requests through `/fetch` with a `64:ff9b:1::x.x.x.x` target reached internal addresses when the deployment had a NAT64 gateway. **Lesson**: SSRF denylist IPv6 coverage must include `::ffff:0:0/96` (IPv4-mapped), `64:ff9b::/96` (well-known NAT64), and `64:ff9b:1::/48` (local-use NAT64). See [H1 #3634400](../../sources/hacktivity/3634400.md).
 
 ## References
 - Critical Thinking Podcast Eps 9, 34, 37

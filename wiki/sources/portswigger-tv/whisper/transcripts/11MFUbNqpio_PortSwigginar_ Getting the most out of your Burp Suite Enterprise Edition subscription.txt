@@ -1,0 +1,338 @@
+Okay, it looks like most people are here, so we'll kick off. Hi and welcome to today's
+Portswigger on the topic of getting the most from your Birkshire Enterprise Edition subscription.
+Before we get going, some quick introductions. So I'm Adam, I'm part of our Enterprise Advocate
+team here at Portswigger. I work with our trialists and customers supporting their evaluations,
+procurement of Enterprise Edition, and hopefully helping them getting the most out of the tool.
+To my right is Alex. Hi folks, I'm Alex. I'm with the technical support team. So as well as the
+day-to-day support, we help customers on board with our products as well. I'll take us through the demo
+today and some tips and tricks around Birkshire Enterprise. We've also got James, Hannah, Kieran
+and Jo in the background today who are managing the Q&A facility in the Zoom toolbar. If you can make
+sure that you use this to ask any questions during the session, please use the Q&A facility over the
+chat box. Just helps us to manage that a little bit easier. We'll try and respond to them as quickly as
+we can during the session. If we don't manage to answer any of your questions, then don't worry,
+we can follow up via email after the session has finished. Also, you'll notice this session is being
+recorded and we hope to get that recording out to you after the session. So if you want to watch it back,
+or if you want to share it with any of your colleagues, then please feel free to do so.
+Quick recap of the agenda. So as a recap, we'll be discussing maximizing scans, application users.
+This is more of a reminder of our sort of unique licensing model here at Portswigger with Enterprise
+Edition. Alex is going to highlight the Kubernetes deployment, which has been made available earlier
+this year that some of you may have not seen. We're then going to run through a product overview demo on
+best practice, manage your entire portfolio of sites and scans, how to trigger scans outside of the UI,
+a release update, which is going to cover some 2022.7 release with regards to the UI, so connection
+checks and progress updates that we'll showcase later, some steps that we'd recommend that you take
+after the session. And then we've just got a short poll that we're going to run at the end of the
+session, if you don't mind, and we can cover off any other questions. So the first thing we want to
+cover, and it might sort of seem fairly obvious, we want to cover off sort of maximizing your
+subscription at Burtry Enterprise Edition. For a little bit of context, when we've spoken to customers
+previously, it's sometimes forgotten how our licensing model is different to other competitor solutions.
+So what often happens, Burtry Enterprise Edition is evaluated by maybe a small team, it's procured,
+and then it's rolled out to the wider team in your organization. And they may not have been involved
+with the initial evaluation. This can sometimes mean that the team that's actually using Burtry
+Enterprise Edition on a daily basis are not necessarily familiar with the capacity of the tool itself.
+So for the avoidance of doubt, it's worth remembering that Burtry Enterprise Edition is licensed
+on concurrent scans. We do not charge you for adding users, we do not charge you for adding all of your
+sites, we do not charge you for running an indefinite number of scans. So some of the previous feedback
+has been that teams are concerned that using the full potential of the tool, they have a fear of building
+up sort of a large bill at the end of the month. To reiterate, this is not the case. And we really do
+want you to be scanning all the time and adding all of your sites and adding all of your users.
+This is a massive differentiator between our products and other solutions that are out there
+in the market. And we really want to shout about it. Next up, I'm going to hand over to Alex,
+and we're going to look at the new Kubernetes deployment.
+Thanks, Adam. So folks, if you've already deployed, it's likely you've chosen the standard
+installation process, potentially some of you may have gone for our old CloudFormation
+deployment as well, which is now unsupported because we've released this new Kubernetes deployment.
+So if you have gone for the standard installer, you've got that up and running, you can stick with
+that, that's absolutely fine. That's kind of the mainstay of our deployments across the customer base.
+But if you've got any interest in containerization and looking towards Kubernetes, there's no problem in
+you moving across from the standard installer to Kubernetes, just contact us at support and we can
+we can help facilitate that process. But in short, the new Kubernetes deployment method is effectively
+done via a Helm chart that we provide. And the idea is that there are no sort of restrictions as
+search around the infrastructure, which was one of the sort of main bits of feedback we had from the
+CloudFormation and ARM templates that we had previously. A bit more freedom in terms of what that
+underlying infrastructure looks like. And then you just deploy the application on top with the Helm chart.
+This also has the inherent advantage of the auto scaling scanning machines. So whereas with the
+standard deployment, where you pre provision your scanning machines, with Kubernetes, you don't,
+they are essentially created when you initiate a scan job, they'll run, and then they'll die off once
+that scan finishes. The inherent benefit being in a cloud environment is around that cost element,
+because we're only effectively paying for what we use. The prerequisites around the Kubernetes
+deployment are as follows. So these are the only elements you need to meet for your own cluster.
+As long as you meet these effectively, you should be able to deploy the Helm chart.
+So some sort of ingress solution, typically that's going to be a load balancer or an ingress controller.
+We'll need a persistent volume claim. So it's going to be application name that you give it dash pvc,
+and that needs to be shared by all the nodes in the namespace. And then to enable the auto scaling,
+the cluster auto scaler must be installed enabled as well. But other than that, you should be able
+to run Burp Suite enterprise on any x86 based cluster. So if your AWS is your GCP or even private,
+should be good to go. This is what that deployment looks like. So from a, from a customer perspective,
+i.e. yourselves, you'd be responsible for the ingress, the web service and the database. That database
+process still follows our normal external deployment. So we have all the docs and the scripts around that.
+It's just that that's effectively managed outside of the Helm chart. And then what the Helm covers is the
+web server pod, the enterprise service and the enterprise server pod. Whilst the scanner pod isn't
+technically deployed by the Helm chart, that's looked after by the enterprise server. So again,
+it's not something you necessarily have to worry about. The Helm chart collectively takes care of that for you.
+In terms of interactivity and components, it's largely still the same as the on-premise installer.
+In terms of those services and components, we're still targeting apps with the scanner pods.
+We can still use things like the Burp collaborator that you used to from either pro or the on-prem
+deployment. So that's Kubernetes. Again, any questions on this, you can fire those into the
+team behind the scenes and they'll be more than happy to answer any questions.
+So moving on to the demo. Effectively, we're just going to walk you through kind of some best practice and
+some tips and tricks on getting set up and particularly around scheduled scans, because
+that is really the sort of main use case for Berksuite Enterprise. To begin with, not a particularly
+sexy element as it were, but if we go to the networking page, this is an important component,
+especially if you're looking to integrate your installation with any sort of third-party apps
+or other elements within the environment. It's a good idea to get this section completed.
+So we've got our web server URL, which is effectively how we're accessing our installation.
+So by default, this will typically be localhost. And then you can change that after the fact,
+once the installation is complete. And then we append a web server port where the service is
+available over. And again, we can change that after the fact. But these need to be completed if
+we're going to integrate, i.e. talk to another system. And the format is as follows. So it's
+going to be your URL and then your port and then separately your web server port as well. If you're
+more interested in a secure connection, so we can upload and enable TLS by uploading a certificate,
+and then just remember to change that web server to HTTPS at the same time.
+So if for whatever reason you might require a proxy server to reach the public internet,
+we can do so here in the network settings page as well. But this is strictly for
+talking to portswigger.net, which is how we handle licensing and automatic updates. So if typically that
+connection will be restricted, you might want to add the details of a proxy server. But again, this is
+just for licensing and updates. If from a scanning perspective, you also require an upstream proxy,
+that's not configured here, that will be done so in your scanning configuration.
+Additionally, again, if we're connecting to any other applications, or we're using the GraphQL API
+from another system, then typically we're going to want to whitelist those URLs,
+which we can do so here for cause purposes.
+So once we've done that, we've got our web server set up. Typically, we're then going to set up
+our team. So as Adam mentioned, we don't limit you in terms of how many people can use
+BipSuite Enterprise, it's very much a team focused product. And we do have role based access control.
+So feel free to throw as many users as you see fit. So you can carve out a specific role. So we have
+some built in ones, but you have complete control to create a custom one as well. So if we go to add a
+new role, you can see here that you can get quite granular in terms of what permissions that role
+actually has. And then once you've created your necessary roles, you can assign those to groups,
+and then your users will fall into those groups. So if we go to new group, for example,
+I can select a predefined role, or one that I've created, we can add those users, but also importantly,
+we can restrict sites. So if you know certain teams are only working with certain sites,
+this is one way to restrict that view that they have across your application portfolio.
+So that's the team. Next, we're probably going to want to check out our scanning machines.
+So you can deploy as many scanning machines as you wish. And these are going to be responsible for
+actually performing the scans against our target application. With a sort of single machine
+deployment where everything is deployed to the same, you'll see this local scanning machine,
+local IP address, but I can deploy as many as I want to external machines, external VMs,
+and that expands my capability. Because one, I'm bringing in more resource, because as you know,
+scans can be quite intensive from a CPU and RAM perspective. So I want to distribute that as best I
+can. Generally speaking, from a sort of best practice perspective, we would do something around five or
+six max concurrent scans per scanning machine. You can take it above that. And we do see customers
+do so with quite a beefy VM, for example. But just from a best practices perspective,
+that's typically what we would recommend. And then once you've deployed all those scanning machines,
+we can see our license info here. So this is what you've purchased in terms of those max concurrent
+scans. Your total will be down here. And then you can distribute that amongst your scanning machines
+as you see fit. So for example, we might have five scanning machines, each with five concurrent scans,
+giving us our total of 25 if that's what we paid for. And we can further carve these out into scanning
+pools. So again, from a resource perspective, we can tie sites to pools. So effectively dedicating
+scanning machines to particular sites or sets of sites. So again, if it's very much a team focus,
+or we need to ensure that we've got that resource available for CICD scans, and we're not impacting
+our regular scheduled scans, we can split those two out. So we set up our team, we've configured our
+networking, and our scanning machines are ready to go. Next job is to create our sites. And there's
+kind of two streams of thought here. So it's particularly for a new installation, or if you've
+got an awful lot of sites, you can use the import sites feature. So this lets you download a CSV
+template, which I've got here just to show you. And you can populate that sort of minimum in terms of
+required information in order to import all of those sites. So you can see here site name,
+included URLs that we want to include as part of our scans. If we want to exclude any, we can do so as
+well. If we want to assign it to a scanning pool, a particular scan configuration, and then email
+recipients for activity around that site. And then once we've completed that, we can import it here.
+And that's going to populate our site list. And then we can start to distribute everything into
+folders if we want to carve things out again into teams, geographical locations. And this is where
+bulk actions start to come into play. So we can start to select things like folders, that's going to
+select all of our sites within that folder. And we've got an update coming out shortly where we have
+folder level actions. So taking that notion of bulk activity further, say we've got a folder,
+and we might want to assign the same scan configuration to all those sites, or with the
+folder level bulk actions, we can do so. I will just run you through creating a new site and what
+we would kind of consider best practice. So we're going to be configuring our own vulnerable website,
+and you are more than free to target this with your own scans. So this is a deliberately vulnerable
+website that we've created, and it's designed to be a modern web application effectively.
+So if I copy my URL, go back to my site, and we'll just call this vulnerable site. And because we're
+going to be looking specifically at scheduling, the idea for this site is that we're going to be running
+a daily scan against this particular web application. So we might call this daily, for example. We can
+distribute that into a folder, so we'll just call that one internal sites. And then we want to add our
+base URL, our site URL, which we'll add in here. And this is where the scan is going to start and run
+from the initial crawl. We can do things like include URLs and exclude URLs if we wish to do so. So maybe we
+want to explicitly define a particular subdomain of our source URL. Maybe we don't want to scan the whole
+application. Typically, especially for initial testing, we'll just leave it at the one base URL.
+What is important is the protocols that we want to use. So by default, it's always going to land on both
+HTTP and S. If we only wanted to specify one, we would select scan using my specified protocols,
+and then ensure that we've supplied the correct protocol there as well. If, for example, we don't want to
+scan HTTP, but that's what we provided, we're not going to get good results from that.
+So once done so, we can then move on to our scan settings. And in our most recent update, so that's
+version 2022.6 for Enterprise. You'll also need version 2022.6.1 for the scanner.
+We've introduced these new preset scan modes, which is going to be your default view when creating your site.
+And these give you access just to some very easy, quick options in terms of what type of scan
+I want to run. They're predefined. And as you can see from the descriptions there, they're fairly self-explanatory,
+so I can do a quick lightweight scan, which is going to complete within 15 minutes. It's good to fire
+off a quick scan and get some results and start analyzing fairly sharpish. We've got a fast scan, which is a bit more thorough,
+but it's still kind of biased more towards speed. Balance, which is very much middle of the road,
+which can be quite a popular one. And then a deeper scan. So if we want to have more coverage,
+deeper understanding of the application, but we're okay from a scan time perspective, that is something
+we might want to pick. Now you still have control over what that scan configuration looks like from a
+custom perspective. So you don't have to use the preset scan modes, but just there to aid you,
+especially when you're initially testing your application. So we still have access to our
+full library. There's going to be the pre-built scan configurations that we have access to that
+you're probably familiar with. And then any custom scan configurations that we might want to include
+as well. For the purposes of this, we're doing a daily scheduled scan. So we're probably going to
+keep that at lightweight because we're just running it every single day. We just want to hit the main
+points in terms of the vulnerabilities within the application. And then maybe we would create another site
+and call that weekly. And we might run then a deep or balanced scan. We've got a bit more time,
+a larger scan window, for example, maybe it's over the weekend. And instead of calling it daily,
+we just call it weekly or a weekend based scan. We can also append our application logins, because if
+our site needs authentication, particularly if most of the content is locked behind an authenticated
+session, we're definitely going to want to add in some application login. By default, that's going to reflect
+just the username and password. So if the application itself is quite simple, single page, username,
+password, we can just provide those credentials here, and it'll be used for the scan itself.
+More typically, it's probably going to be a little bit more complicated in terms of that authentication process.
+So we're going to want to use our recorded login sequence. So in your browser, you can install the
+plugin, which is available within Chrome. And that allows us to record the session, you know, in an
+incognito window of us logging into the application. Again, we've got a great document around this,
+which offers some hints and tips to get the most in terms of an accurate recording, which we can link
+after the session. And then we can take the JSON that is generated from that, cut and paste that into
+here. And again, that'll be used as part of the scan, every session will be authenticated with that
+script. Once we've completed all those details, we can click Save. That's now added our site. So we can
+now start to configure our schedule. On top of that, again, we're looking at a daily based schedule for
+this particular one. So if I go to New Scan, it's already preselected the site I'm configuring,
+because I've just built it. And I select Schedule and Repeat. And this is where I can design my
+schedule. So we're going to pick the date and time for which we want that to start. So just for
+example, we're going to go with eight in the morning every day. And then when do we want to repeat that?
+So every one day, forever, we can repeat a set number of times if you've got a particular window in
+terms of what we're interested in scan results wise, or until a particular date, we're looking to add a few
+more options down the line to how you can carve out that schedule. But this is fairly typical for most
+of our customers. And then very simply, we'll click Save. Apologies, we'll put that in the future.
+And now our schedule has been created, and it's completely hands off. So it's just going to run the
+scans every single day for us, 8am, and we can check back in to start looking at results. But the main
+benefit of having this run every day is that we're going to start to build a picture over time of
+effectively the security posture of that given site. So if we were to jump back into scans,
+for example, here's all of my previously run scans. But I can also look at my schedule. So we can see
+here we've got multiple schedules for different applications within our particular environment.
+And if I jump into my site list, and I select a site, you can see here where the benefits of running a
+regular schedule for your site starts to come into play because we build this picture over time of the
+security posture. So what items have been resolved from a run early perspective? Have any regressed?
+What is that change? And again, we can start to report on these issues across an extended period of time.
+So once we've done that, that's kind of the bread and butter of the scheduling. We might also want to
+be running pipeline based scans. So very similar in nature. But typically, these are going to be API
+driven. So we're going to give you the example of Jenkins, but our generic driver effectively works
+with any pipeline based software, depending on what your platform is. So in the name of,
+of in the case of Jenkins, we can add that specific driver in. And once done so, we'll actually be
+presented with a particular build step that is specific to Burp Suite Enterprise. So I'll take you
+through that configure one in a second. But if I come down here to build step, we can see here,
+we've now got Burp Site Driven Scan and Burp Scan. So Site Driven Scan is because we've pre-created a site,
+as we've seen in the UI, we've got our list of sites. This now has effectively a site ID,
+all of the information is being configured. So from a Jenkins perspective, it's very straightforward
+just to pick the site driven scan and include it as part of my pipeline. And it's going to take all
+the config information from the site level. Now, if I don't want to do that, because perhaps I don't
+know where my application is going to be deployed to, maybe it's dynamic every time I run a pipeline,
+well, the Burp Scan is going to be a better choice in that scenario, because I can define what that URL
+is going to be as part of the pipeline. But to give an example of a site driven scan, all I need to do
+is pass the URL. So again, we mentioned completing those network settings earlier. So now I can pull
+that URL and connect to my enterprise server. I've generated an API key. So again, going back to our
+users, our team, you can create an API user, which will generate that unique key, and I can cycle that
+key as I see fit. That's going to let me do an authenticated session in terms of an API call.
+And then I've got my site list. One of the benefits of the plugin is that that's going to pass that
+site list across. So I can select which site I want to scan as part of that pipeline. And then when do I
+want the build to fail? So perhaps I only want high and certain in terms of the severity and confidence
+level of the issues that are located during the scan. And then that'll fail my build based on what's been
+found. Maybe I've got a particular threshold where I can permit a certain number of issues,
+well, I'll assign that. And as a developer, perhaps I'm not necessarily jumping in and out of the Burp
+Suite Enterprise UI. Otherwise, we mentioned, I can absolutely do so because we don't restrict those
+users. But I can still generate a report from my pipeline as well, which will be essentially the same
+report that I would see as a result of my scans in Burp Suite Enterprise in the UI. So now if I save that
+anytime I build this particular project, that's going to initiate an API driven scan back to Burp Suite
+Enterprise. And again, because of that driver, the two can communicate. We have that awareness of where
+the scan is up to. So Jenkins knows when to fail that build. Now, if we're not interested necessarily
+in pipeline scans, but we still want a bit of automation around Jenkins, we can still utilize
+that GraphQL API and essentially use a Jenkins job to schedule our scans, but via Jenkins. So we've got
+some GraphQL API documentation that we can provide again after the call. But all we need to do is take one
+of those examples scripted out with that kind of configuration information. So again, we can still
+do site driven scans, take the site ID from a pre-populated one, include that inside of a Jenkins
+job, we might convert it to curl, just to make life easier within Jenkins. But that's going to give us all
+the information we need for Jenkins to tell Burp Suite Enterprise, I want to run a scan of this particular
+date and time. One example of creating a scheduled item, which again, we could convert to curl,
+is here, and I'm happy to pass this example across. But the benefit of the GraphQL API is that we just
+got the one endpoint, but we can use mutations to effectively do anything we've seen within the UI,
+all of those elements are exposed. So we're creating a scheduled item, and our variables are down here
+at the bottom. So we call out that ID, and we define our schedule. And again, we authenticate this with
+the API key, and then we can talk to Burp Suite Enterprise that way. So if you're more interested in sort of
+automating and scripting outside of the UI, that's perfectly doable by the GraphQL API.
+Are we happy there, Adam? Have I missed anything?
+I think that's pretty much everything covered, thank you very much.
+We just wanted to, as we mentioned at the top of the agenda, give you a little bit of a sneak peek into
+what's coming up in terms of releases. So we're just going to go through a couple of
+UI changes that are due in 2022.7. So in terms of changes that are happening within the UI, one thing
+that's been fed back from some of the customer interactions that we've had, kind of twofold.
+One is in terms of scan progress checks. So where they're using the tool, we want to see what's
+happening within the scan. If a user is familiar with Burp Suite Professional, potentially they were
+there looking at the scan and how it worked, but that wasn't available within the enterprise UI,
+and also connection checks. So if you want to whiz through those, Alex?
+Yeah. So a lot of the feedback, we've kind of talked around scheduling and looking at results
+and building that long-term picture. But quite often, we want to see the progress of scans as well.
+We don't necessarily want to be hands-off all the time, especially when we're troubleshooting. So we've got
+this concept of the timeline coming into the UI. So rather than just kind of watching the sort of bar
+go around, not kind of knowing where the scan's up to, now we've split into distinct steps. So we kind
+of know where the scan is up to at all times, but it's also going to report things to us. As you can
+see here, the scan's queued because it's assigning it to an available scanning machine. Then it's going to
+start when that's done. So we know the scan's kicked off. Then we know we're in the crawling phase.
+We can look at things like requests made, how many locations are we discovering, what URL is it up to
+right now? Then the audit phase, this is where we start to see issues starting to be presented.
+And we could also potentially start to look at any error messages that we might receive,
+if we have to skip particular checks for whatever reason. And then when the scan actually finishes,
+we can start to drill down into those results in more detail. Another one comes back to that site
+creation. So the kind of idea of being able to perform a connection health check, i.e. can my scanning
+machine reach what it is I'm trying to scan in terms of the target site. So you're going to be
+able to run this connection check at the point you've either created your site, do a check, or any
+time in the future just to make sure that that connection is still valid. And it's going to give
+you that connection status and response back as well. And then if for whatever reason it's not returned,
+you've got that particular response and you can start to troubleshoot. So for example, perhaps the
+scanning machine needs a proxy configuration applied in terms of the scan configuration.
+Brilliant, thank you very much. Worth mentioning that our roadmap is probably available on the site.
+We're looking at publishing a refresh of that in the next couple of weeks. So please do visit
+portswagger.net to take a look at that. In terms of recommended next steps, in fairness, it's fairly simple.
+Don't mind skipping on Alex. For those users that potentially don't update, we'd love to get you on to
+2022.6 and obviously 2022.7 when it's released at the end of July. I won't give a specific date because
+there are our engineers who will slap my wrist for that. But essentially a lot of the features
+and functionality that Alex has shown you during the overview today are only available on the latest
+releases. So especially with regards to the preset scan configs, it's definitely worth getting up to date.
+And also if the scanner's not up to date, then it's also not discovering the latest vulnerabilities.
+Also, if you want to have a play around with those preset scan configs and don't have a website to test,
+as Alex mentioned, we've got the deliberately vulnerable website, which is shown on the screen now.
+So the Gin and Dew shop that we've developed over time, it's something that you can run and we'll
+happily test against. Do you mind popping on? So one thing that we just wanted to grab whilst we've
+still got the audience here, if you wouldn't mind, I'm just going to launch a quick poll that should be live
+on your screens now. Just four questions should take you no more than 60 seconds to complete.
+Just in terms of your usage of Bookshare Enterprise Edition and whether that's going to change over
+time, we're really interested to get your feedback on that. Also, it looks like the Q&A box has been
+fairly quiet during the session. So please use this opportunity now to answer any questions or ask any
+questions that are there. We've got the team live ready and raring to go. And we'd be happy to follow
+up over email should anything else crop up post the session. As we mentioned, we've also recorded the
+sessions. We'll send the recording out either via a YouTube link or via an embedded link in the email
+after the session. And please feel free to forward on to any of your colleagues. I can see quite a few of you
+participating in them, which is great. I'll give you another 60 seconds or so to complete through that.
+As I mentioned, the Q&A facility is still live. A couple of questions in there.
+My colleague James is replying to those now.
+So I can see Matt there regarding AD. So absolutely. So what we looked at was locally managed users
+within Burp itself. We have both integrations with SAML and LDAP. So if we just jump very quickly back
+into the UI, come to integrations here, you can configure both SAML and LDAP. And even if you've got a
+SKIM module along the lines of SAML, we can extend that as well. So you can import effectively your
+existing user group structure, you would create the same groups in terms of the naming convention
+within Burp. And then those users would inherit the permissions that you would assign to those
+particular groups, but they would absolutely be able to log in with their AD or SSO credentials.
+Correct.
+Great stuff. We've got five of you that participated in the poll. If anyone else is able to
+participate and complete that, that would be fantastic. It would be really helpful for us.
+We've got a couple of questions that are live now. I think James is sending answers across.
+Do you want to go through any of those or should we answer those?
+So Joseph mentions around resources.
+Okay. So I mean, with the standard VM-based deployment, the enterprise and web server will
+sit on their own VM and that's fairly static. We've got a document that details what that
+configuration should be. And then each external scanning machine, so it sits on its own machine.
+We'll also have a recommended CPU and memory allocation, depending on how many concurrent scans
+you wish to run. From a scale perspective, typically you wouldn't increase the singular scanning machine
+every time you want to add a scan. Typically, once you get to a certain point, as I mentioned,
+that's usually between sort of five, 10 maximum current scans, you would then deploy another
+scanning machine, which would increase that scale and be resourced accordingly. Again,
+the documentation we've got that applies to the scanning machine, so we can send it across.
+Fantastic. I think we'll leave it there, folks. Thank you very much for joining us today. Any feedback
+on the session would be appreciated. As I say, we'll follow up over email. We'd love to hear from
+you and your experiences with Berkshire Enterprise Edition. Any questions that haven't been answered,
+then we will follow up after the session. Thank you very much, and we look forward to seeing you again
+soon. Thanks, all.

@@ -1,0 +1,356 @@
+1
+00:00:00,000 --> 00:00:10,000
+In this section, we'll explain what OS command injection is, describe how vulnerabilities
+
+2
+00:00:10,000 --> 00:00:14,880
+can be detected and exploited, spell out some useful commands and techniques for different
+
+3
+00:00:14,880 --> 00:00:23,520
+operating systems, and summarize how to prevent OS command injection.
+
+4
+00:00:23,520 --> 00:00:28,320
+OS command injection, also known as shell injection, is a web security vulnerability
+
+5
+00:00:28,320 --> 00:00:33,440
+that allows an attacker to execute arbitrary operating system commands on the server that
+
+6
+00:00:33,440 --> 00:00:39,160
+is running an application, and typically fully compromise the application and all its data.
+
+7
+00:00:39,160 --> 00:00:44,200
+Very often, an attacker can leverage an OS command injection vulnerability to compromise
+
+8
+00:00:44,200 --> 00:00:48,980
+other parts of the hosting infrastructure, exploiting trust relationships to pivot the
+
+9
+00:00:48,980 --> 00:00:56,260
+attack to other systems within the organization.
+
+10
+00:00:56,260 --> 00:01:01,080
+Consider a shopping application that lets the user view whether an item is in stock in
+
+11
+00:01:01,080 --> 00:01:02,640
+a particular store.
+
+12
+00:01:02,640 --> 00:01:08,200
+This information is accessed via a URL like this.
+
+13
+00:01:08,200 --> 00:01:14,080
+To provide the stock information, the application must query various legacy systems.
+
+14
+00:01:14,080 --> 00:01:19,100
+For historical reasons, the functionality is implemented by calling out to a shell command
+
+15
+00:01:19,100 --> 00:01:22,700
+with the product and store IDs as arguments.
+
+16
+00:01:22,700 --> 00:01:28,860
+This command outputs the stock status for the specified item, which returned to the user.
+
+17
+00:01:28,860 --> 00:01:34,540
+Since the application implements no defenses against OS command injection, an attacker can submit
+
+18
+00:01:34,540 --> 00:01:38,560
+this input to execute an arbitrary command.
+
+19
+00:01:38,560 --> 00:01:43,420
+If the input is submitted in the product ID parameter, then the application will execute this
+
+20
+00:01:43,420 --> 00:01:45,240
+command.
+
+21
+00:01:45,240 --> 00:01:50,680
+The echo command simply causes the supplied string to be echoed in the output and is a
+
+22
+00:01:50,680 --> 00:01:54,760
+useful way to test for some types of OS command injection.
+
+23
+00:01:54,760 --> 00:02:00,360
+The ampersand character is a shell command separator, and so what gets executed is actually three
+
+24
+00:02:00,360 --> 00:02:03,100
+separate commands one after another.
+
+25
+00:02:03,100 --> 00:02:07,520
+As a result, this output is returned to the user.
+
+26
+00:02:07,520 --> 00:02:13,060
+From the output, we can see that the original command was executed without its expected arguments,
+
+27
+00:02:13,060 --> 00:02:16,080
+and so returned an error message.
+
+28
+00:02:16,080 --> 00:02:21,520
+We can see that the injected echo command was executed, and the supplied string was echoed
+
+29
+00:02:21,520 --> 00:02:23,760
+in the output.
+
+30
+00:02:23,760 --> 00:02:31,760
+And we can see that the original argument, 29, was executed as a command, which caused an error.
+
+31
+00:02:31,760 --> 00:02:36,980
+Embracing the additional command separator after the injected command is generally useful because
+
+32
+00:02:36,980 --> 00:02:41,360
+it separates the injected command from whatever follows the injection point.
+
+33
+00:02:41,360 --> 00:02:49,920
+This reduces the likelihood that what follows will prevent the injected command from executing.
+
+34
+00:02:49,920 --> 00:02:55,620
+When you have identified an OS command injection vulnerability, it is generally useful to execute
+
+35
+00:02:55,620 --> 00:03:00,980
+some initial commands to obtain information about the system that you have compromised.
+
+36
+00:03:00,980 --> 00:03:11,100
+Here is a summary of some commands that are useful on Linux and Windows platforms.
+
+37
+00:03:11,100 --> 00:03:15,480
+Many instances of OS command injection are blind vulnerabilities.
+
+38
+00:03:15,480 --> 00:03:22,380
+This means that the application does not return the output from the command within its HTTP response.
+
+39
+00:03:22,380 --> 00:03:27,740
+Blind vulnerabilities can still be exploited, but different techniques are required.
+
+40
+00:03:27,740 --> 00:03:31,680
+Enter a website that lets users submit feedback about the site.
+
+41
+00:03:31,680 --> 00:03:35,120
+The user enters their email address and feedback message.
+
+42
+00:03:35,120 --> 00:03:39,980
+The server-side application then generates an email to the site administrator containing the
+
+43
+00:03:39,980 --> 00:03:41,160
+feedback.
+
+44
+00:03:41,160 --> 00:03:46,480
+To do this, it calls out to the mail program with the submitted details.
+
+45
+00:03:46,480 --> 00:03:52,100
+The output from the mail command is not returned in the application's responses, and so using the
+
+46
+00:03:52,100 --> 00:03:55,100
+echo payload would not be effective.
+
+47
+00:03:55,100 --> 00:04:04,760
+In this situation, you can use a variety of other techniques to detect and exploit a vulnerability.
+
+48
+00:04:04,760 --> 00:04:09,940
+You can use an injected command that will trigger a time delay, allowing you to confirm that the
+
+49
+00:04:09,940 --> 00:04:15,020
+command was executed based on the time that the application takes to respond.
+
+50
+00:04:15,020 --> 00:04:21,340
+The ping command is an effective way to do this, because it lets you specify the number of ICMP
+
+51
+00:04:21,340 --> 00:04:26,080
+packets to send, and therefore the time taken for the command to run.
+
+52
+00:04:26,080 --> 00:04:35,900
+This command will cause the application to ping its loopback network adapter for 10 seconds.
+
+53
+00:04:35,900 --> 00:04:40,860
+You can redirect the output from the injected command into a file within the web root that
+
+54
+00:04:40,860 --> 00:04:43,340
+you can then retrieve using your browser.
+
+55
+00:04:43,340 --> 00:04:49,280
+For example, this input will inject a command and redirect the output to a file.
+
+56
+00:04:49,280 --> 00:04:54,440
+The greater than character sends the output from the command to the specified file.
+
+57
+00:04:54,440 --> 00:04:59,700
+You can then use your browser to retrieve the file and view the output from the injected command.
+
+58
+00:04:59,700 --> 00:05:09,000
+You can use an injected command that will trigger a network interaction with a system that you
+
+59
+00:05:09,000 --> 00:05:12,880
+control using out-of-band techniques.
+
+60
+00:05:12,880 --> 00:05:20,100
+This payload uses the NSLOOKUP command to cause a DNS lookup for the specified domain.
+
+61
+00:05:20,100 --> 00:05:25,140
+The attacker can monitor for the specified lookup occurring, and therefore detect the command
+
+62
+00:05:25,140 --> 00:05:27,220
+was successfully injected.
+
+63
+00:05:27,220 --> 00:05:33,760
+The out-of-band channel also provides an easy way to exfiltrate the output from injected commands.
+
+64
+00:05:33,760 --> 00:05:38,620
+This input will cause a DNS lookup to the attacker's domain containing the result of
+
+65
+00:05:38,620 --> 00:05:43,680
+the injected command.
+
+66
+00:05:43,680 --> 00:05:49,760
+A variety of shell meta-characters can be used to perform OS command injection attacks.
+
+67
+00:05:49,760 --> 00:05:56,020
+A number of characters function as command separators, allowing commands to be chained together.
+
+68
+00:05:56,020 --> 00:06:01,060
+These command separators work on both Windows and Unix-based systems.
+
+69
+00:06:01,060 --> 00:06:05,840
+And these command separators work only on Unix-based systems.
+
+70
+00:06:05,840 --> 00:06:11,900
+On Unix-based systems, you can also use backticks or the dollar character to perform in-line execution
+
+71
+00:06:11,900 --> 00:06:16,000
+of an injected command within the original command.
+
+72
+00:06:16,000 --> 00:06:20,620
+Note that the different shell meta-characters have subtly different behaviors that might affect
+
+73
+00:06:20,620 --> 00:06:25,920
+whether they work in certain situations, and whether they allow in-band retrieval of command
+
+74
+00:06:25,920 --> 00:06:29,880
+output or are useful only for blind exploitation.
+
+75
+00:06:29,880 --> 00:06:35,540
+Sometimes, the input that you control appears within quotation marks in the original command.
+
+76
+00:06:35,540 --> 00:06:42,580
+In this situation, you need to terminate the quoted context before using suitable shell meta-characters
+
+77
+00:06:42,580 --> 00:06:48,420
+to inject a new command.
+
+78
+00:06:48,420 --> 00:06:53,540
+By far the most effective way to prevent OS command injection vulnerabilities is to never
+
+79
+00:06:53,540 --> 00:06:57,460
+call out to OS commands from application layer code.
+
+80
+00:06:57,460 --> 00:07:02,580
+In virtually every case, there are alternate ways of implementing the required functionality
+
+81
+00:07:02,580 --> 00:07:05,800
+using safer platform APIs.
+
+82
+00:07:05,800 --> 00:07:11,400
+If it is considered unavoidable to call out to OS commands with user-supplied input, then
+
+83
+00:07:11,400 --> 00:07:14,620
+strong input validation must be performed.
+
+84
+00:07:14,620 --> 00:07:18,700
+You can validate against a whitelist of permitted values.
+
+85
+00:07:18,700 --> 00:07:21,720
+You can validate that the input is a number.
+
+86
+00:07:21,720 --> 00:07:26,620
+You can validate that the input contains only alphanumeric characters, no other syntax or
+
+87
+00:07:26,620 --> 00:07:28,620
+whitespace.
+
+88
+00:07:28,620 --> 00:07:33,060
+Never attempt to sanitize input by escaping shell meta-characters.
+
+89
+00:07:33,060 --> 00:07:38,860
+In practice, this is just too error-prone and vulnerable to being bypassed by a skilled attacker.
+

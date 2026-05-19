@@ -1,0 +1,260 @@
+1
+00:00:00,000 --> 00:00:06,600
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+
+2
+00:00:06,600 --> 00:00:10,680
+automatic session handling in Burp Scanner. Now this is something I've talked about previously
+
+3
+00:00:10,680 --> 00:00:14,040
+regarding the crawl, but today I'm going to focus a little bit more on how the audit
+
+4
+00:00:14,040 --> 00:00:19,080
+automatically maintains session. So let's dive straight in with an example app that shows why
+
+5
+00:00:19,080 --> 00:00:25,560
+this is so important. So I've just created a little application here that has two pages.
+
+6
+00:00:25,560 --> 00:00:31,260
+First we're given a page with a greet me link and if we click on that we're given a page with some
+
+7
+00:00:31,260 --> 00:00:38,220
+pretty obvious reflection. However through some pretty basic cookie usage this page will only
+
+8
+00:00:38,220 --> 00:00:45,600
+allow five visits. So just keep refreshing it before eventually it says no. It gives me a 400 and says
+
+9
+00:00:45,600 --> 00:00:55,080
+please stop. So that means that if we go and actively scan this page, so if we do an active scan,
+
+10
+00:00:55,080 --> 00:01:01,740
+we're not going to find the reflection because when we start sending payloads to the page,
+
+11
+00:01:01,740 --> 00:01:09,300
+we've already used up our session for that page and we start getting 400s. Now if you're getting
+
+12
+00:01:09,300 --> 00:01:14,400
+400s, if you're not hitting the application proper, your payloads aren't reaching the attack surface and
+
+13
+00:01:14,400 --> 00:01:19,140
+you're unlikely to find any bugs and this is why session handling is so important. Now we could set
+
+14
+00:01:19,140 --> 00:01:24,900
+up a manual session handling rule here or what we could do is we could crawl and audit our application.
+
+15
+00:01:24,900 --> 00:01:30,660
+So if I open this up and I don't want HTTPS, I just want HTTP and I go to localhost,
+
+16
+00:01:30,660 --> 00:01:41,280
+8000 and I scan that. So what's going to happen here is Burp Crawler is going to explore the
+
+17
+00:01:41,280 --> 00:01:48,060
+application and it's going to find our vulnerable page and not only is it going to find it, it's
+
+18
+00:01:48,060 --> 00:01:52,740
+also going to figure out what steps it has to take to get back there again should it no longer be in
+
+19
+00:01:52,740 --> 00:01:59,520
+session. This information will be handed off to the audit and the audit will then try to find the
+
+20
+00:01:59,520 --> 00:02:04,260
+shortest viable path that still gets us there. So in this case, nine times out of ten or I guess
+
+21
+00:02:04,260 --> 00:02:09,900
+five times out of six, actually just hitting the same page over and again will work and it will
+
+22
+00:02:09,900 --> 00:02:13,740
+figure out, the audit will figure out that for the most part it could just keep sending the base
+
+23
+00:02:13,740 --> 00:02:20,340
+request and sending payloads in there. However, as those payload containing requests start to get
+
+24
+00:02:20,340 --> 00:02:25,140
+versions of the page that doesn't recognize, that it doesn't see as matching how it originally saw the
+
+25
+00:02:25,140 --> 00:02:30,880
+response when it was crawling, what it will do is it will stop and say, hmm, am I out of session?
+
+26
+00:02:30,880 --> 00:02:36,360
+The way it works this out is we go back to sending an unmodified base request. We want to work out
+
+27
+00:02:36,360 --> 00:02:42,220
+whether it's the payload that's causing an unexpected response or whether our session has died. So we will
+
+28
+00:02:42,220 --> 00:02:47,580
+send an unmodified base request. We will check to see if we're still in session. If we are, we'll go,
+
+29
+00:02:47,580 --> 00:02:50,960
+okay, well it's maybe just that our payloads are causing the application to hand us back different
+
+30
+00:02:50,960 --> 00:02:56,360
+responses, which is totally expected. If we're instead out of session, what we'll do is we'll go
+
+31
+00:02:56,360 --> 00:03:01,220
+back to the full path to get back to that location and we will re-walk it so that we go and get a
+
+32
+00:03:01,220 --> 00:03:05,540
+brand new session. After that we can go back to doing our simple path and keep sending our base
+
+33
+00:03:05,540 --> 00:03:11,060
+requests, keep putting payloads in it until it happens again. And in this way Burp Scanner will
+
+34
+00:03:11,060 --> 00:03:16,280
+continually make sure that all of the payloads it sends are in session. If it ever works out that it
+
+35
+00:03:16,280 --> 00:03:20,940
+has lost session, it will roll back to the last time it saw a successful session, last time
+
+36
+00:03:20,940 --> 00:03:25,800
+it saw a payload being sent and getting a correct response and it will rerun any scan checks that
+
+37
+00:03:25,800 --> 00:03:30,600
+have been seeing unsuccessful responses since then, just to make sure that we're getting maximum
+
+38
+00:03:30,600 --> 00:03:35,700
+coverage. So as we can see here from our crawler and audit, we found our reflection and we found
+
+39
+00:03:35,700 --> 00:03:40,800
+the cross-site scripting that goes along with it. Now this was a topic that was requested a lot by the
+
+40
+00:03:40,800 --> 00:03:46,440
+community because it's not something that we talk about a great deal. If you have any more
+
+41
+00:03:46,440 --> 00:03:50,220
+suggestions for things you'd like me to cover, just let us know.
+
+42
+00:03:50,940 --> 00:03:51,940
+Thank you.
+
+43
+00:03:51,940 --> 00:03:51,940
+
+
+44
+00:03:51,940 --> 00:03:51,940
+
+
+45
+00:03:51,940 --> 00:03:51,940
+
+
+46
+00:03:51,940 --> 00:03:51,940
+
+
+47
+00:03:51,940 --> 00:03:51,940
+
+
+48
+00:03:51,940 --> 00:03:52,940
+Thank you.
+
+49
+00:03:52,940 --> 00:03:52,940
+
+
+50
+00:03:52,940 --> 00:03:53,940
+Thank you.
+
+51
+00:03:53,940 --> 00:03:53,940
+
+
+52
+00:03:53,940 --> 00:03:54,940
+Thank you.
+
+53
+00:03:54,940 --> 00:03:54,940
+
+
+54
+00:03:54,940 --> 00:03:54,940
+
+
+55
+00:03:54,940 --> 00:03:55,940
+Thank you.
+
+56
+00:03:55,940 --> 00:03:55,940
+
+
+57
+00:03:55,940 --> 00:03:56,940
+Thank you.
+
+58
+00:03:56,940 --> 00:03:56,940
+
+
+59
+00:03:56,940 --> 00:03:56,940
+
+
+60
+00:03:56,940 --> 00:03:57,940
+Thank you.
+
+61
+00:03:57,940 --> 00:03:58,940
+Thank you.
+
+62
+00:03:58,940 --> 00:03:58,940
+
+
+63
+00:03:58,940 --> 00:03:59,940
+Thank you.
+
+64
+00:03:59,940 --> 00:03:59,940
+
+
+65
+00:03:59,940 --> 00:04:00,940
+Thank you.
+

@@ -1,0 +1,112 @@
+1
+00:00:00,000 --> 00:00:06,240
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+
+2
+00:00:06,240 --> 00:00:11,120
+stored input detection in Burp Scanner. So stored input detection is the process of finding places
+
+3
+00:00:11,120 --> 00:00:14,880
+in an application where we can submit data that will then be stored by the application,
+
+4
+00:00:14,880 --> 00:00:18,080
+and then linking that to other places in the application where we can retrieve that data.
+
+5
+00:00:18,720 --> 00:00:23,040
+This is different from something like reflected input detection, which is just finding data which
+
+6
+00:00:23,040 --> 00:00:28,480
+is reflected in the immediate response to a request. So stored data detection is really
+
+7
+00:00:28,480 --> 00:00:33,120
+important because stored or second order vulnerabilities tend to have on average a
+
+8
+00:00:33,120 --> 00:00:39,520
+lot higher severity than their reflected or first order counterparts. This is because an attacker can
+
+9
+00:00:39,520 --> 00:00:44,400
+just plant payloads in the application and wait for victims to find them rather than having to rely on
+
+10
+00:00:44,400 --> 00:00:51,440
+a separate delivery mechanism. So how does Burp Scanner do stored input detection? If we hop into Burp here
+
+11
+00:00:51,440 --> 00:00:56,560
+I've got a scan that I've already run so that we don't have to sit and watch it. If I go ahead and
+
+12
+00:00:56,560 --> 00:01:02,400
+open up the view details tab and head over to the audit items we can see here that there are multiple
+
+13
+00:01:02,400 --> 00:01:09,360
+active phases. So in the first phase we do all of our first order checks. In the second phase we
+
+14
+00:01:09,360 --> 00:01:14,400
+generate unique payloads and send them to every insertion point and every request. In the third
+
+15
+00:01:14,400 --> 00:01:20,560
+phase we send every request again and look for those unique payloads from phase two in all of the responses.
+
+16
+00:01:20,560 --> 00:01:27,280
+In phase four we do all of our second order checks. So in a lot of cases these are functionally identical to
+
+17
+00:01:27,280 --> 00:01:31,280
+our first order checks. We just hide the fact that there's more going on between the request and response
+
+18
+00:01:31,280 --> 00:01:36,320
+to the scan check that's doing the scan checking. In the fifth phase we send all of our
+
+19
+00:01:36,320 --> 00:01:43,760
+collaborative collaborator based blind XSS payloads to every insertion point. So phases two and three are what make of our
+
+20
+00:01:43,760 --> 00:01:50,720
+stored input detection and phase four uses these stored data paths. There is one caveat or limitation
+
+21
+00:01:50,720 --> 00:01:55,280
+to our stored input detection currently and that's multi-step processes. So this would be something
+
+22
+00:01:55,280 --> 00:01:59,600
+like an order form that's collecting information across multiple pages and then reflecting all of
+
+23
+00:01:59,600 --> 00:02:04,880
+your choices back at the end. Because currently we're linking single requests to single responses
+
+24
+00:02:04,880 --> 00:02:11,040
+and we're not sending all of the requests in that in that process, if we just do step one or two in
+
+25
+00:02:11,040 --> 00:02:14,880
+isolation and then look at the final step, it's probably going to say something like you've not
+
+26
+00:02:14,880 --> 00:02:19,680
+done everything required and it's not going to reflect our data back to us. This is something
+
+27
+00:02:19,680 --> 00:02:24,400
+that's been on our backlog for a very long time. We just haven't come up with a way of doing it that
+
+28
+00:02:24,400 --> 00:02:33,040
+isn't kind of combinatorial explosive on the number of requests that we'd have to send. So we're working on it and we'll get there.
+

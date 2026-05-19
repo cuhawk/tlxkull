@@ -2,7 +2,7 @@
 title: Johann Rehberger (wunderwuzzi23)
 slug: johann-rehberger
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [wunderwuzzi23, embracethered]
 role: researcher
 primary_focus: ai-security
@@ -144,3 +144,13 @@ inbound: []
   focus and is about building internal red teams — useful only if a
   target engagement requires modeling defender posture, not for
   prompt-injection technique.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/embracethered/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

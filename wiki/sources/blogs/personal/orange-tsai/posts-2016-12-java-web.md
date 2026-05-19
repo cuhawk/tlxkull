@@ -1,0 +1,116 @@
+---
+source: orange-tsai
+source_url: https://blog.orange.tw/posts/2016-12-java-web/
+title: "[隨筆] Java Web 漏洞生態食物鏈 | Orange Tsai"
+author: "Orange Tsai"
+published: 2016-12-06T16:00:00.000Z
+description: "本來這篇文章叫做 HITCON CTF 2016 初賽出題小記的，可是擺著擺著就兩個月過去惹～ 轉來寫寫跟 Java 有關的東西XD 關於序今年五六月的時候，看到某個曾經很多人用但快停止維護的 Java Web Framework 弱點的修補方式感覺還有戲所以開始追一下原始碼挖 0-Day，順便整理一下 Java Web 相關弱點 — 😊覺得有趣。 通常自己在外面演講時對於 Web Secur"
+---
+
+* * *
+
+本來這篇文章叫做 HITCON CTF 2016 初賽出題小記的，可是擺著擺著就兩個月過去惹～
+
+轉來寫寫跟 Java 有關的東西XD
+
+# [關於序](https://blog.orange.tw/posts/2016-12-java-web/\#%E9%97%9C%E6%96%BC%E5%BA%8F "關於序") 關於序
+
+今年五六月的時候，看到某個曾經很多人用但快停止維護的 Java Web Framework 弱點的修補方式感覺還有戲所以開始追一下原始碼挖 0-Day，順便整理一下 Java Web 相關弱點 — 😊覺得有趣。
+
+通常自己在外面演講時對於 Web Security 的分類中大致可分為三個世界:
+
+- File-Based 的世界，一個檔案對應一個入口點如經典的 ASP, PHP, ASPX 等
+- Route-Based 的世界，一個路徑對應一組函數(功能)如經典的 Rails, NodeJS, Django 等
+- Java 的世界，Java 的世界極其複雜自成一格獨立討論
+
+當然三種分類並不是獨立開來，如常見 PHP MVC 用 Rewrite 將 File-Based 偽裝成 Route-Based 的還是有可能有 File Based 的特性，Java 世界中還是可能出現 File-Based / Route-Based 常見問題等等等
+
+Java 可以獨樹一格自成一圈自然有它的道理在! Java Web 相關攻擊手法一直以來都是撲朔迷離，生態複雜出過的弱點又多(想想 Struts2 :P)，偶爾爆出一個很嚴重的漏洞才又開始有人關注，也很難有一個脈絡所以一直以來都沒有看到有個很好的整理! (當然國外還是有一些在這個領域耕耘已久的研究人員如 @pwntester @meder @gebl @frohoff @空虛浪子心 等等等)
+
+這也促使我在這下半年開始來好好研讀一下關於 Java Web 的生態以及弱點漏洞的整理。
+
+從 2013 年開始接觸 CTF 到現在，在 Web 分類中所看到關於 Java 的題目真的少之又少，最常見的通常是 PHP、其次 Python、偶爾來點 Ruby / JavaScript / Go 等等…
+
+雖然 PHP 最大宗很合理(現實網站常見、新手容易入門、語法特性容易寫出問題)，不過身為穩定度高，在大型網站、銀行、政府網站常見的 Java 幾乎沒有就很不合理了。
+
+最後是，PHP 的梗幾乎都被玩完了，除了老梗外幾乎都是基於 PHP 核心問題的特性，該是換點新梗的時候!
+
+# [關於 Java](https://blog.orange.tw/posts/2016-12-java-web/\#%E9%97%9C%E6%96%BC-Java "關於 Java") 關於 Java
+
+Java Web 的生態各種複雜，從最底層的 JVM 到 Web Container 到上層的 Web Framework，在 Java 的世界中就像是一種原料什麼都可以靠它堆塑起來，而不像以往的 PHP 只須要顧好應用層就好! 再加上在 Java 生態中很喜歡引用來、引用去，串來串去的結果則是當底層函示庫出包後，上方所有應用會跟著一起受害，舉個 JBoss Admin Console 這個應用來當例子的話則是:
+
+JBoss Admin Console 使用 Seam Framework 這個框架所開發的網頁應用，而 Seam Framework 使用了 JSF(Java Server Faces) 的架構，Java Server Faces 為一個 Java EE 的標準，基於這個標準上的實作較知名的共有兩套
+
+- Apache 所實作的 MyFaces
+- Oracle 所實作的 Mojarra
+
+而為了讓 JSF 實作更為好用又在其上引申出了一些方便 JSF 使用的 Framework 如 Richfaces
+
+而 Seam 則是使用基於 Richfaces 上的實作，所以整個生態鏈為
+
+- JVM -> JBoss -> Mojarra -> Richfaces -> Seam Framework -> JBoss Admin Console
+
+整個生態鏈串來串去只要其中一個出現漏洞則最上層的應用皆會有問題，例如:
+
+- CVE-2010-4476，JVM 浮點數解析 DoS 漏洞，只要以上處裡的過程中出現類似 Double.parseDouble(“2.2250738585072012e-308”) 的狀況就可以達成 DoS 效果
+- Web Container / Application Server 弱點，這個不細數，JBoss, Tomcat, GlassFish, Weblogic 或是 Websphere 都出過很多洞XD
+- JSF 實作漏洞，可以看下面舉的例子
+- Framework 本身漏洞，如 CVE-2010-1871 - Seam EL注入漏洞導致遠端代碼執行
+- 網頁應用開發者本身自己寫出來的洞
+
+舉個🌰:
+
+在研究 Java 網頁應用弱點的時候發現到了 CVE-2010-1871 這個好玩的東西
+
+漏洞詳情可參閱 《 [JBoss Seam Framework remote code execution](http://blog.o0o.nu/2010/07/cve-2010-1871-jboss-seam-framework.html)》
+
+雖然 Seam Framework 已經是過時的產品了不過身為弱點研究人員感興趣的是漏洞的成因跟如何修補，在研究漏洞如何修補的同時順便對 Seam Framework 的原始碼審查一下，發現在 Seam Framework 2 的這個分支中最新的版本為 2.3.1.Final，在前文有提到，Seam 所使用的是基於 Mojarra 實作的 Richfaces，這代表只要 Mojarra 或是 Richfaces 有弱點，則可影響到所有使用 Seam2 所撰寫的應用程式。
+
+再仔細觀察一下 Seam 2 所使用到的函示庫
+
+- lib/richfaces-core-impl.jar - 根據 MANIFEST 內容顯示版本為 Richfaces 4.3.3.Final
+- lib/jsf-impl.jar - 根據 MANIFEST 內容顯示版本為 Mojarra 2.1.7
+
+最新版本的 Seam 2 使用的居然不是最新版本的第三方函示庫! 透過尋找上面兩個函示庫出現過的漏洞會發現在 2013 年出現的 CVE-2013-3827
+
+詳情可參考《 [Two Path Traversal Defects in Oracle’s JSF2 Implementation](http://security.coverity.com/advisory/2013/Oct/two-path-traversal-defects-in-oracles-jsf2-implementation.html)》
+
+所以基於 CVE-2013-3827 上，將原本的 PoC 修改一下就可以完美的重現在最新版本的 Seam Framework 2 上面。
+
+上面這個例子只能做到讀取敏感檔案，接下來再一個遠端代碼執行的例子:
+
+同樣也是使用到舊版本 Richfaces 的 CVE-2013-2165，開發者根本不會知道多了一個 /a4j/ 的 url-pattern，漏洞會從 url 中直接將參數代入 readObject 執行，剛好可以搭上最近很夯的 Java Deserialization 風潮達成遠端代碼執行!
+
+關於這樣應用建立在前面的基石，當基石出問題時整個倒下來的情形在 Java 世界中並不少見，最近很夯的 Java Deserialization 相關問題也有類似這樣的生態鏈，還不覺得 Java 的世界很有趣嗎? XD
+
+好惹，差不多降!
+
+這只是個隨筆就先富堅，有空的話再多寫一點好惹
+
+# [小結](https://blog.orange.tw/posts/2016-12-java-web/\#%E5%B0%8F%E7%B5%90 "小結") 小結
+
+由於生態完整並要注重系統穩定，大部分使用 Java 當成網站開發的都是些大型網站或注重穩定性的網站如金融業或是政府機構，並且為求穩定通常不會頻繁的更新系統，所以在複雜的架構交疊下如攻擊者沒有一定程度的研究的話很難發現用了什麼框架會有什麼漏洞，因此有時很容易出現那種明明被被很多人檢視過但還是沒被挖出來的漏洞!
+
+如在研究時順便觀察到 Apple 的網站有使用 Mojarra 的特徵，2013 年的漏洞丟下去居然還可以用 Java Web Framework 相關的漏洞真的滿邊緣人的XDD
+
+PoC:
+
+> [https://???.apple.com/???/javax.faces.resource…/WEB-INF/web.xml.jsf](https://blog.orange.tw/???.apple.com/???/javax.faces.resource.../WEB-INF/web.xml.jsf)
+
+出來混遲早要還的，不然技術債會越累積越多，接下來有空的話應該會嘗試檢視 Spring Framework Source Code，畢竟也是現在的主流!
+
+至於 S 什麼什麼 T 什麼什麼 2 的就不用多講了XD
+
+## [題外話 1](https://blog.orange.tw/posts/2016-12-java-web/\#%E9%A1%8C%E5%A4%96%E8%A9%B1-1 "題外話 1") 題外話 1
+
+題外話是，在 Review 完 Seam Framework 後回報了幾個漏洞給 [security@jboss.org](mailto:security@jboss.org) ，不過回覆則說因為 Seam 只能在 JBoss EAP 7 下使用，而 JBoss EAP 也即將在 2016/11 月停止維護，所以除了重要或是嚴重風險的漏洞外皆不修復。
+
+所以你知道的，現在用 Seam 寫的網頁都可以
+
+嗯，真棒XD
+
+## [題外話 2](https://blog.orange.tw/posts/2016-12-java-web/\#%E9%A1%8C%E5%A4%96%E8%A9%B1-2 "題外話 2") 題外話 2
+
+Apple 敏感檔案存取的漏洞是新訓進去前發現的，出來要回報時就發現不能用不知道是修掉還怎樣QQ
+
+本來想直接公開不過還是在發佈文章前最後一秒把關鍵字碼掉惹

@@ -1,0 +1,688 @@
+1
+00:00:00,000 --> 00:00:13,320
+In this tutorial, we'll cover how to scan a website for vulnerabilities using Burp Scanner,
+
+2
+00:00:13,320 --> 00:00:19,200
+how to monitor what scans are doing while they're running, and how to export results.
+
+3
+00:00:19,200 --> 00:00:28,560
+There are two basic ways of performing vulnerability scans using Burp. First, you can let Burp do an
+
+4
+00:00:28,560 --> 00:00:36,000
+end-to-end managed scan. That means crawling to discover content and functionality, and then
+
+5
+00:00:36,000 --> 00:00:43,600
+auditing for vulnerabilities. The second way is that you can select individual items to be audited.
+
+6
+00:00:45,760 --> 00:00:51,840
+Let's look at the first way, which is performing an end-to-end managed scan. The way you launch one
+
+7
+00:00:51,840 --> 00:00:59,200
+of these is you go to the Burp dashboard and you click on New Scan. This opens the scan launcher.
+
+8
+00:01:00,560 --> 00:01:04,960
+You see at the top, you have an option for the scan type, so you could select whether to do
+
+9
+00:01:04,960 --> 00:01:09,920
+a crawl and audit, which is the default, or whether just to crawl to discover content.
+
+10
+00:01:09,920 --> 00:01:16,560
+So we're going to leave it on Crawl and Audit. Then you need to enter a URL or multiple URLs to scan.
+
+11
+00:01:16,560 --> 00:01:25,360
+So I'm going to enter a URL there. Under Protocol Settings, you have an option whether to scan using
+
+12
+00:01:25,360 --> 00:01:33,040
+both HTTP and HTTPS, which is the default, or whether to scan just using the specified protocols
+
+13
+00:01:33,040 --> 00:01:37,760
+that you've given. In general, if you aren't absolutely sure whether an application uses both
+
+14
+00:01:37,760 --> 00:01:42,720
+protocols and has content and functionality on each one, it's best to leave the default setting.
+
+15
+00:01:42,720 --> 00:01:50,880
+That's all you actually need to do to perform a default scan, is just give up the URL and click OK.
+
+16
+00:01:51,600 --> 00:01:56,560
+But we're just going to walk through some other options that you can use to fine-tune the behavior
+
+17
+00:01:56,560 --> 00:02:01,920
+of the scanner and optimize it for different purposes. So down at the bottom here, we have
+
+18
+00:02:01,920 --> 00:02:09,440
+detailed scope configuration. And here you can configure in more detail exactly what is in and out
+
+19
+00:02:09,440 --> 00:02:15,680
+of the scope. So it will always begin crawling from the start URLs that you've given it. But here you
+
+20
+00:02:15,680 --> 00:02:23,600
+can specify additional URL prefixes that should be included or URL prefixes that should be excluded.
+
+21
+00:02:23,600 --> 00:02:29,680
+So if you have other domains or other folders that you want to include in the scan, you can add them
+
+22
+00:02:29,680 --> 00:02:34,320
+under the included prefixes. If you have parts of an application that you don't want to include,
+
+23
+00:02:34,320 --> 00:02:40,880
+you put them under exclude. The scan configuration section is where you can configure a mass of other
+
+24
+00:02:40,880 --> 00:02:47,280
+options to control how the scanner works. One way to do this is to add a new configuration and you can
+
+25
+00:02:47,280 --> 00:02:54,080
+specify whether it's for crawling or auditing. So let's start with crawling. And here we have sections
+
+26
+00:02:54,080 --> 00:03:00,480
+for various areas of configuration and you can expand each of these to define it. So crawl optimization,
+
+27
+00:03:00,480 --> 00:03:07,920
+you can control the link depth, you can configure the crawl strategy as to whether you prefer speed
+
+28
+00:03:07,920 --> 00:03:15,360
+versus deep coverage. Under crawl limits, you can set some limits for how long the crawl should take
+
+29
+00:03:15,360 --> 00:03:23,840
+or the maximum number of locations or the maximum number of requests. You can control how the crawler
+
+30
+00:03:23,840 --> 00:03:30,400
+handles application login functions. So by default, burp will attempt to self-register a user if it
+
+31
+00:03:30,400 --> 00:03:35,440
+discovers a user registration function, it will populate that and attempt to use the credentials
+
+32
+00:03:35,440 --> 00:03:41,760
+to log in with during the scan. You can also trigger login failures. This means submitting invalid
+
+33
+00:03:41,760 --> 00:03:48,000
+credentials to reach functionality or behavior that is accessed behind a failed login. So that might be
+
+34
+00:03:48,560 --> 00:03:53,440
+a forgotten password feature. You can control how burp will handle application errors during the crawl.
+
+35
+00:03:53,440 --> 00:03:58,880
+So whether you want to pause or stop the crawl if there are too many timeouts because the application
+
+36
+00:03:58,880 --> 00:04:03,200
+maybe isn't responding properly. And there are some other miscellaneous options as well.
+
+37
+00:04:05,680 --> 00:04:10,720
+So if we create a configuration for auditing, it works in the same way, but we have a bunch of
+
+38
+00:04:10,720 --> 00:04:18,560
+different options. So under audit optimization, you can configure whether the scanner should optimize for
+
+39
+00:04:18,560 --> 00:04:25,760
+a faster scan or a more thorough scan, depending on what kind of payloads are being sent. You can also
+
+40
+00:04:25,760 --> 00:04:32,640
+configure the audit accuracy so you can tell burp whether to favor fewer false negatives or fewer
+
+41
+00:04:32,640 --> 00:04:38,000
+false positives. So there are some scan checks, some types of techniques that burp can use to find
+
+42
+00:04:38,000 --> 00:04:44,240
+vulnerabilities which are inherently prone to false positives because of the kind of evidence that they
+
+43
+00:04:44,240 --> 00:04:50,960
+gather. So one example of those is a SQL injection payload, which if successful will cause a time delay.
+
+44
+00:04:50,960 --> 00:04:57,520
+Sometimes time delays happen anyway because of varying latency in the application's responses or other
+
+45
+00:04:57,520 --> 00:05:03,040
+delays. And sometimes they could line up with burp's payloads. So burp will repeat those payloads several
+
+46
+00:05:03,040 --> 00:05:07,840
+times to establish a correlation, but this is where you can configure how much of a correlation to look
+
+47
+00:05:07,840 --> 00:05:15,040
+for and whether to favor false positives or false negatives. You can configure the kind of issues that
+
+48
+00:05:15,040 --> 00:05:21,360
+burp will report. So you can select these by the type of scan technique that is being used. So at one
+
+49
+00:05:21,360 --> 00:05:27,840
+extreme we have passive techniques, passive issues, which can be reported just by examining the
+
+50
+00:05:27,840 --> 00:05:34,560
+application's normal traffic, sending normal requests. The other extreme we have intrusive active scans,
+
+51
+00:05:34,560 --> 00:05:40,800
+which involve a lot of more heavy payloads being sent to the application. These can, in some applications,
+
+52
+00:05:40,800 --> 00:05:46,320
+cause damage if the application is vulnerable. And in between you have light and medium active
+
+53
+00:05:46,320 --> 00:05:52,320
+vulnerabilities. Burp scanner also does JavaScript analysis. So it will use static analysis and dynamic
+
+54
+00:05:52,320 --> 00:05:58,080
+analysis techniques on the rendered page on the DOM to discover vulnerabilities and you can configure
+
+55
+00:05:58,080 --> 00:06:05,440
+whether to do that. If you prefer, you can configure individual vulnerabilities to be checked for,
+
+56
+00:06:05,440 --> 00:06:11,760
+and you can configure the specific detection methods that are being used to find those. So as you can
+
+57
+00:06:11,760 --> 00:06:19,520
+see, burp can scan for masses and masses of different vulnerabilities. You can configure how
+
+58
+00:06:19,520 --> 00:06:24,480
+application errors are handled during the audit, similar to during the crawl. So you can skip
+
+59
+00:06:24,480 --> 00:06:31,280
+insertion points or skip audit items if you see too many errors. You can configure the types of insertion
+
+60
+00:06:31,280 --> 00:06:36,800
+points that are used. So you can configure whether that will place payloads into locations like URL
+
+61
+00:06:36,800 --> 00:06:45,040
+parameters, body parameters, and other types. You can optionally tell burp to move some parameters to
+
+62
+00:06:45,040 --> 00:06:49,360
+different locations and audit them again there. So this occasionally is useful. You will have some
+
+63
+00:06:49,360 --> 00:06:54,800
+applications where there's a parameter that is normally in the URL and there's something like a web
+
+64
+00:06:54,800 --> 00:07:00,320
+application firewall that is filtering payloads that appear in the URL. But if you switch that parameter to
+
+65
+00:07:00,320 --> 00:07:05,040
+the body, it still reaches the application. The application is agnostic as to where it appears,
+
+66
+00:07:05,040 --> 00:07:10,720
+but it bypasses the WAF and you can maybe reach a vulnerability. This ends up taking a fair bit
+
+67
+00:07:10,720 --> 00:07:15,840
+longer in the scan because we have to do all the work multiple times for different parameters,
+
+68
+00:07:15,840 --> 00:07:22,960
+but sometimes that's really useful. You can configure whether to ignore certain types of insertion points.
+
+69
+00:07:22,960 --> 00:07:28,880
+There are some well-known insertion points based on their name or their type that are part of platform
+
+70
+00:07:28,880 --> 00:07:33,200
+frameworks and features that we don't normally expect to see vulnerabilities in. You can configure
+
+71
+00:07:33,200 --> 00:07:39,120
+those there. You can configure how burp handles frequently occurring insertion points. They're
+
+72
+00:07:39,120 --> 00:07:44,960
+insertion points like cookies where the same parameter will appear everywhere in every request,
+
+73
+00:07:44,960 --> 00:07:50,880
+and burp can do a full audit of that every time it appears, but it's generally not very efficient to do
+
+74
+00:07:50,880 --> 00:07:57,440
+that. By default, what BERT will do for all kinds of insertion points is if it sees them occurring
+
+75
+00:07:57,440 --> 00:08:04,800
+frequently, it will begin doing a normal thorough audit, and if they prove to be boring, so if the
+
+76
+00:08:04,800 --> 00:08:10,880
+same insertion point always leads to the same vulnerabilities or no vulnerabilities at all, it will
+
+77
+00:08:10,880 --> 00:08:17,520
+gradually scale back to a faster scan to be more efficient on those insertion points. There are some
+
+78
+00:08:17,520 --> 00:08:22,560
+other options for insertion points, whether to use nested insertion points to see one type of data
+
+79
+00:08:22,560 --> 00:08:28,320
+inside another, and you can configure some details about how burp does JavaScript analysis, whether to
+
+80
+00:08:28,320 --> 00:08:33,840
+use dynamic techniques or static techniques, and whether to request missing JavaScript dependencies that
+
+81
+00:08:33,840 --> 00:08:41,520
+are needed to render the page. One thing that's worth pointing out about how the scan configuration
+
+82
+00:08:41,520 --> 00:08:49,040
+options work is that within each of these dialogues, each section is collapsed by default, and that means
+
+83
+00:08:49,040 --> 00:08:55,360
+it's not defined, and if you expand it, then you're defining just the options for that section. So if you save
+
+84
+00:08:55,360 --> 00:09:01,760
+a configuration with one section expanded, you're just defining the settings for that section, and what
+
+85
+00:09:01,760 --> 00:09:08,640
+that means is you can add multiple scan configurations that just configure settings in specific areas, so you might
+
+86
+00:09:08,640 --> 00:09:13,840
+start with your generic general base configuration that you like to use, and then you can add in
+
+87
+00:09:13,840 --> 00:09:20,160
+additional configurations after that to fine-tune different areas of the options. Burp also has a
+
+88
+00:09:20,160 --> 00:09:26,000
+configuration library. This contains various built-in, predefined configurations that you can use for
+
+89
+00:09:26,000 --> 00:09:31,920
+different purposes, and you can also easily create your own custom configurations, save them to the library,
+
+90
+00:09:31,920 --> 00:09:38,240
+and then quickly select them later. Under application login, you can provide Burp with credentials for
+
+91
+00:09:38,640 --> 00:09:44,000
+known accounts that exist, which will be used during the crawl and audit. So if you provide these, when
+
+92
+00:09:44,000 --> 00:09:50,480
+Burp finds a login form, it will log in using those credentials, and if any new content or functionality is
+
+93
+00:09:50,480 --> 00:09:55,760
+discovered, that will be crawled and audited within the user context. So you can add multiple of these, you
+
+94
+00:09:55,760 --> 00:10:02,160
+might have one for ordinary users, or you might have one for a manager role within an application or an
+
+95
+00:10:02,160 --> 00:10:08,560
+administrator, and Burp will use each of these separately and discover content. Finally, under resource pools,
+
+96
+00:10:08,560 --> 00:10:15,280
+you can configure how Burp will make use of your network resources that you have. So you can
+
+97
+00:10:15,280 --> 00:10:20,880
+configure the maximum number of concurrent requests that the scan can make, or you can configure the
+
+98
+00:10:21,680 --> 00:10:28,000
+delay between requests if you want to impose some throttling. This can be useful if you have a very
+
+99
+00:10:28,000 --> 00:10:35,200
+fragile application that you can't scan very quickly, you can make Burp slow down, or if you are doing a lot of
+
+100
+00:10:35,200 --> 00:10:41,440
+scans in parallel, and you don't want to overwhelm your own machine or your network connection, you can
+
+101
+00:10:41,440 --> 00:10:47,760
+limit the total amount of traffic that can be generated from all the scans together. Anyway,
+
+102
+00:10:48,800 --> 00:10:53,440
+to launch a scan, all you really need is the URL. So that's what we're going to provide, and then we're
+
+103
+00:10:53,440 --> 00:11:01,120
+going to click OK to launch the scan. So when we do that, you can see in the dashboard, in the task list,
+
+104
+00:11:01,120 --> 00:11:07,600
+we have this new entry which represents the scan, and it says, call an audit of the URL that I provided.
+
+105
+00:11:08,640 --> 00:11:14,240
+You can see in this status line here, the scan progresses through various different phases,
+
+106
+00:11:14,240 --> 00:11:19,040
+and it tells you what you're doing, and it gives a progress bar for each phase, so you can see how
+
+107
+00:11:19,040 --> 00:11:24,960
+the scan is progressing. What you also have is the request count, the numbers of errors that have been
+
+108
+00:11:24,960 --> 00:11:30,400
+encountered, and the number of locations that have been discovered during the crawl. And then when the scan
+
+109
+00:11:30,400 --> 00:11:35,600
+moves on to the audit phase, you can see the number of issues that have been discovered. What you also
+
+110
+00:11:35,600 --> 00:11:42,240
+have on the top right is the issue activity log, and this is where vulnerabilities will appear in real
+
+111
+00:11:42,240 --> 00:11:48,480
+time as they're discovered for you to monitor the progress of the scan. You also have an event log
+
+112
+00:11:49,200 --> 00:11:54,800
+where various information, various errors, any other details that you might need to be aware of will appear.
+
+113
+00:11:54,800 --> 00:12:02,320
+Now as well as the issue activity log, the other main place where issues get reported is in the target tab.
+
+114
+00:12:02,320 --> 00:12:08,880
+So this will give you a site map of all the content that has been discovered. It will let you see all of
+
+115
+00:12:08,880 --> 00:12:14,960
+the individual requested responses that were found during the crawl, and it will also report all of the
+
+116
+00:12:14,960 --> 00:12:22,960
+vulnerabilities that were found. And you can drill in to individual folders and see the vulnerabilities
+
+117
+00:12:22,960 --> 00:12:29,200
+that exist just within those paths, or you can look at everything together. The way that reports issues is
+
+118
+00:12:29,200 --> 00:12:34,880
+that it gives you all of the information that you need, all of the evidence to understand the issue. So
+
+119
+00:12:34,880 --> 00:12:39,680
+here we have a cross-site scripting vulnerability, and we can see the full request and the highlighted
+
+120
+00:12:39,680 --> 00:12:45,360
+payload that was sent. And then in the response, we can see the payload came back and the site is
+
+121
+00:12:45,360 --> 00:12:51,600
+vulnerable. Different types of vulnerability will report different evidence. So here we have one that
+
+122
+00:12:51,600 --> 00:12:58,400
+is using the collaborator to detect an external service interaction. So we send a payload with a URL
+
+123
+00:12:58,400 --> 00:13:03,120
+on the collaborator, and that caused a DNS interaction for that domain name.
+
+124
+00:13:03,120 --> 00:13:12,720
+The second way of performing vulnerability scans is to send individual items to be audited. So anywhere
+
+125
+00:13:12,720 --> 00:13:18,560
+in Burp, you can select one or more requests, choose scan from the context menu and send them to scanning.
+
+126
+00:13:20,880 --> 00:13:27,760
+So I'm going to go to Burp proxy and open Burps browser, and I'm going to visit a URL.
+
+127
+00:13:27,760 --> 00:13:35,520
+So I'm going to forward all the traffic through the proxy. And then in the history, we can see
+
+128
+00:13:36,160 --> 00:13:40,320
+the request that happened. I could select one of these and do scan.
+
+129
+00:13:42,720 --> 00:13:48,560
+If we do that, the scan launcher opens in the normal way, but we now have a third option, which is to audit
+
+130
+00:13:48,560 --> 00:13:55,120
+the items that I had selected. And here we can see that one URL that I'd selected is in the list.
+
+131
+00:13:55,120 --> 00:14:00,640
+All the other options are the same, except for application login, because we're not going to
+
+132
+00:14:00,640 --> 00:14:06,400
+do a crawl now. There are no login settings. And to audit that single item, we just click OK,
+
+133
+00:14:07,040 --> 00:14:15,600
+and the audit begins. If we go to the dashboard, we can see we have this new task, just doing an audit
+
+134
+00:14:15,600 --> 00:14:26,640
+of that single item. If we do that again, we select a different item and do scan. We now select open scan
+
+135
+00:14:26,640 --> 00:14:35,200
+launcher. Scan launcher opens for this different item. The first time we launched a scan in this way,
+
+136
+00:14:35,760 --> 00:14:44,160
+Burp created a new scan task to do the work. We now have the option whether to add this new item to that
+
+137
+00:14:44,160 --> 00:14:50,880
+same task or whether to create a new task for it. And what that means we can do is we can select different
+
+138
+00:14:50,880 --> 00:14:57,440
+scan configurations to use for different items. I'm going to go to the configuration library and select
+
+139
+00:14:58,000 --> 00:15:08,160
+Light Active Audit Checks. If I launch this scan and go to the dashboard, you can now see there are two audit tasks.
+
+140
+00:15:08,160 --> 00:15:14,880
+The first one using the default configuration and the second one using the audit checks Light Active
+
+141
+00:15:14,880 --> 00:15:22,160
+configuration. Now having done that, what we can do if we want is to select a different item. And when we
+
+142
+00:15:22,160 --> 00:15:30,560
+look at the scan context menu, we can see we can open the scan launcher or we can send this item directly
+
+143
+00:15:30,560 --> 00:15:36,880
+to one of our existing tasks. So this is a really nice way to have different tasks set up and running
+
+144
+00:15:36,880 --> 00:15:44,560
+with different configurations. And as you work manually, you can direct individual requests to a specific task
+
+145
+00:15:44,560 --> 00:15:52,480
+with a specific configuration. That's all the ways of launching scans. So now let's take a look at how you can
+
+146
+00:15:52,480 --> 00:16:01,760
+monitor scans as they're progressing and view the results. So on the dashboard entry for a task, you can click on
+
+147
+00:16:01,760 --> 00:16:21,440
+view details or this little icon to open some more details about the scan in progress. So on this details tab, we have pretty much the same details that are shown on the face of the dashboard. You can see requests, errors, locations that were crawled, numbers of issues discovered during the audit.
+
+148
+00:16:21,440 --> 00:16:27,760
+You can also open the configuration for the scan and change some of the settings as it's in progress.
+
+149
+00:16:29,120 --> 00:16:36,720
+You go to the audit items tab. This shows you all of the items that have been discovered during the crawl,
+
+150
+00:16:36,720 --> 00:16:42,320
+and you can view their progress through the different phases of the audit. So you can see the passive phases,
+
+151
+00:16:42,320 --> 00:16:51,280
+the active phases, the JavaScript work. You can see the full URL. You can see the number of issues that have been reported for each item, numbers of requests and errors.
+
+152
+00:16:51,680 --> 00:17:03,200
+If you double click on an item, you can see the base request and response. So this really gives you complete visibility into what BIRP is doing during the scan.
+
+153
+00:17:04,800 --> 00:17:19,760
+You have the issue activity tab. This contains the same detail as on the dashboard, but just for this one task, this one scan. So you can select individual issues and you can drill into the evidence to examine them as before.
+
+154
+00:17:19,760 --> 00:17:24,880
+And you also have the event log, which just contains the event log entries for this task.
+
+155
+00:17:27,040 --> 00:17:32,480
+Finally, if you want to generate a scan report containing the issues that were discovered,
+
+156
+00:17:33,200 --> 00:17:42,160
+you can do that. Anywhere that you see issues, you can select one or select many and choose report selected issues from the context menu.
+
+157
+00:17:42,160 --> 00:17:49,440
+You can also in the sitemap, select a folder or a host and go to issues and say report issues for this host.
+
+158
+00:17:49,440 --> 00:17:55,360
+So if we do that, we open the reporting wizard, we can choose HTML or XML format.
+
+159
+00:17:56,720 --> 00:18:00,000
+You can select which types of details to include in the report.
+
+160
+00:18:00,000 --> 00:18:09,600
+You can select whether to include full HTTP requests and responses or just relevant extracts to avoid the report getting too big.
+
+161
+00:18:10,560 --> 00:18:14,640
+You can select which issue types to include if you want to exclude some of them.
+
+162
+00:18:15,680 --> 00:18:17,200
+And then you can save the report.
+
+163
+00:18:17,200 --> 00:18:24,160
+So if we give the report a name and save it.
+
+164
+00:18:26,720 --> 00:18:27,920
+That report has been generated.
+
+165
+00:18:28,560 --> 00:18:30,800
+We can then open that report and view it.
+
+166
+00:18:32,240 --> 00:18:33,360
+Here we can see the report.
+
+167
+00:18:33,360 --> 00:18:38,480
+We have a summary at the top showing us the number of issues that have been reported by severity and confidence.
+
+168
+00:18:39,200 --> 00:18:45,840
+And we can drill down and see all of the individual issues and each one by default will include all of the
+
+169
+00:18:46,400 --> 00:18:48,560
+background remediation detail.
+
+170
+00:18:48,560 --> 00:18:54,400
+And where applicable, it will have requests and responses, including the highlights of the interesting parts.
+
+171
+00:18:55,760 --> 00:19:00,400
+So that's how to scan a website for vulnerabilities using Burp Scanner.
+
+172
+00:19:00,400 --> 00:19:17,440
+So that's how to monitor what scans are doing while they're running and how to report results.
+

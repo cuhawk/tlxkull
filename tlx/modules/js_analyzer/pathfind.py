@@ -31,6 +31,10 @@ class Path:
     tag: str | None
     depth: int
     sanitisers_in_path: list[dict]
+    # Per-hop (resolved_kind, candidate_count). Len == depth (one tuple
+    # per traversed edge). Populated when the edges table has the
+    # candidate_count column; otherwise emitted as ("exact", 1).
+    edge_kinds: list[tuple[str, int]] = None  # type: ignore[assignment]
 
 
 def _collect_sanitisers(db: sqlite3.Connection, node_ids: list[int]) -> list[dict]:
@@ -113,6 +117,11 @@ def find_paths(
     # ── edge filter clause (built once) ──────────────────────────────────
     # Note: 'this_cross_file' is intentionally NOT in skip_kinds —
     # it is treated as traversable, same as 'name_match'.
+    edge_cols = {r[1] for r in cur.execute("PRAGMA table_info(edges)")}
+    has_cand = "candidate_count" in edge_cols
+    select_extra = ", resolved_kind"
+    if has_cand:
+        select_extra += ", candidate_count"
     skip_kinds = []
     if not include_dynamic:
         skip_kinds.append("dynamic")
@@ -121,15 +130,15 @@ def find_paths(
     if skip_kinds:
         placeholders = ",".join("?" * len(skip_kinds))
         edge_sql = (
-            f"SELECT callee_id FROM edges "
+            f"SELECT callee_id{select_extra} FROM edges "
             f"WHERE caller_id=? AND callee_id IS NOT NULL "
             f"AND resolved_kind NOT IN ({placeholders})"
         )
         edge_extra = tuple(skip_kinds)
     else:
         edge_sql = (
-            "SELECT callee_id FROM edges "
-            "WHERE caller_id=? AND callee_id IS NOT NULL"
+            f"SELECT callee_id{select_extra} FROM edges "
+            f"WHERE caller_id=? AND callee_id IS NOT NULL"
         )
         edge_extra = ()
 
@@ -147,12 +156,17 @@ def find_paths(
         return q
 
     # ── BFS ──────────────────────────────────────────────────────────────
+    # Filter cap: name_match edges with high candidate_count are
+    # 1/N-ambiguous bare-name resolutions. Mirroring the bestfirst
+    # extractor's --max-name-match default, drop edges with cand>10.
+    MAX_NAME_MATCH_CAND = 10
+
     found: list[Path] = []
-    queue: deque[list[int]] = deque()
-    queue.append([start_id])
+    queue: deque[tuple[list[int], list[tuple[str, int]]]] = deque()
+    queue.append(([start_id], []))
 
     while queue and len(found) < max_paths:
-        path_ids = queue.popleft()
+        path_ids, path_edges = queue.popleft()
         cur_id = path_ids[-1]
         depth = len(path_ids) - 1
 
@@ -167,17 +181,25 @@ def find_paths(
                 tag=tag,
                 depth=depth,
                 sanitisers_in_path=sanitisers,
+                edge_kinds=list(path_edges),
             ))
             continue  # don't traverse past a terminal match
 
         if depth >= max_depth:
             continue
 
-        callees = cur.execute(edge_sql, (cur_id,) + edge_extra).fetchall()
-        for (callee_id,) in callees:
+        for row in cur.execute(edge_sql, (cur_id,) + edge_extra).fetchall():
+            callee_id = row[0]
+            rk = row[1] if len(row) > 1 else "exact"
+            cand = row[2] if (has_cand and len(row) > 2) else 1
             if callee_id in path_ids:
                 continue  # cycle within this path
-            queue.append(path_ids + [callee_id])
+            if rk == "name_match" and (cand or 1) > MAX_NAME_MATCH_CAND:
+                continue  # ambiguous bare-name match — drop to cut FP volume
+            queue.append((
+                path_ids + [callee_id],
+                path_edges + [(rk or "exact", int(cand or 1))],
+            ))
 
     found.sort(key=lambda p: (p.depth, p.qualified_names[-1]))
     return found

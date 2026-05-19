@@ -2,7 +2,7 @@
 title: Horizontal BOLA — same-privilege cross-account object access
 slug: horizontal-bola
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-19T00:00:00Z
 tags: [technique/idor, technique/access-control, sink/unauthorized-read]
 inbound: []
 ---
@@ -65,7 +65,10 @@ GET /login/home.jsp?role=1 HTTP/1.1
 
 ## Seen-in-the-wild
 
-(none yet)
+- **2026-01-20 — Stripo AI Hub cross-tenant access via deleted project** (Stripo Inc / srcode, H1 #3459285, Critical, 137 votes): After deleting a project, associated campaign data remained accessible by other tenants by referencing the old project ID. Soft-delete didn't revoke authorisation checks on child resources. See [H1 #3459285](../../sources/hacktivity/3459285.md).
+- **2026-05-19 — GitHub cross-repository IDOR in security_analysis/bypass** (GitHub / H1 #3592387, High): Settings endpoint accepted a repository identifier without validating org membership, exposing security analysis bypass settings across repositories. See [H1 #3592387](../../sources/hacktivity/3592387.md).
+- **2024-07-xx — IDOR exposes PII of tens of thousands of users** (H1 #2967032, High, 92 votes): Direct object reference in a user listing endpoint returned supervisor PII by iterating numeric user IDs. See [H1 #2967032](../../sources/hacktivity/2967032.md).
+- **2026-01-xx — Missing access control in MigrationFile allows upload to any workspace** (H1 #3506183, High): File upload endpoint accepted a `migration_file_id` without verifying the caller owned the target workspace. Classic BOLA on a resource-creation endpoint. See [H1 #3506183](../../sources/hacktivity/3506183.md).
 
 ## References
 

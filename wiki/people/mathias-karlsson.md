@@ -2,7 +2,7 @@
 title: Mathias Karlsson (avlidienbrunn)
 slug: mathias-karlsson
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [avlidienbrunn]
 role: researcher
 primary_focus: client-side
@@ -70,3 +70,13 @@ inbound: []
 - **Detectify roles** — co-founder; over the years has rotated through engineering, research, advisory positions. Knowledge-advisor / consulting-style framing in recent years per Detectify Labs author bio; no confirmed Cure53 staff page found in public sources at time of writing — treat that affiliation as rumor unless a Cure53 author page surfaces.
 - **Collaborators** — frequent pair-work with Frans Rosén (see `frans-rosen.md`), Fredrik Nordberg Almroth, and (more recently) Justin Gardner; HackerOne $10,650 DoD chain co-authored with [Brett Buerhaus](./zlz.md).
 - **Cross-refs** — research feeds `../techniques/dom-xss/htmx-csp-bypass.md`, `../techniques/dom-xss/url-anatomy-bypass-cheatsheet.md`, `../techniques/dom-xss/url-credential-payload-smuggling.md`, `../techniques/postmessage/`, and tooling cross-links into `../techniques/supply-chain/` for archive abuse.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/detectify/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

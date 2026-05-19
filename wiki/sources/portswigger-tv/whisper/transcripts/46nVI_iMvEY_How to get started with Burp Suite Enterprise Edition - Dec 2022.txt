@@ -1,0 +1,478 @@
+Brilliant, right. Hello everyone, thanks very much for joining and welcome to today's
+Port Swiggin Art on maximising your usage of Berkshire Enterprise Edition. A couple of quick
+introductions and I will turn our video on, apologies if we've got to do that.
+Apologies if there's any coughs or slutters, there's a little bit of a cough going around
+the office which has already taken out one of our other presenters today. So my name is Adam,
+I'm part of our customer advocacy team here at Port Swiggin and my role is to support organisations
+with their POCs and working with existing customers, helping them to get the most out of
+Port Swiggin and our products. To my right is Alex. Hi folks, my name is Alex, I sit with the technical
+support team, so we handle the day-to-day support for both professional and enterprise products.
+And we work with Adam's team in assisting customers both getting started and continuing
+with their scanning journey. We've also got a large team in the background today that's manning the Q&A
+facility. So we've got Sophie, Hannah, James, Kieran and plenty of others. Please do use this to ask any
+questions that you've got during the session. We'll try and respond to them all as quickly as possible.
+If we can't, don't worry. We usually leave between five and ten minutes at the end,
+at the end of the session, just open where we can answer any questions. And if we don't get to them
+during that session, we will follow up. So please reach up as many questions as you've got into the Q&A
+and we'll follow up after the event. So just as a quick recap why we're here today. So over the past
+couple of months we've been focusing our customer conversations on the challenges that they are
+facing when rolling out automated DAST scanning within their organizations. So our aim today is
+to highlight some of those customer conversations which will hopefully resonate with the attendees on
+today's call. So sorry about that. During this session we're going to be covering deployment of Enterprise
+Edition and how we recommend that you prepare for that. Alex is going to run a UI demo for those of you
+who are new to Enterprise Edition and help you get to grips with using the software correctly. Following
+that we're going to cover some of the common challenges that I mentioned and best practices for
+DAST scanning based on those customer conversations that we've been having. Finally we're going to run
+through some next steps that we would love for you to take following this session and as a reminder
+please absolutely hammer the Q&A box make sure the rest of the team are busy. So we're going to
+quickly touch on how to deploy Enterprise Edition, the architecture and system requirements. So it's worth
+mentioning that we've got a mix of customers on the call. Some of you and bad luck to the poll will have
+an active deployment already live but we'll also have some new customers who have not taken any action with their license
+to date. So in terms of deployment preparation, prior to installation we advise that you
+carefully read the preparing our preparing to deploy guidance which you'll find in the support center
+one of the guys are going to drop that as a chat thanks Kieran and we will follow up with a
+with a link following the session. This will walk you through everything that you'll need to know about
+each of the available deployment options of which there are a few and allow you to consider what will
+work best for you and your organization. Alex is going to go through these options shortly but we typically
+see customers taking around two to four weeks to deploy Enterprise Edition. Often any delays are due to
+internal constraints which again I've seen from the poll answers which is not great here but it's good
+that we're hearing the same thing and potentially waiting for any prepared infrastructure to be spun up.
+Alex is now going to run through deployment options and a high level overview of system requirements.
+Thanks Adam. Okay folks so we'll start out with the deployment options of which there are two
+options that are available to you and this is largely going to come down to either personal preference or
+kind of the resource that you have available to you. So option one which is by far kind of the most
+common option is just utilizing the standard installer so you can grab this from our release page depending
+on the OS that you want to deploy to. There's not much in terms of hard and fast requirements from an OS
+perspective essentially if it's 64 bit and you can run Java 17 the OS itself itself should be fine.
+There's a couple of options around if you deploy to a single machine which is really just for trial
+purposes so once the sort of production stage has been met we typically expect customers to deploy
+to the multi-system environment which is what we're going to cover today. If your preference is more
+towards containerization we do have the Kubernetes option available so this is deploying via our helm
+charts that we supply for the application deployment. Again the notion here is that we want to be
+as agnostic as possible so there are a few pre-requirements to meet but as long as it's an x86
+based cluster you should be able to get up and running on whichever platform you have be that a cloud
+provider or or private and then you can take advantage of the auto scaling scaling machines as well.
+But we do typically advise that if you have no Kubernetes experience you'll probably be better
+sticking with the standard installer just because you will have a smoother time in terms of setup and
+an operation. But if you're capable and confident with the Kubernetes side then that's a great option as well.
+System requirements is a big one to mention.
+You can view this on our website which I would highly encourage you to do. We're just about to release a
+kind of revamped system requirements document as well just to make things as clear and easy to digest as
+possible but just kind of anecdotally from a support team perspective a lot of the queries and tickets
+that we get in terms of issues typically relate back to underspect machines so it's very important to
+make sure that you're hitting at the very least the minimum requirement and preferably the recommended
+system requirements when it comes to deploying the various components of enterprise. It can be a
+little bit nuanced because there is no one size fits all when it comes to deploying virtual enterprise
+because it does depend on things like how many concurrent scans you're going to be running,
+what are the size and sort of depth of your of your applications, are we dealing with SPAs,
+heavy JavaScript etc etc and I'll just underpin that by saying once you've kind of consumed that
+documentation if you still have questions if you need guidance you can reach out to the
+support team and we will help you with determining what those those system requirements will look like.
+So from a standard installer perspective an architecture for a multi-machine deployment
+this is what it's going to look like so the the enterprise server and web server
+always live together on one machine that can be physical or virtual it can live in a cloud
+environment so if you're interested in deploying to EC2 as your VM, GCP absolutely fine you can still use a
+standard installer in that cloud environment so that for example would be would be one virtual
+machine for the enterprise server and web server then you'll have one or more scanning machines
+this is just just going to depend on your on your concurrency in terms of how many scams you want to
+support again this links back to that system requirements documentation which will determine how
+many scams you can run per machine how many machines ultimately you will need and those scanning
+machines will talk back to the enterprise server over port 8072.
+Those of you who trialed might be familiar with the bundled h2 database which is which is great for the
+trial but for production environments generally we recommend the external database especially as you
+scale you'll find this is more performant and more supporting of what you're trying to achieve at scale
+again the types of database that we support are in the system requirements documentation but again that
+will typically deployed externally to its own machine along with those scanning machines we've got some
+some egress and ingress there as well so an important one is the connection to portswigger.net
+via port 443 this is for license activation which is a requirement there is no offline activation
+so that's the same thing that's available um that can be proxied if required and it's also how we deliver
+the automated updates if you have those enabled manual updates are supported offline
+the scanning machine will naturally want to talk to the target application so by default these are
+going to be over the http and s ports um and that goes hand in hand with burp collaborator those of
+you who are burp professional users might be familiar with collaborator it works in the same way um
+for enterprise as a public service that the scanning machines by default will want to access along with
+the target applications this is for additional functionality with your scanning it's not a strict
+requirement but we certainly do encourage its use if possible and then finally how your users access
+the system so it's essentially deployed architecture so we can have lots of teams lots of users accessing the
+same central web server which will link to the enterprise server um so we'll cover in the demo but
+here we want to configure the web server url import that those users can access
+from wherever they are internal network external network and then if your preference is api clients
+that's how they they connect as well for those who are interested in the kubernetes deployment again
+we try to kind of remain as agnostic as possible so we provide the helm chart that deploys the application
+and but the cluster um setup needs to be done before that application can be deployed
+um and we say you need these three things so you will need to set up an ingress solution so typically
+that's going to be a load balancer or ingress controller a persistent volume claim so application
+name dash pvc whatever whatever application name you give it and that has to be shared by all the nodes
+in the namespace and then we want to take advantage of that auto scaling for the scanning machines so we
+don't have to pre-provision them they're created as and when needed so the cluster auto scaler must be
+installed and enabled as well um again we've got all of the kubernetes deployment documentation
+available so please do give that a read if you're interested in in the kubernetes side of things
+this is what the architecture looks like from a helm chart sort of versus the cluster perspective so
+everything within their helm chart is deployed for you um web server pod enterprise service enterprise
+server pod and then ultimately the scanning parts once those jobs are created same kind of connectivity
+from a egress an ingress perspective um we'll also need that ingress solution that the users can
+connect to to access the enterprise server itself and we're still talking about the concept of an
+external um database for which we provide those the setup scripts for
+apologies i'm gonna have a big cough before we continue so i don't irritate anyone
+i'm gonna have a big cough before we go to the server server server server server server server
+server server server server server server server server server server server server server server server server
+before we step into the ui that alex is going to run through we wanted to
+and when we cover the foundations of enterprise edition um it's probably worth highlighting what
+customers are telling us about their journeys with automated dash scanning and it's all fairly
+obvious but hopefully you'll hear something that resonates with you and if we follow this journey from
+right to left on the screen as it is we have security teams using birksweep pro for their quarterly
+annual pen tests who are now shifting actively shifting to this middle area where they're introducing
+automated scanning across their portfolio of applications using the schedule scan feature with
+with enterprise edition so this is great as it often frees up the security team's time to work on
+the more critical issues and since its launch we felt that this was the primary use case for
+enterprise edition and the conversation is now changing however and more and more customers want
+to integrate dust into a cicd pipeline as we shift further onto that left hand side of the screen as
+a way of catching those issues earlier on in the software development life cycle these pipeline pipeline
+scans are then supplemented with regular weekly or monthly scans often deeper scans effectively covering
+all bases so you might run a quicker lightweight scan as part of a pipeline scan and then using the deeper
+scan configurations to make sure that you're catching every vulnerability within the app and some of you
+may have seen this logo before but just to just to quickly touch on dastardly dastardly is a free
+lightweight web application or security scanner from for your cicd pipeline from burp suite it's designed
+specifically for web devs and it checks your application for seven security issues that are
+likely to be of interest to them during software development if you're not quite ready or you're
+you're potentially not at this stage yet for cicd integration with enterprise edition this is a great
+way to bridge that gap with your developers help them secure their builds earlier and hopefully enable in
+the future then to to get fully on board with the concept of integrating all of their scans all of
+their builds with a full scan from enterprise edition um we're hoping to run a future session on dastardly
+specifically in the new year and where we'd love for you to ascend and to learn more so alex is now
+going to take you through those um enterprise edition foundations so i'd like to over to you thanks
+thanks a lot okay folks so i mean from a from an installation setup perspective um once you hit
+the home screen the ui um the view will be slightly different for you because you've you've been kind
+of taken through the in product hand holding of getting set up um and there's some quick links to
+take a look up and follow this that'd be this page here it's got all sorts of information in it about
+getting set up about starting um the site configuration about scans links to all the
+documentation and integration etc so very much encourage you to explore this quick links page
+um when you're first getting set up in terms of what we'll just go through in the ui today um it's
+just going to be that foundational knowledge and some tips and tricks on on getting the most out of
+your those initial scans um so actually my my first kind of port of call again once you've installed
+once you've hit that ui and maybe you pass some of that initial um quick scan elements is jump into
+the networks component of the settings um so this is where your web server settings are going to sit
+and these are important to be completed because any either users or applications that want to come into
+enterprise externally are going to utilize these settings um this is important that we get those set
+kind of from the get-go to avoid any confusion later on so the web server url itself um
+which by default head installation might just be sort of local host port 8080 um you can configure a tls
+to secure that connection and then use something like a fully qualified domain name to access the web
+server so we'll have our url with the port appended and underneath that the web server port itself and
+we can toggle on the use of tls and upload a p12 certificate for those secure connections
+and if we require a proxy server one for that license activation that we spoke around and also for
+automatic updates we can add those proxy configurations here just to be clear this is nothing in regards to
+scanning that is handled separately this is just for talking to ports with a.net where maybe you don't
+normally allow an external connection to be allowed that's a quick bit of networking out of the way
+um next step might be to explore setting up our team or at least some some initial users um so you log in
+with your admin account and you probably want to get some other permissions set up so it's all role
+based access control the basic premise is that we create these roles that we want there are some
+built-in ones so you can see there scan initiator scan results editor but you have complete control
+to go in and customize those roles as you see fit so you've got access to all the permissions so split
+into things like sites scans scanning machines the team itself settings so you can really restrict
+or enhance a user's permissions based on your own requirements um
+um just close those and once we've got our roles set up those roles are typically assigned to groups
+and then you assign those users to your groups so very much a team focused product again um you can
+have some unbuilt ones there but you're free to create your own and then we can further start to
+restrict site views on that basis so everything is handled on a site basis with an enterprise so if you
+do have particular teams and you want them looking after their own sites and not necessarily viewing
+or or interfering with other sites um this is where you would would adhere those restrictions
+it's probably worth remembering as well if you were not part of the original procurement procurement or
+trial of enterprise edition that users are unlimited within the product there's no restrictions there so
+again we encourage you to get as many of your your colleagues added at this stage absolutely and if
+your preference is more around um single sign-in login so if we jump into settings here and integrations
+um perhaps something for further down the line but you can set up ldap and saml integration so we can
+pass across existing groups um from your identity providers that may or may not already exist um so we
+can handle login and authentication and permissions on that basis as well if that's your preference again all of
+that is documented from a process perspective um but let's let's dive into creating a site so as i
+mentioned everything is site based with enterprise um much like the team basis that adam mentioned there
+there's no limits as to how many sites that you add um to the application the license just applies to
+those concurrent scans so don't feel like you need to be careful in terms of how many sites are adding here
+and feel free to add as many as you like we have the bulk um import template so if you need to get
+up and running with a lot of sites quickly you can complete that template and then import it and
+i'll populate all those details for you i actually encourage you just to play around with a couple of
+sites first make sure that you've got a few scans on your belt and before you start sort of importing
+on mass just so you can get used to what those site settings look like um what are important in terms
+of the configuration um and that we're getting good scanning results so if you go to new site
+we can see on the left we've already kind of got a folder structure underway um but again it's a great
+way to organize all of the applications might go on a team basis might go on a geographical basis
+um but we can create that folder structure and assign our sites to that and again maybe restrict the
+permissions on that on that base as well but we can give our site a name we'll just call this test site
+and if we need to do any sort of tagging you know a particular user against a particular site or naming
+convention we can add that into the site name um as well just to make search and identification a bit
+easier and then we can move on to our site scope which is a very important component um of scanning with
+enterprise so the basic premise is that we want to provide our initial url to target in terms of our
+our scan and then when we kick off a scan all of the sub directories of that url will be scanned
+by default so for any pro users that might be used to things like the site map or navigating manually
+um this being a das scanner this being automated we really just want to point and let enterprise do its
+thing um so typically most of your sites might just look like
+and then we're going to go away and scan the whole application but we can be more specific with than
+that in terms of the the site path so if you want to restrict that to a particular directory um we can
+specify that directory in the main site url um so maybe that's just home and then we're adding another
+slash on the end that means we're just specifically scanning that directory or maybe we want to leave it
+open and just to mention everything will be default http and s or if we specify a specific protocol
+we can scan just using that protocol if that's all that's available but if we jump down in here
+into additional and excluded urls and we can customize that site scope further so typically with the
+included urls what we're doing here is there might be components of the application that belong to our
+app but don't fall under that main site url so might actually be classed as out of scope um because we've
+not added anything but just that site url so we could potentially add that here it's good for calling
+out things like api definitions because again sometimes they might not fall under the same
+host domain as our site url so we can add that to the included urls and similarly for
+excluded the bits that we don't want to scan um maybe we just don't want to scan it because it's
+not of interest to us um maybe it's something like a logout button that we don't want to be clicking on
+and so we can add those urls to the excluded list generally speaking again as an automated scanner we
+want to kind of let enterprise do its thing so we don't necessarily want to be populating these with huge
+um url lists but certainly have a play around with that that scape um and you'll soon soon get to grips with it on that
+um and you'll soon soon get to grips with it on that on that basis again one of this is documented if
+you need to to read up on it once we've got our scope set we can move on to our scan settings
+um so the first main component is going to be the scan configuration itself and there's two options here
+the preset scan mode which is designed to get you up and running as quick as possible
+and then the custom configuration mode um which once you're comfortable with the kind of preset scan
+modes or your site needs some very specific behaviors applied then we can start tinkering
+with with custom configurations so we can start out with something like a lightweight scan which
+is capped at 15 minutes that's just going to give you a quick snapshot of the security posture of that
+application maybe it's a daily scan that you want to run and then we can move up the board um fast
+which is again biased towards speed but isn't capped balanced a good sweet spot between coverage and
+speed and then deep where we're trying to gain that ultimate understanding of a site security posture
+um longer crawl more thorough audit and i would just encourage you to kind of cycle through all of
+these one thing to mention is that when we're trying to build out that security posture over time
+um which is which is certainly achievable with the with the notion of doing everything on a site basis
+and you'll see from the sites page for each app um we're building out those graphs over time if you
+keep changing scan configurations under the same site it is going to skew those results because we're
+playing with very different um parameters so if you do want to chop and change scan configurations
+if that's at the start and you're just testing and playing around or later on you need to make a
+change to a scan configuration for whatever reason um sometimes it's better actually just to create a
+new site same details but just add that altered um scan configuration so again we're not affecting those
+those results at the time that's a preset scan mode we will come to the custom mode um a little bit
+later on but next we can move on to application logins if we need authentication for our site um this is
+is where we can add those and we have two options adding username and passwords if you've got a
+really basic single page form username password this is the best option to use because that's going
+to be the quickest in terms of the scan when we're finding that form and then just submitting those
+credentials and logging in then we can discover all of the authenticated content for anything more
+complex um we would look to our recorded login sequence um which we're going to talk in a little
+bit more detail now around authenticated targets
+so as we know um in terms of the sort of mod modern web application landscape um with authentication
+and we're getting sort of increasingly complex with those method methods sso multi-factor authentication
+kind of moving away from that that simple single html form for for logins so we do get a lot of
+questions around this um you know i've got complex login sequences how do i navigate those how do i know
+that the scanner has used an authentication um that i've applied successfully and again another common one
+is around multi-factor or two-factor authentication so if any of these are kind of top of your mind as
+well well recorded login sequence is usually the answer to these these types of questions um and we'll take you
+through an example now of how to create and apply one just specifically on the mfa side um so recorded
+login sequence does not support 2fa mfa we always recommend that those mechanisms are disabled for
+the purposes of scanning um and the reason for that is that we log in a lot during a scan we're trying to
+navigate these paths and create that sort of map of what we're looking at from an application basis and
+what we want toward it so it's not just one long single session and therefore as you would imagine
+having to apply multiple um dynamic generated codes throughout an automated scan is not an easy
+mechanism or practical one um to support so again we recommend that's disabled as a mechanism for
+for scanning maybe you just make a test account specific for the use of of logging into your
+applications during scans
+so we'll just give a quick example um hang on a second here
+so we're going to use the example of this application here it's a deliberately vulnerable
+test app um with a with a two-stage um signing mechanisms that's again something that would be
+suitable to the uh to the recorded login process if we go back to our enterprise site um we're looking
+to generate a json script to add to the recorded login here if you click on the link to the documentation
+this is going to take you through in much more detail um around authentication best practices and i
+would highly encourage you to to read that as well but also how to install and the plugin that we have
+so you you'll require the recorded login plugin here so if we just come back
+navigate to our login url so recorded login is designed to handle um redirections um outside of
+what your scope might be so another great benefit of recorded login is if you do have things like sso
+redirects once you hit your login page you're taken somewhere else you authenticate you come back
+um that's all ignored essentially from a scope perspective when a recorded login is playing
+so we don't need to do things like add those sso logins with the huge urls into our inclusive rules
+because the record login is bypassing that for us so once the plugin is installed we can click new
+recording and that'll spit us out into an incognito session because that is just how we would log in
+during a scan we can navigate to our initial url everything inside of the red box is what is being
+recorded so you need to be very deliberate um in terms of your actions when recording we don't want
+additional clicks we don't want additional keyboard taps etc because that is going to be reflected on
+our script and probably cause errors when we're trying to replay the script but you can just log in
+as you normally would so what do test test.com enter that password
+sign in it's recorded that whole flow um as well as any redirects that we might have occurred once
+we hit that home page we don't want to navigate anywhere else we don't want to click log out
+we've hit that home page which is what we want the scanner to do our base url that we've provided for
+that site url and now we can stop recording that will generate the json script for us so we can now
+add that to the recorded login sequence give it a label because that will be saved and then click save
+by default we will no longer be able to view the script um it has those credentials in it so just
+from a permissions perspective that is disabled by default if you want your user to be able to review
+and even edit those there is a permission available for that but now that's been applied assuming we
+were scanning that particular website um as our main site url that authentication will be handled
+for us with the recorded login sequence
+in terms of the rest of our site configuration um for those that are pro users you will be
+familiar with extensions um but for those that are new extensions are available from the bat store
+um again we can provide the link to that extensions are additions to your sites that modify the scan
+behavior in some way um so one example would be log4shell scanner that happened um just after after
+christmas last year we introduced an extension to handle that scan check um so again we're just trying
+to modify the scanner in some way shape or form um so there's some useful ones on there that you might
+want to check out but certainly not a requirement from a from a site configuration perspective
+um scanning pools so we can organize our scanning machines into pools if we want to dedicate resource
+just one typical use case would be i've got my sort of daily weekly automated dash scans they might
+get assigned to one scan pool that consists of a few scanning machines i know they're always going to
+be taken care of and i've got my cicd scans that might sit in another pool that the devs are using to
+kick off ad hoc pipeline builds and then the two sort of resources don't bleed over and then if we've
+configured either smtp server in our settings or select notifications we can specify users that we want
+to notify of scan progress as well and that's it we've created our site we could then perform a pre-scan
+check which is available for all new sites and sites that already exist so for starters we're going
+to run a connection check against the url that you provided and hopefully we got a 200 okay so we know
+that the scanning machine can reach that target application and there's going to be no issues with
+the scan if there is a problem you get some remediation remediation advice and the response code
+related to that so it might be that maybe we've not added our proxy configuration details for the
+scanning machine to reach the target application maybe it's a client tls cert um there can be many
+reasons that we could we could address there same for the recorded login if we've applied a recorded
+login we can run the pre-scan check it'll play it for us and then provide a series of screenshots that
+we can run through and we can observe if the authentication has been successful or not
+so that we know when we run a scan we can log in okay again if there are any problems it'll throw
+out some remediation advice and then you can address that and ultimately if you need to you
+can always contact my team and support to uh to help you with those two checks
+then it's a case of kicking off your scan once you've created your first site so once you go once
+you've created a site you can go to new scan and then maybe you've built out the site tree maybe you've
+just got the one site but then you can select from that site tree the application that you want to
+scan because it's all site based we're just going to pull through all of that configuration data
+every time we want to scan typically we're going to schedule this based on your own requirements
+so the start date and time and then we can repeat that process um again based on your own schedule
+so daily weekly monthly whatever the case may be set up multiple sites for the same application
+and have a schedule across multiple data points that's absolutely no problem and we can run off
+uh run an ad hoc scan as well if we're maybe just getting started and testing etc
+once that's been kicked off it'll be assigned to an available scanning machine
+or pool if that's what you've got configured and then we can observe the scan in the timeline if we
+want to so once the scan starts we'll observe the crawling phase we can see how many requests we're
+making the urls we're looking at etc and then i'll move it to the audit phase once the crawling is done
+um we're actually carrying out the scan checks and auditing the the locations that we've discovered
+once that scan has run and you can start to assess the results this is the same application for a
+previously run scan um and we can start to look at the issues that have been populated
+it's all based on severity level and confidence so high medium low or informational and we can filter on
+that basis certain firm tentative or a false positive that we've marked but if we drill down into a
+particular issue we get our advisory which is going to give you all the background information around
+that particular vulnerability remediation advice there'll be a reference to our web security academy
+very useful one for developers as well if you're owning those pipeline scans um sandbox environments to
+carry out the same kind of payloads as well and then our cwe classifications for the vulnerability
+we can view the request and the response for the payload and if after further investigation we
+decide we want to mark this as a false positive and we can do so and we can propagate that to future
+scans as well so it's not being flagged every single time we can we can mark it as that that false positive
+i don't know we'll be happy that we've covered the basics and we can yeah we can crack on no problem
+um so yeah that's we mentioned around customer conversations obviously rise of single page apps
+has gone hand in hand with increasing reliance on apis and microservices increasing number of customers
+looking to scan these types of apps as part of their portfolio and traditionally these types of
+applications have been very difficult for automated scanners to navigate due to their complexity
+highly dynamic and to ensure you get the maximum coverage across your across your sbas and you'll need
+to ensure that scanning configs have been set up in the correct in in the correct way so we're not
+necessarily going to cover exactly how the scanner navigates it navigates an sba or improvements that we're
+making to an spa to the scanner in terms of its capabilities with sbas we ran a session in october
+with uh alex sportship it's available on our um youtube channel um which was specifically on the
+scanning capabilities and what we're going to be working on in 2023 with relation to sbas but those
+customer questions on on this on the screen at the moment so how do we effectively navigate an sba how do
+i know in terms of how much coverage i'm going to get across that application um these are all things
+that we're actively working with it's it's it's not something that we're ever going to stop working on
+anything with sbas but there are things that we can do in the product at the moment challenge going
+to show you that will increase your chances of coverage across an sba so with single page apps um i
+think one of the the kind of main underpins is just going back to what we talked around the start
+with system requirements um just use the nature of single page applications uh they do tend to be
+quite intensive from a from a scanning perspective um so kind of phase one is just hitting those
+recommended system requirements from both an enterprise and a scanning machine perspective
+because you'll find if your system is underpowered um scanning performance will suffer and
+particularly in relation to sbas we see this quite often um where it's just simply struggling to cover
+um cover the application in any sort of depth so that's definitely kind of point one we mentioned
+before on the preset scan modes and again i definitely encourage you to try those especially
+as you're just starting out but with sbas this could be potentially where we we start to kind of bleed
+into the the custom um scan configurations so you can build out your own library of custom configs and
+there can be lots of different reasons to use the custom configuration so if we go to settings and scan
+configs you'll have a whole bunch of inbuilt ones that we provide and then you add your own as kind
+of time progresses um so we can see here again it's just sort of centered around either the audit or
+the crawl or maybe we're minimizing false positives but if we go to new configuration it gives you all the
+options that are available from a scan configuration perspective and you can start to tweak these um and
+this is typically what we would we would suggest in regards to a to an spa so as a starting point we jump into
+crawl optimization here um we want to specify the crawl strategy certainly as at least a more complete
+basis and due to what we want to cover in terms of the application or you may even need to knock that
+up to to most complete for maximum coverage and we've always seen benefits from this um in terms of
+single application single page applications something like the fastest um is not going to be suitable at
+all because that that's really for static um web applications you're not going to see good results
+from a from a fastest um crawl strategy with a with an spa um and faster it's just not enough time to
+to give any sort of balance of coverage if it is an authenticated application um so just kind of diving
+back to that recorded logging component as well there's a very useful option here which is available with
+some of the preset scan modes um but effectively if you're only interested in authenticated content i would
+highly encourage you to enable this option here as well so this means we're only ever going to crawl
+using the credentials that have been applied um so if say it's an internal app and it's on your sso
+network and you have to log in every time you access the application i would say why not use this option
+um to go back to one of the other questions as well around how do i know i've logged in this will
+instantly let you know because we're going to perform that recorded login and if we don't crawl any further
+you're probably going to see an error in the scan logs that something's gone wrong with the
+authentication if we start to crawl we're discovering new locations we know we've logged in correctly but
+because we've performed that recorded logging as a first action
+if we come down to auditing this is where you'll find your issues being reported and the audit optimization
+so the audit speed um again normal isn't necessarily a bad thing in relation to single page applications
+it does also link back to what kind of coverage you want from an issues perspective but there's certainly
+no harm in clicking thorough again when it comes to spas to make sure we're trying to maximize
+that coverage as best we can same goes for the accuracy if we want to either minimize false negatives or
+false positives i imagine most of you are more interested in false positives there um and then
+some customers like to go by scan type so these are effectively groupings um so so medium active and
+an intrusive active are certainly popular ones for internal apps because you're looking for kind of the
+most vulnerable um for sites that might be live or public maybe passive or like to light active is
+more appropriate but you also have this option to select individual issues so another great one for
+sba is if you're specifically looking for particular issues maybe you just want to drop that down to those
+issues that we can really focus on as opposed to covering the whole breadth of all the issues
+issues that we cover um and then i think we've potentially missed one there as well so spas i'm
+sure some of you might use this yourself that um they can quite often use fragments so if you do
+utilize fragments for your application you can set this to yes or effectively telling the scanner that
+we're going to be looking out for fragments in the url as a way of navigation and again that can typically
+um increase your coverage as well um i'll just close this by saying we've got all of these options
+documented in terms of what they do and what they mean so if you're interested in learning more about
+customization we'll link those docs um and it explains each option um what we mentioned earlier
+was this is a lot of connectivity around the scanning machine that we mentioned when we were talking about
+proxies and enterprise versus scanning machine um so if you've got any requirement around platform
+auth so ntlm basic digest i.e not login pages this is where you have those credentials so a good
+distinction there between recorded login and platform authentication you apply those on a scan
+configuration basis and then apply those to your site save for proxy servers we can add those here or
+client tls sets but again highly encourage you to explore the documentation around custom configurations
+and then we'll just go to the next step and then we'll just go to the next step and then we'll just
+go to the next step and then we'll just go to the next step and then we'll just go to the next step
+and then we'll just go to the next step and then we'll just go to the next step and then we'll just go to the next step
+and then we'll just go to the next step and then we'll just go to the next step and then we'll just go to the next step
+and then we'll just go to the next step and then we'll just go to the next step and then we'll just go to the next step
+and then we'll just go to the next step and then we'll just go to the next step and then we'll just go to the next step
+um api based architecture is only becoming more popular i'm sure you're all interested
+um in how to go about scanning your your apis um and we do get these these kind of questions you know
+how do i get that set up in my site to scan apis what about the definition um how do i know that i'm
+scanning those apis correctly so this just really links back to what the site setup um and then there's
+some kind of prerequisites around api scanning we'll just come out of that scan configuration
+go to new site um so api scanning is enabled by default you would have to turn it off in a scan
+configuration for us not to pass any definitions that we locate but how we locate those definitions
+is via a url so it's an important point to note that the definition must be hosted either somewhere
+within the application or at a url that we can include in the scope so that we can locate it
+and then pass it and derive the endpoints from within so i'm going to give you a very quick example
+um from swagger's own website because um that is what we support open api specification version 3 for
+the definitions is a requirement for api scanning so let's just say this is our application url we would
+take that add it to our main site url that's what we want to scan and then we've got an example here
+of a hosted version 3 definition as part of the same application but we appreciate that might not
+always be the case that it is hosted under the same domain as a source application so if that was the case
+i would add that to my included url so i'm bringing that definition into scope um so i know that the scanner
+can locate it and pass it and in terms of knowing that we have discovered it once you complete a
+scan we'll just come out of the screen a second we'll go to an old scan this logging tab is very
+useful once the scan is either running or complete just to determine if there are any issues or kind
+of what's going on and there will be entries specific to identifying api endpoints within this scan
+event log if we have successfully located and passed that that definition so that's kind of what to look
+out for and then naturally the urls will be populated um from that discovery so that's another method of
+knowing that we found those locations successfully around authentication again you've got the option
+of recorded login if those are locked behind an auth server or we can do things like add custom headers
+again we've got documentation around this and if you need further help again just reach out to my team
+and then we can do things like that and then we can do things like that and then we can do things like
+that and then we can do things like that and then we can do things like that and then we can do things
+like that and then we can do things like that and then we can do things like that and then we can do things like
+that and then we can do things like that and then we can do things like that and then we can do things like
+that and then we can do things like that and then we can do things like that and then we can do things like that
+and then we can do things like that and then we can do things like that and then we can do things like that
+we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like
+that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can
+we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like
+that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can
+we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like that and then we can do things like
+in regards to the generic driver again the premise is exactly the same and I can use that with Jenkins as well but I just built out a command instead this could be within a pipeline rather than a freestyle project but it's all the same kind of kind of information we've got our driver here the path to the driver itself we're connecting to enterprise our web server URL we've got our API key
+our site ID and then our optional parameters around again when do we want the bill to fail confidence rating severity rating what kind of report do we want where do we want that stored and again there's some documentation around the optional parameters of which we can build out further options there as well but again once that pipeline runs it's just sending that API request back to enterprise if I jump into my scans here I can see that it's kicked off that API scan but again the developer doesn't need to look at this
+look at the console app in the pipeline and then generate that report for him or herself
+anything we need to add to Adam you happy no I think that's everything covered off thank you very much so to wrap up
+apologies for coughing as well today we've got a couple of next steps and ask that we'd love you to take through if you're able to skip to the next slide Alex
+um now appreciate and thank you very much for answering the poll at the beginning of the session I can see that some of you are at different stages with your journey of enterprise edition but depending where you are we've got a couple of asks so basically if you haven't deployed please take a look at the preparation guidance
+Kieran obviously dropped in the chat at the beginning of the session but we'll follow up on email so if you're not deployed please check that out and get get started with enterprise edition if you have deployed what we'd often suggest as Alex mentioned get plenty of tech support cases coming through that are related to system requirements so we recommend that you check out the system requirements and the new doc should be live in the next week or so and make sure that you're up to spec
+once you're in the product get those first scans run and start to build up a picture of the vulnerabilities in your apps please share it with with colleagues and users make sure that you're getting the the reports and the remediation advice out to the right people
+um we are here to support it's often forgot because we don't charge any extra for it the support is available and with enterprise edition so it would be fantastic if you could follow up if you are having any issues and we'd love to hear about it
+and love to solve those issues and just launched a quick two question poll at the end we'd love to to understand how whether you found value in today's session and um what whether you'd like to book a session in 2023 for us to support your organization with that rollout
+and thank you very much for attending today it was really appreciated we're going to stay live for 10 minutes or so turn the video and put mute on so i can have a good cough
+uh but we're here to finish off any q a's and we should get all of the um follow-ups out to you if not tomorrow it'll be friday we've got a couple of um a couple of other dependencies but we'll get those to you and if you'd like to attend a session in the new year then we'd love to have you so thank you very much thank you alex thanks to all the team thanks all and we'll see you soon
+you

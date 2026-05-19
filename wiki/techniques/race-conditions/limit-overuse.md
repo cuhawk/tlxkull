@@ -2,7 +2,7 @@
 title: Limit overrun — coupon / credit / token double-spend
 slug: limit-overuse
 created_utc: 2026-05-12T00:00:00Z
-updated_utc: 2026-05-12T00:00:00Z
+updated_utc: 2026-05-19T00:00:00Z
 tags: [technique/race-conditions, sink/business-logic]
 inbound: []
 ---
@@ -52,7 +52,9 @@ GET /api/user/info?user=victim&api-key[]=
 
 ## Seen-in-the-wild
 
-(none yet)
+- **2024-10-18 — Mozilla Monitor email limit bypass** (Mozilla / sushantd19, H1 #1913309, Low): Concurrent POSTs to the "add monitored email" endpoint allowed users to exceed the 5-address limit. Classic read-check-then-insert without transaction. See [H1 #1913309](../../sources/hacktivity/1913309.md).
+- **2024-04-04 — WorldID max verifications bypass** (Tools for Humanity / toormund, H1 #2110030, High, $3 000): Parallel requests to the cloud backend verification endpoint bypassed the per-user verification count limit. Fix: enforce the cap atomically in the database. See [H1 #2110030](../../sources/hacktivity/2110030.md).
+- **2025-07-03 — MozillaVPN local privilege escalation via install race** (Mozilla / northsea, H1 #2261577, Medium): TOCTOU during VPN installer: attacker replaces the binary between the signature check and execution, resulting in root execution on macOS. See [H1 #2261577](../../sources/hacktivity/2261577.md).
 
 ## References
 

@@ -1,0 +1,89 @@
+In this section, we'll explain what OS command injection is, describe how vulnerabilities
+can be detected and exploited, spell out some useful commands and techniques for different
+operating systems, and summarize how to prevent OS command injection.
+OS command injection, also known as shell injection, is a web security vulnerability
+that allows an attacker to execute arbitrary operating system commands on the server that
+is running an application, and typically fully compromise the application and all its data.
+Very often, an attacker can leverage an OS command injection vulnerability to compromise
+other parts of the hosting infrastructure, exploiting trust relationships to pivot the
+attack to other systems within the organization.
+Consider a shopping application that lets the user view whether an item is in stock in
+a particular store.
+This information is accessed via a URL like this.
+To provide the stock information, the application must query various legacy systems.
+For historical reasons, the functionality is implemented by calling out to a shell command
+with the product and store IDs as arguments.
+This command outputs the stock status for the specified item, which returned to the user.
+Since the application implements no defenses against OS command injection, an attacker can submit
+this input to execute an arbitrary command.
+If the input is submitted in the product ID parameter, then the application will execute this
+command.
+The echo command simply causes the supplied string to be echoed in the output and is a
+useful way to test for some types of OS command injection.
+The ampersand character is a shell command separator, and so what gets executed is actually three
+separate commands one after another.
+As a result, this output is returned to the user.
+From the output, we can see that the original command was executed without its expected arguments,
+and so returned an error message.
+We can see that the injected echo command was executed, and the supplied string was echoed
+in the output.
+And we can see that the original argument, 29, was executed as a command, which caused an error.
+Embracing the additional command separator after the injected command is generally useful because
+it separates the injected command from whatever follows the injection point.
+This reduces the likelihood that what follows will prevent the injected command from executing.
+When you have identified an OS command injection vulnerability, it is generally useful to execute
+some initial commands to obtain information about the system that you have compromised.
+Here is a summary of some commands that are useful on Linux and Windows platforms.
+Many instances of OS command injection are blind vulnerabilities.
+This means that the application does not return the output from the command within its HTTP response.
+Blind vulnerabilities can still be exploited, but different techniques are required.
+Enter a website that lets users submit feedback about the site.
+The user enters their email address and feedback message.
+The server-side application then generates an email to the site administrator containing the
+feedback.
+To do this, it calls out to the mail program with the submitted details.
+The output from the mail command is not returned in the application's responses, and so using the
+echo payload would not be effective.
+In this situation, you can use a variety of other techniques to detect and exploit a vulnerability.
+You can use an injected command that will trigger a time delay, allowing you to confirm that the
+command was executed based on the time that the application takes to respond.
+The ping command is an effective way to do this, because it lets you specify the number of ICMP
+packets to send, and therefore the time taken for the command to run.
+This command will cause the application to ping its loopback network adapter for 10 seconds.
+You can redirect the output from the injected command into a file within the web root that
+you can then retrieve using your browser.
+For example, this input will inject a command and redirect the output to a file.
+The greater than character sends the output from the command to the specified file.
+You can then use your browser to retrieve the file and view the output from the injected command.
+You can use an injected command that will trigger a network interaction with a system that you
+control using out-of-band techniques.
+This payload uses the NSLOOKUP command to cause a DNS lookup for the specified domain.
+The attacker can monitor for the specified lookup occurring, and therefore detect the command
+was successfully injected.
+The out-of-band channel also provides an easy way to exfiltrate the output from injected commands.
+This input will cause a DNS lookup to the attacker's domain containing the result of
+the injected command.
+A variety of shell meta-characters can be used to perform OS command injection attacks.
+A number of characters function as command separators, allowing commands to be chained together.
+These command separators work on both Windows and Unix-based systems.
+And these command separators work only on Unix-based systems.
+On Unix-based systems, you can also use backticks or the dollar character to perform in-line execution
+of an injected command within the original command.
+Note that the different shell meta-characters have subtly different behaviors that might affect
+whether they work in certain situations, and whether they allow in-band retrieval of command
+output or are useful only for blind exploitation.
+Sometimes, the input that you control appears within quotation marks in the original command.
+In this situation, you need to terminate the quoted context before using suitable shell meta-characters
+to inject a new command.
+By far the most effective way to prevent OS command injection vulnerabilities is to never
+call out to OS commands from application layer code.
+In virtually every case, there are alternate ways of implementing the required functionality
+using safer platform APIs.
+If it is considered unavoidable to call out to OS commands with user-supplied input, then
+strong input validation must be performed.
+You can validate against a whitelist of permitted values.
+You can validate that the input is a number.
+You can validate that the input contains only alphanumeric characters, no other syntax or
+whitespace.
+Never attempt to sanitize input by escaping shell meta-characters.
+In practice, this is just too error-prone and vulnerable to being bypassed by a skilled attacker.

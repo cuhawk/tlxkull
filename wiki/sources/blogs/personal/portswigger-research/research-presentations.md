@@ -1,0 +1,15 @@
+---
+source: portswigger-research
+source_url: https://portswigger.net/research/presentations
+title: "presentations | PortSwigger Research"
+---
+
+# presentations
+
+## presentations Articles
+
+[**Browser-Powered Desync Attacks** 10 August 2022Browser-Powered Desync Attacks](https://portswigger.net/research/browser-powered-desync-attacks) [**Hunting evasive vulnerabilities** 13 May 2022\\
+\\
+Hunting evasive vulnerabilities](https://portswigger.net/research/hunting-evasive-vulnerabilities) [**HTTP/2: The Sequel is Always Worse** 05 August 2021HTTP/2: The Sequel is Always Worse](https://portswigger.net/research/http2) [**Portable Data exFiltration: XSS for PDFs** 10 December 2020Portable Data exFiltration: XSS for PDFs](https://portswigger.net/research/portable-data-exfiltration) [**Web Cache Entanglement** 05 August 2020Web Cache Entanglement](https://portswigger.net/research/web-cache-entanglement) [**HTTP Desync Attacks: Request Smuggling Reborn** 07 August 2019HTTP Desync Attacks: Request Smuggling Reborn](https://portswigger.net/research/http-desync-attacks-request-smuggling-reborn) [**Turbo Intruder: Embracing the billion-request attack** 25 January 2019Turbo Intruder: Embracing the billion-request attack](https://portswigger.net/research/turbo-intruder-embracing-the-billion-request-attack) [**Practical Web Cache Poisoning** Redefining 'unexploitable'09 August 2018Practical Web Cache PoisoningRedefining 'unexploitable'](https://portswigger.net/research/practical-web-cache-poisoning) [**Hackability inspector** 06 July 2018Hackability inspector](https://portswigger.net/research/hackability-inspector) [**Cracking the lens: targeting HTTP's hidden attack-surface** 27 July 2017Cracking the lens: targeting HTTP's hidden attack-surface](https://portswigger.net/research/cracking-the-lens-targeting-https-hidden-attack-surface) [**DOM based AngularJS sandbox escapes** 11 May 2017DOM based AngularJS sandbox escapes](https://portswigger.net/research/dom-based-angularjs-sandbox-escapes) [**JSON hijacking for the modern web** 25 November 2016JSON hijacking for the modern web](https://portswigger.net/research/json-hijacking-for-the-modern-web) [**Backslash Powered Scanning: hunting unknown vulnerability classes** 04 November 2016Backslash Powered Scanning: hunting unknown vulnerability classes](https://portswigger.net/research/backslash-powered-scanning-hunting-unknown-vulnerability-classes) [**Exploiting CORS misconfigurations for Bitcoins and bounties** 14 October 2016Exploiting CORS misconfigurations for Bitcoins and bounties](https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties) [**Hunting asynchronous vulnerabilities** 15 September 2015Hunting asynchronous vulnerabilities](https://portswigger.net/research/hunting-asynchronous-vulnerabilities) [**Server-Side Template Injection** 05 August 2015\\
+\\
+Server-Side Template Injection](https://portswigger.net/research/server-side-template-injection)

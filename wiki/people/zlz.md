@@ -2,7 +2,7 @@
 title: Brett Buerhaus (bbuerhaus / zlz)
 slug: zlz
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [bbuerhaus, zlz, ziot]
 role: hunter
 primary_focus: enterprise
@@ -124,3 +124,13 @@ inbound: []
   resolving to public content as of this writing. Palisade Security
   (Sam Curry's consulting firm, founded ~2018) is the entity behind
   most joint engagements — see [sam-curry.md](sam-curry.md).
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/zlz-buerhaus/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

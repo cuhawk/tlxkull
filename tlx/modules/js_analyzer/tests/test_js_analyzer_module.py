@@ -441,6 +441,37 @@ def test_walk_js_files_custom_excludes_flips(tmp_path):
     assert rels == {"lib/u.js"}
 
 
+def test_walk_js_files_includes_jsx_ts_tsx_mjs_cjs(tmp_path):
+    from modules.js_analyzer.module import JsAnalyzerConfig, _walk_js_files
+
+    (tmp_path / "src").mkdir()
+    for fname in ("a.js", "b.jsx", "c.ts", "d.tsx", "e.mjs", "f.cjs"):
+        (tmp_path / "src" / fname).write_text("//x", encoding="utf-8")
+
+    cfg = JsAnalyzerConfig()
+    files = _walk_js_files(tmp_path, cfg.exclude_dirs)
+    rels = {f["rel"] for f in files}
+    assert rels == {
+        "src/a.js", "src/b.jsx", "src/c.ts",
+        "src/d.tsx", "src/e.mjs", "src/f.cjs",
+    }
+
+
+def test_walk_js_files_skips_dts_and_min(tmp_path):
+    from modules.js_analyzer.module import JsAnalyzerConfig, _walk_js_files
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "types.d.ts").write_text("// types", encoding="utf-8")
+    (tmp_path / "src" / "vendor.min.js").write_text("// min", encoding="utf-8")
+    (tmp_path / "src" / "vendor.min.mjs").write_text("// min", encoding="utf-8")
+    (tmp_path / "src" / "app.ts").write_text("// real", encoding="utf-8")
+
+    cfg = JsAnalyzerConfig()
+    files = _walk_js_files(tmp_path, cfg.exclude_dirs)
+    rels = {f["rel"] for f in files}
+    assert rels == {"src/app.ts"}
+
+
 def test_template_files_picked_up(tmp_path):
     """`.vue` and `.html` files outside excluded dirs end up in template_files."""
     from unittest.mock import patch

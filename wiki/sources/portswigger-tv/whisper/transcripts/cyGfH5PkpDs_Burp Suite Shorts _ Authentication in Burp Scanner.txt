@@ -1,0 +1,46 @@
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+authentication in Burp Scanner. So there are three sections in the settings where you can configure
+different authentication related settings. So I'm going to go through each one now,
+what you can configure and what it does. So let's just jump straight into Burp and have a look.
+If I open up a new scan, first off here we have the application login settings. So here you can
+configure two types of logins. First off is using login credentials, a username and a password.
+So if you set these up, if Burp crawler encounters a simple login form, so just a username and password,
+it can use these configured credentials to fill that in and log in nice and easy.
+Secondly, we have recorded login sequences. So rather than trying to add support for every single
+different type of login out there, and this gets really difficult especially when things like SSO
+providers are introduced and just there's a thousand and one different ways of doing a login.
+So rather than trying to add support for every single one, always playing catch up, we introduce
+recorded login sequences. So these are JSON definitions that drive a browser and tell it exactly what to do
+and how to log in. I'll probably go into a little bit more detail on recorded logins in an upcoming video,
+just save it a little bit of time here. So next up, let's hop into the scan configuration, create a new custom crawling configuration.
+So the first thing I wanted to go over is this crawl using my provided logins only in the crawl optimization here.
+So normally, Burp crawler will do a multi-phase approach to crawling. It'll do several passes.
+So if you've set up login credentials or recorded logins, it will first try to crawl as much of the application as possible
+without using your login. So if it encounters any login forms, it just won't use them and it won't use
+your recorded logins just yet. So this is trying to find as much unauthenticated content as possible.
+However, if you select this option, we won't do that. We will just use your provided logins. So in the case of
+plain credentials, we will crawl unauthenticated until we spot a login form and then we will immediately stop.
+Move on to crawling with an authenticated context using your credentials and using that form we've
+identified. If you've given us a recorded login, we don't even have to do that. We can just start
+crawling with your recorded logins immediately. So this is a really useful setting for if you know
+that your application has very little to no unauthenticated areas or in particular, if you have,
+let's say again, an SSO and when you hit any of your start URLs, you immediately get redirected to
+a login process. In this case, there's really no point doing an unauthenticated pass and you may as
+well just crawl only using the provided logins. Finally, we've got this login function setting.
+It's a grayed out because I've got that one selected. So these control what Burp Crawler should
+automatically do when it encounters a login form. Again, this is just a simple username, password,
+login form.
+So first off, we have attempt to self-register a user. If this is set up, Burp Crawler will identify
+what it thinks might be a registration form in addition to a login form. This is usually something
+with a username and a password and then many other fields. What we'll then do is use this form to try
+and register a user and then in the same way as if you provided the credentials yourself, it will do a
+follow-up pass using its self-registered credentials and try to find as much authenticated content with
+those credentials as possible. Secondly, we've got trigger login failures. So this is just what Burp
+Crawler should do if it finds a login form when it's trying to crawl unauthenticated. With this setting on,
+it will try to submit those forms just using bogus credentials. So just a randomly generated username
+and password. And this is trying to, as it says, trigger login failures. If you turn this off, then
+if we see a login form while crawling, we'll just completely ignore it knowing that we'll either come
+back to it if you've given us credentials or just if you haven't completely ignore it altogether.
+So that's all of the ways you can configure authentication for a Crawler audit. I haven't
+covered platform authentication here because that's more of a desktop-wide network
+stack setting. So perhaps one of the desktop team can go over that in future.

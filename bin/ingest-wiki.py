@@ -14,9 +14,41 @@ TLX = REPO / "tlx"
 sys.path.insert(0, str(TLX))
 
 from modules.rag.module import DocsConfig
-from modules.rag.tools import docs_ingest_dir
+from modules.rag.tools import docs_ingest_dir, docs_ingest
 from kernel.embedders.google import GoogleEmbedder
 from kernel.embedders.chroma_adapter import make_chroma_adapter
+
+_EXCLUDE_DIRS = {".git", "node_modules", "__pycache__", ".venv", "_external"}
+
+
+async def ingest_large_dir(
+    directory: str, glob: str, cfg, ef, concurrency: int = 12
+) -> tuple[int, int]:
+    """Ingest a directory with >200 files using concurrent docs_ingest calls."""
+    dir_path = Path(directory)
+    paths = sorted(
+        p for p in dir_path.glob(glob)
+        if p.is_file() and not any(part in _EXCLUDE_DIRS for part in p.parts)
+    )
+    sem = asyncio.Semaphore(concurrency)
+    counters = {"files": 0, "chunks": 0, "done": 0, "total": len(paths)}
+
+    async def _ingest_one(p: Path) -> None:
+        async with sem:
+            raw = await docs_ingest(str(p), "wiki", cfg, ef)
+            r = json.loads(raw)
+            if "error" not in r:
+                counters["files"] += 1
+                counters["chunks"] += r.get("ingested", 0)
+            counters["done"] += 1
+            if counters["done"] % 100 == 0:
+                print(
+                    f"  [{counters['done']}/{counters['total']}] "
+                    f"files={counters['files']} chunks={counters['chunks']}"
+                )
+
+    await asyncio.gather(*(_ingest_one(p) for p in paths))
+    return counters["files"], counters["chunks"]
 
 
 async def main() -> None:
@@ -34,7 +66,9 @@ async def main() -> None:
     # _ingest_log.jsonl never enter the collection.
     targets = [
         (str(REPO / "wiki" / "sources"), "*.md"),
+        (str(REPO / "wiki" / "sources" / "hacktivity"), "*.md"),  # large: uses per-file path
         (str(REPO / "wiki" / "sources" / "podcasts" / "ct"), "*.md"),
+        (str(REPO / "wiki" / "sources" / "blogs"), "**/*.md"),
         (str(REPO / "wiki" / "techniques"), "**/*.md"),
         (str(REPO / "wiki" / "payloads"), "**/*.md"),
         (str(REPO / "wiki" / "tools"), "**/*.md"),
@@ -50,6 +84,17 @@ async def main() -> None:
             continue
         print(f"INGEST {directory} {glob}")
         try:
+            # Count files first to decide path
+            dir_path = Path(directory)
+            file_count = sum(
+                1 for p in dir_path.glob(glob)
+                if p.is_file() and not any(part in _EXCLUDE_DIRS for part in p.parts)
+            )
+            if file_count > 200:
+                files, chunks = await ingest_large_dir(directory, glob, cfg, ef)
+                print(f"  -> files={files} chunks={chunks}")
+                continue
+
             raw = await docs_ingest_dir(
                 directory=directory,
                 glob=glob,

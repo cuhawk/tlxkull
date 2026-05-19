@@ -2,7 +2,7 @@
 title: Sam Curry (samwcyo)
 slug: sam-curry
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [samwcyo]
 role: hunter
 primary_focus: enterprise
@@ -119,3 +119,13 @@ inbound: []
   doing anything else.
 - **Voice:** narrative, screenshot-heavy, vendor-praising-on-fix.
   Disclosures usually well-coordinated; many patched in 24-48h.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/sam-curry/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

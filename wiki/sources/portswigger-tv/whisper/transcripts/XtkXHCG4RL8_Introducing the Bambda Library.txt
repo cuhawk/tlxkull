@@ -1,0 +1,147 @@
+Okay, so I'll introduce myself first. I'm Simon, I'm a UX designer on Burp Suite Professional.
+I'm Eugen, I'm a developer on Burp Suite Pro.
+I'm Russell, I'm also a developer on Burp Suite.
+And I'm Ryan, and I'm also a developer.
+Perfect. Yeah, today we're here to speak to you about the BAMDA library. Thank you everyone for joining.
+I'll pass over to Ryan to get us started.
+Okay, so hey everyone. Thank you for coming to our talk about the new feature for BAMDA's,
+the BAMDA library. But before we go into that, what actually is a BAMDA?
+Because Burp begins with a B, we name a lot of things starting with B, like B-checks, BAPs,
+even the BWIS. Hence a BAMDA is just a Burp lander.
+BAMDAs are small sections of Java-based code that you can run directly from Burp Suite's interface.
+They are written in Java and enable you to quickly personalize various tasks,
+from creating custom match and replace rules to customizing table columns and filters to suit to your workflows.
+Well that's great, but what can you actually do with BAMDAs?
+BAMDAs
+
+BAMDAs are very useful. View filters help you reduce the noise in highly used tables
+and identify useful information. You can find them in proxy, HTTP and WebSockets history,
+logger and sitemap. One example for HTTP history is filtering for authorized JWT tokens.
+This helps you navigate to only the important traffic through the proxy.
+No longer lose important logger information. The BAMDA capture filter you need to logger will ensure
+you're not saving useless requests and only retain the most helpful ones.
+From even more fine-grained control to filter out static content,
+to only capturing the most interesting responses for memory efficiency.
+This example would only record requests with specific text in it, helping you easily go back to logging attempts.
+You can use custom columns to look for patterns and detect well-known and easy to check vulnerabilities.
+They're in proxy HTTP and WebSockets history and logger. Public cores or a misconfigured access control
+can be easily detected and highlighted in the table, cutting down the time you need to spend manually.
+Match and replace is even more powerful with the addition of the Montoya API. One helpful example is
+that you can hijack CSP reports automatically using the collaborator. This lets you add collaborator
+payloads without having to check this book manually, letting you iterate on your payloads and find
+detailed metadata essential to exploiting your target. But I hear you asking, or not asking, what should
+you not use BAMDAs for? Well, BAMDAs will let you run any Java code you want. If it's in the standard library,
+you can access it, which can lead to some pretty fun things that don't necessarily have to be useful.
+The legendary Tiberius, one of our founding members, has kindly collected a selection of such dark magics
+in the totally useless BAMDAs repository. Let's see a few of them, and a couple more that we've made for fun.
+You can fade burp in and out, if you want your proxy table to oscillate in and out of existence.
+You can bounce the burp window around your desktop, should you be bored of being able to easily click
+table entries. You can shut down your system, for obvious reasons, we don't have a video for this one.
+And of course, if it can display, it can run bad apple.
+Basically, the limit is pretty much your imagination. Whilst you can't import things at the top of the file,
+Java lets you use fully qualified paths, which gives you access to literally everything bundled
+in the standard library, including UI elements, IO, and file handling. And since it's literally just
+Java at the end of the day, your most accessible friendly LLM can write pretty good code for you.
+Just remember to fix the imports and ensure you tell it about our Montoya functions.
+Some useful boundaries suggested by Tiberius in his recent presentation on this discord were
+checking if missing strict transport security headers are prevalent, or just
+on some responses, checking for cache control headers on non-static content,
+or finding cookies set without HTTP only secure same-side, etc. Or to explore.
+So, that's all well and good. But what's the problem? Well, we initially designed bandas to be
+throwaway code, something to write in two minutes and discard after five. But we heard from you that you
+wanted an easy way to save your bandas, to iterate on them, and share them easily with others. But you
+couldn't do that within Burp itself, so you were saving them in text files, even Google Docs, or sending
+them in Slack chats, and copy pasting them into Burp for every single project. This is most certainly a clunky,
+annoying process. You wanted bandas to be easier to save and access directly in Burp, so we listened.
+So, introducing the BAMDA library, available in both Burp Suite Professional and Burp Suite Community.
+Now you won't need to leave Burp to save and load BAMDAs. This means you'll also be able to accumulate
+a valuable collection of BAMDAs to reuse across your project files. Let's dive in and see how it works.
+Here is the BAMDA library, helping you manage all your BAMDAs. You can create BAMDAs, import them from
+others, export and share them to the wider community. Not only did we want to make BAMDAs easier for
+existing fans, but we wanted to make them easier to get into if you're new. So we packed the BAMDA library
+with a variety of templates provided by our amazing research team. These templates are a great entry
+point for anyone who's not used them before, giving instantly useful functionality you can take advantage
+of without having to learn Java on day one. And if you're already familiar, they're easy to adapt to
+suit your needs. And if you already have an idea of what you want to work on, you can create a blank BAMDA too.
+So, you've found a BAMDA you love, or perhaps your colleague is sharing their essential collection
+with you. Easily import BAMDAs, including folders, into burp. Burp will recurse down the folders,
+making it easy to import large collections of BAMDAs, like the entire GitHub repo. We'll get back to that in a bit.
+Or maybe you want to share your latest BAMDA creation. You can export one or many BAMDAs directly
+from burp, perfect to be shared on Discord or uploaded to GitHub. Your BAMDA library is shared
+across project files, so you'll likely want to manage them quite carefully. You can delete ones you no
+longer need, duplicate ones, and edit all in one place.
+Within the editor itself, you can load BAMDAs from the library, edit them, and save your new creations back to it.
+You can even use hotkeys to navigate the editor quickly. This gives you the power of BAMDAs without
+having to move away from where you're working. Here's a GIF to show you how this works. So here we're
+loading a BAMDA from the library, editing it, and saving it back to the library, all seamlessly within
+the editor. And you can do this everywhere you have BAMDAs. Please note that some of these BAMDAs are only
+available in Burp Suite Professional, such as Match and Replace and Custom Columns.
+One of the most important parts of this whole feature is the community around BAMDAs.
+We're now showcasing the BAMDA GitHub repository everywhere BAMDAs are, hopefully helping you all
+to discover the next best way to enhance your pen testing. The current BAP Store extension,
+bchech helper, will soon undergo a major update, including a rename, to provide the functionality
+of a BAMDA store, integrating your favorite GitHub repository directly within Burp.
+Now we'll have a quick look behind the scenes at how we handle BAMDAs in the library,
+and some other interesting functionality. So in the library, we're using a unique ID on every BAMDA,
+so that when you import BAMDAs, especially if they already exist in your library, Burp can figure out
+what's new versus what's already in there. If you import a BAMDA that shares an existing ID,
+you'll be prompted to decide which one to keep. If you want both, the imported one just gets assigned
+a fresh ID. This also means that we export that ID along with the BAMDA, so whenever you bring BAMDAs
+in or send them out, there's always a consistent way to keep track of them, even if you import multiple
+versions from a repository over time. It's also useful to know that you have the ability to drop requests
+in the match and replace BAMDA. This can be achieved by setting the service to null on the request.
+And on the horizon for BAMDAs is custom actions. This is a brand new type of BAMDA in repeater.
+These will provide the ability to ask arbitrary questions about your requests in repeater.
+The BAMDAs can be run manually or toggled to run each time a request is sent. You'll be able to see
+the results in the output section. Have you tried the BAMDA library? If so, we'd love your feedback.
+Fill out the survey to share your thoughts. We always appreciate hearing from you. If you're interested
+in a follow-up video call to discuss your experience, let us know in the survey. That's it for the
+presentation. Now we'll answer any questions.
+If you could either type your questions in the chat or ask to speak, we can give you permission to speak.
+We'll leave up the link to the feedback as well for the rest of the session.
+A few people typing so we'll wait and see what happens.
+A few people typing so we can get a few questions.
+Question from Goatsniff. Are you looking for contributions to the BAMDA repo or are you picking
+making your own BAMDAs?
+Both I think. Are we? So the templates are created by our research team. So we've added those directly into
+BIRP. But yes, we're absolutely looking for contributions to our repo as well, aren't we?
+There's already a bunch of contributions in the repo already from people.
+Yeah. Feel free to pull requests and add anything you feel would be useful to everyone.
+Absolutely. And we've spent quite a bit of engineering effort, quite a bit of design thinking
+around how the imports from GitHub work. Like we mentioned in the presentation, we've got
+IDs behind the scenes. So if people are constantly pulling down the repo and importing that back to BIRP,
+that we can sort of help you manage that. So we're expecting that the repo will be a valuable
+source of BAMDAs for everybody. So yeah, please do. Please do share those.
+Agharis asked, we can't input from GitHub yet, correct? Will other providers, e.g. GitLab, be supported?
+So not directly, but you can always download the entire zip of the GitHub from the
+the actual GitHub. So you can download the zip and if you extract that,
+we will basically recurse through all of the folders. So it's like three clicks.
+And that will work for basically any repository.
+Yeah. So that would work with that work for GitLab too, wouldn't it?
+Yeah. Yeah. Just download the zip, extract it as a folder and then import from the entire folder.
+Yeah. Import that folder into BIRP. Yeah.
+So that's a question from Nick C. If you have multiple BIRP installs on other customer provider laptops,
+what's the quickest way to copy over your BAMDA library instead of adding each one manually?
+I see there's a forward slash BIRP suite BAMDAs with BAMDAs in it. Can we just copy these over to
+the customer machine or is there a better way? Well, you could, but it's probably not the best way to do it.
+So I would probably recommend that you just export the BAMDAs and zip them up and then
+send them to whoever needs to import them. So go into your BAMDA library in the UI,
+select them all, export them to a folder and then re-import that folder on the next laptop.
+Yes. Yeah. That's the best way.
+Because there's a unique ID behind each one, then it would enable you to be able to
+kind of keep that up to date by, if you do make any changes, re-exporting it, re-importing it into your
+other implementations of BIRP and then that would update the appropriate BAMDAs that you changed.
+Yeah. Yeah. Cool. Thanks, Nick. And then one from Anjay. With exporting a BAMDA, are they normalised?
+In the way of white space characters so they look, so they look the same on Git or in BIRP?
+Short answer, yes. Yeah. Yeah. The white space is retained. So that what you see in GitHub and what
+you see, you know, hopefully in the BAMDA editor and what you see in the library should all match.
+Longer answer, like, you can have any special characters you want in the title because we store it
+sort of in the text in the file. The actual name of it will get normalised so it's compatible with file systems.
+Mm-hmm. Cool. And another one from Nick C. Would you have to import each one, one at a time?
+No. So no, you can book select and... No, you can import folders at the folder level. Yeah.
+Yeah. So you can... Oh yeah. I already answered, but yes. You can do all that through the UI in books.
+That's in books. That's cool.
+Okay. Well, thank you everyone for joining. As I mentioned, we've recorded this so we'll
+um, we'll share this back on Discord. Have a nice rest of your day, evening. Thank you everybody.
+And thanks for being on Discord and using Burp Suite.
+Thanks guys. Thank you. Thank you. Bye bye. Bye.

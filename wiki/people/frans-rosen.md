@@ -2,7 +2,7 @@
 title: Frans Rosén (fransrosen)
 slug: frans-rosen
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [fransrosen, frans-rosen, fransr, fros]
 role: researcher
 primary_focus: client-side
@@ -129,6 +129,11 @@ inbound: []
 
 ## Notes
 
+- **Blog bodies ingested into wiki RAG 2026-05-19.** Full bodies of the
+  Detectify Labs writeups listed above live under
+  `wiki/sources/blogs/detectify/` and are embedded in the `wiki` Chroma
+  collection. Query via `docs_query(collection="wiki", ...)` instead of
+  WebFetch.
 - Recurring CT guest; one of Justin/Joel's go-to references for
   client-side and OAuth-flow tradecraft. The Ep 45 rerun (Ep 75) is
   evidence of replay value — the methodology content holds up.

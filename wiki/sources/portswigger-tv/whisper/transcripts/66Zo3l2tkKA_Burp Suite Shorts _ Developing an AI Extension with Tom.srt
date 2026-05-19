@@ -1,0 +1,408 @@
+1
+00:00:00,000 --> 00:00:05,960
+Hi, I'm Tom from the Portswigger development team. Today I'm going to show you how easy it is to
+
+2
+00:00:05,960 --> 00:00:11,160
+leverage Burp AI in your Burp Suite extensions using the Montoya API. To do this, I'm going to
+
+3
+00:00:11,160 --> 00:00:17,640
+be working through a live example of how to integrate AI in the reporting extension that
+
+4
+00:00:17,640 --> 00:00:24,800
+I've been writing. So I've done all of the fun swing UI part here to save you having to watch
+
+5
+00:00:24,800 --> 00:00:31,220
+me fumble with that bit. We have issues, we can add some custom requirements for our report, and we
+
+6
+00:00:31,220 --> 00:00:35,660
+can hit generate. But the report generation isn't yet implemented, so I'm going to show you how to do
+
+7
+00:00:35,660 --> 00:00:41,540
+that now. So if we hop into our code, you can see that we've got this report generation class here.
+
+8
+00:00:41,540 --> 00:00:48,440
+The first thing this does when it generates a report is it checks whether AI is enabled. AI can be turned
+
+9
+00:00:48,440 --> 00:00:55,400
+off or on for extensions individually. So it's important in your extension before doing any AI
+
+10
+00:00:55,400 --> 00:00:59,780
+operations to check whether it's enabled, otherwise it's not going to work. The second important thing
+
+11
+00:00:59,780 --> 00:01:06,140
+we do is we move off of the swing thread onto a new thread, because what we're going to be doing with AI
+
+12
+00:01:06,140 --> 00:01:11,420
+could take a long time and we don't want to hinder the user experience as it runs. So I've just got a
+
+13
+00:01:11,420 --> 00:01:17,720
+little utility here I wrote that creates a service and runs any code that you give it. I've also made
+
+14
+00:01:17,720 --> 00:01:22,680
+sure that my extension shuts down the executor service when it's done. So once we hopped onto a new
+
+15
+00:01:22,680 --> 00:01:28,520
+thread, I've got some boilerplate here that's just generating a report class, executing the prompt,
+
+16
+00:01:28,520 --> 00:01:35,880
+which is not yet implemented, rendering it to HTML, and then saving it. The reason that we're rendering to
+
+17
+00:01:35,880 --> 00:01:44,420
+HTML here is that if we ask the AI to respond in HTML, it's not always going to do an amazing job. It's going
+
+18
+00:01:44,420 --> 00:01:48,740
+to tend to, it prefers to respond in Markdown. So it's better to just let it do that and then do the
+
+19
+00:01:48,740 --> 00:01:53,300
+conversion ourselves. The reason I even need to do the conversion is just because swing components
+
+20
+00:01:53,300 --> 00:01:56,820
+can render HTML and they can't render Markdown. Otherwise it would probably would have just left
+
+21
+00:01:56,820 --> 00:02:02,820
+it in Markdown. So how do we actually execute our prompt? Well, the first thing we need to do is we
+
+22
+00:02:02,820 --> 00:02:09,700
+need to create some messages. A message is a what we actually send to the AI and there are three different
+
+23
+00:02:09,700 --> 00:02:15,780
+types. There are system messages, user messages and assistant messages. The first thing we're going to want
+
+24
+00:02:15,780 --> 00:02:24,020
+is a system message. So if we create a new message for system message and a Montoya helper for this and
+
+25
+00:02:24,020 --> 00:02:29,140
+we're going to give it our content. Now I've already written out the system message so you don't have to see me
+
+26
+00:02:29,140 --> 00:02:33,460
+get it wrong several times with typos and all that. But what we're effectively doing is we're
+
+27
+00:02:33,460 --> 00:02:38,260
+explaining to the AI the role that we want it to provide. So we're telling it that it is a DAST
+
+28
+00:02:38,260 --> 00:02:42,980
+vulnerability report writer. We're going to tell it the input we're going to give it. So a series of
+
+29
+00:02:42,980 --> 00:02:48,260
+web application vulnerabilities found by Burp Suite's DAST scanner and a set of custom requirements
+
+30
+00:02:48,260 --> 00:02:53,860
+given by the user. We're then explaining what its task is, which is to generate a vulnerability report.
+
+31
+00:02:54,340 --> 00:02:58,340
+We're going to give it some parameters to work in. So we're going to tell it to be clear and readable,
+
+32
+00:02:58,340 --> 00:03:03,300
+detailed, comprehensive, where possible. We want it to retain the original wording in the issues.
+
+33
+00:03:03,940 --> 00:03:08,740
+We need it to retain or include all of the additional information requested by the client
+
+34
+00:03:09,380 --> 00:03:14,740
+and also include any additional information it thinks is relevant. What we're also doing is rather
+
+35
+00:03:14,740 --> 00:03:20,740
+than sending the issue evidence or the request responses to the AI for it to include, we're just
+
+36
+00:03:20,740 --> 00:03:24,900
+going to tell it how to attach them. This is because we want to limit the data that we're sending
+
+37
+00:03:24,900 --> 00:03:32,740
+and receiving from the AI. Each token that we send is effectively going to, so we don't want to send
+
+38
+00:03:33,300 --> 00:03:38,340
+things that are unnecessary. In this case it doesn't need the evidence to construct the report so we can
+
+39
+00:03:38,340 --> 00:03:44,420
+just tell it how to embed it and we'll do that afterwards. So we want to put our system message
+
+40
+00:03:44,420 --> 00:04:00,340
+into our first message and we'll create a new list to put our messages in.
+
+41
+00:04:03,860 --> 00:04:06,820
+And we'll put generics on it because that's how you write good java code.
+
+42
+00:04:06,820 --> 00:04:13,780
+Yep, so messages add system message. So what we want to do next is actually send our content.
+
+43
+00:04:13,780 --> 00:04:18,260
+So we're going to create a message for our custom requirements and this is going to be a user message.
+
+44
+00:04:18,260 --> 00:04:22,420
+So this is data that the user is sending. We've set up our system message so we now want to provide
+
+45
+00:04:22,420 --> 00:04:28,740
+user data and again there's a nice Montoya help for creating a user message. Now we're not just going
+
+46
+00:04:28,740 --> 00:04:34,180
+to paste the custom requirements straight in because we do want to give the AI a little bit of context as
+
+47
+00:04:34,180 --> 00:04:40,500
+to what data we're providing here and this really just has to take the form of custom requirements
+
+48
+00:04:40,500 --> 00:04:45,780
+and then we'll add the custom requirements and that's as easy as that. So we'll add that to our
+
+49
+00:04:45,780 --> 00:04:52,580
+messages. So what we want to do now and Copilot is handily giving us a hint is to create a user
+
+50
+00:04:52,580 --> 00:04:58,980
+message for each of the issues that we want to send. So yeah we'll hit the right button. So for each
+
+51
+00:04:58,980 --> 00:05:05,220
+issue we want to generate a new message and add it to our messages. Now obviously this issue message
+
+52
+00:05:05,220 --> 00:05:11,540
+doesn't exist that's not a thing in the Montoya API because that's a custom requirement we have,
+
+53
+00:05:11,540 --> 00:05:16,660
+not a general use case. So we're going to create user messages but I will go ahead and create a little
+
+54
+00:05:16,660 --> 00:05:23,460
+helper here for creating a issue message and that will take an issue, an audit issue. So what we want
+
+55
+00:05:23,460 --> 00:05:31,940
+to do here is effectively serialize issue data. So we'll create the issue and we want an issue type
+
+56
+00:05:32,580 --> 00:05:41,380
+which will be the issue type as you'd expect. We want the issue severity. You're going to see me fumble
+
+57
+00:05:41,380 --> 00:05:46,260
+with the keyboard a lot here. We want the confidence. Okay Copilot's getting the hang of this now. We want
+
+58
+00:05:46,260 --> 00:05:53,420
+the issue URL. I spoke too soon. We want the detail. We want the background.
+
+59
+00:05:53,620 --> 00:05:59,780
+We want the remediation if I can spell it. And we want the number of evidence items. Like I said
+
+60
+00:05:59,780 --> 00:06:04,340
+we're not going to actually attach the evidence. We're just going to tell the AI how many there are
+
+61
+00:06:04,340 --> 00:06:10,500
+so that it can kind of use that information. So we're going to format this with the issue type
+
+62
+00:06:11,540 --> 00:06:15,700
+which I think is the name. I've called it type but it is actually name on the interface.
+
+63
+00:06:16,340 --> 00:06:25,860
+There's a severity. There's a confidence. There's a base URL. There's a detail. There's a background.
+
+64
+00:06:26,420 --> 00:06:33,860
+There is a remediation. Is that next? Yep remediation. And then for the evidence we want to get the request
+
+65
+00:06:33,860 --> 00:06:39,140
+responses and just get the size. Cool. So we're going to return that and format it a bit better as well.
+
+66
+00:06:39,780 --> 00:06:45,380
+Don't know where that came from. Don't need that. Cool. So yep we are now serializing our issues into
+
+67
+00:06:45,380 --> 00:06:50,180
+something that the AI can understand. Again using kind of the minimal amount of data that we want to
+
+68
+00:06:50,180 --> 00:06:55,620
+send to actually get the value that we need. So we've got all of our messages. What do we need to do now?
+
+69
+00:06:55,620 --> 00:07:00,580
+So now we actually need to again copilot's jumping the gun again a bit but we want to actually
+
+70
+00:07:01,380 --> 00:07:08,900
+execute our prompt. So we're going to create a new prompt object using the Montoya API's AI object
+
+71
+00:07:08,900 --> 00:07:13,300
+and then we're going to execute it sending our messages. We can also provide prompt options here
+
+72
+00:07:13,940 --> 00:07:20,740
+and that allows us to control the temperature of our request. The temperature is a float value between
+
+73
+00:07:20,740 --> 00:07:27,060
+zero and two where the closer it gets to two the more creative the AI gets. The default value is 0.5
+
+74
+00:07:27,060 --> 00:07:35,460
+which is a little bit creative but mostly sticking to kind of facts and not trying to think outside
+
+75
+00:07:35,460 --> 00:07:38,580
+the box too much which is about right for what we want. So I'm just going to leave it as it is.
+
+76
+00:07:39,140 --> 00:07:45,940
+So this will go and execute our prompt or our series of messages as a prompt and then we can just
+
+77
+00:07:45,940 --> 00:07:50,740
+get the content which is the result. The final thing we want to do here is we want to make sure that we've
+
+78
+00:07:50,740 --> 00:07:56,180
+got any error handling covered. So we are going to catch any prompt exceptions that can happen.
+
+79
+00:07:56,980 --> 00:08:03,060
+Now this could be due to the AI being unreachable. It could be because the AI is disabled. It could be
+
+80
+00:08:03,060 --> 00:08:08,020
+that we run out of credits. For now all that we're going to do is we're going to log these to error.
+
+81
+00:08:08,020 --> 00:08:13,620
+And again this is just a little utility that I've written that wraps the Montoya logging API so that I can
+
+82
+00:08:13,620 --> 00:08:20,420
+do it statically. And for now we'll just return just an empty string because it's just the easiest way
+
+83
+00:08:20,420 --> 00:08:29,700
+to do for our little example here. I was wondering why that was complaining. Again generics because I'm
+
+84
+00:08:29,700 --> 00:08:37,620
+trying to code live and remember how to do it. So just to summarize what we're doing is we are taking
+
+85
+00:08:37,620 --> 00:08:43,380
+our system message which is our instructions for how the AI should behave. We're taking user messages which
+
+86
+00:08:43,380 --> 00:08:50,580
+are an approximation for our input where each message is wrapping the input in a bit of context
+
+87
+00:08:51,540 --> 00:08:55,060
+and then we're sending all of those to the AI making sure to account for any errors.
+
+88
+00:08:58,740 --> 00:09:07,140
+So let's build that again and hop back in. So we'll go and reload our extension. Make sure the AI is
+
+89
+00:09:07,140 --> 00:09:17,940
+turned on and send some issues. Cool. So we're going to hit generate report now and that's going to go off
+
+90
+00:09:17,940 --> 00:09:24,420
+again on a new thread as we did and send our messages to the AI and we'll see what it comes back with.
+
+91
+00:09:24,980 --> 00:09:30,900
+All of this code will be available in the extensions repository. I've created a branch specifically for
+
+92
+00:09:30,900 --> 00:09:36,260
+this code demo. So the code in the live version of the extension is a little different because there
+
+93
+00:09:36,260 --> 00:09:42,180
+are different generation modes I've added and slightly more robust error handling. But there is a branch
+
+94
+00:09:42,180 --> 00:09:46,340
+specifically for this code with me demo if you want to go and check out the code that's been written.
+
+95
+00:09:46,340 --> 00:09:47,380
+That will be committed there.
+
+96
+00:09:51,060 --> 00:09:57,620
+There we go. So we can see that we have generated a vulnerability report for Gin and Juice Shop. We've got all of
+
+97
+00:09:57,620 --> 00:10:04,100
+our issues in here with all of the data that we sent and a summary at the end. Now what I probably should
+
+98
+00:10:04,100 --> 00:10:08,820
+have done is give it some custom requirements to show the actual value of doing this rather than just
+
+99
+00:10:08,820 --> 00:10:16,180
+formatting what comes directly out of Burp's issues. But never mind. I'm not going to run it again and make
+
+100
+00:10:16,180 --> 00:10:22,820
+everyone sit and watch that. But yeah, there we go. That was how easy it was to take all of our data from
+
+101
+00:10:22,820 --> 00:10:31,140
+our extension and use Burp AI to create a powerful response. I don't know how to end this so just give
+
+102
+00:10:31,140 --> 00:10:43,300
+it a go yourselves, I guess. It's that easy.
+

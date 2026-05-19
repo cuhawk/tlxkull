@@ -1,0 +1,260 @@
+1
+00:00:00,000 --> 00:00:07,680
+DGP is supposed to be stateless.
+
+2
+00:00:08,320 --> 00:00:13,480
+So each request that I send should have no impact on the next request.
+
+3
+00:00:13,580 --> 00:00:15,980
+And obviously request smuggling violates that.
+
+4
+00:00:15,980 --> 00:00:18,800
+But even if you ignore request smuggling,
+
+5
+00:00:18,920 --> 00:00:22,520
+there are some other cases when HP can become stateful.
+
+6
+00:00:23,180 --> 00:00:25,960
+And if you don't realize this and test for it,
+
+7
+00:00:25,960 --> 00:00:28,320
+you can miss some quite interesting vulnerabilities.
+
+8
+00:00:28,320 --> 00:00:35,320
+For example, some servers do more validation on the first request
+
+9
+00:00:35,980 --> 00:00:38,260
+sent over any given connection.
+
+10
+00:00:38,260 --> 00:00:44,940
+So on this target, there's an SSRF vulnerability.
+
+11
+00:00:45,660 --> 00:00:49,840
+And now if we try to hit this internal host directly,
+
+12
+00:00:50,040 --> 00:00:53,540
+well, they detect that the host header is wrong
+
+13
+00:00:53,540 --> 00:00:56,520
+and they just issue us with a redirect.
+
+14
+00:00:56,520 --> 00:01:01,420
+And you can send that over and over and you'll get the same thing every time.
+
+15
+00:01:02,160 --> 00:01:07,340
+But the thing is, this server is only doing the validation of the host header
+
+16
+00:01:07,340 --> 00:01:10,420
+on the first request on each connection.
+
+17
+00:01:11,080 --> 00:01:16,020
+So I've just made a custom action called connection state attack,
+
+18
+00:01:16,080 --> 00:01:19,880
+which basically takes this and it smuggles it behind a valid,
+
+19
+00:01:19,880 --> 00:01:22,040
+genuine, normal looking request.
+
+20
+00:01:22,280 --> 00:01:24,700
+And so all you've got to do is first send this,
+
+21
+00:01:24,740 --> 00:01:27,180
+see what the normal response is and then hit this button.
+
+22
+00:01:27,180 --> 00:01:29,260
+And now it will smuggle the request.
+
+23
+00:01:30,420 --> 00:01:36,460
+And behold, we've just gained access to the admin panel via the SSRF.
+
+24
+00:01:36,680 --> 00:01:40,820
+And once again, the only way to access this is by smuggling this request.
+
+25
+00:01:40,820 --> 00:01:43,240
+So if you do it directly, you don't see anything.
+
+26
+00:01:43,700 --> 00:01:47,920
+We can use the logger to see what's actually happened behind the scene.
+
+27
+00:01:48,040 --> 00:01:51,880
+So when I'm sending these requests with the repeater,
+
+28
+00:01:52,120 --> 00:01:55,480
+every single one is sent on a different connection ID,
+
+29
+00:01:55,600 --> 00:01:57,840
+as you can see from this column that I've switched on here.
+
+30
+00:01:58,280 --> 00:02:00,780
+But when I hit that magic button with the custom action,
+
+31
+00:02:01,180 --> 00:02:05,300
+then it sends this innocent precursor request with a valid host header.
+
+32
+00:02:05,300 --> 00:02:10,400
+And then it sends the malformed one that I had in the repeater.
+
+33
+00:02:11,220 --> 00:02:17,800
+And the power of this is this is not just limited to host header attacks.
+
+34
+00:02:17,980 --> 00:02:27,180
+In principle, any kind of server level validation could be bypassed using this technique.
+
+35
+00:02:27,400 --> 00:02:31,320
+And now thanks to this custom action, you can test for it simply by pressing a button.
+
+36
+00:02:31,320 --> 00:02:36,060
+If we just have a look at the code underneath,
+
+37
+00:02:36,660 --> 00:02:40,020
+all it's doing is it's taking the input request
+
+38
+00:02:40,020 --> 00:02:46,360
+and it's sending a simplified version to the target URL with a legitimate host header
+
+39
+00:02:46,360 --> 00:02:50,140
+and without any malformed headers or anything like that.
+
+40
+00:02:50,280 --> 00:02:55,820
+And then it's sending the actual attack immediately after it and setting the response over there.
+
+41
+00:02:56,600 --> 00:02:59,020
+So, yeah, hope you find it useful.
+
+42
+00:02:59,020 --> 00:03:04,880
+Please note you will need to be using the latest version of Burp Suite to perform this attack
+
+43
+00:03:04,880 --> 00:03:13,120
+as it uses a new feature that was just added to around making it easier to reuse connections like this.
+
+44
+00:03:14,660 --> 00:03:15,840
+And that's pretty much it.
+
+45
+00:03:16,340 --> 00:03:21,140
+Only other thing is this is my first time making this kind of demo video with audio narration.
+
+46
+00:03:21,360 --> 00:03:26,060
+So let me know what you think if you like it or if you think I should just stick to writing blog posts.
+
+47
+00:03:26,760 --> 00:03:27,580
+Thanks for listening.
+
+48
+00:03:29,020 --> 00:03:31,020
+Thank you.
+
+49
+00:03:31,020 --> 00:03:31,020
+
+
+50
+00:03:31,020 --> 00:03:31,020
+
+
+51
+00:03:31,020 --> 00:03:31,020
+
+
+52
+00:03:31,020 --> 00:03:31,020
+
+
+53
+00:03:31,020 --> 00:03:31,020
+
+
+54
+00:03:31,020 --> 00:03:31,020
+
+
+55
+00:03:31,020 --> 00:03:31,020
+
+
+56
+00:03:31,020 --> 00:03:31,020
+
+
+57
+00:03:31,020 --> 00:03:31,020
+
+
+58
+00:03:31,020 --> 00:03:31,020
+
+
+59
+00:03:31,020 --> 00:03:31,020
+
+
+60
+00:03:31,020 --> 00:03:31,020
+
+
+61
+00:03:31,020 --> 00:03:31,020
+
+
+62
+00:03:31,020 --> 00:03:31,020
+
+
+63
+00:03:31,020 --> 00:03:31,020
+
+
+64
+00:03:31,020 --> 00:03:31,020
+
+
+65
+00:03:31,020 --> 00:03:31,020
+
+

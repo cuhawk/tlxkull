@@ -43,6 +43,10 @@ inbound: []
 - [CBC IV Recovery via 8-Byte Null Block](cbc-iv-recovery-null-block.md) — IV-recovery primitive against unauthenticated CBC
 - [cPanel CRLF Session-File Injection](cpanel-crlf-session-injection.md) — \r\n injection into on-disk session record → auth bypass
 
+## Technique pages
+
+- [ORM / query-builder SQL injection](orm-sqli.md) — Django Q objects `_connector`, Nextcloud column-type, FilteredRelation annotation injection
+
 ## Sub-patterns to expand
 
 - [ ] `ssrf-cloud-imds.md` — SSRF to AWS/GCP/Azure IMDS credential theft

@@ -1,0 +1,38 @@
+Hi, I'm Dave from the Burp Scan and Development team and today I'm going to talk a little bit
+about a new way that you can test your B-Checks in Burp Street Professional 2023.7.2 and newer.
+So for anyone who's unfamiliar with B-Checks, we released them in Burp Street Professional 2023.6
+as a way of adding custom scan checks into Burp Scanning Engine, adding your own custom logic for
+application-specific vulnerabilities. And at the time I recorded a YouTube video explaining how
+you could use a B-Checks to find a SQL injection vulnerability on Portsburg's deliberately
+vulnerable web application Gin & Juice Shop. A few days after I recorded that video, I was
+running another scan of the Gin & Juice Shop for a different reason and I noticed that I started
+getting extra issues than the one I was expecting. So I was getting the issue I demonstrated in the
+video and I was also getting a few others. So today I'm going to show you how you can use the
+B-Checks testing tool within Birt Street Professional to find and debug issues within your B-Checks.
+So let's hop into Burp. In the extensions tab under B-Checks, we have the same BS code editor that we
+released with Birt Street Professional 2023.6 with B-Checks. Only now there is also a new panel on the
+right-hand side that indicates that you can test your B-Checks. So if we pick a couple of the requests
+that showed the false positive issue, we can send those over to the B-Check editor and we'll also send
+over the one with the issue. And we send both those things into the tester and you can see that those
+requests have both appeared, one for catalog and one for blog. And once we've got our test cases,
+we can then run the B-Check and it will run the entire B-Check against all of the requests that
+you've provided and give you a quick overview over what's been reported. So we have the issue in the
+category parameter, which is the one that I showed in the original video where the issue is present and
+you see that the responses differ from 200 status code to 500 status code and back again. But also we're
+getting issues where all the way through the response status code is 200 and you can see that in the
+detail it's saying it changed from 200 to 200. So definitely not the issue I was kind of expecting.
+So let's head over into the B-S code editor and it actually turns out that the flaw within this B-Check
+was my use of differs from. According to the the documentation differs from actually looks at a number
+of response attributes, not just the status code. So even though I told it to use the status code,
+the thing that was checked included all the content length and that any variance in the response
+actually exhibited an issue instead of just the status code. So in order to fix this B-Check,
+we need to use the is keyword and negate that condition. So we need to say that the status code
+of the weaponized response and the base response have to be not the same. So once I've made that change,
+if I now re-run the test, we can see that only one issue has been reported instead of the four we had
+previously. And the one issue has the status code flipping from 200 to 500 and back again. So that's now
+only the issue that we were hoping to find and not all of the false positives.
+Some of the more eagle-eyed amongst you may have noticed that the B-Check editor has been given a
+bit of a facelift. It's now got some syntax highlighting. This is coming really soon in
+Burp Suite, so keep an eye out for that. But on the side of the B-Checks, hopefully this provides a really
+intuitive way of finding logical issues with B-Checks that you have written yourself. So please feel free
+to give it a try and let us know if you have any feedback.

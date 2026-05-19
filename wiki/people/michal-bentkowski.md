@@ -2,7 +2,7 @@
 title: Michał Bentkowski
 slug: michal-bentkowski
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 tags: [person, role/researcher, focus/client-side, focus/xss, focus/html-sanitizers, focus/prototype-pollution, vendor/securitum]
 handles: [securitymb]
 role: researcher
@@ -70,3 +70,13 @@ inbound: []
 - **Output style:** technical, terse, lots of minimal HTML/JS PoCs inline. Reads like a sanitizer regression-test suite in prose form. Worth re-reading whole posts when hunting any HTML-sanitizer target — payloads usually generalize.
 - **Trigger to consult his blog:** anytime a target ships DOMPurify, sanitize-html, Ruby Sanitize, or any allow-list HTML filter — and especially when the app stores HTML then re-renders it (mXSS thrives on re-parse).
 - **Trigger from prototype pollution:** if a target has PP and any client-side sanitizer/template config, his work is the playbook. See [../techniques/prototype-pollution/](../techniques/prototype-pollution/).
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/securitum-research/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

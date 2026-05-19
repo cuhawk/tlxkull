@@ -60,6 +60,12 @@ def _csp_neutralization_factor(cap: dict, csp: CSPDirectives) -> float:
     """
     if not csp.raw:
         return 1.0
+    # Report-only policies tell the browser to fire violation reports
+    # but never block execution. They must NOT downgrade chain
+    # severity — a chain that lands in production through a
+    # report-only CSP fires for real.
+    if csp.report_only:
+        return 1.0
 
     exec_ctx = cap.get("exec_context", "")
     script_exec = cap.get("script_exec", "none")
@@ -218,6 +224,8 @@ def viability_breakdown(
         "exec_context": cap.get("exec_context") if cap else None,
         "trusted_types_guarded": bool(cap.get("trusted_types_guarded")) if cap else False,
         "csp_observed": bool(ctx.csp.raw),
+        "csp_report_only": bool(ctx.csp.report_only),
+        "csp_enforced": bool(ctx.csp.raw and not ctx.csp.report_only),
         "trusted_types_enforced": bool(ctx.trusted_types.enforced),
         "framework": ctx.rendering.framework or None,
     }

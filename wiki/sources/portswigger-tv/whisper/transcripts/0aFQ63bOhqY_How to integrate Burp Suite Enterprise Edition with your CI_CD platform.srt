@@ -1,0 +1,248 @@
+1
+00:00:00,000 --> 00:00:13,000
+In this tutorial, we'll explain how to integrate your CI-CD platform with BurpSuite's Enterprise Edition.
+
+2
+00:00:13,000 --> 00:00:19,000
+We're going to demo setting up Jenkins, but the steps are essentially the same for other platforms.
+
+3
+00:00:19,000 --> 00:00:27,000
+We have plugins for other CI-CD systems and also a generic plugin that can easily be used with any platform.
+
+4
+00:00:27,000 --> 00:00:33,000
+The first thing we need to do is to set up an API user in BurpSuite Enterprise Edition.
+
+5
+00:00:33,000 --> 00:00:41,000
+So we're going to log in as admin and then go to Team and Add New User.
+
+6
+00:00:41,000 --> 00:00:48,000
+We enter the details of the user and we select the option to use an API key.
+
+7
+00:00:48,000 --> 00:00:54,000
+We also need to add the user to the Scan Initiators group so that they can trigger a scan.
+
+8
+00:00:54,000 --> 00:01:00,000
+Then we save the user and we copy the API link.
+
+9
+00:01:00,000 --> 00:01:05,000
+You need to keep a note of the API link and I'll paste it into a new browser tab.
+
+10
+00:01:05,000 --> 00:01:11,000
+You then need to download the BurpSuite plugin for Jenkins from our website.
+
+11
+00:01:11,000 --> 00:01:14,000
+Then you log into Jenkins as an admin user.
+
+12
+00:01:14,000 --> 00:01:21,000
+Go to Manage Jenkins, then Manage Plugins, and then the Advanced tab.
+
+13
+00:01:21,000 --> 00:01:31,000
+Under Upload Plugin, click Choose File and select the HPI file from within the zip file that you downloaded.
+
+14
+00:01:31,000 --> 00:01:33,000
+And click Upload.
+
+15
+00:01:33,000 --> 00:01:40,000
+The plugin will be installed and you need to check the box to restart Jenkins when the installation is complete.
+
+16
+00:01:40,000 --> 00:01:44,000
+After Jenkins restarts, sign in again.
+
+17
+00:01:44,000 --> 00:01:53,000
+Then create a new item, give the item a name and select the type of project that you want to use.
+
+18
+00:01:57,000 --> 00:02:02,000
+In the Build section, add an Execute Shell build step.
+
+19
+00:02:02,000 --> 00:02:12,000
+In the Execute Shell build script, write a short script that echoes the URL of the running application that you want to scan.
+
+20
+00:02:12,000 --> 00:02:20,000
+This would typically be in a staging environment and will already have been deployed by a previous step in your build pipeline.
+
+21
+00:02:20,000 --> 00:02:27,000
+The URL needs to be echoed assigned to BurpScan URL.
+
+22
+00:02:27,000 --> 00:02:33,000
+Then add a BurpScan build step.
+
+23
+00:02:33,000 --> 00:02:36,000
+You need to provide the URL of the Burp API.
+
+24
+00:02:36,000 --> 00:02:45,000
+This should be the URL that you copied earlier, less the version suffix.
+
+25
+00:02:45,000 --> 00:02:49,000
+This is all you need to do to get a default scan running from your CI pipeline.
+
+26
+00:02:49,000 --> 00:02:54,000
+But you'll often want to configure some custom settings for the scan.
+
+27
+00:02:54,000 --> 00:02:59,000
+You can use the in-browser API interface to create suitable settings.
+
+28
+00:02:59,000 --> 00:03:05,000
+You get to this by browsing to the API URL that we copied earlier.
+
+29
+00:03:07,000 --> 00:03:11,000
+In the REST API definition, click on Scan.
+
+30
+00:03:11,000 --> 00:03:13,000
+We've already set this one up.
+
+31
+00:03:13,000 --> 00:03:17,000
+You can define the site URL and name.
+
+32
+00:03:17,000 --> 00:03:21,000
+You can select a named scan configuration.
+
+33
+00:03:21,000 --> 00:03:23,000
+And we've selected light active checks.
+
+34
+00:03:23,000 --> 00:03:26,000
+At the bottom, the interface shows you a curl command.
+
+35
+00:03:26,000 --> 00:03:31,000
+You can use this to trigger the defined scan via the REST API from any tool.
+
+36
+00:03:31,000 --> 00:03:36,000
+For CI integration, we just need to copy the JSON that defines the scan settings.
+
+37
+00:03:36,000 --> 00:03:41,000
+You then go back to Jenkins and paste this into the scan definition box.
+
+38
+00:03:45,000 --> 00:03:51,000
+You can also configure the issue severity and confidence levels that will cause the build to fail.
+
+39
+00:03:51,000 --> 00:03:57,000
+So we could specify that we only want to fail the build when a high severity issue is found.
+
+40
+00:03:59,000 --> 00:04:09,000
+If we go back to Burp Suite Enterprise Edition and look at the sites, we can see that in this installation, we have two folders containing some sites that were already set up.
+
+41
+00:04:09,000 --> 00:04:15,000
+If we go to Jenkins, we can trigger a build manually by clicking Build Now.
+
+42
+00:04:15,000 --> 00:04:24,000
+Obviously, in the real world, the build will be triggered by a commit or a pull request or on a schedule or some other event.
+
+43
+00:04:24,000 --> 00:04:32,000
+Once a build is running, you can look in the console output to confirm that the Burp scan is happening.
+
+44
+00:04:32,000 --> 00:04:40,000
+Now, in Burp Suite Enterprise Edition, if we refresh the sites page, we can see that a new site has appeared for this configured scan.
+
+45
+00:04:40,000 --> 00:04:46,000
+If we click into the site, we can see that the scan has been initialized.
+
+46
+00:04:46,000 --> 00:04:54,000
+And if we go into more details, we can see the details of the website that is being scanned and that the scan was generated by the API.
+
+47
+00:04:54,000 --> 00:05:00,000
+Once the scan has completed, in Jenkins, we can see in the console output any issues that have been found.
+
+48
+00:05:00,000 --> 00:05:10,000
+The build log includes details of the types of issues that were found, their severity and their location.
+
+49
+00:05:10,000 --> 00:05:15,000
+And in this case, we can see that the build has failed because some high severity issues were discovered.
+
+50
+00:05:15,000 --> 00:05:22,000
+If we want, we can also look in the Burp Suite Enterprise Edition UI and see the details of the same issues there.
+
+51
+00:05:22,000 --> 00:05:28,000
+So that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+52
+00:05:30,000 --> 00:05:34,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+53
+00:05:34,000 --> 00:05:36,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+54
+00:05:36,000 --> 00:05:38,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+55
+00:05:38,000 --> 00:05:40,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+56
+00:05:40,000 --> 00:05:42,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+57
+00:05:42,000 --> 00:05:44,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+58
+00:05:44,000 --> 00:05:46,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+59
+00:05:46,000 --> 00:05:48,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+60
+00:05:48,000 --> 00:05:50,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+61
+00:05:50,000 --> 00:05:52,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Edition.
+
+62
+00:05:52,000 --> 00:05:54,000
+And that's how to integrate your CI-CD platform with Burp Suite Enterprise Enterprise Edition.
+

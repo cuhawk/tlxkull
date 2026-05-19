@@ -1,0 +1,23 @@
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+frequently occurring insertion points in Burp Scanner. This is going to be more of an explanation
+than a demonstration, which is why I wandered away from my desk. So Burp Scanner's frequently
+occurring insertion point behavior is an optimization that aims to reduce the number
+of insertion points being fully scanned as the scan goes on. The idea behind it is there may be
+many insertion points that occur on many requests throughout an application, but either never
+trigger back-end behavior or always trigger the same back-end behavior, regardless of what
+request they're in. The Referrer header would be a good example of this. It'll be in almost every
+base request. However, there's a good chance that the web application either completely ignores it
+or just feeds it to the same tracking function each time. For these insertion points, there's no point
+fully scanning them once we're happy that they're either inert or we've found everything we're going
+to find. We'd just be wasting effort. So how does it work? After Burp Scanner has run the full suite
+of scan checks against an insertion point in a base request. It makes a note of whether any issues
+were found. This yes or no information is stored against a key made up of the insertion points name
+and type, so for example a cookie name session, as well as the containing requests host method and content
+type. If we scan the same insertion point using this criteria frequently enough without finding new
+issues, we'll fall back to a more lightweight scan instead of using the full suite. This lightweight scan
+consists of checking for reflections and checking for differences using a fuzzing payload. If we do find
+a data reflection or a difference, we'll switch back to fully scanning that insertion point again.
+The thresholds for this behaviour kicking in vary between insertion point types and can change
+depending on whether we're seeing unique base values for that insertion point each time. They're also
+reduced in the fast audit speed. Finally, this optimisation can be turned off completely on an
+insertion point type basis in the audit config.

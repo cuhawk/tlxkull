@@ -1,0 +1,125 @@
+Hi everybody, my name is Mark, I'm a web developer here, a .NET developer in the web team here
+at Portswigger. The web team is responsible for our public website but also for a whole
+kind of suite of applications and tools that we use internally to power and grow the business.
+What that means is that unlike my colleagues who build Burp Suite and that family of tools,
+I'm not a security specialist by trade, my background is in .NET web-based development.
+So I've typically worked on teams where application security is a separate function
+that happens downstream of my team, usually kind of side by side with the QA function.
+So I was really interested to give Dastardly a go, tried to integrate it into my continuous
+integration and deployment pipeline and quite excited by the thought of that then being able to
+fail my build if a vulnerability is found in exactly the same way I would expect the build to fail if
+a unit test or an integration test fails. So what I've got to show you today is a very simple website
+with a deliberate vulnerability in it. It's hosted on GitHub and it uses a GitHub Actions workflow to
+build the site, run the tests, deploy the site to Azure and finally run a Dastardly scan on that site.
+So first thing I'll do is show you the, we'll go to the app code in GitHub. This is a public repo if
+anyone's interested in looking at it in more detail, passing a link to their developers or forking the
+repo then it's all of that is available. I'm just going to start by making a simple code change because
+that will trigger a build and then we can see that that build pipeline in action. So I'm just going to
+make a simple change here to the readme file. Save that. And if I now switch to the Actions tab in GitHub,
+we should see that that's queued up a build and there it has. So we've got a build at the top there
+queued that'll take a couple of minutes to run. So in the meantime, while that's busy, what I'm going to
+do is show you the site and demonstrate the vulnerability to you so you can all kind of get
+a clear idea of what we're looking to detect and then we'll come back here and look at the code that
+had to be written in order to integrate dastardly into that pipeline. And even if you're not a developer
+or a coder, I promise you we're not diving into anything too detailed. So here's the site. As I
+mentioned, it's very simple and there's a bit of explanatory text on there to say that it's vulnerable
+to cross site scripting or XSS attacks. So the way it works is if we type a message in the box here and
+click submit, then as long as the demo gods are smiling on us, that message will get added to the
+bottom of the screen. But it's being added as raw HTML. So if we were to paste in some JavaScript
+into that box and see what happens, you'll see that that's our vulnerability in action. We've just added
+JavaScript to the page, the browser has run it and it's triggered a print event on the page. You can
+easily imagine that being used to steal customer login details or anything of that kind. So that's
+exactly the kind of thing that we're going to hope dastardly can find with its DAS scanning capabilities.
+So let's switch back over to GitHub. Our build is still running. If I switch back to the the code view,
+you'll see a folder here called GitHub workflows. This is where we build our GitHub actions pipeline.
+And it's actually just a single file. It's pretty easy to follow, easy to read. We've got three main
+sections in this file that are referred to in GitHub actions as jobs. The first job, which is up at the
+top here. That job is going to build the latest version of the code, test it, and then package it up
+ready for uploading to Azure. And that's pretty straightforward. The second step here goes from
+there to there. And this takes that packaged website that we just built and uploads it to a web app on
+Azure. Just worth noting that this is publishing directly to a production environment because we're
+just using a free web app on Azure for this demo purpose. So it doesn't have different deployment
+environments in a real world situation. This would be publishing to a beta or a staging environment and
+running tests there running running vastardly there before the site goes live. But again, we're just
+keeping things pretty simple for this demo. But the real kind of meat in the sandwich, the bit that we're
+really interested in looking at is this third job that's been added at the bottom. And this is what
+triggers a scan with dastardly. And although that's only what kind of 17 lines of code, in fact, it's
+simpler than it looks. The bit that makes dastardly happen is just those four lines in the middle. And
+we can see there that's grabbing the dastardly action from the GitHub marketplace. So that's a reusable
+kind of package that makes it really easy to integrate dastardly into your build. And it's calling
+it and all it's providing it with is one piece of information, which is the URL of the website that we
+want to scan. Okay. Below that is a kind of optional section, but the documentation for dastardly
+recommends adding this and it is really useful, as we'll see later on. What this is doing is just
+taking the output from dastardly where it documents its findings and presenting them to us in a more
+user readable, you know, user friendly format. So it's well worth having that as well. But it's not
+really a core part of getting dastardly into the into the pipeline. So that is it. Literally those last
+few lines in the file were all that needed to change in this project in order to integrate dastardly. So
+there's nothing to download. There's nothing to install. Best of all, as, as you know, my colleagues
+have mentioned already, there's nothing to pay for. There's really no kind of barrier to entry with
+dastardly. You can just integrate and go. Anyway, that's enough time spent looking at code. If we switch
+back to our pipeline screen, we can see that that that latest build is now completed and it's failed.
+And it's interesting looking here at the build history. We can see when I first built this project,
+the build pipeline simply ran the build and test step and everything was green gave us a green light
+towards the project was fine. Likewise, extended it then to deploy it to Azure and that all worked fine.
+And for many web developers, really, this is about as far as their development pipeline goes. And so far,
+everything's looking good, right? It's giving us green lights all the way. But as soon as we've added
+that dastardly scan for the pipeline, that's when the build starts failing, as you can see here in these
+last two steps. So let's click in and look at that in a bit more detail. And what this screen is showing us is
+the kind of status of our latest build. We've got a graphical view in the middle there of what
+happened when our pipeline ran. And as we just mentioned, you can see the three, those three
+sections of the of the configuration file mapped to these three steps of the build. Build and test is
+good. Deployment to Azure is good. But the dastardly scan is where our problems happened. It's already
+giving us a little heads up down below here that it found cross site scripting vulnerability. We can
+click on the scan with dastardly step, drill into a bit more information there. And apart from some
+absolutely elite ASCII at the top there, which we're all very proud of, and we wear on our T-shirts,
+it does tell us down at the bottom here in fairly brief detail that it found an error. It tells us
+where the error code and what type it was, and also the severity, which is judged to be high. I think
+we'd agree with that. That's the kind of raw output from dastardly. But that third or that final little
+optional section of the configuration that I've pointed out to you before gives us this fourth step
+of the build down the left to the dastardly scan report. So click on that. You can see at a glance
+the same kind of information presented in a bit more of a graphically appealing way. It tells us the
+vulnerability that we found and where it found it. But for me as a non-specialist web developer,
+the real kind of juice comes into it when I click raw output and start to look at this. And what
+dastardly has given us here now is not just telling us there's a vulnerability on this page of the site,
+but it's giving us a whole load of information here about the detail of what this issue is,
+which I as the developer may not be really familiar with. Background of the issue, suggested steps to
+remediate it. It's fantastic. You get this similar kind of information to what you would find on our
+web security academy on the website, but here it's presented right in the build. And I'd really like
+to think that it's going to do a great job of educating web developers and making us all kind of
+better more app sec aware developers.
+So, let's see.
+
+
+
+
+
+
+Let's see.
+Let's see.
+
+
+Let's see.
+Let's see.
+
+Let's see.
+Let's see.
+
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.
+Let's see.

@@ -23,6 +23,7 @@ from kernel.tools import Tool
 _SUPPORTED_TEXT_EXT = frozenset({
     ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
     ".json", ".md", ".html", ".css", ".vue", ".svelte",
+    ".txt",
 })
 _EXCLUDE_DIRS_SERVICE = frozenset({
     "node_modules", ".git", ".next", "dist", "build",

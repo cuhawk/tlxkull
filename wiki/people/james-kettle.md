@@ -2,7 +2,7 @@
 title: James Kettle (albinowax)
 slug: james-kettle
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [albinowax, james.kettle]
 role: researcher
 primary_focus: server-side
@@ -68,3 +68,18 @@ inbound: []
 - **Community role:** Curates the annual *Top 10 Web Hacking Techniques* vote (took over from Jeremiah Grossman / WhiteHat in 2018). Three-stage process: open nominations → community shortlist vote → expert-panel final ranking, with PortSwigger's own research excluded from the panel to avoid bias.
 - **Tooling philosophy:** Ships research as Burp extensions first (Param Miner, Turbo Intruder, HTTP Request Smuggler), then folds proven techniques into core Burp Scanner. Reading his extension source code is often a faster path to understanding the underlying attack than the paper.
 - **Style:** Writes long-form, dense, example-heavy posts with concrete bounty payouts disclosed. Posts age extremely well — the 2018 cache poisoning paper still applies in 2026.
+- **Most overlooked vuln class (2025 AMA):** Race conditions beyond the well-understood limit-overuse pattern. All other race condition types mostly discovered by accident or never found.
+- **Research topic selection strategy (AMA):** Short-term projects → pick an *active* area (e.g., SAML in 2025) and build on recently published research; fast to validate and publish. Long-term projects → pick a topic *dead for 2+ years* to avoid research collision with others who submitted to Black Hat.
+- **AI in research:** Uses OpenAI Deep Research to get up to state-of-the-art fast on a topic, particularly when asked to look at RFCs, academic papers, source code, and Stack Overflow. Notes that AI can occasionally surface a novel hacking technique (happened to him once). Does not use AI as a replacement for domain expertise.
+- **Black Hat 2025 research:** Encoding-based attacks (10 classes; long-form documents exist). Collaborated with an external researcher. Made $100K in 2 weeks at some phase of the research (disclosed in AMA; specifics at Black Hat).
+- **"Kettled" requests:** His term (coined by Burp engineers in his honour) for an H2 request that cannot be accurately represented in H1 syntax — e.g., a header value containing a newline. Burp shows "this request has been kettled" and hides the H1 message editor view.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/portswigger-research/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

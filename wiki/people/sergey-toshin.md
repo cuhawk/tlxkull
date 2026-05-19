@@ -2,7 +2,7 @@
 title: Sergey Toshin
 slug: sergey-toshin
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [bagipro, _bagipro]
 role: researcher
 primary_focus: mobile-android
@@ -75,3 +75,13 @@ Vendor-specific landmark chains:
 - Style: terse, code-snippet-heavy posts; always includes the malicious-app PoC manifest + `Intent` constructor. Good template for our own mobile findings.
 - Cross-references in our wiki: nearly every page under [../techniques/mobile/](../techniques/mobile/) traces some primitive back to an Oversecured post — keep this dossier as the canonical link hub when ingesting future mobile sources.
 - He's Ukrainian-Russian (Moscow-based at company founding, displays a Ukrainian flag on his X profile post-2022). Public posture is apolitical-technical; vendor-disclosure relationships with Samsung and Google are intact.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/oversecured/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

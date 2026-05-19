@@ -1,0 +1,968 @@
+1
+00:00:00,000 --> 00:00:19,560
+Last year we made it significantly easier to find DOMXSS with a new tool called DOMInvader.
+
+2
+00:00:20,080 --> 00:00:28,740
+This year we've improved DOMInvader to make finding client-side prototype pollution as easy as a couple of clicks.
+
+3
+00:00:28,740 --> 00:00:33,140
+So what exactly is client-side prototype pollution?
+
+4
+00:00:34,020 --> 00:00:45,600
+It is a vulnerability that occurs when you merge an object with a user-controlled JSON object or an object generated from the query or hash parameters.
+
+5
+00:00:46,500 --> 00:00:49,820
+And the merge operation doesn't sanitize the keys.
+
+6
+00:00:49,820 --> 00:00:57,100
+This enables the attacker to use property keys like underscore underscore proto underscore underscore,
+
+7
+00:00:57,600 --> 00:01:03,820
+which allows them to create arbitrary assignments to the object prototype or other global prototypes.
+
+8
+00:01:04,960 --> 00:01:09,280
+When this happens, it's referred to as a prototype pollution source.
+
+9
+00:01:10,140 --> 00:01:12,940
+The following sample code demonstrates this.
+
+10
+00:01:12,940 --> 00:01:18,840
+The snippet of code looks through all the parameters in the query string.
+
+11
+00:01:19,840 --> 00:01:29,260
+URL decodes the parameter name, creates an object and assigns a property name that an attacker can control as well as a property value.
+
+12
+00:01:31,200 --> 00:01:35,740
+And that's the basis of how prototype pollution sources occur.
+
+13
+00:01:35,740 --> 00:01:42,480
+In order to exploit prototype pollution, you need both a source and a gadget.
+
+14
+00:01:43,480 --> 00:01:50,560
+A prototype pollution gadget occurs when the property is used in a dangerous way without filtering.
+
+15
+00:01:51,780 --> 00:01:54,740
+For example, a site might do the following.
+
+16
+00:01:54,740 --> 00:02:00,640
+At first glance, it might not look like there's a problem here.
+
+17
+00:02:01,480 --> 00:02:12,360
+The object doesn't contain any properties, but the JavaScript engine will look at the object prototype for the HTML property if it doesn't exist on the current object.
+
+18
+00:02:13,400 --> 00:02:17,740
+Then this leads to a prototype pollution gadget called HTML.
+
+19
+00:02:18,640 --> 00:02:22,560
+Let's see what happens when we modify the object prototype.
+
+20
+00:02:22,560 --> 00:02:38,840
+This results in the object prototype dot HTML property being used instead of the HTML property of the my object object literal.
+
+21
+00:02:39,720 --> 00:02:45,900
+A developer will assume such properties are not user controlled and thus leads to XSS.
+
+22
+00:02:45,900 --> 00:02:52,500
+DomInvader can help find both a prototype pollution source and gadget for you.
+
+23
+00:02:52,960 --> 00:02:55,020
+Let's see how we can find them.
+
+24
+00:03:01,480 --> 00:03:05,460
+By default, client-side prototype pollution scanning is turned off.
+
+25
+00:03:06,060 --> 00:03:08,400
+This is because it can cause site breakage.
+
+26
+00:03:09,020 --> 00:03:14,080
+However, if you want to find some prototype pollution sources, we need to switch it on.
+
+27
+00:03:14,080 --> 00:03:20,280
+So, head over to the DomInvader icon and switch on prototype pollution.
+
+28
+00:03:21,440 --> 00:03:22,720
+And hit reload.
+
+29
+00:03:25,220 --> 00:03:28,120
+Once you've switched it on, we need a site to test it on.
+
+30
+00:03:28,660 --> 00:03:32,880
+Luckily, we've prepared some test cases that can help demonstrate common bugs.
+
+31
+00:03:32,880 --> 00:03:46,620
+Visit portswigger-labs.net slash dom-invader-prototype-pollution and then choose the query string gadget test case.
+
+32
+00:03:47,420 --> 00:03:53,880
+So, let's scroll down and click on the query string gadget test case.
+
+33
+00:03:53,880 --> 00:04:00,720
+If everything goes well, you should see the icon change.
+
+34
+00:04:01,280 --> 00:04:09,020
+This is a new feature in DomInvader and it will show you how many syncs or messages it finds in the icon.
+
+35
+00:04:09,420 --> 00:04:12,800
+The icon will also change colour if it's found something interesting.
+
+36
+00:04:12,800 --> 00:04:16,060
+In this case, it seems to have found something interesting.
+
+37
+00:04:16,460 --> 00:04:18,260
+We need to open DevTools.
+
+38
+00:04:18,920 --> 00:04:20,420
+So, just hit right click.
+
+39
+00:04:21,460 --> 00:04:22,800
+And then inspect.
+
+40
+00:04:23,660 --> 00:04:24,800
+Or you can use F12.
+
+41
+00:04:26,500 --> 00:04:28,800
+And then click on the DomInvader tab.
+
+42
+00:04:33,140 --> 00:04:35,340
+And then the Dom Augmented Dom view.
+
+43
+00:04:35,340 --> 00:04:41,520
+You can see DomInvader has found two client-side prototype pollution sources.
+
+44
+00:04:42,260 --> 00:04:47,080
+Both occur within the query string because the source name says in search.
+
+45
+00:04:47,760 --> 00:04:50,060
+And there are two separate techniques.
+
+46
+00:04:51,420 --> 00:04:56,880
+This specifies what is required to inject the query string to cause prototype pollution.
+
+47
+00:04:57,420 --> 00:05:00,380
+And that's how you find prototype pollution sources.
+
+48
+00:05:05,340 --> 00:05:10,640
+So, you found client-side prototype pollution.
+
+49
+00:05:11,200 --> 00:05:12,200
+Now, what should you do?
+
+50
+00:05:12,840 --> 00:05:19,060
+Well, you might want to confirm that the site is actually vulnerable by doing a test yourself.
+
+51
+00:05:20,040 --> 00:05:21,460
+DomInvader makes this easy.
+
+52
+00:05:22,000 --> 00:05:25,200
+When a source has been found, simply click on the test button.
+
+53
+00:05:25,620 --> 00:05:28,700
+And it will open a new window with a test injection.
+
+54
+00:05:29,440 --> 00:05:31,520
+Let's click the button to see what happens.
+
+55
+00:05:31,520 --> 00:05:33,520
+Let's click the button to see what happens.
+
+56
+00:05:34,380 --> 00:05:38,340
+So, DomInvader has injected a test string in the query string.
+
+57
+00:05:38,780 --> 00:05:41,680
+Which includes a prototype pollution source.
+
+58
+00:05:42,380 --> 00:05:43,520
+So, if we open DevTools.
+
+59
+00:05:45,460 --> 00:05:46,860
+And look at the console.
+
+60
+00:05:47,880 --> 00:05:52,900
+You can see DomInvader has logged the object prototype in the console.
+
+61
+00:05:53,360 --> 00:05:56,380
+And you can see the test property is actually there.
+
+62
+00:05:56,820 --> 00:06:01,260
+So, DomInvader has injected this test property as a prototype pollution source.
+
+63
+00:06:01,260 --> 00:06:04,800
+And you can see the value that DomInvader has injected.
+
+64
+00:06:05,300 --> 00:06:12,880
+Now, you can confirm this yourself just by typing object.prototype.
+
+65
+00:06:13,120 --> 00:06:14,280
+If I can spell it.
+
+66
+00:06:17,420 --> 00:06:22,920
+And you can see the test property has been injected into the object prototype.
+
+67
+00:06:23,480 --> 00:06:28,100
+And you can confirm that this site is indeed vulnerable to prototype pollution.
+
+68
+00:06:28,100 --> 00:06:38,360
+You can find gadgets in two different ways.
+
+69
+00:06:39,280 --> 00:06:41,900
+The first is to use the scan for gadgets button.
+
+70
+00:06:42,500 --> 00:06:46,560
+This button appears on the source tree when you've found a prototype pollution source.
+
+71
+00:06:46,560 --> 00:06:54,360
+The advantage of using this button is that DomInvader combines the source and the gadget when producing an exploit.
+
+72
+00:06:55,120 --> 00:06:59,960
+So, let's click on the scan for gadgets button on the prototype pollution source we found earlier.
+
+73
+00:06:59,960 --> 00:07:09,460
+You'll notice when clicking on the button, DomInvader will open a new window and show a progress bar.
+
+74
+00:07:10,000 --> 00:07:16,240
+When the scan is complete, DomInvader will report the gadgets it's found and the icon will change.
+
+75
+00:07:17,420 --> 00:07:21,060
+Let's open up DevTools and the DomInvader tab.
+
+76
+00:07:21,060 --> 00:07:30,400
+As you can see, DomInvader has found an inner HTML sink.
+
+77
+00:07:31,240 --> 00:07:35,400
+And in between the canaries injected, you'll see there is a number.
+
+78
+00:07:35,960 --> 00:07:43,700
+This number is used to pair the prototype pollution source with the gadget to produce a more accurate exploit.
+
+79
+00:07:43,700 --> 00:07:51,520
+The string prototype pollution follows a number and identifies that the value came from a prototype pollution source.
+
+80
+00:07:52,080 --> 00:07:56,520
+After that, the actual gadget name in this case is called HTML.
+
+81
+00:07:58,340 --> 00:08:02,540
+The second way that you can scan for gadgets is to change the settings.
+
+82
+00:08:03,400 --> 00:08:11,020
+This is useful when you might not have a prototype pollution source, but you want to ensure your site doesn't have any gadgets.
+
+83
+00:08:11,020 --> 00:08:17,700
+Let's head over to the DomInvader settings in the top right of the screen and let's switch it on.
+
+84
+00:08:22,400 --> 00:08:30,600
+So here we need to click the prototype pollution settings cog here, which will show you additional options.
+
+85
+00:08:32,980 --> 00:08:35,760
+And we need to choose scan for gadgets.
+
+86
+00:08:36,200 --> 00:08:38,480
+So let's click the scan for gadgets checkbox.
+
+87
+00:08:38,480 --> 00:08:46,520
+And what DomInvader does is it shows you the optimal settings for that selection.
+
+88
+00:08:46,520 --> 00:08:59,440
+So for example, it will try to remove the CSP and X-Frame options headers by default because iFrames are used to scan for gadgets.
+
+89
+00:09:00,320 --> 00:09:02,760
+You can change the defaults if you wish.
+
+90
+00:09:04,340 --> 00:09:10,980
+But now when you refresh the page by clicking on the reload button, after you've clicked save,
+
+91
+00:09:12,040 --> 00:09:14,760
+DomInvader will then scan for just gadgets.
+
+92
+00:09:14,760 --> 00:09:34,000
+Now we know how to find gadgets, let's try and exploit them.
+
+93
+00:09:34,700 --> 00:09:38,440
+First we need to follow the steps in the finding gadgets video to find our gadget.
+
+94
+00:09:38,440 --> 00:09:43,600
+Once you have your gadget, we simply need to click the green exploit button.
+
+95
+00:09:44,180 --> 00:09:45,860
+So let's click the exploit button.
+
+96
+00:09:47,000 --> 00:09:53,220
+The exploit button will open a new window and attempt to match up the prototype pollution source with the gadget and sync
+
+97
+00:09:53,220 --> 00:09:55,620
+and create a prototype pollution payload.
+
+98
+00:09:56,340 --> 00:09:58,520
+If successful, you should see an alert.
+
+99
+00:09:59,020 --> 00:10:03,520
+We've successfully exploited prototype pollution with just a couple of clicks.
+
+100
+00:10:03,520 --> 00:10:14,780
+Some sites might not work correctly if you inject certain parts of the URL.
+
+101
+00:10:15,860 --> 00:10:20,200
+Perhaps they have a redirect when the hash is modified, which can break an injection.
+
+102
+00:10:21,200 --> 00:10:26,640
+For this reason, DomInvader allows you to customise where prototype pollution gets injected.
+
+103
+00:10:26,640 --> 00:10:30,840
+So let's head over to the DomInvader settings by clicking on the icon.
+
+104
+00:10:32,520 --> 00:10:36,160
+And then we need to click on the prototype pollution settings cog here.
+
+105
+00:10:38,020 --> 00:10:43,280
+You can see there are three different checkboxes to control prototype pollution injection.
+
+106
+00:10:43,800 --> 00:10:48,600
+We have query string injection, hash injection and JSON injection.
+
+107
+00:10:48,600 --> 00:10:56,980
+Turning off the query string injection will prevent DomInvader for injecting in the query string.
+
+108
+00:10:57,980 --> 00:11:01,120
+Hash injection will do the same but in the hash portion of the URL.
+
+109
+00:11:01,800 --> 00:11:09,900
+And finally, switching off JSON injection will prevent DomInvader for injecting the prototype pollution inside of web messages.
+
+110
+00:11:09,900 --> 00:11:14,500
+To confirm these settings, you just need to click on the save button.
+
+111
+00:11:15,280 --> 00:11:20,240
+And now DomInvader will only inject in the places that you've selected.
+
+112
+00:11:26,380 --> 00:11:33,980
+You might encounter a site where prototype pollution fails if all prototype pollution techniques are attempted.
+
+113
+00:11:34,920 --> 00:11:38,600
+DomInvader allows you to choose which techniques are used.
+
+114
+00:11:38,600 --> 00:11:51,320
+If you go to the settings icon and click the prototype pollution settings cog, you'll notice there's a techniques button.
+
+115
+00:11:52,780 --> 00:11:59,180
+Clicking on this button will open a dialog which allows you to switch off prototype pollution techniques.
+
+116
+00:12:02,700 --> 00:12:07,840
+Once you are done, click save to save your changes and hit reload.
+
+117
+00:12:08,600 --> 00:12:13,180
+Now DomInvader will only try a single technique.
+
+118
+00:12:20,600 --> 00:12:25,440
+DomInvader, by default, will scan for prototype pollution in the top frame.
+
+119
+00:12:25,440 --> 00:12:31,680
+We found whilst testing that this offered the best performance and worked on most sites.
+
+120
+00:12:32,520 --> 00:12:42,300
+However, you might encounter situations where a site might block a certain technique but might be vulnerable to a different one.
+
+121
+00:12:42,860 --> 00:12:49,300
+In this case, DomInvader can scan every technique selected in a separate frame.
+
+122
+00:12:49,300 --> 00:12:55,040
+To do this, click on the DomInvader icon and the prototype pollution cog.
+
+123
+00:12:58,540 --> 00:13:03,200
+Then check the scan each technique in separate frame option.
+
+124
+00:13:03,200 --> 00:13:04,200
+And hit save.
+
+125
+00:13:04,200 --> 00:13:19,380
+Now, when DomInvader scans for prototype pollution, it will use iframes for each of the techniques, allowing you to scan them independently.
+
+126
+00:13:20,380 --> 00:13:21,660
+Let's try running the scan.
+
+127
+00:13:21,660 --> 00:13:29,460
+You'll notice now a progress bar appears showing DomInvader scanning for sources.
+
+128
+00:13:29,460 --> 00:13:35,300
+On completion, it will inform you how many prototype pollution sources it has found.
+
+129
+00:13:35,300 --> 00:13:47,220
+By default, DomInvader will scale the amount of properties scanned automatically.
+
+130
+00:13:47,780 --> 00:13:54,040
+This produces faster performance but can miss gadgets if an injected property causes an exception.
+
+131
+00:13:55,000 --> 00:14:00,240
+For this reason, we allow you to customise how many properties per frame when scanning.
+
+132
+00:14:00,240 --> 00:14:06,840
+So, head over to the DomInvader settings and the prototype pollution settings cog.
+
+133
+00:14:08,980 --> 00:14:12,120
+Auto scale amount of properties per frame.
+
+134
+00:14:12,960 --> 00:14:14,720
+So, we need to switch that off.
+
+135
+00:14:16,100 --> 00:14:20,340
+And this allows you to customise how many properties per frame we want to scan.
+
+136
+00:14:20,680 --> 00:14:24,160
+So, if you drag it right, that's faster but less accurate.
+
+137
+00:14:24,320 --> 00:14:27,260
+And if you drag it left, it's slower but more accurate.
+
+138
+00:14:27,260 --> 00:14:30,660
+And we need to select scan for gadgets.
+
+139
+00:14:32,220 --> 00:14:40,700
+And if you click save, that will enable you to change the amount of properties per frame DomInvader uses to scan.
+
+140
+00:14:46,580 --> 00:14:49,920
+Whilst testing DomInvader on real world size,
+
+141
+00:14:50,340 --> 00:14:55,560
+we noticed that we weren't really using the sources like location much.
+
+142
+00:14:55,560 --> 00:14:58,180
+And we found when scanning for gadgets,
+
+143
+00:14:58,460 --> 00:15:03,700
+we were getting a lot of noise from non-interesting syncs such as JSON.parse.
+
+144
+00:15:04,160 --> 00:15:11,820
+We decided it would be a good idea to allow the user to customise which sources or syncs are instrumented.
+
+145
+00:15:12,380 --> 00:15:17,800
+We decided to switch off all sources and non-interesting syncs by default.
+
+146
+00:15:17,800 --> 00:15:23,640
+If you want to customise which sources or syncs DomInvader instruments,
+
+147
+00:15:24,040 --> 00:15:26,100
+then head over to the general settings.
+
+148
+00:15:27,020 --> 00:15:29,100
+Click the DomInvader icon.
+
+149
+00:15:30,380 --> 00:15:34,000
+Click the cog next to the DomInvader on-off switch.
+
+150
+00:15:34,000 --> 00:15:46,900
+Click the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link to the link.
+
+151
+00:15:46,900 --> 00:15:55,620
+You can also use the buttons below to select all, non or interesting syncs.
+
+152
+00:15:56,360 --> 00:15:59,700
+Make sure you click the save button to save your choices.
+
+153
+00:16:02,080 --> 00:16:04,220
+You can also do the same with sources.
+
+154
+00:16:04,440 --> 00:16:09,480
+So if we open up the cog again and click on the sources tab in the general settings,
+
+155
+00:16:10,240 --> 00:16:15,640
+you can then switch on and off the various sources that you wish DomInvader to instrument.
+
+156
+00:16:16,900 --> 00:16:18,780
+And all you need to do is click save.
+
+157
+00:16:20,400 --> 00:16:23,940
+And that's how you customise the sources and syncs in DomInvader.
+
+158
+00:16:29,940 --> 00:16:32,480
+When using DomInvader to scan at scale,
+
+159
+00:16:32,900 --> 00:16:37,080
+we quickly realised we needed a way to get vulnerabilities out of DomInvader.
+
+160
+00:16:37,600 --> 00:16:40,480
+The solution we came up with was to use callbacks.
+
+161
+00:16:40,480 --> 00:16:47,700
+A callback allows you to call a custom JavaScript function when a source, sync or message is found.
+
+162
+00:16:48,340 --> 00:16:53,080
+You can use this callback to log the results or whatever you decide to do.
+
+163
+00:16:53,920 --> 00:16:59,980
+Returning true or false in the callback enables you to instruct DomInvader to log the results or not.
+
+164
+00:16:59,980 --> 00:17:02,780
+Here's how to add a callback.
+
+165
+00:17:03,600 --> 00:17:05,480
+Click the DomInvader icon.
+
+166
+00:17:07,140 --> 00:17:09,200
+And then the general settings cog.
+
+167
+00:17:11,060 --> 00:17:14,540
+Then click the sync callback configuration button.
+
+168
+00:17:15,920 --> 00:17:20,060
+This should then show you a deactivated callback because it's greyed out.
+
+169
+00:17:20,780 --> 00:17:22,340
+Click inside the text box.
+
+170
+00:17:22,340 --> 00:17:27,480
+By default, it logs all the data to the console and returns true.
+
+171
+00:17:28,460 --> 00:17:30,480
+Once you are done, click save.
+
+172
+00:17:30,740 --> 00:17:32,840
+And now the callback is active.
+
+173
+00:17:32,840 --> 00:17:41,700
+So if we visit a test case such as the augmented DOM eval test case.
+
+174
+00:17:42,880 --> 00:17:47,740
+And we click on the link to inject the canary into the query string.
+
+175
+00:17:49,220 --> 00:17:51,900
+And you'll notice DomInvader finds an issue.
+
+176
+00:17:52,200 --> 00:17:54,240
+So if we open up DevTools.
+
+177
+00:17:56,000 --> 00:17:57,360
+Click on DomInvader.
+
+178
+00:17:57,360 --> 00:18:02,960
+As you can see, the source, the canary has hit the sync.
+
+179
+00:18:04,440 --> 00:18:07,080
+So what we can do now is click over to the console.
+
+180
+00:18:08,100 --> 00:18:10,380
+And you can see our callback has been executed.
+
+181
+00:18:10,640 --> 00:18:12,460
+And all the data has been printed to the console.
+
+182
+00:18:13,900 --> 00:18:16,500
+So if you wanted to deactivate your callback.
+
+183
+00:18:17,160 --> 00:18:19,440
+Then you just need to click on the DomInvader icon.
+
+184
+00:18:20,260 --> 00:18:22,240
+Go to the general settings cog again.
+
+185
+00:18:22,880 --> 00:18:25,920
+Click on the sync callback configuration button.
+
+186
+00:18:25,920 --> 00:18:28,620
+And just hit reset.
+
+187
+00:18:29,620 --> 00:18:31,020
+And then when you hit reload.
+
+188
+00:18:32,380 --> 00:18:34,800
+DomInvader will stop using that callback.
+
+189
+00:18:42,100 --> 00:18:47,600
+You might have noticed that there is some new information in the augmented DOM and message tabs.
+
+190
+00:18:48,440 --> 00:18:51,560
+DomInvader now shows you the outer HTML of the element.
+
+191
+00:18:52,240 --> 00:18:53,260
+Which is truncated.
+
+192
+00:18:53,260 --> 00:18:58,340
+The frame path will show you which frame a message or sync is coming from.
+
+193
+00:18:59,180 --> 00:19:05,960
+So if you head over to post-swigger-labs.net slash dom-invader.
+
+194
+00:19:06,300 --> 00:19:10,000
+And choose the post-message eval iframe test case.
+
+195
+00:19:10,260 --> 00:19:11,520
+We can demonstrate them.
+
+196
+00:19:12,680 --> 00:19:17,920
+So if we scroll down to the post-message eval iframe test case.
+
+197
+00:19:17,920 --> 00:19:18,720
+And click on it.
+
+198
+00:19:19,840 --> 00:19:23,080
+So then head over to the DOMInvader icon.
+
+199
+00:19:24,200 --> 00:19:26,700
+And turn on post-message interception.
+
+200
+00:19:27,780 --> 00:19:29,260
+And reload the page.
+
+201
+00:19:31,620 --> 00:19:34,080
+And if we open up dev tools.
+
+202
+00:19:34,620 --> 00:19:36,160
+And the DOMInvader tab.
+
+203
+00:19:36,160 --> 00:19:42,660
+It shows an eval sync and the frame path.
+
+204
+00:19:43,080 --> 00:19:46,060
+So in this instance the sync occurs within an iframe.
+
+205
+00:19:46,440 --> 00:19:48,920
+You might notice there is an event column.
+
+206
+00:19:49,420 --> 00:19:54,180
+This tells you which event is being used at the time the canary reached the sync.
+
+207
+00:19:54,540 --> 00:19:57,120
+In this case it is coming from a message event.
+
+208
+00:19:58,080 --> 00:20:01,640
+Let's click the message tab to view the messages.
+
+209
+00:20:04,580 --> 00:20:08,860
+You can see DOMInvader shows which frame the message comes from.
+
+210
+00:20:09,000 --> 00:20:10,820
+And which frame it's posting to.
+
+211
+00:20:11,320 --> 00:20:14,300
+You might notice that the frame is posting to itself.
+
+212
+00:20:15,080 --> 00:20:20,540
+The reason for this is DOMInvader attempts to automatically post messages to the event listener.
+
+213
+00:20:21,060 --> 00:20:23,120
+To see the true origin of the message.
+
+214
+00:20:23,120 --> 00:20:26,080
+We need to switch off generate automated messages.
+
+215
+00:20:26,080 --> 00:20:29,580
+So click on the DOMInvader icon.
+
+216
+00:20:30,860 --> 00:20:33,740
+Turn off generate automated messages.
+
+217
+00:20:34,300 --> 00:20:35,300
+Hit reload.
+
+218
+00:20:38,580 --> 00:20:45,200
+And now you can see the message origin is coming from the top frame to the child frame.
+
+219
+00:20:45,800 --> 00:20:50,920
+And that's how you can view frame path information in DOMInvader.
+
+220
+00:20:52,920 --> 00:20:53,340
+So.
+
+221
+00:20:56,080 --> 00:20:57,080
+And now you can see the message.
+
+222
+00:20:57,080 --> 00:20:57,080
+
+
+223
+00:20:57,080 --> 00:20:57,080
+
+
+224
+00:20:57,080 --> 00:20:57,080
+
+
+225
+00:20:57,080 --> 00:20:57,080
+
+
+226
+00:20:57,080 --> 00:20:57,080
+
+
+227
+00:20:57,080 --> 00:20:58,080
+And now you can see the message.
+
+228
+00:20:58,080 --> 00:20:59,080
+And now you can see the message.
+
+229
+00:20:59,080 --> 00:20:59,080
+
+
+230
+00:20:59,080 --> 00:21:00,080
+And now you can see the message.
+
+231
+00:21:00,080 --> 00:21:01,080
+And now you can see the message.
+
+232
+00:21:01,080 --> 00:21:02,080
+And now you can see the message.
+
+233
+00:21:02,080 --> 00:21:03,080
+And now you can see the message.
+
+234
+00:21:03,080 --> 00:21:04,080
+And now you can see the message.
+
+235
+00:21:04,080 --> 00:21:05,080
+And now you can see the message.
+
+236
+00:21:05,080 --> 00:21:05,080
+
+
+237
+00:21:05,080 --> 00:21:06,080
+And now you can see the message.
+
+238
+00:21:06,080 --> 00:21:07,080
+And now you can see the message.
+
+239
+00:21:07,080 --> 00:21:07,080
+
+
+240
+00:21:07,080 --> 00:21:08,080
+And now you can see the message.
+
+241
+00:21:08,080 --> 00:21:09,080
+And now you can see the message.
+
+242
+00:21:09,080 --> 00:21:09,080
+
+

@@ -1,0 +1,96 @@
+1
+00:00:00,000 --> 00:00:06,960
+Hi, I'm Tom from the Burp Scanner development team. Today I'm going to talk a little bit about
+
+2
+00:00:06,960 --> 00:00:12,160
+about nested insertion points. So when a request is sent to Burp Scanner either from the crawl or
+
+3
+00:00:12,160 --> 00:00:16,880
+from another tool, Burp Scanner can automatically locate all the insertion points within that
+
+4
+00:00:16,880 --> 00:00:21,200
+request which is where it wants to send its payloads. Some insertion point types are fairly
+
+5
+00:00:21,200 --> 00:00:27,280
+self-explanatory, things like cookie values, URL parameter values, the entire body. However,
+
+6
+00:00:27,280 --> 00:00:32,480
+a nested insertion point takes a little bit more explaining. So what a nested insertion point is,
+
+7
+00:00:32,480 --> 00:00:38,000
+is when Burp Scanner has found somewhere it wants to send a payload that is within multiple layers of
+
+8
+00:00:38,000 --> 00:00:42,640
+encoding or data types. Now let's jump into Burp and I can show an example of this.
+
+9
+00:00:44,480 --> 00:00:50,800
+So if we have a look here, we've got an example of SQL injection found on Portswigger's vulnerable
+
+10
+00:00:50,800 --> 00:00:57,120
+web app Gin and Juice Shop. As we can see from the issue description, it's telling us that there is a
+
+11
+00:00:57,120 --> 00:01:03,600
+JSON value parameter which is also base64 encoded and it's within a tracking ID cookie, which is here.
+
+12
+00:01:04,560 --> 00:01:09,920
+So this is an example of a nested insertion point. There are multiple layers of data types and encoding
+
+13
+00:01:09,920 --> 00:01:16,080
+that have to be unraveled and kind of re-ravelled, I guess, to send a payload correctly. We can use
+
+14
+00:01:16,080 --> 00:01:21,920
+Inspector to see this. If we open up the cookies, we can see the tracking ID cookie here. The Inspector
+
+15
+00:01:21,920 --> 00:01:30,080
+will show us that we can undo the URL encoding and then undo the base64 encoding and see that,
+
+16
+00:01:30,080 --> 00:01:34,960
+yeah, there is a piece of JSON here. And if we look here, we can see that we sent our single quote payload.
+
+17
+00:01:36,080 --> 00:01:40,800
+There's another example in the second request. Again, opening up the cookies, opening up the tracking ID.
+
+18
+00:01:41,520 --> 00:01:47,840
+We've got the value here, decode it from base64, and here we've got two quotes. So a pretty standard SQL
+
+19
+00:01:47,840 --> 00:01:54,400
+injection attack. And this is pretty much it. Burp Scanner has identified the payload it wants to send,
+
+20
+00:01:54,400 --> 00:01:59,840
+it's identified where it wants to send it inside multiple layered encoding and data types, and made
+
+21
+00:01:59,840 --> 00:02:06,240
+sure to do all those data types and encoding back up before it sends a request so everything's neat and how it
+
+22
+00:02:06,240 --> 00:02:13,360
+found it effectively. We're currently exploring ways to better visualize insertion points in the scanner,
+
+23
+00:02:13,360 --> 00:02:19,280
+particularly those that we scanned but didn't necessarily find anything for, as these aren't
+
+24
+00:02:19,280 --> 00:02:22,400
+currently visible. So keep an eye out for that soon.
+

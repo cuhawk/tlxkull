@@ -1,0 +1,65 @@
+DGP is supposed to be stateless.
+So each request that I send should have no impact on the next request.
+And obviously request smuggling violates that.
+But even if you ignore request smuggling,
+there are some other cases when HP can become stateful.
+And if you don't realize this and test for it,
+you can miss some quite interesting vulnerabilities.
+For example, some servers do more validation on the first request
+sent over any given connection.
+So on this target, there's an SSRF vulnerability.
+And now if we try to hit this internal host directly,
+well, they detect that the host header is wrong
+and they just issue us with a redirect.
+And you can send that over and over and you'll get the same thing every time.
+But the thing is, this server is only doing the validation of the host header
+on the first request on each connection.
+So I've just made a custom action called connection state attack,
+which basically takes this and it smuggles it behind a valid,
+genuine, normal looking request.
+And so all you've got to do is first send this,
+see what the normal response is and then hit this button.
+And now it will smuggle the request.
+And behold, we've just gained access to the admin panel via the SSRF.
+And once again, the only way to access this is by smuggling this request.
+So if you do it directly, you don't see anything.
+We can use the logger to see what's actually happened behind the scene.
+So when I'm sending these requests with the repeater,
+every single one is sent on a different connection ID,
+as you can see from this column that I've switched on here.
+But when I hit that magic button with the custom action,
+then it sends this innocent precursor request with a valid host header.
+And then it sends the malformed one that I had in the repeater.
+And the power of this is this is not just limited to host header attacks.
+In principle, any kind of server level validation could be bypassed using this technique.
+And now thanks to this custom action, you can test for it simply by pressing a button.
+If we just have a look at the code underneath,
+all it's doing is it's taking the input request
+and it's sending a simplified version to the target URL with a legitimate host header
+and without any malformed headers or anything like that.
+And then it's sending the actual attack immediately after it and setting the response over there.
+So, yeah, hope you find it useful.
+Please note you will need to be using the latest version of Burp Suite to perform this attack
+as it uses a new feature that was just added to around making it easier to reuse connections like this.
+And that's pretty much it.
+Only other thing is this is my first time making this kind of demo video with audio narration.
+So let me know what you think if you like it or if you think I should just stick to writing blog posts.
+Thanks for listening.
+Thank you.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

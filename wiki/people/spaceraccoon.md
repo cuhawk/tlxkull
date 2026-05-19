@@ -2,7 +2,7 @@
 title: Eugene Lim (spaceraccoon)
 slug: spaceraccoon
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [spaceraccoonsec, spaceraccoon, eugene1337]
 role: dual
 primary_focus: zero-day
@@ -69,3 +69,13 @@ inbound: []
 - **Recurring theme: chains.** "Individual vulnerabilities often chain well together — a low-severity file read primitive helps understand context to find a code execution path." This framing pervades both the IoT writeups (Tapo, Crestron) and the book's methodology chapters — useful prior when triaging long taint chains in `targets/<name>/chains/`.
 - **LLM-assisted research direction.** `vulnerability-spoiler-alert` + the negative-days post mark his recent pivot toward AI-augmented vuln discovery; relevant to TLX's own `js_run_audit` + autoresearch-loop patterns.
 - **No public Tencent / Alibaba writeups confirmed** as of this dossier — searches for that combination returned threat-actor infra rather than spaceraccoon's own research. Removed from this page; revisit if a future source surfaces one.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/spaceraccoon/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

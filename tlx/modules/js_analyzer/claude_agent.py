@@ -351,7 +351,11 @@ def _examine_chain(chain_id: int, findings: dict) -> dict:
         q: findings["snippets"].get(q, "<unavailable>")
         for q in chain["path"]
     }
-    return {"chain": chain, "snippets": snippets}
+    out: dict = {"chain": chain, "snippets": snippets}
+    prior = (findings.get("prior_techniques") or {}).get(chain_id) or []
+    if prior:
+        out["prior_techniques"] = prior
+    return out
 
 
 def _get_snippet(qname: str, findings: dict) -> dict:
@@ -890,6 +894,41 @@ def _dispatch(name: str, inp: dict, findings: dict, state: Any,
     return json.dumps(result)
 
 
+async def _prefetch_wiki_context(findings: dict, kernel: Any) -> None:
+    """Best-effort: populate findings['prior_techniques'][cid] for every chain.
+
+    One wiki RAG query per chain (top_k=3, score floor 0.30). Cached by
+    query string to dedupe sibling chains that share vuln_class+sink.
+    Silently returns on any failure (no embedder, no wiki collection).
+    """
+    from modules.js_analyzer.wiki_context import (
+        _build_technique_query,
+        fetch_prior_techniques,
+    )
+
+    framework_tags = findings.get("framework_tags") or []
+    chains = findings.get("chains") or []
+    if not chains:
+        return
+
+    prior_map: dict[int, list[dict]] = {}
+    query_cache: dict[str, list[dict]] = {}
+    for chain in chains:
+        qkey = _build_technique_query(chain, framework_tags)
+        if qkey in query_cache:
+            prior_map[chain["id"]] = query_cache[qkey]
+            continue
+        hits = await fetch_prior_techniques(
+            chain, kernel, framework_tags=framework_tags, top_k=3,
+        )
+        query_cache[qkey] = hits
+        if hits:
+            prior_map[chain["id"]] = hits
+
+    if prior_map:
+        findings["prior_techniques"] = prior_map
+
+
 async def analyse_chains_async(
     findings: dict, kernel: Any, *, external_run_id: str | None = None,
 ) -> str:
@@ -946,6 +985,8 @@ async def analyse_chains_async(
     system_prompt = _load_system_prompt()
     ctx = _RunContext()
     tools = _make_tools(findings, state, kernel, ctx)
+
+    await _prefetch_wiki_context(findings, kernel)
 
     initial_user = (
         "Analyse the following findings and produce a security report.\n\n"
