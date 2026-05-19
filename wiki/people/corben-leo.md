@@ -2,7 +2,7 @@
 title: Corben Leo (hacker_)
 slug: corben-leo
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [hacker_, lc, cdl, cdll, sxcurity]
 role: hunter
 primary_focus: recon
@@ -73,3 +73,36 @@ inbound: []
 - **Recon dogma (from his public posts and Ep 21):** be methodical when fuzzing framework-specific routes (Express, Rails, Flask, Django); rotate HTTP methods (don't only `GET`); reuse the same wordlist with different methods; chase historical recon for forgotten subdomains. See [@hacker_/status/1765589673018044715](https://x.com/hacker_/status/1765589673018044715).
 - **Collab patterns:** Frequent collaborator with [Shubham Shah](shubham-shah.md) (Assetnote co-founder), [Sean Yeoh](sean-yeoh.md) (Assetnote). CT-era pairings with [Justin Gardner](justin-gardner.md) and the Assetnote crowd.
 - **Why he matters to TLX:** archetype for the recon-heavy chain pattern the workflow encodes (`recon` → `js-harvest` → `js-index` → `chain-triage` → `opus-deep-audit`). His writeups are reference data for the "exposed dev tooling → cred harvest → RCE" technique class.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [17 01 01 zip to rce lfi](../sources/blogs/personal/corben-leo/blog-17-01-01-zip-to-rce-lfi.md)
+- [17 01 09 aol xss](../sources/blogs/personal/corben-leo/blog-17-01-09-aol-xss.md)
+- [17 05 09 ipb xss](../sources/blogs/personal/corben-leo/blog-17-05-09-ipb-xss.md)
+- [17 06 30 bandcamp xss](../sources/blogs/personal/corben-leo/blog-17-06-30-bandcamp-xss.md)
+- [17 11 27 tricky cors](../sources/blogs/personal/corben-leo/blog-17-11-27-tricky-cors.md)
+- [17 11 30 asus sqli](../sources/blogs/personal/corben-leo/blog-17-11-30-asus-sqli.md)
+- [17 12 17 hackertarget](../sources/blogs/personal/corben-leo/blog-17-12-17-hackertarget.md)
+- [17 3 10 att rce](../sources/blogs/personal/corben-leo/blog-17-3-10-att-rce.md)
+- [18 1 11 chaining yahoo bugs](../sources/blogs/personal/corben-leo/blog-18-1-11-chaining-yahoo-bugs.md)
+- [18 12 5 xss to xxe in prince](../sources/blogs/personal/corben-leo/blog-18-12-5-xss-to-xxe-in-prince.md)
+- [18 6 16 advanced cors techniques](../sources/blogs/personal/corben-leo/blog-18-6-16-advanced-cors-techniques.md)
+- [19 7 14 atlassian crowd rce](../sources/blogs/personal/corben-leo/blog-19-7-14-atlassian-crowd-rce.md)
+- [19 9 04 jenkins to full pwnage](../sources/blogs/personal/corben-leo/blog-19-9-04-jenkins-to-full-pwnage.md)
+- [adapting to endure sequoia summary](../sources/blogs/personal/corben-leo/blog-adapting-to-endure-sequoia-summary.md)
+- [hacking kucoin](../sources/blogs/personal/corben-leo/blog-hacking-kucoin.md)
+- [learn to hack webapps](../sources/blogs/personal/corben-leo/blog-learn-to-hack-webapps.md)
+- [blog](../sources/blogs/personal/corben-leo/blog.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/corben-leo/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

@@ -83,3 +83,23 @@ Source files:
 
 Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
 
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [2010 12 chronofeit phishing](../sources/blogs/personal/skeletonscribe-kettle/2010-12-chronofeit-phishing.md)
+- [2011 02 hackxor hacking game beta](../sources/blogs/personal/skeletonscribe-kettle/2011-02-hackxor-hacking-game-beta.md)
+- [2011 05 js less xss](../sources/blogs/personal/skeletonscribe-kettle/2011-05-js-less-xss.md)
+- [2011 05 simulating targets for xsscsrf attacks](../sources/blogs/personal/skeletonscribe-kettle/2011-05-simulating-targets-for-xsscsrf-attacks.md)
+- [2011 07 sparse bruteforce addon scanner](../sources/blogs/personal/skeletonscribe-kettle/2011-07-sparse-bruteforce-addon-scanner.md)
+- [2011 12 phrack ebook](../sources/blogs/personal/skeletonscribe-kettle/2011-12-phrack-ebook.md)
+- [2012 06 x frame options sameorigin warning](../sources/blogs/personal/skeletonscribe-kettle/2012-06-x-frame-options-sameorigin-warning.md)
+- [2013 05 practical http host header attacks](../sources/blogs/personal/skeletonscribe-kettle/2013-05-practical-http-host-header-attacks.md)
+- [2014 08 comma separated vulnerabilities](../sources/blogs/personal/skeletonscribe-kettle/2014-08-comma-separated-vulnerabilities.md)
+- [2015 02 exploiting path relative style sheet](../sources/blogs/personal/skeletonscribe-kettle/2015-02-exploiting-path-relative-style-sheet.md)
+- [2015 08 server side template injection](../sources/blogs/personal/skeletonscribe-kettle/2015-08-server-side-template-injection.md)
+- [2016 04 exploiting uber and piwik with adapted](../sources/blogs/personal/skeletonscribe-kettle/2016-04-exploiting-uber-and-piwik-with-adapted.md)
+- [2016 08 reviewing bug bounties hackers](../sources/blogs/personal/skeletonscribe-kettle/2016-08-reviewing-bug-bounties-hackers.md)
+- [2017 04 abusing owasp](../sources/blogs/personal/skeletonscribe-kettle/2017-04-abusing-owasp.md)
+- [2017 11 h1 212 ctf writeup](../sources/blogs/personal/skeletonscribe-kettle/2017-11-h1-212-ctf-writeup.md)
+
+<!-- sources:auto:end -->

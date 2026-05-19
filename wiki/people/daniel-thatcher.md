@@ -2,7 +2,7 @@
 title: Daniel Thatcher
 slug: daniel-thatcher
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [_danielthatcher, danielthatcher]
 role: researcher
 primary_focus: server-side
@@ -123,3 +123,22 @@ inbound: []
   - Server-side prototype pollution detection → see
     `wiki/techniques/prototype-pollution/server-side.md` (create on
     first finding).
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/daniel-thatcher/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [2019 04 09 obtaining xss using moodle features and minor bugs](../sources/blogs/personal/daniel-thatcher/2019-04-09-obtaining-xss-using-moodle-features-and-minor-bugs.md)
+- [2020 09 16 exploiting a useless cookie based xss and making it useful](../sources/blogs/personal/daniel-thatcher/2020-09-16-exploiting-a-useless-cookie-based-xss-and-making-it-useful.md)
+- [2026 01 06 research at intruder](../sources/blogs/personal/daniel-thatcher/2026-01-06-research-at-intruder.md)
+- [projects](../sources/blogs/personal/daniel-thatcher/projects.md)
+
+<!-- sources:auto:end -->

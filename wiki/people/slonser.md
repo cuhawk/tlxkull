@@ -2,7 +2,7 @@
 title: Vsevolod Kokorin (Slonser)
 slug: slonser
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [slonser_, slonser, slonser-s]
 role: researcher
 primary_focus: client-side
@@ -72,3 +72,29 @@ inbound: []
 - **Disclosure style** — willing to go public when vendors dismiss. The 2024 Microsoft Outlook spoofing case (TechCrunch) is the canonical example: report dismissed, demoed live by sending a spoofed email "from Microsoft" to a journalist. Useful prior when modeling vendor-response risk on similar bugs.
 - **Collaborators** — orbits the Russian/CIS research scene (Solidlab, neploxaudit, C4T BuT S4D CTF), but ships to Western platforms (HackerOne, Google VRP, Chrome). Frequent guest / collaborator on the Critical Thinking Bug Bounty Podcast.
 - **Cross-refs** — research seeds `../techniques/dom-xss/credentialless-iframe-login-csrf.md`, `../techniques/dom-xss/fetchlater-redirect-persistence.md`, `../techniques/dom-xss/service-worker-allowed-scope-hijack.md`, `../techniques/dom-xss/dompurify-namespace-hijack-getbyid.md`, `../techniques/dom-xss/dompurify-post-output-replace.md`, `../techniques/dom-xss/window-name-exfil.md`, and `../techniques/dom-xss/taint-flow-open-redirect.md`. Tooling pairs with `../tools/caido/` notes (when added).
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [posts cve 2023 5480](../sources/blogs/personal/slonser/posts-cve-2023-5480.md)
+- [posts dompurify dirty namespace bypass](../sources/blogs/personal/slonser/posts-dompurify-dirty-namespace-bypass.md)
+- [posts dompurify node type confusion](../sources/blogs/personal/slonser/posts-dompurify-node-type-confusion.md)
+- [posts email attacks](../sources/blogs/personal/slonser/posts-email-attacks.md)
+- [posts ipv6 zones](../sources/blogs/personal/slonser/posts-ipv6-zones.md)
+- [posts make self xss great again](../sources/blogs/personal/slonser/posts-make-self-xss-great-again.md)
+- [posts mysql2 attacker configuration](../sources/blogs/personal/slonser/posts-mysql2-attacker-configuration.md)
+- [posts smugglle ai ouputs](../sources/blogs/personal/slonser/posts-smugglle-ai-ouputs.md)
+- [posts why protocol matters](../sources/blogs/personal/slonser/posts-why-protocol-matters.md)
+- [posts](../sources/blogs/personal/slonser/posts.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/slonser/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

@@ -1,6 +1,6 @@
 ---
 name: sanitizer-on-path
-description: Cheap proxy for CFG-dominance sanitizer check. Per chain in chains/all.jsonl, walk path qnames and query node_sanitizers; if any sanitizer's `clears` category matches the chain's sink/source category (or is `any`), mark chain.sanitized=True. Default mode is coarse (sanitizer anywhere in fn counts); --strict-dominance requires sanitizer line < next call-out line. Splits chains/all.jsonl into sanitized.jsonl + clean.jsonl. Run after extract_chains_bounded.py (Phase 2 of project_implicit_tags_plan.md). Targets the audited→confirmed FP-rate gap.
+description: Cheap proxy for CFG-dominance sanitizer check. Per chain in chains/all.jsonl, walk path qnames and query node_sanitizers; if any sanitizer's `clears` category matches the chain's sink/source category (or is `any`), mark chain.sanitized=True. Default mode is strict-dominance (sanitizer line < next call-out line) — flipped from coarse on 2026-05-19 because Number_coerce/parseInt_parseFloat (clears=any) over-defused. Use --coarse to revert. Splits chains/all.jsonl into sanitized.jsonl + clean.jsonl. Run after extract_chains_bounded.py (Phase 2 of project_implicit_tags_plan.md). Targets the audited→confirmed FP-rate gap.
 ---
 
 # sanitizer-on-path
@@ -32,7 +32,7 @@ Skip if:
 
 ## Steps
 
-1. **Run the scanner.**
+1. **Run the scanner (strict-dominance by default).**
    ```bash
    python3 bin/sanitizer_on_path.py <target_name>
    ```
@@ -40,16 +40,18 @@ Skip if:
    pull `node_sanitizers` rows. A chain is sanitized when any
    sanitizer's `clears` category intersects with the chain's
    sink/source category mapping (`html`, `attribute`, `url`, `js`),
-   or `clears` is `any`.
+   or `clears` is `any`, AND the sanitizer's line < the next
+   call-out line on the same function (cheap CFG-dominance proxy).
 
-2. **(Optional) strict-dominance.**
+2. **(Opt-out) coarse mode.**
    ```bash
-   python3 bin/sanitizer_on_path.py <target_name> --strict-dominance
+   python3 bin/sanitizer_on_path.py <target_name> --coarse
    ```
-   Only count a sanitizer when its line < the next call-out line on
-   the same function. Cheaper-than-CFG proxy for "sanitizer
-   dominates the forwarding call". Lower FP-reduction rate, lower
-   risk of false-clearing.
+   Treat any sanitizer anywhere in the function as clearing the
+   chain. Higher FP-reduction rate but higher risk of false-clearing
+   when `clears=any` sanitizers like `Number_coerce` appear on side
+   values not in the taint flow. Use only when strict mode misses
+   known defensive patterns.
 
 ## Outputs
 
@@ -114,14 +116,31 @@ without implicit-tags. Implicit-tag chains carry confidence < 1.0;
 if such a chain is ALSO sanitized, treat the combined low-confidence
 + sanitized signal as strong-drop.
 
-## Calibration (coolblue-intigriti, 2000 chains)
+## Calibration
+
+**coolblue-intigriti (2000 chains, legacy DB rows with `clears=any`):**
 
 | Mode | Sanitized | Clean | Elapsed |
 |---|---:|---:|---:|
-| coarse (default) | 488 (24.4%) | 1512 | 0.10s |
+| coarse (legacy default) | 488 (24.4%) | 1512 | 0.10s |
 | strict-dominance | 25 (1.2%) | 1975 | 0.37s |
 
-Coarse mode dropped 488 chains — significant FP-rate reduction if
-those are real sanitizations. ~470 of the 488 are `Number_coerce` /
-`parseInt_parseFloat` (`clears=any`); spot-check before fully
-trusting on targets with heavy numeric coercion.
+**netlify-h1 (2000 chains, strict + canonical-clears override, 2026-05-19):**
+
+| Mode | Sanitized | Clean | Elapsed |
+|---|---:|---:|---:|
+| strict-dominance (current default) | 8 (0.4%) | 1992 | 0.15s |
+
+The 2026-05-19 change loads the canonical `clears` set per sanitizer
+id from `tlx/.../taxonomies/sanitizers.json` and overrides stale DB
+rows. Concretely: `sanitizer_Number_coerce` and
+`sanitizer_parseInt_parseFloat` carried `clears=any` in older
+snapshots but the JSON narrowed them to `clears=numeric` (which no
+sink category in the mapping matches). On netlify, 17559 stale rows
+were overridden at scan time; sanitized dropped from 90.1% (over-
+defused) to 0.4% (defensible).
+
+Spot-check `sanitized.jsonl` before fully discarding from audit; the
+remaining matches should be `encodeURIComponent` on url sinks +
+`textContent_assign` / `dompurify_namespaced` / `createTextNode` on
+html sinks.

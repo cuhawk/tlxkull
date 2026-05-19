@@ -24,10 +24,21 @@ the queue.
          - w_sanit * sanitizer_penalty(chain.path_has_sanitizer)
    ```
    Default weights live in `bin/triage_weights.json`; user can tune.
-3. Write `targets/<name>/chains/all.jsonl` (every chain) and
-   `chains/hot.jsonl` (top N where N = min(20, count*0.1)).
+3. Write tiered output:
+   - `chains/hot.jsonl` — top N where N = min(`--max-hot`, ceil(count*0.1)).
+     Goes to `cc-taint-adversarial` / `opus-deep-audit`.
+   - `chains/warm.jsonl` — next M where M = min(`--max-warm`, remainder).
+     Default --max-warm=80. Feeds `autoresearch-loop` and reaudit when
+     hot returns no TP.
+   - `chains/cold.jsonl` — everything past hot+warm. Long-tail; rarely
+     audited unless explicitly requested.
+   - `chains/all.jsonl` — every chain (legacy; consumers gradually
+     migrate to tier files).
+   Optional `--hot-score-floor X`: chains scoring below X are demoted
+   from hot → warm even if the cap isn't full.
 4. Compute a quick distribution (`{sink_kind: count}`,
-   `{source_kind: count}`) for the result block.
+   `{source_kind: count}`) plus score percentiles (p99/p95/p90/p50) for
+   the result block.
 
 ## Sink severity defaults (high → low)
 1. DOM XSS sinks (`innerHTML`, `outerHTML`, `dangerouslySetInnerHTML`,
@@ -46,6 +57,9 @@ the queue.
 ## Outputs
 - `targets/<name>/chains/all.jsonl`
 - `targets/<name>/chains/hot.jsonl`
+- `targets/<name>/chains/warm.jsonl`
+- `targets/<name>/chains/cold.jsonl`
+- `targets/<name>/chains/triage.json` (includes `tiers` + `score_percentiles`)
 - updated `status.json.phases.triage`
 
 ## Failure modes

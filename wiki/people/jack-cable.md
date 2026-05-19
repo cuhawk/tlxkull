@@ -2,7 +2,7 @@
 title: Jack Cable
 slug: jack-cable
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [jackhcable, cablej]
 role: dual
 primary_focus: ai-security
@@ -62,3 +62,27 @@ inbound: []
 - **DMCA-as-suppression pattern.** The Cluely takedown of his system-prompt screenshot — vendor claiming "proprietary source code" over content shipped to every installing user — is a teachable example. Cite it when arguing for stronger VDP safe-harbor language.
 - **Collab graph.** Alex Stamos (Corridor CSO; ex-Krebs Stamos colleague), Chris Krebs (Krebs Stamos Group), Sen. Gary Peters' staff (TechCongress), Allan Friedman (CISA SBOM), Justin Gardner (CT host, Ep 136).
 - **When to invoke this dossier:** any Electron / desktop AI-app target; any time a vendor threatens legal action over a disclosure; questions about VDP / safe-harbor / CFAA scope; AI codegen failure modes; secure-by-design policy framing in writeups.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/jack-cable/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [bypassing payments using webhooks](../sources/blogs/personal/jack-cable/blog-bypassing-payments-using-webhooks.md)
+- [host header injection](../sources/blogs/personal/jack-cable/blog-host-header-injection.md)
+- [how i hacked mediums top stories](../sources/blogs/personal/jack-cable/blog-how-i-hacked-mediums-top-stories.md)
+- [k anonymity](../sources/blogs/personal/jack-cable/blog-k-anonymity.md)
+- [linkedin](../sources/blogs/personal/jack-cable/blog-linkedin.md)
+- [password not provided](../sources/blogs/personal/jack-cable/blog-password-not-provided.md)
+- [race conditions](../sources/blogs/personal/jack-cable/blog-race-conditions.md)
+- [blog](../sources/blogs/personal/jack-cable/blog.md)
+- [docs stratosphere pdf](../sources/blogs/personal/jack-cable/docs-stratosphere-pdf.md)
+
+<!-- sources:auto:end -->

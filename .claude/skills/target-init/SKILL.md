@@ -60,6 +60,23 @@ scope, auth type, and notes from a single structured place.
 ## Outputs
 - `targets/<name>/status.json` (created or merged).
 
+## Follow-up (post js-index)
+
+After `js-index` lands `index/frameworks.json` and
+`chain-triage`/`extract_chains_bounded` lands `chains/triage.json`,
+run the V2 flag recommender once per target so V2 subsystems are not
+silently off:
+
+```bash
+python3 bin/recommend_v2_flags.py <name>
+source targets/<name>/v2_flags.env
+```
+
+The recommender is read-only against the per-target snapshot DB
+(no LLM, no API key). It writes `targets/<name>/v2_flags.env` and a
+`status.json.phases.v2_recommend` block listing the chosen flags and
+why each one fired.
+
 ## Failure modes
 - `http.md` missing → emit template, halt.
 - Empty scope → halt, demand user add at least one `in:` line.

@@ -2,7 +2,7 @@
 title: Matt Brown
 slug: matt-brown
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [nmatt0, mattbrwn]
 role: researcher
 primary_focus: iot-hardware
@@ -77,3 +77,36 @@ inbound: []
 - **Signature tradecraft:** chip-off → external programmer → patch firmware → reflash → boot back into a modified system for debug. BGA reballing is the part most hunters won't replicate; he teaches it on YouTube.
 - **Press surface:** when he ships a finding, mainstream tech press picks it up (ALPR story ran across Wired-adjacent outlets). Useful precedent if we ever ship hardware-side findings — the disclosure-via-YouTube pattern works.
 - **Religious affiliation on GitHub bio** ("Soli Deo Gloria") — context, not security-relevant.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [attacking enterprise iot mobile apps](../sources/blogs/personal/matt-brown/blog-attacking-enterprise-iot-mobile-apps.md)
+- [bypassing restricted shell on uniview security camera](../sources/blogs/personal/matt-brown/blog-bypassing-restricted-shell-on-uniview-security-camera.md)
+- [cleartext communications to univew cloud servers](../sources/blogs/personal/matt-brown/blog-cleartext-communications-to-univew-cloud-servers.md)
+- [firmware extraction and analysis of uniview camera](../sources/blogs/personal/matt-brown/blog-firmware-extraction-and-analysis-of-uniview-camera.md)
+- [hanwha firmware file decryption](../sources/blogs/personal/matt-brown/blog-hanwha-firmware-file-decryption.md)
+- [hardware hacking tools beginners guide](../sources/blogs/personal/matt-brown/blog-hardware-hacking-tools-beginners-guide.md)
+- [intercepting mobile traffic with caido and frida](../sources/blogs/personal/matt-brown/blog-intercepting-mobile-traffic-with-caido-and-frida.md)
+- [iot pentesting basics uart root shells](../sources/blogs/personal/matt-brown/blog-iot-pentesting-basics-uart-root-shells.md)
+- [iot pentesting roadmap](../sources/blogs/personal/matt-brown/blog-iot-pentesting-roadmap.md)
+- [iot vulnerability basics onvif missing authentication](../sources/blogs/personal/matt-brown/blog-iot-vulnerability-basics-onvif-missing-authentication.md)
+- [police bodycam data to china](../sources/blogs/personal/matt-brown/blog-police-bodycam-data-to-china.md)
+- [sidebar](../sources/blogs/personal/matt-brown/blog-sidebar.md)
+- [uniview camera network services](../sources/blogs/personal/matt-brown/blog-uniview-camera-network-services.md)
+- [vstarcam cb73 hardcoded root password](../sources/blogs/personal/matt-brown/blog-vstarcam-cb73-hardcoded-root-password.md)
+- [vstarcam cb73 proprietary encryption analysis](../sources/blogs/personal/matt-brown/blog-vstarcam-cb73-proprietary-encryption-analysis.md)
+- [blog](../sources/blogs/personal/matt-brown/blog.md)
+- [iot penetration testing](../sources/blogs/personal/matt-brown/iot-penetration-testing.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/matt-brown/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

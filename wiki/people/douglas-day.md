@@ -2,7 +2,7 @@
 title: Douglas Day
 slug: douglas-day
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [archangeldday, the_arch_angel, archangel, arch_angel, douglasday, dday]
 role: hunter
 primary_focus: collaboration
@@ -61,3 +61,13 @@ inbound: []
 - **Vendor-widget surface.** The Intercom ATO writeup is a recurring inspiration for the "embedded third-party widget = forgotten attack surface" pattern; worth cross-referencing whenever a target embeds Intercom, Zendesk, Drift, etc.
 - **Auth/authz heavy.** Privilege escalation, role mixing, MFA edge cases — his bread and butter. Less client-side / XSS than peers.
 - **Voice.** Pragmatic, work-life-balance honest; "justify the hobby that doesn't generate income" was a recurring Ep. 35 thread. Treat his rules-of-thumb as heuristics, not laws.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/douglas-day/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

@@ -1,0 +1,27 @@
+# blogs · personal · oversecured
+
+_Auto-generated index. 23 ingested pages._
+
+- [20 security issues found in xiaomi devices](blog-20-security-issues-found-in-xiaomi-devices.md)
+- [android deep link vulnerabilities](blog-android-deep-link-vulnerabilities.md)
+- [android security checklist theft of arbitrary files](blog-android-security-checklist-theft-of-arbitrary-files.md)
+- [android security checklist webview](blog-android-security-checklist-webview.md)
+- [content providers and the potential weak spots they can have](blog-content-providers-and-the-potential-weak-spots-they-can-have.md)
+- [disclosure of 7 android and google pixel vulnerabilities](blog-disclosure-of-7-android-and-google-pixel-vulnerabilities.md)
+- [discovering vendor specific vulnerabilities in android](blog-discovering-vendor-specific-vulnerabilities-in-android.md)
+- [faster vulnerability triage new reports](blog-faster-vulnerability-triage-new-reports.md)
+- [inside mobile taint analysis](blog-inside-mobile-taint-analysis.md)
+- [introducing mavengate a supply chain attack method for java and android applications](blog-introducing-mavengate-a-supply-chain-attack-method-for-java-and-android-applications.md)
+- [mobile app security testing beyond the login screen](blog-mobile-app-security-testing-beyond-the-login-screen.md)
+- [mobile app security testing cicd](blog-mobile-app-security-testing-cicd.md)
+- [mobile app security testing how to choose the right platform buyer e2 80 99s guide 2026](blog-mobile-app-security-testing-how-to-choose-the-right-platform-buyer-e2-80-99s-guide-2026.md)
+- [oversecured apps care part 1 vulnerability disclosure of 225 google apps](blog-oversecured-apps-care-part-1-vulnerability-disclosure-of-225-google-apps.md)
+- [oversecured detects dangerous vulnerabilities in the tiktok android app](blog-oversecured-detects-dangerous-vulnerabilities-in-the-tiktok-android-app.md)
+- [security researchers find vulnerabilities in mental health apps](blog-security-researchers-find-vulnerabilities-in-mental-health-apps.md)
+- [that ai you confide in may be an open book researchers find cloud keys exposed conversations and injectable chat in](blog-that-ai-you-confide-in-may-be-an-open-book-researchers-find-cloud-keys-exposed-conversations-and-injectable-chat-in.md)
+- [the app you asked your employees to install can leak their bank account details to hackers](blog-the-app-you-asked-your-employees-to-install-can-leak-their-bank-account-details-to-hackers.md)
+- [use cryptography in mobile apps the right way](blog-use-cryptography-in-mobile-apps-the-right-way.md)
+- [what is a mobile dast and why security teams are moving beyond pen testing](blog-what-is-a-mobile-dast-and-why-security-teams-are-moving-beyond-pen-testing.md)
+- [cve](cve.md)
+- [dast](dast.md)
+- [partner](partner.md)

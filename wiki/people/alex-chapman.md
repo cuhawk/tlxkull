@@ -2,7 +2,7 @@
 title: Alex Chapman (ajxchapman)
 slug: alex-chapman
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [ajxchapman]
 role: hunter
 primary_focus: server-side
@@ -70,3 +70,23 @@ inbound: []
 - **White / grey box bias.** Strong preference for programs that expose source or binaries (GitLab being the archetype). Reads diffs and fix commits to find adjacent variants — a pattern worth mirroring in our own workflow when programs ship open source.
 - **CI/CD as a hunting ground.** Half his public CVE list lives in container runtimes used by CI (Docker, Kata, runners). Worth pairing with our own CI/CD scope on relevant targets.
 - **Engagement-driven.** Publicly states that responsive triagers + personal acknowledgement materially change which programs he keeps hitting. Useful signal when evaluating program quality.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [posts 2020 11 19 privileged container escape](../sources/blogs/personal/alex-chapman/posts-2020-11-19-privileged-container-escape.md)
+- [posts 2021 02 28 kata containers escape](../sources/blogs/personal/alex-chapman/posts-2021-02-28-kata-containers-escape.md)
+- [posts 2021 11 10 practical security recommendations for startups](../sources/blogs/personal/alex-chapman/posts-2021-11-10-practical-security-recommendations-for-startups.md)
+- [posts 2024 05 08 exploit archeology](../sources/blogs/personal/alex-chapman/posts-2024-05-08-exploit-archeology.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/alex-chapman/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

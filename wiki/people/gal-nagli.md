@@ -2,7 +2,7 @@
 title: Gal Nagli (naglinagli)
 slug: gal-nagli
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [naglinagli, galnagli, nagli]
 role: dual
 primary_focus: cloud
@@ -172,3 +172,20 @@ inbound: []
   the through-line). When a wiki technique page on "cache-key-suffix
   WCD" or "exposed ClickHouse on dev subdomain" is created, seed it
   from this dossier.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/naglinagli-gh/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [disclosures](../sources/blogs/personal/naglinagli-gh/disclosures.md)
+- [milestones](../sources/blogs/personal/naglinagli-gh/milestones.md)
+
+<!-- sources:auto:end -->

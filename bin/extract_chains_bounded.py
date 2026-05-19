@@ -189,7 +189,20 @@ def main() -> int:
     ap.add_argument("--max-total", type=int, default=2000)
     ap.add_argument("--max-hot", type=int, default=20)
     ap.add_argument(
-        "--max-name-match-candidates", type=int, default=10,
+        "--max-warm", type=int, default=80,
+        help="Size cap of warm.jsonl (chains ranked 21..N). Sits between "
+             "hot and cold. Feeds autoresearch-loop and quick reaudit "
+             "passes when hot batch returns no TP. Default 80.",
+    )
+    ap.add_argument(
+        "--hot-score-floor", type=float, default=None,
+        help="Optional absolute score floor for hot.jsonl. Chains below "
+             "this score are demoted to warm.jsonl even if the hot cap "
+             "isn't full. Disabled by default (None).",
+    )
+    ap.add_argument(
+        "--name-match-candidates", "--max-name-match-candidates",
+        dest="max_name_match_candidates", type=int, default=10,
         help="Drop edges with resolved_kind='name_match' whose "
              "candidate_count > this. Default 10. Defends against "
              "single-letter minified qname collisions (`a`, `n`, `v`) "
@@ -306,16 +319,66 @@ def main() -> int:
     chains.sort(key=lambda c: c["score"], reverse=True)
     out = target_dir / "chains"
     out.mkdir(parents=True, exist_ok=True)
-    (out / "all.jsonl").write_text("\n".join(json.dumps(c) for c in chains) + ("\n" if chains else ""))
-    n_hot = min(a.max_hot, max(1, math.ceil(len(chains) * 0.1)))
-    (out / "hot.jsonl").write_text("\n".join(json.dumps(c) for c in chains[:n_hot]) + ("\n" if chains else ""))
+
+    def _write(path: Path, rows: list[dict]) -> None:
+        if rows:
+            path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+        else:
+            path.write_text("")
+
+    # Tiered split — replaces hard cap=20. hot.jsonl still feeds
+    # cc-taint-adversarial / opus-deep-audit. warm.jsonl is the new
+    # mid-tier that autoresearch-loop / quick reaudit can pull from when
+    # hot returns no TP. cold.jsonl is everything else in all.jsonl.
+    n_total = len(chains)
+    n_hot_target = min(a.max_hot, max(1, math.ceil(n_total * 0.1)))
+    if a.hot_score_floor is not None:
+        idx_floor = next(
+            (i for i, c in enumerate(chains)
+             if c["score"] < a.hot_score_floor),
+            n_total,
+        )
+        n_hot = min(n_hot_target, idx_floor)
+    else:
+        n_hot = n_hot_target
+    n_warm = min(a.max_warm, max(0, n_total - n_hot))
+
+    hot_rows = chains[:n_hot]
+    warm_rows = chains[n_hot:n_hot + n_warm]
+    cold_rows = chains[n_hot + n_warm:]
+
+    _write(out / "all.jsonl", chains)
+    _write(out / "hot.jsonl", hot_rows)
+    _write(out / "warm.jsonl", warm_rows)
+    _write(out / "cold.jsonl", cold_rows)
+
+    def _pct(rows: list[dict], q: float) -> float | None:
+        if not rows:
+            return None
+        idx = max(0, min(len(rows) - 1, int(round(q * (len(rows) - 1)))))
+        return rows[idx]["score"]
 
     sink_dist = Counter(c["sink"]["taxonomy_id"] for c in chains)
     src_dist = Counter(c["source"]["taxonomy_id"] for c in chains)
     triage = {"target": name, "db": str(db), "severity": a.severity,
-              "caps": {"max_depth": a.max_depth, "max_paths_per_source": a.max_paths_per_source,
-                       "max_total": a.max_total},
-              "total": len(chains), "hot": n_hot,
+              "caps": {"max_depth": a.max_depth,
+                       "max_paths_per_source": a.max_paths_per_source,
+                       "max_total": a.max_total,
+                       "max_hot": a.max_hot,
+                       "max_warm": a.max_warm,
+                       "hot_score_floor": a.hot_score_floor},
+              "total": n_total,
+              "tiers": {
+                  "hot": n_hot,
+                  "warm": n_warm,
+                  "cold": max(0, n_total - n_hot - n_warm),
+              },
+              "score_percentiles": {
+                  "p99": _pct(chains, 0.01),
+                  "p95": _pct(chains, 0.05),
+                  "p90": _pct(chains, 0.10),
+                  "p50": _pct(chains, 0.50),
+              },
               "sink_dist": dict(sink_dist.most_common()),
               "source_dist": dict(src_dist.most_common())}
     (out / "triage.json").write_text(json.dumps(triage, indent=2))

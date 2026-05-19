@@ -1,201 +1,158 @@
-"""Wiki structural lint — orphans + dangling links + stale.
-
-Supports both:
-- standard markdown:  [text](relative/path.md)
-- obsidian wikilinks: [[slug]] or [[../path/slug]]
-
-Writes wiki/_lint_<YYYYMMDD>.md. Does NOT touch any wiki page.
-"""
-from __future__ import annotations
-
-import datetime as dt
-import re
-import sys
-from collections import defaultdict
+#!/usr/bin/env python3
+"""Wiki lint — structural pass only (no LLM contradiction; not whitelisted)."""
+import os, re, sys, time
+from datetime import datetime, timedelta
 from pathlib import Path
+from collections import defaultdict
 
-REPO = Path(__file__).resolve().parents[1]
-WIKI = REPO / "wiki"
+ROOT = Path("/Users/soural/Documents/TLX/wiki")
+LINK_RE = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+SEEN_RE = re.compile(r'(?i)seen[- ]in[- ]the[- ]wild|seen-in-wild|sightings?:|observed:')
+DATE_RE = re.compile(r'(20\d{2})-(\d{2})-(\d{2})')
 
-# Ignore these for orphan detection (leaves by design)
-ORPHAN_EXEMPT_PATTERNS = [
-    "SCHEMA.md",
-    "_ingest_log.jsonl",
-    "_lint_",
-    "findings/",
-    "_external/",
-    "sources/podcasts/ct/whisper/",  # transcripts dir is not in graph
-    "README.md",  # per-folder README pages are leaves
-    "_wiki_ingest_summary.md",
-]
+now = datetime.now()
+stale_threshold = timedelta(days=180)
 
-STALE_THRESHOLD_DAYS = 180
+EXCLUDE_ROOTS = {"_external"}  # vendored, don't lint
+LEAF_OK = {"SCHEMA.md"}        # always leaves
 
+all_files = []
+for p in ROOT.rglob("*.md"):
+    rel = p.relative_to(ROOT)
+    parts = rel.parts
+    if parts and parts[0] in EXCLUDE_ROOTS:
+        continue
+    if rel.name.startswith("_lint_"):
+        continue
+    all_files.append(p)
 
-def is_exempt(rel: str) -> bool:
-    return any(p in rel for p in ORPHAN_EXEMPT_PATTERNS)
+file_set = {p.resolve() for p in all_files}
+inbound = defaultdict(list)
+dangling = []
 
-
-_MD_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-_WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
-
-
-def slug_to_candidates(slug: str, all_pages: set[str]) -> list[str]:
-    """Resolve a wikilink slug to potential page paths.
-
-    Tries:
-    - exact path match with .md suffix
-    - directory match -> notes.md or SUMMARY.md or README.md inside dir
-    - basename-only match across the tree
-    """
-    s = slug.split("#", 1)[0].split("|", 1)[0].strip()
-    if not s:
-        return []
-    if s.endswith(".md"):
-        s_md = s
-    else:
-        s_md = s + ".md"
-    cands = []
-    # directory link -> resolve to index page
-    if not s.endswith(".md"):
-        for idx in ("notes.md", "SUMMARY.md", "README.md"):
-            for p in all_pages:
-                if p.endswith(f"/{s}/{idx}") or p == f"{s}/{idx}":
-                    cands.append(p)
-    # exact match by basename
-    for p in all_pages:
-        if Path(p).name == Path(s_md).name:
-            cands.append(p)
-        elif p.endswith("/" + s_md):
-            cands.append(p)
-    return list(dict.fromkeys(cands))
-
-
-def main() -> None:
-    md_files = sorted([
-        p for p in WIKI.rglob("*.md")
-        if "_external/" not in str(p.relative_to(WIKI))
-        and not p.name.startswith("_lint_")
-    ])
-    rel_files = {str(p.relative_to(WIKI)): p for p in md_files}
-    all_rel = set(rel_files.keys())
-
-    inbound = defaultdict(set)  # rel_target -> set(rel_source)
-    dangling = []  # (rel_source, link_text, link_target)
-
-    for rel, p in rel_files.items():
-        try:
-            text = p.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
-        # markdown links
-        for m in _MD_LINK_RE.finditer(text):
-            lt = m.group(2).split("#", 1)[0].strip()
-            if not lt or lt.startswith(("http://", "https://", "mailto:")):
-                continue
-            target_abs = (p.parent / lt).resolve()
-            try:
-                target_rel = str(target_abs.relative_to(WIKI))
-            except ValueError:
-                continue
-            if target_rel in all_rel:
-                inbound[target_rel].add(rel)
-            else:
-                # only flag .md misses
-                if lt.endswith(".md") or "/" in lt:
-                    dangling.append((rel, m.group(1), lt))
-        # wikilinks
-        for m in _WIKILINK_RE.finditer(text):
-            slug = m.group(1)
-            cands = slug_to_candidates(slug, all_rel)
-            if not cands:
-                dangling.append((rel, slug, f"[[{slug}]] (unresolved)"))
-            else:
-                for c in cands:
-                    inbound[c].add(rel)
-
-    # Orphans: not in inbound + not exempt
-    orphans = []
-    for rel in sorted(all_rel):
-        if is_exempt(rel):
-            continue
-        if not inbound.get(rel):
-            orphans.append(rel)
-
-    # Stale: techniques/* with no Seen-in-the-wild entry in last 180 days
-    now = dt.datetime.now(dt.timezone.utc).date()
-    stale = []
-    seen_re = re.compile(r"\{date:\s*(\d{4}-\d{2}-\d{2})")
-    for rel, p in rel_files.items():
-        if "techniques/" not in rel:
-            continue
+for p in all_files:
+    try:
         text = p.read_text(encoding="utf-8", errors="replace")
-        dates = seen_re.findall(text)
-        if not dates:
-            continue  # no seen-in-wild yet; not stale, just unused
-        try:
-            latest = max(dt.date.fromisoformat(d) for d in dates)
-        except ValueError:
+    except Exception as e:
+        continue
+    base = p.parent
+    for m in LINK_RE.finditer(text):
+        href = m.group(2).split('#')[0].split('?')[0].strip()
+        if not href: continue
+        if href.startswith(('http://','https://','mailto:','#')): continue
+        # resolve relative
+        if href.startswith('/'):
+            target = ROOT / href.lstrip('/')
+        else:
+            target = (base / href).resolve()
+        # only care about .md targets inside wiki/
+        if not str(target).startswith(str(ROOT)):
             continue
-        age = (now - latest).days
-        if age > STALE_THRESHOLD_DAYS:
-            stale.append((rel, latest.isoformat(), age))
+        if target.suffix == "" and not target.exists():
+            # try .md
+            t_md = target.with_suffix(".md")
+            if t_md.exists():
+                target = t_md
+        if target.suffix == ".md":
+            if target.exists():
+                inbound[target.resolve()].append(p.resolve())
+            else:
+                dangling.append((p, href))
 
-    today = now.isoformat()
-    report = WIKI / f"_lint_{today.replace('-', '')}.md"
+# Orphans
+orphans = []
+for p in all_files:
+    rp = p.resolve()
+    if rp in inbound and inbound[rp]:
+        continue
+    parts = p.relative_to(ROOT).parts
+    if parts and parts[0] == "findings":
+        continue  # leaves by design
+    if p.name in LEAF_OK:
+        continue
+    if p.name == "README.md" or p.name == "index.md":
+        continue  # entry points
+    orphans.append(p)
 
-    lines = []
-    lines.append(f"# Wiki lint -- {today}\n")
-    lines.append(f"Total pages: {len(all_rel)}\n")
-    lines.append(f"Orphans: {len(orphans)}")
-    lines.append(f"Dangling links: {len(dangling)}")
-    lines.append(f"Stale techniques: {len(stale)}\n")
+# Stale techniques
+stale = []
+for p in all_files:
+    parts = p.relative_to(ROOT).parts
+    if not parts or parts[0] != "techniques":
+        continue
+    if len(parts) == 1:
+        continue  # top-level technique index, skip
+    text = p.read_text(encoding="utf-8", errors="replace")
+    dates = DATE_RE.findall(text)
+    last_seen = None
+    if dates:
+        cand = [datetime(int(y),int(m),int(d)) for y,m,d in dates if 2020<=int(y)<=2030]
+        if cand:
+            last_seen = max(cand)
+    if last_seen is None:
+        last_seen = datetime.fromtimestamp(p.stat().st_mtime)
+    if (now - last_seen) > stale_threshold:
+        stale.append((p, last_seen))
 
-    lines.append(f"## Orphans ({len(orphans)})\n")
-    if orphans:
-        lines.append("Pages with zero inbound markdown / wikilink references.\n")
-        for o in orphans:
-            lines.append(f"- {o}")
-    else:
-        lines.append("None.")
+# Report
+today = now.strftime("%Y%m%d")
+out = ROOT / f"_lint_{today}.md"
+lines = []
+lines.append(f"# Wiki lint — {now.strftime('%Y-%m-%d')}")
+lines.append("")
+lines.append(f"_files scanned: {len(all_files)} (excludes `_external/**`, `_lint_*.md`)_")
+lines.append(f"_contradictions: skipped — LLM call not in API whitelist per CLAUDE.md_")
+lines.append("")
+lines.append(f"## Orphans ({len(orphans)})")
+lines.append("")
+lines.append("Pages with zero inbound links from other wiki pages.")
+lines.append("Excludes `findings/**`, `SCHEMA.md`, `README.md`, `index.md`.")
+lines.append("")
+# Group orphans by top dir
+by_dir = defaultdict(list)
+for p in orphans:
+    parts = p.relative_to(ROOT).parts
+    by_dir[parts[0] if parts else "_root"].append(p)
+for d in sorted(by_dir.keys()):
+    lst = sorted(by_dir[d], key=lambda x: x.stat().st_mtime, reverse=True)
+    lines.append(f"### {d}/ ({len(lst)})")
+    lines.append("")
+    for p in lst[:200]:
+        rel = p.relative_to(ROOT)
+        ts = datetime.fromtimestamp(p.stat().st_mtime).strftime("%Y-%m-%d")
+        lines.append(f"- `wiki/{rel}` — {ts}")
+    if len(lst) > 200:
+        lines.append(f"- _...{len(lst)-200} more truncated_")
     lines.append("")
 
-    lines.append(f"## Dangling links ({len(dangling)})\n")
-    if dangling:
-        # Group by source page
-        by_src = defaultdict(list)
-        for src, txt, tgt in dangling:
-            by_src[src].append((txt, tgt))
-        for src in sorted(by_src):
-            lines.append(f"- {src}")
-            for txt, tgt in by_src[src][:5]:
-                lines.append(f"  - {tgt}  ({txt!r})")
-            if len(by_src[src]) > 5:
-                lines.append(f"  - ... +{len(by_src[src]) - 5} more")
-    else:
-        lines.append("None.")
-    lines.append("")
+lines.append(f"## Dangling links ({len(dangling)})")
+lines.append("")
+lines.append("Links pointing to .md files that do not exist.")
+lines.append("")
+# Group by source file
+by_src = defaultdict(list)
+for p, href in dangling:
+    by_src[p].append(href)
+src_sorted = sorted(by_src.items(), key=lambda kv: len(kv[1]), reverse=True)
+for p, hrefs in src_sorted[:100]:
+    rel = p.relative_to(ROOT)
+    lines.append(f"- `wiki/{rel}` ({len(hrefs)}):")
+    for h in hrefs[:10]:
+        lines.append(f"  - `{h}`")
+    if len(hrefs) > 10:
+        lines.append(f"  - _...{len(hrefs)-10} more_")
+if len(src_sorted) > 100:
+    lines.append(f"- _...{len(src_sorted)-100} more source files truncated_")
+lines.append("")
 
-    lines.append(f"## Stale techniques ({len(stale)})\n")
-    if stale:
-        lines.append("Pages with no Seen-in-the-wild entry in > "
-                     f"{STALE_THRESHOLD_DAYS} days.\n")
-        for rel, last, age in sorted(stale, key=lambda x: -x[2])[:50]:
-            lines.append(f"- {rel} -- last {last} ({age}d)")
-    else:
-        lines.append("None.")
-    lines.append("")
+lines.append(f"## Stale techniques ({len(stale)})")
+lines.append("")
+lines.append("`techniques/**` pages whose newest dated entry / mtime is >180 days ago.")
+lines.append("")
+for p, ls in sorted(stale, key=lambda x: x[1]):
+    rel = p.relative_to(ROOT)
+    lines.append(f"- `wiki/{rel}` — last seen {ls.strftime('%Y-%m-%d')}")
 
-    lines.append("## Contradictions (skipped)\n")
-    lines.append(
-        "Contradiction detection requires LLM judge calls and was skipped "
-        "this run per CLAUDE.md API-key whitelist. Structural lint only.\n"
-    )
-
-    report.write_text("\n".join(lines))
-    print(f"wrote {report.relative_to(REPO)}")
-    print(f"orphans={len(orphans)} dangling={len(dangling)} stale={len(stale)}")
-
-
-if __name__ == "__main__":
-    main()
+out.write_text("\n".join(lines), encoding="utf-8")
+print(f"wrote: {out}")
+print(f"orphans={len(orphans)} dangling={len(dangling)} stale={len(stale)}")

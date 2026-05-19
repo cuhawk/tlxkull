@@ -2,7 +2,7 @@
 title: Inti De Ceukelaire (securinti)
 slug: inti-de-ceukelaire
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [securinti, intidc]
 role: dual
 primary_focus: social-engineering
@@ -69,3 +69,27 @@ inbound: []
 - **Collab patterns:** Frequent on-stage partner of Renniepak (also Intigriti); recurring CT-podcast guest pairings with Justin Gardner ([justin-gardner.md](justin-gardner.md)) per CT host's collab notes. Intigriti runs the H1-equivalent LHE circuit covered in CT Ep 42 (Intigriti LHE Recap with renniepak).
 - **Tools / repos:** GitHub [IntiDC](https://github.com/IntiDC) — `clintool` (Gmail confidential-mail leak-tracer), `twitter-verified` (Nov 2022 verified-user dump), `marypoppit` (data-hiding-in-data), `klassenjustitie`. Less code-output than infrastructure-hunter peers; output is mostly write-ups and policy work.
 - **Cross-references:** Ticket Trick / autoresponder primitives belong in any future `wiki/techniques/social-engineering/` subtree (not yet created); OAuth-flavoured work cross-links to [../techniques/oauth/](../techniques/oauth/) — especially [facebook-implicit-flow-app-confusion.md](../techniques/oauth/facebook-implicit-flow-app-confusion.md) and [redirect-uri-bypass.md](../techniques/oauth/redirect-uri-bypass.md).
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [p hacking a sushi restaurant video](../sources/blogs/personal/inti/p-hacking-a-sushi-restaurant-video.md)
+- [p how brands like orange downplay security](../sources/blogs/personal/inti/p-how-brands-like-orange-downplay-security.md)
+- [p how i infiltrated phishing panels](../sources/blogs/personal/inti/p-how-i-infiltrated-phishing-panels.md)
+- [p info and booking](../sources/blogs/personal/inti/p-info-and-booking.md)
+- [p inti cardreveal privacy policy](../sources/blogs/personal/inti/p-inti-cardreveal-privacy-policy.md)
+- [p scan to scam how thieves can steal](../sources/blogs/personal/inti/p-scan-to-scam-how-thieves-can-steal.md)
+- [p when privacy expires how i got access](../sources/blogs/personal/inti/p-when-privacy-expires-how-i-got-access.md)
+- [p why subscribe](../sources/blogs/personal/inti/p-why-subscribe.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/inti/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

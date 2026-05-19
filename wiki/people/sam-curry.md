@@ -129,3 +129,17 @@ Source files:
 
 Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
 
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [about](../sources/blogs/personal/sam-curry/about.md)
+- [feed rss](../sources/blogs/personal/sam-curry/feed-rss.md)
+- [hacking apple](../sources/blogs/personal/sam-curry/hacking-apple.md)
+- [hacking clubwpt gold](../sources/blogs/personal/sam-curry/hacking-clubwpt-gold.md)
+- [hacking kia](../sources/blogs/personal/sam-curry/hacking-kia.md)
+- [hacking millions of modems](../sources/blogs/personal/sam-curry/hacking-millions-of-modems.md)
+- [hacking subaru](../sources/blogs/personal/sam-curry/hacking-subaru.md)
+- [points com](../sources/blogs/personal/sam-curry/points-com.md)
+- [web hackers vs the auto industry](../sources/blogs/personal/sam-curry/web-hackers-vs-the-auto-industry.md)
+
+<!-- sources:auto:end -->

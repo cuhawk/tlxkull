@@ -52,3 +52,29 @@ orphans, gaps. Lint *reports*; user *decides*. Lint never auto-deletes.
 ## Resolution flow
 User reads report → either edits pages manually OR asks Claude to
 "fix orphan X by adding inbound link from <page>". Lint never edits.
+
+## Tooling
+
+- `bin/wiki_lint.py` — structural pass (orphans / dangling / stale).
+  Contradictions skipped — LLM call not in CLAUDE.md API whitelist.
+- `bin/wiki_backlink_people.py` — appends auto-managed
+  `## Ingested blog posts` block (markers `<!-- sources:auto:start/end -->`)
+  to `people/<x>.md` for every mapped blog dir under
+  `sources/blogs/personal/<dir>/`. Idempotent — re-runs replace the block
+  in place.
+- `bin/wiki_index_sources.py` — generates `_index.md` in each org/multi-author
+  source bucket (hacktivity, p0, bughunters, etc.) + top-level
+  `sources/_index.md`. Overwrites only `_index.md` files.
+- `bin/wiki_index_categories.py` — generates `_index.md` per subdir under
+  `techniques/`, `payloads/`, `tools/`, plus `people/_index.md`,
+  `targets/_index.md`, and root `wiki/README.md`.
+
+Routine maintenance order:
+```
+python3 bin/wiki_backlink_people.py
+python3 bin/wiki_index_sources.py
+python3 bin/wiki_index_categories.py
+python3 bin/wiki_lint.py
+```
+Re-run after any bulk ingest (CTBB, PortSwigger-TV, blog crawl). All four
+are idempotent and safe.

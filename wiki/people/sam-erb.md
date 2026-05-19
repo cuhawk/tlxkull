@@ -2,7 +2,7 @@
 title: Sam Erb (erbbysam)
 slug: sam-erb
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [erbbysam]
 role: dual
 primary_focus: server-side
@@ -90,3 +90,22 @@ inbound: []
 - Engineering background heavily shapes his methodology — see
   Critical Thinking Ep 48 for his explicit framing of
   "understand-how-it's-built before you break it."
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [index php 2017 11 17 ctf](../sources/blogs/personal/sam-erb/index-php-2017-11-17-ctf.md)
+- [index php 2019 02 09 dnsgrep](../sources/blogs/personal/sam-erb/index-php-2019-02-09-dnsgrep.md)
+- [index php 2022 01 15 why i broke your subdomain recon pipeline last night](../sources/blogs/personal/sam-erb/index-php-2022-01-15-why-i-broke-your-subdomain-recon-pipeline-last-night.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/sam-erb/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

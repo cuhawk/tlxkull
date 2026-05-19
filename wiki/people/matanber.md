@@ -2,7 +2,7 @@
 title: Matan Berson (MatanBer)
 slug: matanber
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [matanber, mtnber, matan_ber]
 role: researcher
 primary_focus: client-side
@@ -67,3 +67,20 @@ inbound: []
 - **Chrome extension threat model (Ep. 95).** Four-component decomposition (manifest, content scripts, service worker, extension pages) plus the isolated-world boundary. Highest-value attack-surface bullets: web-accessible resources that redirect to non-web-accessible pages (the MetaMask pattern), `externally_connectable` misconfigurations exposing `chrome.runtime.onMessageExternal` to attacker origins, content-script DOM injections that survive `isTrusted` checks via synthetic harvested clicks, closed shadow DOM defeated by CSS-exfil and overlay clickjacking. Likely seed for a future `wiki/techniques/browser-extensions/` subtree.
 - **Writeup style.** Long-form narrative with embedded code blocks, each post building one gadget at a time. Closer to PortSwigger Research format than to Sammouda's terse PoC chains. Good template when our writeup needs to teach a primitive, not just report a bug.
 - **Cross-reference.** Sits at the intersection of [../techniques/postmessage/](../techniques/postmessage/), [../techniques/dom-xss/](../techniques/dom-xss/), and [../techniques/csp/](../techniques/csp/) — many of his chains touch all three. When opening a new client-side audit on a target with extensions, web messaging, or cookie-based session handling, this page is the entry point.
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/matanber/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [4 char csti](../sources/blogs/personal/matanber/blog-4-char-csti.md)
+- [cspt levels](../sources/blogs/personal/matanber/blog-cspt-levels.md)
+
+<!-- sources:auto:end -->

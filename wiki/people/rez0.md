@@ -2,7 +2,7 @@
 title: Joseph Thacker (rez0)
 slug: rez0
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-19T14:42:00Z
 handles: [rez0__, rez0, jthack, rez0corp]
 role: researcher
 primary_focus: ai-security
@@ -68,3 +68,29 @@ Vulnus Ex Machina ("Vulnerability in the Machine") is the 3-part CT mini-series 
 - **Day-job lens.** AppOmni is SaaS-security focused, so his framing often pulls in SaaS-identity, OAuth-to-LLM, and tool-call-abuse angles that pure-research AI-safety folks miss. See AppOmni blog for the enterprise-flavored writeups; josephthacker.com for the bug-bounty-flavored ones.
 - **Collab graph.** Daniel Miessler (UL NO — newsletter/AI), Johann Rehberger (`wunderwuzzi`, Embrace the Red), Justin Gardner (CT co-host), Hrishi (PIPE contributor).
 - **When to invoke this dossier:** any time a target ships an LLM feature, a RAG endpoint, an agent with tool-use, or a markdown-rendering AI chat. His methodology post is the default starting checklist before custom recon.
+
+<!-- sources:auto:start -->
+## Ingested blog posts
+
+- [ai 2025 08 19 ai models are not safety tuned for kids](../sources/blogs/personal/rez0-thacker/ai-2025-08-19-ai-models-are-not-safety-tuned-for-kids.md)
+- [ai 2025 09 24 ai comprehension gaps](../sources/blogs/personal/rez0-thacker/ai-2025-09-24-ai-comprehension-gaps.md)
+- [ai 2025 11 24 prompt injection isnt a vulnerability](../sources/blogs/personal/rez0-thacker/ai-2025-11-24-prompt-injection-isnt-a-vulnerability.md)
+- [ai 2026 02 24 ai s impact on bug bounty](../sources/blogs/personal/rez0-thacker/ai-2026-02-24-ai-s-impact-on-bug-bounty.md)
+- [hacking 2025 08 19 quest for the shortest domain](../sources/blogs/personal/rez0-thacker/hacking-2025-08-19-quest-for-the-shortest-domain.md)
+- [hacking 2025 10 20 metanarrative prompt injection](../sources/blogs/personal/rez0-thacker/hacking-2025-10-20-metanarrative-prompt-injection.md)
+- [hacking 2026 01 29 bondu smart toy vulnerability](../sources/blogs/personal/rez0-thacker/hacking-2026-01-29-bondu-smart-toy-vulnerability.md)
+- [hacking 2026 03 06 the agentic hacking era](../sources/blogs/personal/rez0-thacker/hacking-2026-03-06-the-agentic-hacking-era.md)
+- [hacking 2026 03 20 claude code hacking skills](../sources/blogs/personal/rez0-thacker/hacking-2026-03-20-claude-code-hacking-skills.md)
+- [personal 2026 01 12 words i live by](../sources/blogs/personal/rez0-thacker/personal-2026-01-12-words-i-live-by.md)
+
+<!-- sources:auto:end -->
+
+## Wiki RAG ingestion
+
+Blog bodies ingested 2026-05-19 into the `wiki` Chroma collection.
+Source files:
+
+- `wiki/sources/blogs/personal/rez0-thacker/`
+
+Query via `docs_query(collection="wiki", query="...")` instead of WebFetch.
+

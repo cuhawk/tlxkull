@@ -99,21 +99,66 @@ def _parse_clears(clears_blob: str | None) -> set[str]:
     return {c.strip() for c in clears_blob.split(",") if c.strip()}
 
 
+_SANITIZER_JSON = (
+    Path(__file__).resolve().parent.parent
+    / "tlx" / "modules" / "js_analyzer" / "taxonomies" / "sanitizers.json"
+)
+
+
+def _load_canonical_clears() -> dict[str, set[str]]:
+    """Load the ground-truth `clears` set per sanitizer id from the JSON
+    taxonomy. Used to override stale `clears=any` rows in older snapshot
+    DBs — e.g. sanitizer_Number_coerce was once `any` but is now
+    `numeric`-only. Reading from JSON keeps the DB rewrites unnecessary
+    while still defusing the over-defuse pattern.
+    """
+    out: dict[str, set[str]] = {}
+    if not _SANITIZER_JSON.exists():
+        return out
+    try:
+        rows = json.loads(_SANITIZER_JSON.read_text())
+    except (json.JSONDecodeError, OSError):
+        return out
+    for r in rows:
+        sid = r.get("id")
+        clears = r.get("clears")
+        if not sid or not isinstance(clears, list):
+            continue
+        out[sid] = {str(c) for c in clears}
+    return out
+
+
 def _load_sanitizers_by_qname(
     conn: sqlite3.Connection,
 ) -> dict[str, list[dict]]:
-    """qname → list of sanitizer records {taxonomy_id, line, clears (set)}."""
+    """qname → list of sanitizer records {taxonomy_id, line, clears (set)}.
+
+    Stale snapshot DBs may carry `clears=any` for sanitizers whose JSON
+    taxonomy has been narrowed (e.g. Number_coerce, parseInt_parseFloat
+    now only clear `numeric`). Override the DB value with the canonical
+    JSON value when known — same effect as re-indexing, no schema
+    churn. Tracked via _clears_override_counts for triage_sanitizer.json.
+    """
+    canonical = _load_canonical_clears()
     out: dict[str, list[dict]] = {}
+    overrides: Counter[str] = Counter()
     rows = conn.execute(
         "SELECT n.qualified_name, ns.taxonomy_id, ns.line, ns.clears "
         "FROM node_sanitizers ns JOIN nodes n ON n.id = ns.node_id"
     ).fetchall()
     for qname, tax_id, line, clears in rows:
+        db_clears = _parse_clears(clears)
+        canon = canonical.get(tax_id)
+        if canon is not None and canon != db_clears:
+            db_clears = canon
+            overrides[tax_id] += 1
         out.setdefault(qname, []).append({
             "taxonomy_id": tax_id,
             "line": int(line) if line is not None else 0,
-            "clears": _parse_clears(clears),
+            "clears": db_clears,
         })
+    if overrides:
+        print(f"sanitizer_clears_overrides={dict(overrides)}", file=sys.stderr)
     return out
 
 
@@ -243,9 +288,19 @@ def main(argv: list[str] | None = None) -> int:
                     help="Chain JSONL (default: chains/all.jsonl)")
     ap.add_argument(
         "--strict-dominance",
+        dest="strict_dominance",
         action="store_true",
+        default=True,
         help="Require sanitizer.line < next call-out line on the same fn. "
-             "Default off (coarse: sanitizer anywhere in fn counts).",
+             "Default ON (FP-rate reduction). Use --coarse to revert.",
+    )
+    ap.add_argument(
+        "--coarse",
+        dest="strict_dominance",
+        action="store_false",
+        help="Coarse mode: sanitizer anywhere in fn counts. Default was "
+             "this until 2026-05-19; flipped to strict because Number_coerce "
+             "+ parseInt_parseFloat (clears=any) over-defused.",
     )
     ap.add_argument("--no-rewrite-all", action="store_true",
                     help="Skip rewriting chains/all.jsonl in place.")

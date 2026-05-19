@@ -51,7 +51,14 @@ scoring.
 ## Steps
 
 ```bash
-# Run only the env-enabled stages
+# 0. (Recommended) Generate per-target flag recommendations from
+#    detected frameworks + chain sink/source distribution. Reads
+#    index/frameworks.json + chains/triage.json + a cheap source scan.
+#    Writes targets/<target>/v2_flags.env (sourceable).
+python3 bin/recommend_v2_flags.py <target>
+source targets/<target>/v2_flags.env
+
+# 1. Run only the env-enabled stages (the recommended set just sourced).
 python3 bin/v2_pipeline.py <target>
 
 # Force every stage on for this run (useful for benchmarking)
@@ -64,6 +71,10 @@ python3 bin/v2_pipeline.py <target> --only parser_context,persistent_taint,origi
 JS_ENABLE_SINK_VIABILITY=1 JS_ENABLE_SANITIZER_REALITY=1 \
     python3 bin/extract_chains_bestfirst.py <target>
 ```
+
+The recommender lists each enabled flag with a one-line reason, and
+also writes `status.json.phases.v2_recommend` so subsequent sessions
+can resume without re-running it.
 
 ## Output JSON shape
 
