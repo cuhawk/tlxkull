@@ -1,0 +1,461 @@
+{
+  "_schema": "sink_id -> capabilities. Consumed by sink_viability.py. Additive sidecar to sinks.json; missing entries fall back to defaults.",
+  "_fields": {
+    "exec_context": "html_parser | js_global | js_eval | url | attribute | style | text | srcdoc | dom_property",
+    "parser_context": "html | js | url | attribute | css | text",
+    "script_exec": "direct | via_script_tag | via_event_handler | none",
+    "csp_neutralized_by": "list of CSP directives that block this sink (script-src 'self' etc.)",
+    "csp_bypassable_by": "list of CSP misconfigs that still allow exploitation",
+    "trusted_types_guarded": "true = enforced TT policy blocks this sink",
+    "framework_overrides": "framework_name -> override note (informational)",
+    "min_payload_chars": "approximate minimum payload length for script exec",
+    "navigation": "true if sink causes top-level navigation (open redirect path)"
+  },
+
+  "innerHTML_assign": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'", "script-src 'self' (event-handler-only payloads survive)"],
+    "csp_bypassable_by": ["unsafe-inline", "dangling-markup", "DOM-clobbering"],
+    "trusted_types_guarded": true,
+    "min_payload_chars": 14,
+    "framework_overrides": {
+      "angular": "blocked unless preceded by bypassSecurityTrustHtml",
+      "react": "auto-escaped through {children}; only via dangerouslySetInnerHTML"
+    }
+  },
+  "outerHTML_assign": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline", "dangling-markup"],
+    "trusted_types_guarded": true,
+    "min_payload_chars": 14
+  },
+  "insertAdjacentHTML_call": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline", "dangling-markup"],
+    "trusted_types_guarded": true,
+    "min_payload_chars": 14
+  },
+  "document_write": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true,
+    "min_payload_chars": 12
+  },
+  "document_writeln": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true,
+    "min_payload_chars": 12
+  },
+  "srcdoc_assign": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["fresh iframe inherits about:srcdoc; parent CSP may not apply"],
+    "trusted_types_guarded": false,
+    "min_payload_chars": 12
+  },
+  "iframe_srcdoc_assign": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["fresh iframe context"],
+    "trusted_types_guarded": false,
+    "min_payload_chars": 12
+  },
+  "createContextualFragment": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true,
+    "min_payload_chars": 14
+  },
+  "dangerouslySetInnerHTML": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true,
+    "framework_overrides": {
+      "react": "explicit React opt-out of escaping; no React-level guard"
+    },
+    "min_payload_chars": 14
+  },
+  "vue_v_html_sink": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true,
+    "framework_overrides": {
+      "vue": "explicit v-html opt-out"
+    }
+  },
+  "angular_inner_html_binding": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true,
+    "framework_overrides": {
+      "angular": "Angular sanitizes by default unless bypassSecurityTrustHtml supplied SafeHtml"
+    }
+  },
+  "angular_bypass_trust_html": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": false,
+    "framework_overrides": {
+      "angular": "explicit sanitizer opt-out; viability HIGH whenever fed by user input"
+    }
+  },
+  "angular_modern_bypassSecurityTrust": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": false,
+    "framework_overrides": {
+      "angular": "explicit sanitizer opt-out"
+    }
+  },
+  "vue_compile": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'none'", "script-src 'self' without unsafe-eval"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "angular_compile": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' without unsafe-eval"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+
+  "eval_call": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false,
+    "min_payload_chars": 5
+  },
+  "eval_indirect": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "new_Function": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false,
+    "min_payload_chars": 5
+  },
+  "setTimeout_string": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "setInterval_string": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "setImmediate_string": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "execScript_legacy": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "vm_runIn_family": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["n/a — server-side Node.js context"],
+    "trusted_types_guarded": false
+  },
+  "vm_Script_ctor": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["n/a — server-side Node.js context"],
+    "trusted_types_guarded": false
+  },
+  "require_dynamic": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["n/a — server-side Node.js context"],
+    "trusted_types_guarded": false
+  },
+
+  "script_src_assign": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": ["script-src restricting origins (not 'self' alone if attacker controls origin)"],
+    "csp_bypassable_by": ["script-src *", "JSONP endpoints on allowed origin"],
+    "trusted_types_guarded": false
+  },
+  "script_text_assign": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": false
+  },
+
+  "location_href_assign": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI when no navigate-to in CSP"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+  "location_assign_call": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+  "location_replace_call": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+  "location_bare_assign": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+  "frame_location_assign": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI in iframe context (sandbox-dependent)"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+  "window_navigate_legacy": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+  "window_open": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "via_script_tag",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: URI when target tab inherits opener"],
+    "trusted_types_guarded": false,
+    "navigation": true
+  },
+
+  "setAttribute_dangerous_attr": {
+    "exec_context": "attribute",
+    "parser_context": "attribute",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": false
+  },
+  "setAttribute_dynamic_attr": {
+    "exec_context": "attribute",
+    "parser_context": "attribute",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": false
+  },
+  "event_handler_attr_assign": {
+    "exec_context": "attribute",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": false
+  },
+
+  "postMessage_send": {
+    "exec_context": "dom_property",
+    "parser_context": "text",
+    "script_exec": "none",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["receiver may treat data as HTML or eval — defer to receiver context"],
+    "trusted_types_guarded": false
+  },
+
+  "fetch_call": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "none",
+    "csp_neutralized_by": ["connect-src restricting origins"],
+    "csp_bypassable_by": [],
+    "trusted_types_guarded": false
+  },
+  "fetch_with_user_input": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "none",
+    "csp_neutralized_by": ["connect-src restricting origins"],
+    "csp_bypassable_by": [],
+    "trusted_types_guarded": false
+  },
+  "xhr_open_call": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "none",
+    "csp_neutralized_by": ["connect-src restricting origins"],
+    "csp_bypassable_by": [],
+    "trusted_types_guarded": false
+  },
+  "axios_call": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "none",
+    "csp_neutralized_by": ["connect-src restricting origins"],
+    "csp_bypassable_by": [],
+    "trusted_types_guarded": false
+  },
+
+  "pp_gadget_innerHTML": {
+    "exec_context": "html_parser",
+    "parser_context": "html",
+    "script_exec": "via_event_handler",
+    "csp_neutralized_by": ["script-src 'none'"],
+    "csp_bypassable_by": ["unsafe-inline"],
+    "trusted_types_guarded": true
+  },
+  "pp_gadget_eval": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "pp_gadget_setTimeout": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": ["script-src 'self' (no unsafe-eval)"],
+    "csp_bypassable_by": ["unsafe-eval"],
+    "trusted_types_guarded": false
+  },
+  "pp_gadget_require": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["n/a — server-side"],
+    "trusted_types_guarded": false
+  },
+
+  "child_process_exec_sink": {
+    "exec_context": "js_eval",
+    "parser_context": "text",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["n/a — server-side"],
+    "trusted_types_guarded": false
+  },
+  "child_process_spawn_sink": {
+    "exec_context": "js_eval",
+    "parser_context": "text",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["n/a — server-side"],
+    "trusted_types_guarded": false
+  },
+
+  "electron_shell_openexternal": {
+    "exec_context": "url",
+    "parser_context": "url",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["javascript: / file: / smb: protocol abuse"],
+    "trusted_types_guarded": false
+  },
+  "electron_nodeintegration_sink": {
+    "exec_context": "js_eval",
+    "parser_context": "js",
+    "script_exec": "direct",
+    "csp_neutralized_by": [],
+    "csp_bypassable_by": ["contextIsolation=false grants full Node API"],
+    "trusted_types_guarded": false
+  }
+}

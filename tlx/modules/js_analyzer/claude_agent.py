@@ -138,6 +138,16 @@ Your job:
 5. If not, name the specific reason (sanitiser, framework escape, \
 context mismatch).
 
+Sanitizer adequacy:
+- The taxonomy block lists each sanitizer on the path with a "covers" or
+  "DOES NOT cover sink flavor" verdict. Take the verdict as ground truth
+  for whether the sanitizer clears the right flavor category, but still
+  reason about bypassability — e.g. DOMPurify covers html but historical
+  config (KEEP_CONTENT, ADD_TAGS) or pre-2.4 versions can be bypassed.
+- A sanitizer that "DOES NOT cover sink flavor" should NOT downgrade
+  exploitability — it is wrong-flavor on-path (e.g. encodeURIComponent
+  before an innerHTML write).
+
 Constraints:
 - Do not request more information. Use what you are given.
 - Be concise — under 400 words.
@@ -500,25 +510,93 @@ def _gather_chain_snippets(findings: dict, chain: dict) -> str:
 
 
 def _gather_taxonomy_context(chain: dict) -> str:
+    from modules.js_analyzer.taxonomy import (
+        infer_sink_flavor,
+        sanitizer_covers_sink,
+    )
+
     src = chain.get("source", {}) or {}
     sink = chain.get("sink", {}) or {}
-    return (
-        f"source taxonomy: {src.get('taxonomy_id', '?')}\n"
-        f"sink taxonomy:   {sink.get('taxonomy_id', '?')}"
-    )
+    sink_id = sink.get("taxonomy_id", "")
+    flavors = infer_sink_flavor(sink_id)
+    flavor_str = ", ".join(flavors) if flavors else "unknown"
+
+    lines = [
+        f"source taxonomy: {src.get('taxonomy_id', '?')}",
+        f"sink taxonomy:   {sink_id or '?'}",
+        f"sink flavor:     {flavor_str}",
+    ]
+    sans = chain.get("sanitisers_in_path") or chain.get("sanitizers_in_path") or []
+    if sans:
+        lines.append("sanitizers on path:")
+        for s in sans:
+            tax_id = s.get("taxonomy_id", "?")
+            clears = s.get("clears") or []
+            adequate, overlap = sanitizer_covers_sink(clears, sink_id)
+            verdict = (
+                f"covers ({', '.join(overlap)})"
+                if adequate
+                else "DOES NOT cover sink flavor"
+            )
+            clears_str = (
+                ", ".join(clears) if isinstance(clears, (list, tuple))
+                else str(clears)
+            )
+            lines.append(
+                f"  - {tax_id} @ line {s.get('line','?')} "
+                f"clears=[{clears_str}] → {verdict}"
+            )
+    else:
+        lines.append("sanitizers on path: none")
+    return "\n".join(lines)
 
 
 def _render_chain_for_opus(chain: dict) -> str:
     src = chain.get("source", {}) or {}
     sink = chain.get("sink", {}) or {}
-    path = " → ".join(chain.get("path", [])) or "(empty)"
+    path_repr = _maybe_compressed_path(chain)
     return (
         f"id: {chain.get('id')}\n"
         f"source: {src.get('qname','')} @ {src.get('file','')}:{src.get('line','')}\n"
         f"sink:   {sink.get('qname','')} @ {sink.get('file','')}:{sink.get('line','')}\n"
         f"depth:  {chain.get('depth', '?')}\n"
-        f"path:   {path}"
+        f"path:   {path_repr}"
     )
+
+
+def _maybe_compressed_path(chain: dict) -> str:
+    """Render the chain path. When ENABLE_CHAIN_COMPRESSION is on and
+    the chain has more than 4 hops, run :func:`compress_chain` and emit
+    the compressed narrative form. Otherwise return the raw path joined
+    by arrows.
+    """
+    raw = chain.get("path") or []
+    if not raw:
+        return "(empty)"
+    try:
+        from modules.js_analyzer.js_analyzer_config import ENABLE_CHAIN_COMPRESSION
+    except Exception:
+        ENABLE_CHAIN_COMPRESSION = False
+    if not ENABLE_CHAIN_COMPRESSION or len(raw) <= 4:
+        return " → ".join(str(x.get("qname") if isinstance(x, dict) else x) for x in raw)
+    try:
+        from modules.js_analyzer.chain_compress import compress_chain
+        view = dict(chain)
+        view["path"] = list(raw)
+        if chain.get("path_files"):
+            view["path_files"] = list(chain["path_files"])
+        compress_chain(view)
+        nar = view.get("narrative") or []
+        ratio = view.get("compression_ratio", 0.0)
+        lines = []
+        for h in nar:
+            kind = h.get("kind", "hop")
+            summary = h.get("summary") or h.get("qname") or ""
+            lines.append(f"  {h.get('hop')}. [{kind}] {summary}")
+        body = "\n".join(lines)
+        return f"(compressed {len(raw)}→{len(nar)} hops, ratio {ratio})\n{body}"
+    except Exception:
+        return " → ".join(str(x.get("qname") if isinstance(x, dict) else x) for x in raw)
 
 
 # ---------------------------------------------------------------------------
@@ -542,11 +620,16 @@ REJECT a chain if ANY of these disqualifiers fires:
 
 2. wrapped_safe_sanitizer
    The sink is wrapped in a known-safe sanitizer call WITHIN the same
-   function body. Known-safe set:
-   - DOMPurify.sanitize
-   - encodeURIComponent (only when the sink expects URL-component context)
-   - JSON.stringify before innerHTML/outerHTML
-   - Trusted Types policy.createHTML
+   function body AND that sanitizer's `clears` set covers the sink's
+   flavor (see TAXONOMY block — "covers (...)" means adequate; "DOES
+   NOT cover sink flavor" means the sanitizer is on-path but wrong
+   flavor and does NOT disqualify the chain). Known-safe set when
+   flavor matches:
+   - DOMPurify.sanitize          → html, attribute
+   - sanitize-html / xss lib     → html
+   - encodeURIComponent          → url
+   - JSON.stringify              → html (only when written into element body)
+   - Trusted Types policy.createHTML → html
 
 3. pure_intermediates_only
    Every intermediate node in the chain is a pure function: no taint

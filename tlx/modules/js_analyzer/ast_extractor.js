@@ -413,6 +413,24 @@ function extractBodyParams(node) {
     return keys;
 }
 
+// Property-level taint helper: build the static dotted path of a
+// MemberExpression like `req.body.user` -> "req.body.user". Returns
+// null when any segment is computed or non-identifier (e.g. dynamic
+// subscript, optional chain head missing).
+function staticMemberPath(n) {
+    if (!n) return null;
+    if (n.type === 'Identifier') return n.name;
+    if (n.type === 'ThisExpression') return 'this';
+    if (n.type !== 'MemberExpression' && n.type !== 'OptionalMemberExpression') {
+        return null;
+    }
+    if (n.computed) return null;
+    const base = staticMemberPath(n.object);
+    if (!base) return null;
+    if (!n.property || n.property.type !== 'Identifier') return null;
+    return base + '.' + n.property.name;
+}
+
 function extractIdentifiers(node) {
     const ids = new Set();
     function walk(n) {
@@ -422,6 +440,11 @@ function extractIdentifiers(node) {
             return;
         }
         if (n.type === 'MemberExpression' || n.type === 'OptionalMemberExpression') {
+            // Property-level taint: emit the static dotted path so a
+            // value tainted as `req.body.user` matches downstream sinks
+            // that pass `req.body.user` as an argument.
+            const dotted = staticMemberPath(n);
+            if (dotted) ids.add(dotted);
             walk(n.object);
             if (n.computed) walk(n.property);
         }
@@ -1743,9 +1766,22 @@ function extractOne(abs, rel) {
             });
         }
 
-        if (p.node.left.type !== 'Identifier') return;
-
-        const varName = p.node.left.name;
+        // Property-level taint: when LHS is a static MemberExpression
+        // (obj.prop = X), the assigned name carries the full dotted path
+        // so the taint solver tracks per-property state.
+        let varName;
+        if (p.node.left.type === 'Identifier') {
+            varName = p.node.left.name;
+        } else if (
+            p.node.left.type === 'MemberExpression' ||
+            p.node.left.type === 'OptionalMemberExpression'
+        ) {
+            const dotted = staticMemberPath(p.node.left);
+            if (!dotted) return;
+            varName = dotted;
+        } else {
+            return;
+        }
         const sourceRule = isSourceCallOrAccess(rhs);
         const sanitiserRule = isSanitiserCall(rhs);
         const argVars = extractIdentifiers(rhs);

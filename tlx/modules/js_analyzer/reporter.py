@@ -29,6 +29,12 @@ from modules.js_analyzer.callgraph_tools import (
     list_entry_points,
     trace_to_sink,
 )
+from modules.js_analyzer.js_analyzer_config import (
+    ENABLE_SANITIZER_REALITY,
+    ENABLE_SINK_VIABILITY,
+    SANITIZER_CONFIDENCE_FLOOR,
+    VIABILITY_DROP_THRESHOLD,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -128,7 +134,14 @@ _ASYNC_PATTERNS = re.compile(
 )
 
 
-def score_chain(chain: dict, snippets: dict) -> float:
+def score_chain(
+    chain: dict,
+    snippets: dict,
+    *,
+    runtime_confirmed_sinks: set[str] | None = None,
+    browser_context: Any = None,
+    target_dir: str | None = None,
+) -> float:
     """Score a chain 0–100. Higher = more likely to be exploitable.
 
     Pure function: no I/O, no global state mutation.
@@ -140,6 +153,17 @@ def score_chain(chain: dict, snippets: dict) -> float:
       sanitiser_penalty −30   subtract if known sanitiser pattern found in any snippet
       snippet_available 0–10  all path nodes have snippets → more confident
       async_bonus      0–10   async patterns are harder to spot manually
+      runtime_confirm  0/+15  sink fired in a headless-browser run
+
+    Sprint-A additions (plans/ARCHITECTURE_EVOLUTION.md §4, §5):
+      * When ``ENABLE_SINK_VIABILITY`` and a BrowserContext is provided,
+        the returned score is multiplied by the sink's viability factor
+        (CSP / Trusted Types / parser context / framework override).
+        Off by default.
+      * When ``ENABLE_SANITIZER_REALITY``, the −30 sanitizer penalty is
+        only applied when the matched sanitizer's effective confidence
+        clears ``SANITIZER_CONFIDENCE_FLOOR``. Otherwise the chain stays
+        un-penalized and gets a ``partial_sanitizer`` note.
     """
     sink_id    = chain.get("sink", {}).get("taxonomy_id", "")
     source_id  = chain.get("source", {}).get("taxonomy_id", "")
@@ -168,8 +192,26 @@ def score_chain(chain: dict, snippets: dict) -> float:
     penalty = 0
     path_snippets = [snippets.get(q, "") for q in path]
     combined = "\n".join(path_snippets)
-    if _SANITISER_PATTERNS.search(combined):
-        penalty = -30
+    sanitizer_hit = _SANITISER_PATTERNS.search(combined)
+    if sanitizer_hit:
+        if ENABLE_SANITIZER_REALITY:
+            # Evaluate the matched sanitizer for adequacy.
+            sv = _evaluate_path_sanitizer(
+                sink_id=sink_id,
+                combined_snippet=combined,
+                sanitizer_match=sanitizer_hit.group(0),
+                target_dir=target_dir,
+            )
+            if sv is not None and sv.confidence >= SANITIZER_CONFIDENCE_FLOOR:
+                penalty = -30
+            else:
+                penalty = 0  # partial sanitizer — keep chain in play
+                chain.setdefault("annotations", []).append({
+                    "kind": "partial_sanitizer",
+                    "sanitizer_verdict": sv.to_dict() if sv is not None else None,
+                })
+        else:
+            penalty = -30
 
     # snippet_available: all path qnames have non-empty snippet
     snip_pts = 10 if path and all(snippets.get(q, "") for q in path) else 0
@@ -177,8 +219,74 @@ def score_chain(chain: dict, snippets: dict) -> float:
     # async_bonus: any snippet contains async API
     async_pts = 10 if _ASYNC_PATTERNS.search(combined) else 0
 
-    total = sink_pts + src_pts + dir_pts + penalty + snip_pts + async_pts
-    return max(0.0, min(100.0, float(total)))
+    # runtime_confirm: sink was observed firing in a headless-browser run.
+    # Strong reachability proof — bumps the chain past most heuristic
+    # ceilings so reviewer attention follows.
+    runtime_pts = 0
+    if runtime_confirmed_sinks and chain.get("sink", {}).get("qname") in runtime_confirmed_sinks:
+        runtime_pts = 15
+
+    total = sink_pts + src_pts + dir_pts + penalty + snip_pts + async_pts + runtime_pts
+    total = max(0.0, min(100.0, float(total)))
+
+    # ── Viability multiplicative adjustment (§4) ─────────────────────────
+    if ENABLE_SINK_VIABILITY and browser_context is not None and sink_id:
+        try:
+            from modules.js_analyzer.sink_viability import compute as _viab, viability_breakdown as _vb
+            factor = _viab(sink_id, browser_context)
+            if factor < 1.0:
+                breakdown = _vb(sink_id, browser_context)
+                chain["viability_factor"] = factor
+                chain["viability_breakdown"] = breakdown
+                total = max(0.0, min(100.0, total * factor))
+            else:
+                # Surface a benign breakdown so downstream consumers can
+                # tell viability ran (vs. silently no-op).
+                chain["viability_factor"] = 1.0
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("sink_viability_failed", sink_id=sink_id, error=str(exc))
+
+    return total
+
+
+def _evaluate_path_sanitizer(
+    *,
+    sink_id: str,
+    combined_snippet: str,
+    sanitizer_match: str,
+    target_dir: str | None,
+):
+    """Map the regex-matched sanitizer fragment to a taxonomy id and run
+    the registry. Returns ``SanitizerVerdict`` or None when we can't
+    classify.
+
+    Cheap fragment→id table — matches the well-known sanitizer ids in
+    ``taxonomies/sanitizers.json``.
+    """
+    from modules.js_analyzer.sanitizer_registry import evaluate
+
+    frag = sanitizer_match.lower()
+    if "dompurify" in frag:
+        sid = "sanitizer_dompurify"
+    elif ".sanitize(" in frag:
+        sid = "sanitizer_dompurify_namespaced"
+    elif "encodeuri" in frag:
+        sid = "sanitizer_encodeURIComponent"
+    elif "escapehtml" in frag or frag.endswith(".escape("):
+        sid = "sanitizer_lodash_escape"
+    elif "createhtml" in frag:
+        sid = "sanitizer_trustedtypes_createHTML"
+    else:
+        return None
+    try:
+        return evaluate(
+            sid,
+            call_snippet=combined_snippet,
+            target_dir=target_dir,
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("sanitizer_evaluate_failed", sid=sid, error=str(exc))
+        return None
 
 
 # ── main API ─────────────────────────────────────────────────────────────
@@ -254,6 +362,7 @@ def extract_findings(
                 },
                 "depth": path_obj.get("depth", len(nodes) - 1),
                 "path":  nodes,
+                "sanitisers_in_path": path_obj.get("sanitisers_in_path", []),
             })
 
     # ── 2b. Merge prototype-pollution gadget chains ──────────────────────
@@ -286,6 +395,33 @@ def extract_findings(
         if "source" in src_result:
             snippets[qname] = src_result["source"]
 
+    # Runtime evidence: load qnames of sinks observed firing in a
+    # headless-browser run (mock_backend sink_monitor merge). Best-effort
+    # — table may not exist on older DBs.
+    runtime_confirmed_sinks: set[str] = set()
+    try:
+        if callgraph and getattr(callgraph, "conn", None) is not None:
+            rows = callgraph.conn.execute(
+                "SELECT DISTINCT n.qualified_name FROM runtime_sink_hits r "
+                "JOIN nodes n ON n.id = r.sink_node_id "
+                "WHERE r.sink_node_id IS NOT NULL"
+            ).fetchall()
+            runtime_confirmed_sinks = {r[0] for r in rows if r and r[0]}
+    except Exception:
+        runtime_confirmed_sinks = set()
+
+    # Sprint-A (§4): load BrowserContext for this target if present.
+    # Fully optional — absence yields ``None`` and viability scoring is
+    # skipped. The skill driver ``bin/infer_browser_context.py`` writes
+    # this file.
+    browser_context = None
+    if ENABLE_SINK_VIABILITY and target_folder:
+        try:
+            from modules.js_analyzer.browser_context import load as _bctx_load
+            browser_context = _bctx_load(target_folder)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning("browser_context_load_failed", error=str(exc))
+
     # ── 4. Score, sort, cap ───────────────────────────────────────────────
     for chain in chains:
         if chain.get("vuln_class_hint") == "Prototype Pollution gadget chain":
@@ -293,7 +429,28 @@ def extract_findings(
             # so they sort comparably alongside taint-flow chains.
             chain["score"] = float(chain.get("score", 0.8)) * 100.0
         else:
-            chain["score"] = score_chain(chain, snippets)
+            chain["score"] = score_chain(
+                chain, snippets,
+                runtime_confirmed_sinks=runtime_confirmed_sinks,
+                browser_context=browser_context,
+                target_dir=target_folder,
+            )
+        if chain.get("sink", {}).get("qname") in runtime_confirmed_sinks:
+            chain["runtime_confirmed"] = True
+
+    # Sprint-A (§4): when viability runs, demote chains under the drop
+    # threshold so they fall out of the hot list — but keep them in the
+    # full chain set for downstream review.
+    if ENABLE_SINK_VIABILITY:
+        for chain in chains:
+            vf = chain.get("viability_factor", 1.0)
+            if vf < VIABILITY_DROP_THRESHOLD:
+                chain["score"] = min(chain.get("score", 0.0), 5.0)
+                chain.setdefault("annotations", []).append({
+                    "kind": "viability_demoted",
+                    "factor": vf,
+                    "threshold": VIABILITY_DROP_THRESHOLD,
+                })
 
     chains.sort(key=lambda c: c["score"], reverse=True)
 

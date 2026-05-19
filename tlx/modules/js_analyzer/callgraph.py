@@ -1171,3 +1171,80 @@ class CallGraph:
             "tags_sink":   tag_kinds.get("sink", 0),
             "tags_source": tag_kinds.get("source", 0),
         }
+
+    def snapshot_graph(
+        self,
+        out_path: Path | str,
+        *,
+        label: str | None = None,
+    ) -> dict:
+        """Write a content-addressable JSON snapshot of nodes + edges + tags.
+
+        Used by differential mode: compare two snapshots to find newly-
+        introduced reachable sinks across scan runs.
+
+        Schema (single JSON object):
+          {
+            "label":      str | null,
+            "created_at": ISO-8601 UTC,
+            "content_hash": sha256 of the sorted-key payload,
+            "stats":      dict (same shape as .stats()),
+            "nodes":      [{id, qname, file, kind}],
+            "edges":      [{from, to, kind}],
+            "tags":       [{node, taxonomy, kind, line}],
+          }
+        """
+        import datetime as _dt
+
+        out_path = Path(out_path)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        nodes = [
+            {"id": r[0], "qname": r[1], "file": r[2], "kind": r[3]}
+            for r in self.conn.execute(
+                "SELECT id, qualified_name, file, kind FROM nodes "
+                "ORDER BY id"
+            )
+        ]
+        edges = [
+            {"from": r[0], "to": r[1], "kind": r[2]}
+            for r in self.conn.execute(
+                "SELECT caller_id, callee_id, resolved_kind FROM edges "
+                "WHERE callee_id IS NOT NULL "
+                "ORDER BY caller_id, callee_id, line"
+            )
+        ]
+        tags = [
+            {"node": r[0], "taxonomy": r[1], "kind": r[2], "line": r[3]}
+            for r in self.conn.execute(
+                "SELECT node_id, taxonomy_id, kind, line FROM node_tags "
+                "ORDER BY node_id, taxonomy_id, line"
+            )
+        ]
+
+        payload = {
+            "nodes": nodes,
+            "edges": edges,
+            "tags":  tags,
+        }
+        content_serialised = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        content_hash = hashlib.sha256(content_serialised.encode("utf-8")).hexdigest()
+
+        envelope = {
+            "label":        label,
+            "created_at":   _dt.datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "content_hash": content_hash,
+            "stats":        self.stats(),
+            **payload,
+        }
+        out_path.write_text(
+            json.dumps(envelope, sort_keys=True, indent=2),
+            encoding="utf-8",
+        )
+        return {
+            "path":         str(out_path),
+            "content_hash": content_hash,
+            "node_count":   len(nodes),
+            "edge_count":   len(edges),
+            "tag_count":    len(tags),
+        }

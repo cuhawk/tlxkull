@@ -126,3 +126,143 @@ def load_default(repo_root=None):
     if dupes:
         raise ValueError(f"duplicate taxonomy ids after extras: {sorted(dupes)}")
     return t
+
+
+# ─── Sanitizer-adequacy reasoning ────────────────────────────────────────
+#
+# Each sink ID is mapped to one or more taint flavors. Sanitizer entries
+# in taxonomies/sanitizers.json carry a `clears` list of flavor categories.
+# A sanitizer is "adequate" for a sink iff the intersection of the
+# sanitizer's clears set and the sink's flavor set is non-empty.
+#
+# Flavor categories:
+#   html         — HTML element body context (innerHTML, document.write, …)
+#   attribute    — HTML attribute context (setAttribute on event/href/src)
+#   url          — URL context (location.href, fetch URL, navigation)
+#   code         — JavaScript-code context (eval, new Function, setTimeout str)
+#   sqli         — SQL query construction
+#   nosql        — NoSQL query (Mongo $where, etc.)
+#   command      — shell / OS command (exec, spawn)
+#   path         — filesystem path (fs.read, traversal)
+#   open_redirect — navigation away to attacker-controlled URL
+#   xxe          — XML parser fed user input
+#   prototype    — prototype pollution gadget reach
+#   ssrf         — server-side request forgery
+SINK_FLAVOR_MAP: dict[str, tuple[str, ...]] = {
+    # html / DOM XSS
+    "innerHTML_assign":               ("html",),
+    "outerHTML_assign":               ("html",),
+    "srcdoc_assign":                  ("html",),
+    "iframe_srcdoc_assign":           ("html",),
+    "document_write":                 ("html",),
+    "document_writeln":               ("html",),
+    "insertAdjacentHTML_call":        ("html",),
+    "dangerouslySetInnerHTML":        ("html",),
+    "jquery_html":                    ("html",),
+    "jquery_parseHTML":               ("html",),
+    "jquery_append":                  ("html",),
+    "jquery_before":                  ("html",),
+    "jquery_after":                   ("html",),
+    "jquery_prepend":                 ("html",),
+    "jquery_replaceWith":             ("html",),
+    "jquery_replaceAll":              ("html",),
+    "jquery_wrap_family":             ("html",),
+    "jquery_insertBefore_after":      ("html",),
+    "angular_inner_html_binding":     ("html",),
+    "angular_bypass_trust_html":      ("html",),
+    "angular_legacy_trustAs":         ("html",),
+    "angular_modern_bypassSecurityTrust": ("html",),
+    "vue_compile":                    ("html",),
+    "angular_compile":                ("html",),
+    "vue_v_html_sink":                ("html",),
+    "createContextualFragment":       ("html",),
+    "trusted_types_create_policy":    ("html",),
+    "dom_clobbering_or_fallback":     ("html",),
+    # attribute XSS
+    "event_handler_attr_assign":      ("attribute", "code"),
+    "setAttribute_dangerous_attr":    ("attribute",),
+    "setAttribute_dynamic_attr":      ("attribute",),
+    "jquery_attr_dangerous":          ("attribute",),
+    "jquery_selector_with_user_input": ("html",),
+    # url / navigation
+    "location_href_assign":           ("url", "open_redirect"),
+    "location_assign_call":           ("url", "open_redirect"),
+    "location_replace_call":          ("url", "open_redirect"),
+    "location_bare_assign":           ("url", "open_redirect"),
+    "frame_location_assign":          ("url", "open_redirect"),
+    "window_navigate_legacy":         ("url", "open_redirect"),
+    "window_open":                    ("url", "open_redirect"),
+    "script_src_assign":              ("url", "code"),
+    "script_text_assign":             ("code",),
+    # code execution
+    "eval_call":                      ("code",),
+    "eval_indirect":                  ("code",),
+    "new_Function":                   ("code",),
+    "setTimeout_string":              ("code",),
+    "setInterval_string":             ("code",),
+    "setImmediate_string":            ("code",),
+    "execScript_legacy":              ("code",),
+    "vm_runIn_family":                ("code",),
+    "vm_Script_ctor":                 ("code",),
+    "require_dynamic":                ("code",),
+    # network / SSRF
+    "fetch_call":                     ("url", "ssrf"),
+    "xhr_open_call":                  ("url", "ssrf"),
+    "axios_call":                     ("url", "ssrf"),
+    # backend
+    "sql_injection_sink":             ("sqli",),
+    "nosql_injection_sink":           ("nosql",),
+    "path_traversal_sink":            ("path",),
+    "child_process_exec":             ("command",),
+    "child_process_exec_sink":        ("command",),
+    "child_process_spawn_sink":       ("command",),
+    "electron_shell_openexternal":    ("url", "command"),
+    "electron_nodeintegration_sink":  ("code",),
+    # prototype pollution gadgets
+    "lodash_merge_set":               ("prototype",),
+    "jquery_extend_deep":             ("prototype",),
+    "object_setPrototypeOf":          ("prototype",),
+    "reflect_setPrototypeOf":         ("prototype",),
+    "computed_proto_assign":          ("prototype",),
+    # misc
+    "postMessage_send":               ("html", "code"),
+    "document_domain_assign":         ("html",),
+}
+
+
+def infer_sink_flavor(sink_id: str) -> tuple[str, ...]:
+    """Map a sink taxonomy_id to its taint flavor(s).
+
+    Returns an empty tuple for unknown sinks (caller treats this as
+    'unknown flavor' — sanitizer adequacy cannot be judged).
+    """
+    return SINK_FLAVOR_MAP.get(sink_id, ())
+
+
+def parse_sanitizer_clears(clears_csv: str | list | None) -> tuple[str, ...]:
+    """Normalize the sanitizer.clears field (CSV string OR list) to a tuple."""
+    if clears_csv is None:
+        return ()
+    if isinstance(clears_csv, (list, tuple)):
+        return tuple(str(c).strip() for c in clears_csv if str(c).strip())
+    return tuple(c.strip() for c in str(clears_csv).split(",") if c.strip())
+
+
+def sanitizer_covers_sink(
+    sanitizer_clears: str | list | None,
+    sink_id: str,
+) -> tuple[bool, list[str]]:
+    """Return (adequate, intersecting_flavors).
+
+    A sanitizer is adequate for a sink iff its `clears` set intersects
+    with the sink's inferred flavor set. Unknown sinks always return
+    (False, []) — caller treats this as 'cannot judge adequacy'.
+    """
+    clears = set(parse_sanitizer_clears(sanitizer_clears))
+    if not clears:
+        return False, []
+    flavors = set(infer_sink_flavor(sink_id))
+    if not flavors:
+        return False, []
+    overlap = sorted(clears & flavors)
+    return bool(overlap), overlap

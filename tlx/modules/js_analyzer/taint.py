@@ -5,6 +5,15 @@ returns confirmed source→sink flows within that function.
 
 Algorithm: line-ordered worklist on per-variable label sets. Conservative —
 no control-flow precision (if/else, loops are union).
+
+Property-level taint:
+    Variable names may be static dotted paths emitted by ast_extractor.js
+    (e.g. "req.body.user", "this.cfg.secret"). The solver treats these as
+    opaque distinct names — taint on "req.body.user" is independent of
+    taint on "req.body" or "req". This gives per-property precision when
+    the source code uses static member access; computed indexes
+    (req[x]) and aliasing (const b = req.body) still collapse to the
+    base identifier.
 """
 
 

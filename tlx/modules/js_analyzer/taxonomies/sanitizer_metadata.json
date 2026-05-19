@@ -1,0 +1,160 @@
+{
+  "_schema": "sanitizer_id -> version + config metadata. Consumed by sanitizer_registry.py. Additive sidecar to sanitizers.json.",
+  "_fields": {
+    "library": "npm package name (or null for built-in)",
+    "version_aware": "true if known_bypass_versions has entries",
+    "config_aware": "true if config_options non-empty",
+    "default_config_clears": "flavors cleared when called with no args",
+    "config_options": "list of {flag, weakens_when, downgrade_to, behaviour}",
+    "known_bypass_versions": "list of {version_range, bypass, downgrade_to, reference}",
+    "context_sensitivity": "if non-empty, sanitizer only clears in these contexts",
+    "regex_weakness_heuristic": "for regex sanitizers, signals that the regex is incomplete"
+  },
+
+  "sanitizer_dompurify": {
+    "library": "dompurify",
+    "version_aware": true,
+    "config_aware": true,
+    "default_config_clears": ["html", "attribute"],
+    "config_options": [
+      {"flag": "ALLOWED_TAGS", "weakens_when": "contains '*' or contains 'script' or contains 'iframe'", "downgrade_to": 0.05, "behaviour": "explicit allow of unsafe tags"},
+      {"flag": "ALLOWED_ATTR", "weakens_when": "contains on* attributes or 'srcdoc'", "downgrade_to": 0.1, "behaviour": "allows event-handler or srcdoc attributes"},
+      {"flag": "ADD_TAGS", "weakens_when": "contains 'script'", "downgrade_to": 0.05, "behaviour": "adds tags to default allowlist"},
+      {"flag": "ADD_ATTR", "weakens_when": "contains 'srcdoc' or on* attribute", "downgrade_to": 0.1, "behaviour": "adds attribute allowlist"},
+      {"flag": "FORBID_TAGS", "weakens_when": "missing common dangerous tags (no script/iframe/object/embed)", "downgrade_to": 0.4, "behaviour": "incomplete denylist"},
+      {"flag": "KEEP_CONTENT", "weakens_when": "true", "downgrade_to": 0.4, "behaviour": "preserves text of forbidden tags - downstream may re-render"},
+      {"flag": "RETURN_DOM_FRAGMENT", "weakens_when": "true", "downgrade_to": 0.6, "behaviour": "returns fragment; downstream insertion semantics depend on caller"},
+      {"flag": "RETURN_DOM", "weakens_when": "true", "downgrade_to": 0.6, "behaviour": "same as RETURN_DOM_FRAGMENT"},
+      {"flag": "SAFE_FOR_JQUERY", "weakens_when": "false in <2.4", "downgrade_to": 0.7, "behaviour": "jQuery handling pre-2.4 has mXSS path"},
+      {"flag": "WHOLE_DOCUMENT", "weakens_when": "true", "downgrade_to": 0.7, "behaviour": "preserves <html><head> wrapper, expands attack surface"},
+      {"flag": "ALLOW_UNKNOWN_PROTOCOLS", "weakens_when": "true", "downgrade_to": 0.3, "behaviour": "javascript: URI not blocked"},
+      {"flag": "USE_PROFILES", "weakens_when": "html: false AND svg: true (SVG without HTML still bypassable)", "downgrade_to": 0.5, "behaviour": "profile selection"}
+    ],
+    "known_bypass_versions": [
+      {"version_range": "<2.0.17", "bypass": "mXSS via Mutation breakout (CVE-2020-26870)", "downgrade_to": 0.4, "reference": "cure53/DOMPurify#345"},
+      {"version_range": "<2.2.9", "bypass": "form mutation bypass", "downgrade_to": 0.5, "reference": "cure53/DOMPurify#511"},
+      {"version_range": "<2.3.5", "bypass": "noscript namespace confusion", "downgrade_to": 0.5, "reference": "cure53/DOMPurify#578"},
+      {"version_range": "<2.4.0", "bypass": "SVG use href bypass", "downgrade_to": 0.5, "reference": "cure53/DOMPurify#700"},
+      {"version_range": "<3.0.6", "bypass": "nested form/template bypass", "downgrade_to": 0.4, "reference": "cure53/DOMPurify#923"},
+      {"version_range": "<3.1.3", "bypass": "node-comparison nested template confusion", "downgrade_to": 0.5, "reference": "cure53/DOMPurify#995"},
+      {"version_range": "<3.2.4", "bypass": "MathML+noscript mXSS chain", "downgrade_to": 0.5, "reference": "cure53/DOMPurify#1062"}
+    ]
+  },
+
+  "sanitizer_dompurify_namespaced": {
+    "library": "dompurify",
+    "version_aware": true,
+    "config_aware": true,
+    "default_config_clears": ["html", "attribute"],
+    "config_options_inherit_from": "sanitizer_dompurify",
+    "known_bypass_versions_inherit_from": "sanitizer_dompurify",
+    "high_fp_rate": true,
+    "note": "Bare .sanitize() may not be DOMPurify; only trust when accompanied by DOMPurify import evidence"
+  },
+
+  "sanitizer_xss_lib": {
+    "library": "xss",
+    "version_aware": true,
+    "config_aware": true,
+    "default_config_clears": ["html"],
+    "config_options": [
+      {"flag": "whiteList", "weakens_when": "{} (empty -> default allowlist used)", "downgrade_to": 1.0, "behaviour": "default whitelist applies"},
+      {"flag": "stripIgnoreTag", "weakens_when": "false", "downgrade_to": 0.7, "behaviour": "keeps escaped tag content"},
+      {"flag": "stripIgnoreTagBody", "weakens_when": "not 'script'", "downgrade_to": 0.6, "behaviour": "leaves script body text"},
+      {"flag": "allowList", "weakens_when": "contains 'iframe' or 'script'", "downgrade_to": 0.1, "behaviour": "explicit unsafe tag allow"}
+    ],
+    "known_bypass_versions": [
+      {"version_range": "<1.0.10", "bypass": "attribute value parsing bypass", "downgrade_to": 0.5, "reference": "leizongmin/js-xss issues"}
+    ]
+  },
+
+  "sanitizer_sanitize_html": {
+    "library": "sanitize-html",
+    "version_aware": true,
+    "config_aware": true,
+    "default_config_clears": ["html"],
+    "config_options": [
+      {"flag": "allowedTags", "weakens_when": "contains 'script' or 'iframe' or 'object'", "downgrade_to": 0.05, "behaviour": "explicit unsafe tag allow"},
+      {"flag": "allowedAttributes", "weakens_when": "contains '*': ['*'] or on* attributes", "downgrade_to": 0.1, "behaviour": "wildcard attribute allow"},
+      {"flag": "allowedSchemes", "weakens_when": "contains 'javascript' or 'data'", "downgrade_to": 0.1, "behaviour": "javascript: URI not blocked"},
+      {"flag": "allowVulnerableTags", "weakens_when": "true", "downgrade_to": 0.05, "behaviour": "explicit opt-in to unsafe parsing"}
+    ],
+    "known_bypass_versions": [
+      {"version_range": "<2.7.1", "bypass": "regex backtracking + style attribute bypass", "downgrade_to": 0.5, "reference": "apostrophecms/sanitize-html issues"}
+    ]
+  },
+
+  "sanitizer_lodash_escape": {
+    "library": "lodash",
+    "version_aware": false,
+    "config_aware": false,
+    "default_config_clears": ["html"],
+    "context_sensitivity": ["element_body_only"],
+    "note": "Encodes &<>\"'`/ only. Safe in HTML element body. NOT safe in attribute without quotes, href/src URLs, javascript: protocol, or inside <script>/style/event handlers."
+  },
+
+  "sanitizer_he_encode": {
+    "library": "he",
+    "version_aware": false,
+    "config_aware": true,
+    "default_config_clears": ["html"],
+    "context_sensitivity": ["element_body_only"],
+    "config_options": [
+      {"flag": "useNamedReferences", "weakens_when": "false", "downgrade_to": 1.0, "behaviour": "switches to numeric references; no security impact"},
+      {"flag": "allowUnsafeSymbols", "weakens_when": "true", "downgrade_to": 0.05, "behaviour": "explicit opt-out of HTML escaping"}
+    ]
+  },
+
+  "sanitizer_encodeURIComponent": {
+    "library": null,
+    "version_aware": false,
+    "config_aware": false,
+    "default_config_clears": ["url"],
+    "context_sensitivity": ["url_query_or_path"],
+    "note": "URL component context only. Does NOT clear javascript: protocol when placed at URL start - that requires a scheme check."
+  },
+
+  "sanitizer_Number_coerce": {
+    "library": null,
+    "default_config_clears": ["numeric"],
+    "context_sensitivity": ["numeric_only_sinks"],
+    "note": "Defuses chains whose sink expects a number; useless against html/url/code sinks (NaN coerces back to string 'NaN')."
+  },
+
+  "sanitizer_parseInt_parseFloat": {
+    "library": null,
+    "default_config_clears": ["numeric"],
+    "context_sensitivity": ["numeric_only_sinks"],
+    "note": "Same caveat as Number()."
+  },
+
+  "sanitizer_textContent_assign": {
+    "library": null,
+    "default_config_clears": ["html"],
+    "note": "True structural escape - DOM treats payload as text node. Safe in element body. Does NOT protect against subsequent re-serialization via innerHTML."
+  },
+
+  "sanitizer_createTextNode": {
+    "library": null,
+    "default_config_clears": ["html"],
+    "note": "Same as textContent assign. Safe unless caller re-serializes the resulting node via .outerHTML or insertBefore into a context that interprets it."
+  },
+
+  "sanitizer_event_origin_check": {
+    "library": null,
+    "version_aware": false,
+    "config_aware": false,
+    "default_config_clears": ["url"],
+    "regex_weakness_heuristic": "startsWith / indexOf / includes / endsWith on origin allows attacker prefixed/suffixed origin (foo.com.attacker.com) - downgrade.",
+    "note": "Only strict equality clears postMessage origin taint. Substring matches against origin are insufficient."
+  },
+
+  "sanitizer_trustedtypes_createHTML": {
+    "library": null,
+    "version_aware": false,
+    "config_aware": false,
+    "default_config_clears": ["html"],
+    "policy_body_weakness_heuristic": "policy createHTML body that returns input unchanged (return s; return input;) or applies only a single .replace() regex is a fake sanitizer - downgrade to 0.2.",
+    "note": "Trusted Types policy createHTML output trusted iff policy implementation actually sanitizes. Static analyzer should inspect policy body."
+  }
+}
