@@ -1,4 +1,4 @@
-import fp from "../../data/cdn_fingerprints.json";
+import fp from "../../data/cdn_fingerprints.json" with { type: "json" };
 
 export type CdnFamily = "cloudflare" | "akamai" | "fastly" | "cloudfront" | "varnish" | "nginx";
 

@@ -16,7 +16,7 @@ export async function sweepUrlParser(
     const dynamicSignal =
       probe.response.body.length > 0 &&
       !/^\s*[#\.]/.test(probe.response.body) &&
-      probe.response.status >= 200 && probe.response.status < 300;
+      (probe.response.status ?? 0) >= 200 && (probe.response.status ?? 0) < 300;
 
     if (cache.hit && dynamicSignal) {
       findings.push({

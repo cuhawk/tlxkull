@@ -33,7 +33,7 @@ export async function sweepCdnQuirks(
   }
 
   const purge = await sender.send({ method: "PURGE", url, headers: baseline.headers, body: "" });
-  if (purge.response.status >= 200 && purge.response.status < 400) {
+  if ((purge.response.status ?? 0) >= 200 && (purge.response.status ?? 0) < 400) {
     findings.push({
       id: `cp-${endpoint.id}-purge`,
       module: "cache-poison",

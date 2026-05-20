@@ -14,19 +14,19 @@ export async function runSmuggling(endpoint: Endpoint, opts: SmugglingOpts): Pro
   const findings: Finding[] = [];
 
   const cl = await probeClTe(rawSend, target);
-  if (cl.candidate) findings.push(mkFinding(endpoint, "cl-te", cl));
+  if (cl.candidate) findings.push(mkFinding(endpoint, "cl-te", cl as unknown as Record<string, unknown>));
 
   const tc = await probeTeCl(rawSend, target);
-  if (tc.candidate) findings.push(mkFinding(endpoint, "te-cl", tc));
+  if (tc.candidate) findings.push(mkFinding(endpoint, "te-cl", tc as unknown as Record<string, unknown>));
 
   const tt = await probeTeTe(rawSend, target);
-  for (const r of tt) if (r.candidate) findings.push(mkFinding(endpoint, `te-te:${r.obfuscation}`, r));
+  for (const r of tt) if (r.candidate) findings.push(mkFinding(endpoint, `te-te:${r.obfuscation}`, r as unknown as Record<string, unknown>));
 
   const hbh = await probeHopByHop(rawSend, target, ["Content-Length", "Cookie", "Authorization"]);
-  for (const r of hbh) if (r.differential) findings.push(mkFinding(endpoint, `hop-by-hop:${r.header}`, r));
+  for (const r of hbh) if (r.differential) findings.push(mkFinding(endpoint, `hop-by-hop:${r.header}`, r as unknown as Record<string, unknown>));
 
   const h2 = await probeH2Downgrade({ host: target.host, port: target.port });
-  if (h2.candidate) findings.push(mkFinding(endpoint, "h2-downgrade", h2));
+  if (h2.candidate) findings.push(mkFinding(endpoint, "h2-downgrade", h2 as unknown as Record<string, unknown>));
 
   return findings;
 }

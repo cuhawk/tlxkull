@@ -8,8 +8,8 @@ import { sweepParamCloaking } from "./param_cloaking.js";
 import { sweepUrlParser } from "./url_parser.js";
 import { sweepCfHeaderOverflow } from "./cf_header_overflow.js";
 import { sweepCdnQuirks } from "./cdn_quirks.js";
-import unkeyedHeaders from "../../../data/unkeyed_headers.json";
-import urlSuffixes from "../../../data/url_parser_suffixes.json";
+import unkeyedHeaders from "../../../data/unkeyed_headers.json" with { type: "json" };
+import urlSuffixes from "../../../data/url_parser_suffixes.json" with { type: "json" };
 
 export async function runCachePoison(
   sender: CaidoSender,

@@ -6,8 +6,8 @@ import { sweepPathAppend } from "./path_append.js";
 import { sweepDelimiter } from "./delimiter.js";
 import { sweepCacheBusterParam } from "./cache_buster_param.js";
 import { sweepTraversalInKey } from "./traversal_in_key.js";
-import extensions from "../../../data/static_extensions.json";
-import delimiters from "../../../data/delimiters.json";
+import extensions from "../../../data/static_extensions.json" with { type: "json" };
+import delimiters from "../../../data/delimiters.json" with { type: "json" };
 
 const TRAVERSAL_INNERS = ["/api/auth/session", "/api/user", "/profile", "/me"];
 
