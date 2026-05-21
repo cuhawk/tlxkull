@@ -1,0 +1,53 @@
+Hello! Today's video will be about cache poisoning. First, we'll take a look how it was possible to
+redirect all our abuse reports on GitHub to completely innocent victim and later we'll see
+how Firefox updates could be completely disabled. The whole video is based on an excellent research
+done by James Kettle. Links to his white paper and his talk are in the description. Enjoy!
+Let's start by explaining why do we even use cache. When a user opens a website, the request travels
+like this through the reverse proxy to the application server. Sometimes the application
+server has to process the request before sending the response. However, many times the request is
+very simple and can be the same for all users, for example index.html. In such case, the same response
+can be returned every single time without consuming a precious time of application server. That's exactly
+what shared cache does and make sure to not confuse it with the local cache that is stored inside your
+browser. Sometimes the server tells us if the response comes from cache or not by using hit or miss in
+headers. If not, we can determine it based on the time because the response from the cache will be much
+quicker. But how does it actually cache it? The application server sends headers that tell the cache
+server whether it can store a specific response or not. For example, a request to a resource that only we have
+access to must never be cached. But when headers allow it, the cache server saves the response before sending
+it to this particular user and then it stores it for a specified amount of time. Then for each request, it has to
+decide whether he can use a cached response or he has to forward the request to the application server.
+That's when a cache key is being used. It's a signature of a request based on which the cache server decides
+what to do. A simple cache key could look like this. And if all those parameters match, then the cache
+server decides that it can respond with a saved response. The inputs that are included in the cache key are called
+kit inputs and all the other ones are unkid inputs. And the idea behind web cache poisoning attacks is to find
+an unkid input that will be ignored by the cache server but will be considered by the application server.
+For example, many PHP applications support X original URL header. So both requests on the screen will be treated
+the same way by the PHP server but they will have completely different cache key. In such case, we can poison
+the cache using such a request. So when a legitimate user tries to visit index.html, he will get a response
+response from cache from the path specified by us. But where is the impact, you may ask. The easy way of
+exploiting such issues is to increase the impact of reflected cross-site scripting or unexploitable XSSs.
+But more often than not, you will not have an XSS and in such case, you need to get creative. Let's see how
+James got creative on GitHub's website. This is a standard get request. Parameters are where they always
+are, which is in the URL. And how about this request? It seems valid, but do you think that web application
+servers will actually use those parameters? Turns out that some frameworks do and one of them is Ruby on
+Rails, which was used to develop GitHub website. If you send such requests, then GitHub will prioritize the
+parameters from the body, but VarnishCacheServer will use the parameter from the URL in its cache key.
+This way you can poison any parameterized request with arbitrary values. What could you do with it on
+GitHub? For example, there is a report abuse functionality and you could poison the URL that
+would be used to report your account and redirect the abuse report to completely innocent victim.
+You could also manipulate filters, deny access to topics or disable the raw button on files. GitHub paid for
+this report. Many times you can use cache poisoning to cause denial of service. This is often not very
+impactful and not very welcome by triageurs. However, in my next example, you could disable updates for
+Firefox browser, which would be critical in case if there would be a fix for zero day vulnerability,
+keeping all the users insecure. URI normalization is a process that is supposed to cache and normalize
+all the URIs that are written slightly differently, but at the end meet the same address.
+For example, the process of normalization might include URL decoding the address. And Firefox servers
+use Nginx for caching. And the problem was that in such case, Nginx would forward the request to the
+application server without any normalization while the cache key is being URL decoded. It means that both of
+these requests would have the same cache key. But only the first one is valid. It's sent every time you start up
+your Firefox browser to check if there are any updates available, while the second one without URL decoding
+will be considered completely invalid path. In such case, the server, instead of returning a 404 not found,
+it will redirect the user to main Mozilla page. And if you poison the cache this way, all the requests
+that are meant to check for updates will not actually check for updates at all. And Firefox paid $5,000 for this vulnerability.
+And that's it for today's video. If you like the cache poisoning attacks, go see James' talk on this topic.
+The link is in the card as well as in the description down below. And if you like my explanations,
+go watch other videos on my channel. But for now, thanks for watching and goodbye.

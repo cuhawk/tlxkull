@@ -1,0 +1,209 @@
+Over the years, I've seen multiple 5-digit bounties awarded for request smuggling bugs,
+so naturally I'd like to find one myself.
+But to be honest, I never did anything more than just running a tool like Request Smuggler.
+So to learn how people are actually earning money of request smuggling, I extracted all
+the reports from the internet and I studied them.
+In this video, I will show you what is the most common root cause of request smuggling
+and also what are the potential areas for future research.
+Enjoy!
+The most common category that I've noticed was white space characters in content length or
+transfer encoding headers.
+So we can see big bounties awarded in this category.
+For example, this one in Apple.
+A quick recap of what request smuggling even is.
+You have a few different ways to tell the server what is the length of your request.
+The most common that we see when we send requests from the browser is the content length header,
+which just tells the server how long our request is.
+But there's also transfer encoding chunks header, which sort of tells the length of the next chunk.
+And then until it meets zero, it means there are more chunks to be sent.
+And the thing is, even though we don't see it sent from the browsers, usually this has the priority over the content length header.
+And most of requests smuggling bugs occur because one of the component, either the front end or the back end,
+incorrectly interprets these requests and either prioritizes them correctly or doesn't see one of these headers.
+So this category white space characters in CL or TE headers.
+It means to obstruct one of these headers, usually transfer encoding from one of the components.
+And I've seen everything I've seen spaces, stats before the header, before the column, after the column, after the value, just everything.
+In this case, we have the new line just after the header name transfer encoding.
+It actually and then we have the space here, which is quite important because it looks like a invalid HTTP request,
+like there's a header name with no column here and here the line starts with the space.
+It looks like an invalid line, but it actually is a multi-line header because when the header line starts with the space,
+it means that what follows is the continuation of the previous header.
+I don't know if the specification allows the column to be in the new line,
+but if you would have, for example, just for encoding column chunked and then in the next line,
+you would have chunked again, it would be a valid continuation of the value.
+So this bug makes a lot of sense.
+And just one of the components beat treat this differently than the other component,
+which led to to request smuggling here in Apple, for which there was $36,000 of reward.
+So quite a, quite a great bug.
+And as I told you, I've seen many different variations of different new line characters, tabs, spaces,
+OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, OX09, O
+of these headers. That's such a hard word. But in most of these reports like here, the priorities were straight in all components. I assume all components would prioritize transfer encoding over the content length header. Just one component did not see this as a valid header. And in these 13 reports that I have here,
+there was just invalid order just when there was both transfer encoding and content length header, the content length would get the priority, which is not what the specification says. So it is bad. A lot of these reports are from the sort of some time ago for like here 2019. This is where the original article, well, not the original, the article by James Kettle
+about HTTP desync being reborn was published. And some of these reports where you know, you just send both headers, the server prioritizes the incorrect one. And that's the bug. And most newer request smacking bugs that I've seen required something more, like required either the obfuscation by those white space characters that I've shown you before,
+or something else. Or something else. We go to the next group, which is multiple transfer encoding or CTL or transfer encoding or content length headers.
+Here, for example, we have a request like this with one content length and two transfer encoding headers. Just one of the transfer encoding is invalid.
+So I assume what happens is one component only takes the last value of transfer encoding, sees that it is invalid. So it instead decides to use the content length header.
+And the other component, sees either just takes the first value of the header when there are multiple headers with the same name, or maybe combine these values together.
+But one way or another, it does see the transfer encoding header. And the component that sees that the chunk transfer encoding sees the request end here and sees this being the next request.
+And then this victim's request, and then this victim's request, which can be a random request from another user is like the continuation of this request.
+While the other component sees this header, I assume 69 ends somewhere here, and just sees this as the next header as it expects.
+So this this is what caused this back. We only had seven of these, but that's what what caused them.
+And before you ask me if I can share all these reports, I am always sharing these reports in BBR Premium Archive.
+The article is generally for BBR Premium subscribers for the members, and the free video is usually based on about one third of the case study.
+And the database is also in the paid version. And that's where you can find it is the first link in the description.
+The next category that I have is ignoring the TE or CEL headers.
+And we can see from seven reports that I have in this category, four are from James Cattle's article.
+The thing is, I try to extract separate reports from his articles to sort of get especially when when the exploitation was actually a bit different.
+But often he wouldn't mention the bounty. So I don't know the bounties for this.
+I only have one bug with with the bounty in this category.
+What does it mean to ignore the content length header? The thing is, it's the the newer research, the browser powered decing attacks.
+So some endpoints would just ignore the content length header, even if you even if you send it.
+So doesn't matter if the content length is zero or if it has an actual value with it.
+The the server would just not look at this value.
+So here we have the the case where we use the content length of 311 in this case.
+So this whole second request should be the the body of the first request.
+But the server because it just redirects, it doesn't actually need the body, but it should still consume it.
+It ignores it. And that's why it just sees two different requests and issues two different responses.
+And the the great thing about this variation of of request smuggling or or desync is that you can send these two perfectly valid requests or to be more precise.
+This one big request with this as a body.
+You can send this from the browser, which allows client side attacks, which allows, you know, to attack the victim inside the browser.
+And this is a great bug.
+And I think usually you're able to achieve the access with this because you can, as you can see, you can just in this case, you can just issue a request to attackers URL because we can see that we have Azure victim and Azure attacker.
+So a different host serving the XSS, but the browser doesn't know it's a different house.
+The browser just thinks it's a one one request with the response.
+One response where these are the headers and this is the body.
+So a great research and a great, great bugs as well.
+Then for request, we have not closing the connection, which I have the example here.
+The thing is, when you send something invalid and the server denies it, it should also close the connection to sort of not allow you to send more data.
+So if you send the request that's too large, if you send an invalid header, if you do things like this and the server decides it's a bad request, it should close the connection because when it doesn't, it leads to strange things happening.
+Like here, we actually have this article has like five different bugs, but this particular one, you just send a request that's too large.
+The server replies that it's an invalid HTTP request, but it keeps the connection open.
+And what follows, so you send the exact value of bytes that makes the request too large and straight after that, you send the request to the request.
+And straight after that, it will consider the next thing, a new request, even if the previous request was not finished.
+So you can just sort of continue talking to the server, even though you send a request that was too large, which, yeah, it led to four bugs.
+These behaviors, not closing the connection.
+So it is something to watch out for.
+Then I have as well four bugs in the HTTP 2 version.
+Again, three of those come from the article by James Cattle.
+And I was also sort of wondering, I'm still wondering what's the reason that sort of this great research does not lead to a lot of other bugs being found or at least other bugs being published, because maybe people are making a ton of money on this and they are not publishing it.
+But yeah, it's strange.
+But yeah, it's strange.
+There's a great research.
+There are great bugs.
+And then there is nothing.
+And I wonder what, what happens.
+These bugs.
+These bugs.
+This is another article.
+This one is from 21, 2021.
+And what happened here was the downgrading from HTTP 2 to HTTP 1.
+So the server would use HTTP 2 when talking with the client.
+But then when the front end would talk with the back end, it would use HTTP 1 again.
+And normally it's not a problem, but it becomes the problem when like here it also forwards a very important header like content length without checking if it's a valid one or not.
+So you send, this is a sort of HTTP 2 syntax because in HTTP 2 the content length header is not really used because it's a binary protocol and it doesn't use this to decide where does the request finish.
+So you just send this as a body.
+But then when front end would be talking with the back end with HTTP 1, it does need the content length header or the transfer encoding channel doesn't matter.
+And then it just uses the content length sent by the client without verifying it.
+So the back end would think the request ends here.
+And this is a new request, which is of course not true.
+And this led to request smuggling.
+We had 20K Netflix, 10K Verizon, 7K Verizon, 7.5K Basecamp, and surely more bounties just by James Heddle because he doesn't disclose all the bugs that he's discovered.
+And I wonder what other ones are out there.
+Then we have fun ones with Node doing fun stuff.
+I have three reports in the only using new line or carriage return characters as a line terminator.
+There was a few, there were a few fun reports with Node doing strange stuff.
+In this case, Node decided.
+So in generally, HTTP 1 relies heavily on text parsing and on new lines because it separates different headers and the body and the end of the request using where the new lines are.
+And the new lines actually two characters usually carries return and line feed.
+So, and this is very important, but Node for some reason decided is enough.
+If you just have the carriage return, which is usually denoted as backslash error or percent zero D.
+And here, no other server would consider this being a new line, but Node did.
+And it did consider this to be a valid transfer encoding chunked header, which of course is exactly what you need to de-sync the backend with the frontend.
+And these were reported $1,800 from the internet back bounty.
+The other one is quite similar as well, but we'll go to the next category where the server would treat not a literal chunked transfer encoding as chunked transfer encoding.
+For example, this is a fun one.
+I did publish a video.
+I will link it in the description about this request smuggling back with the AJP protocol.
+It was a CTF task with the CVE.
+And the thing was the code was just only looking specifically for the chunked transfer encoding chunked and nothing else would work.
+But the other component or the other piece of code of the same component would treat a value like transfer encoding chunked chunked or chunked comma chunked as a valid transfer encoding chunked header,
+which was also enough to de-sync the server.
+And it was it was a fun exploiting this one.
+It was quite hard because the AJP protocol is something you probably don't know about, but it was very, very fun.
+The next group, CRLF injection, also free bugs in this category.
+And here it's something a bit different because you do not.
+It's not like most of the other reports where you sort of send the transfer encoding and content length header and one component sees different thing than another.
+In this case, you just send one request.
+But the front end when forwarding the request messes up with the decoding of this request and actually makes it like it's two different requests, which leads to request smuggling as well.
+I'm actually surprised this is not more common, especially I published an article about a great talk about this bug.
+And I'm quite surprised how easy it is to misconfigure Nginx to make this possible.
+And I'm quite surprised this is not more common because of this.
+But I only saw three reports of this.
+This particular one was rewarded twelve and a half thousand dollars.
+Now we go into something that I think is a great area for research.
+And it's something I didn't know about before doing this case study.
+There is a thing called trailer, which means when you have a chunked encoding.
+So it's it's this.
+So you have the one chunk of length five here, the other chunk of length two here.
+Don't be mistaken.
+There's no space here in this like in here.
+In the beginning, I thought it's the leading space type of bug.
+But it looks like this because of the line number here, which I think shouldn't be like this.
+But it is not the case.
+There is no space here.
+And the trailer of an HTTP request just means when you have the chunked body encoding,
+you can still have some headers after or trailer headers.
+I'm not sure if they are treated exactly like normal headers.
+I think they shouldn't.
+So I did.
+Of course, I've never seen this being used by an actual application.
+And I also didn't see this in any other bug apart from these two ones.
+Both both these reports were 14, $4,600.
+It's a bug in Apache.
+And I'm 100% sure this is such a niche feature of HTTP that it is a good area of research because there is no way that all the other servers consume this trailer correctly because of how rare it is.
+Then the next category is H2C upgrade.
+I've only saw two reports of this in one blog post by AssetNode, which is always a great thing.
+I also saw this in a CTF task and it looked it's not that hard to misconfigure your server to be able to do this, but we didn't see more of this in the in the wild.
+The thing is, you can do the upgrade of the HTTP one to HTTP two, the way that you bypass the reverse proxy.
+And then, of course, you can bypass the WAF, you can bypass the access control that's on the sort of middle layer, things like this.
+So it's a fun bug.
+I've tried it a few times.
+There is a tool H2C smuggler on GitHub, which does this.
+Unfortunately, I haven't found this bug, but it looks like something that's not the attack scenario is quite reasonable.
+So I'm sure it's always worth checking for this when you're testing a target and when this is useful.
+And then we have two last categories with only one bug each.
+Here is another fun one with Node doing strange stuff.
+Namely, it would replace the carriage return.
+So the SDS, as I've said, a new line is usually carried return line feed characters.
+And for some reason, Node would replace the carriage return with the dash, which seems weird to me.
+I don't know why they did this.
+But this is crucial because the content length header normally contains the dash between the word content and the word length.
+So we should send the request like this.
+I think it actually should be denied because I don't think this character is allowed in the header name, but it doesn't matter.
+But one way or another, a component that would see this and accept this would definitely not consider this being a valid content length header.
+But then Node would sort of decode the CR to a hyphen, which would make this a valid content length header.
+So the front end would see these as two different requests.
+The back end would see this as one request with the body length of 42, which I assume is up to here.
+So this would be a new request.
+It's quite a fun one.
+I don't know why Node does this stuff, but Node was definitely something that was fun during this case study to see the bug like this.
+It was only rewarded $500 by the internet bug bounty, but it's still a fun bug.
+And the last category, which I also think is a good area for some research is chunk extensions, which I also up to recently, I didn't know about.
+I just learned, I think it was the motivation for me to do this case study.
+I saw a talk about these bugs, the HTTP garden tool for testing different HTTP servers.
+And I learned what a chunk extension is, and I think this pushed me to do this case study.
+So when you have the chunk transfer encoding, which is this, you can also have chunk extensions.
+So after the column, you can have some parameters here that obviously probably no one in the whole world ever uses.
+But that's exactly what we as security professionals, we want to have a feature that nobody knows about.
+But HTTP libraries and servers have to support.
+So here there was also some some case where a new line character in the in the chunk shouldn't be accepted, but can be accepted.
+And it led to this and bugs.
+Also a fun one, also a good, great area for research.
+Because again, this feature is not used a lot.
+So so maybe this is something that not all the servers get right.
+So if you're looking for areas for further research, I would definitely look at trailer parsing and chunk extensions.
+They look like very good candidates for bugs to me.
+That's it for this video.
+Remember that the full case study is in the BBR premium archive.
+But if you want to watch another free case study video, check out this playlist because I've already published nine of them.
+For now, thank you for watching and goodbye.
+Goodbye.

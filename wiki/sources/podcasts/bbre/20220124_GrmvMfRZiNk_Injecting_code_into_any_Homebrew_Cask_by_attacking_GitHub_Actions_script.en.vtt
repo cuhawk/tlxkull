@@ -1,0 +1,316 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.080 --> 00:00:05.680
+Hello! In this episode of Bug Bounty Reports&nbsp;
+Explained, I will show you an amazing,&nbsp;&nbsp;
+
+00:00:05.680 --> 00:00:12.320
+out of the box hacking technique that could lead&nbsp;
+to compromising anyone who uses Homebrew Casks to&nbsp;&nbsp;
+
+00:00:12.320 --> 00:00:19.200
+install stuff on MacOS or Linux. The vulnerability&nbsp;
+was found by RyotaK. Link to his blogpost is in&nbsp;&nbsp;
+
+00:00:19.200 --> 00:00:27.200
+the description. Enjoy! Homebrew is a package&nbsp;
+manager for MacOS - something like apt for Linux.&nbsp;&nbsp;
+
+00:00:27.760 --> 00:00:36.000
+To install a cask, you run this command. Cask&nbsp;
+was originally an independent brew extension&nbsp;&nbsp;
+
+00:00:36.000 --> 00:00:43.120
+but now it's quite integrated with the tool.&nbsp;
+At the moment, there are almost 4,000 casks.&nbsp;&nbsp;
+
+00:00:43.120 --> 00:00:49.760
+Each is defined by a file which looks like this&nbsp;
+and is stored in the official homebrew repository&nbsp;&nbsp;
+
+00:00:49.760 --> 00:00:56.880
+on GitHub. Among other properties, there was&nbsp;
+version of the cask and its checksum. You can&nbsp;&nbsp;
+
+00:00:56.880 --> 00:01:04.880
+imagine that managing manually updates of 4,000&nbsp;
+casks is a very time-consuming job. So homebrew&nbsp;&nbsp;
+
+00:01:04.880 --> 00:01:12.720
+team automated it using GitHub Actions. It's&nbsp;
+a platform integrated with GitHub for handling&nbsp;&nbsp;
+
+00:01:12.720 --> 00:01:20.560
+things like running tests or deploying your code.&nbsp;
+In Homebrew, there was a script that automatically&nbsp;&nbsp;
+
+00:01:20.560 --> 00:01:27.200
+merged the pull request if it only changed the&nbsp;
+version and the checksum of the cask. Let's&nbsp;&nbsp;
+
+00:01:27.200 --> 00:01:34.000
+consider an attack scenario where we would like&nbsp;
+to inject our code into a cask configuration file.&nbsp;
+
+00:01:34.560 --> 00:01:41.200
+Although it's mostly used for storing static&nbsp;
+information, it's still a ruby file so injecting&nbsp;&nbsp;
+
+00:01:41.200 --> 00:01:49.680
+code here would lead to an RCE on the machine of&nbsp;
+anyone who installs the cask. But before that your&nbsp;&nbsp;
+
+00:01:49.680 --> 00:01:56.960
+pull request had to go through multiple checks.&nbsp;
+Some of the requirements like modifying only one&nbsp;&nbsp;
+
+00:01:56.960 --> 00:02:03.440
+file or not moving, creating or deleting files are&nbsp;
+easy to meet and we will not focus on them here.&nbsp;&nbsp;
+
+00:02:04.720 --> 00:02:12.240
+Two rules that are most relevant for us are that&nbsp;
+count of added and deleted lines must be the same&nbsp;&nbsp;
+
+00:02:12.240 --> 00:02:19.520
+and all changed lines must match these regexes.&nbsp;
+So only versions and checksums could be changed.&nbsp;&nbsp;
+
+00:02:20.800 --> 00:02:26.800
+At this point, you might be thinking that it's&nbsp;
+yet another bug that originates from an incomplete&nbsp;&nbsp;
+
+00:02:26.800 --> 00:02:35.360
+regex but it's not. It's much more interesting.&nbsp;
+Instead, it's another case where security of&nbsp;&nbsp;
+
+00:02:35.360 --> 00:02:41.920
+millions of users relies on a relatively small&nbsp;
+repository that it will do what it's supposed to&nbsp;&nbsp;do.
+
+00:02:41.920 --> 00:02:50.880
+Because to know what were the changes in the&nbsp;
+files, GitHub Actions script used this git_diff&nbsp;&nbsp;repository.
+
+00:02:50.880 --> 00:02:58.880
+Because you can run `git diff` command&nbsp;
+but it only returns text and to know if the pull&nbsp;&nbsp;
+
+00:02:58.880 --> 00:03:06.480
+request should be auto merged or not, you must&nbsp;
+know exactly what was inside the commits.
+
+00:03:06.480 --> 00:03:14.080
+git_diff is a ruby library that parses the text from `git&nbsp;
+diff` command and returns concrete information&nbsp;&nbsp;
+
+00:03:14.080 --> 00:03:19.680
+about how many files were changed, what were&nbsp;
+those files and what were those changes and so on.&nbsp;&nbsp;
+
+00:03:21.200 --> 00:03:28.880
+The hunter decided to try to hide malicious&nbsp;
+changes from this git_diff script. It takes&nbsp;&nbsp;
+
+00:03:28.880 --> 00:03:34.960
+the input from `git diff` command and it's using&nbsp;
+text parsing and regexes to extract information.&nbsp;&nbsp;
+
+00:03:35.840 --> 00:03:40.480
+This is an example `git diff`&nbsp;
+after changing one line in a file.
+
+00:03:42.720 --> 00:03:49.440
+Importantly, even though the file was still in&nbsp;
+the same location, `git diff` prints those file&nbsp;&nbsp;
+
+00:03:49.440 --> 00:03:58.080
+names with a/ or b/ prepended to differentiate&nbsp;
+between versions of the file. So git_diff library&nbsp;&nbsp;
+
+00:03:58.080 --> 00:04:04.640
+first parsed this first line, it also checked if&nbsp;
+any files were added or deleted and so on and so&nbsp;&nbsp;on...
+
+00:04:04.640 --> 00:04:12.320
+There were quite a lot of regexes like this.&nbsp;
+But for us, the interesting part starts here.&nbsp;&nbsp;
+
+00:04:13.680 --> 00:04:21.200
+If the line starts with +++ followed by&nbsp;
+b/filepath, it means that the following changes&nbsp;&nbsp;
+
+00:04:21.200 --> 00:04:29.120
+added lines to this file. If it starts with&nbsp;
+--- followed by a/filepath, it means those&nbsp;&nbsp;
+
+00:04:29.120 --> 00:04:36.240
+lines were deleted from this file. Then, there&nbsp;
+is information about those lines and then there&nbsp;&nbsp;
+
+00:04:36.240 --> 00:04:42.480
+are contents of the file. If the line is not&nbsp;
+prepended by anything, it means it's unchanged.&nbsp;&nbsp;
+
+00:04:42.480 --> 00:04:47.760
+If there is a minus it means it was deleted&nbsp;
+and if there was a plus it means it was added.&nbsp;&nbsp;
+
+00:04:49.120 --> 00:04:55.040
+Now, let's see what happens when I make&nbsp;
+this change - where I add a line that starts&nbsp;&nbsp;
+
+00:04:55.040 --> 00:05:06.800
+with ++. It was an added line so in `git diff` one&nbsp;
+plus sign is prepended before this line. It looks&nbsp;&nbsp;
+
+00:05:06.800 --> 00:05:13.440
+like this and we can see by the color that&nbsp;
+it was added to the file. However, git_diff&nbsp;&nbsp;
+
+00:05:13.440 --> 00:05:18.960
+ruby library did not work on colors&nbsp;
+- it only saw the raw text input.&nbsp;&nbsp;
+
+00:05:20.080 --> 00:05:27.840
+So when seeing this output, it didn't consider it&nbsp;
+an added line but instead, it matched this regex.&nbsp;&nbsp;
+
+00:05:27.840 --> 00:05:35.760
+So git_diff thought it's an information that some&nbsp;
+lines were added to this file but since there are&nbsp;&nbsp;
+
+00:05:35.760 --> 00:05:42.480
+no lines that were actually changed, so no lines&nbsp;
+prepended by a single minus or a single plus,&nbsp;&nbsp;
+
+00:05:43.040 --> 00:05:50.560
+it detects 0 file changes. This gives you the&nbsp;
+ability to add almost arbitrary lines to ruby&nbsp;&nbsp;
+
+00:05:50.560 --> 00:05:58.160
+files in the official Homebrew repository. Almost&nbsp;
+arbitrary because there were still a few problems.&nbsp;&nbsp;
+
+00:05:59.360 --> 00:06:03.760
+First, line in the file must&nbsp;
+start with a double plus sign.&nbsp;&nbsp;
+
+00:06:04.880 --> 00:06:13.040
+What does it mean in ruby? Not much actually. Plus&nbsp;
+and minus before a variable act as just sign of a&nbsp;&nbsp;
+
+00:06:13.040 --> 00:06:19.360
+number. So if you have a positive number, putting&nbsp;
+a minus in front of it will make it negative.&nbsp;&nbsp;
+
+00:06:19.360 --> 00:06:25.920
+But putting a plus, two minuses or two&nbsp;
+pluses will not affect it. Importantly,&nbsp;&nbsp;
+
+00:06:25.920 --> 00:06:33.520
+it will not throw an error, even if the expression&nbsp;
+is a string. Another problem that you must solve&nbsp;&nbsp;
+
+00:06:33.520 --> 00:06:41.360
+is that the changed file must be inside Casks/&nbsp;
+folder. When git_diff library sees multiple lines,&nbsp;&nbsp;
+
+00:06:41.360 --> 00:06:48.400
+the next one overrides the previous one so you can&nbsp;
+have anything you want in the first line as long&nbsp;&nbsp;
+
+00:06:48.400 --> 00:06:56.400
+as the second will match this regex which will&nbsp;
+be a file inside Casks/ folder. Unfortunately,&nbsp;&nbsp;
+
+00:06:56.400 --> 00:07:03.040
+it's still not the end - it's only half of the&nbsp;
+problems. Because due to another bug in git_diff,&nbsp;&nbsp;
+
+00:07:03.040 --> 00:07:10.400
+the line with the filename must not use quotes.&nbsp;
+When ruby sees this code, it tries to evaluate&nbsp;&nbsp;
+
+00:07:10.400 --> 00:07:17.120
+variable b, variable Casks and then call&nbsp;
+the rb function on the variable iterm2.&nbsp;&nbsp;
+
+00:07:18.400 --> 00:07:24.800
+To avoid exceptions of undefined objects, here&nbsp;
+the hunter defined all these in the previous line.&nbsp;&nbsp;
+
+00:07:25.760 --> 00:07:33.280
+This is the syntax in ruby which you can use to&nbsp;
+embed ruby code inside a string. And finally,&nbsp;&nbsp;
+
+00:07:33.280 --> 00:07:39.280
+the last problem that you have to solve is&nbsp;
+Rubocop - a static code analyzer and formatter.&nbsp;&nbsp;
+
+00:07:39.920 --> 00:07:46.560
+It didn't quite like the style of the injected&nbsp;
+code. It knows that exploits must be elegant.&nbsp;&nbsp;
+
+00:07:47.280 --> 00:07:53.040
+Although you could disable it in one line by&nbsp;
+adding a comment, you couldn't use that in&nbsp;&nbsp;
+
+00:07:53.040 --> 00:07:59.440
+the second line because then it was parsed as&nbsp;
+the part of the filename. What the hunter did&nbsp;&nbsp;
+
+00:07:59.440 --> 00:08:05.520
+was adding a third line in between with&nbsp;
+an if instruction and the comment. Then,&nbsp;&nbsp;
+
+00:08:05.520 --> 00:08:12.880
+the next slide was treated as the part of the&nbsp;
+if expression and Rubocop also ignored it. This&nbsp;&nbsp;
+
+00:08:12.880 --> 00:08:18.560
+is the final payload. With approval of the&nbsp;
+Homebrew security team, the pull request&nbsp;&nbsp;
+
+00:08:18.560 --> 00:08:24.640
+was approved and the change was merged to&nbsp;
+iterm2 cask which is the second most popular.&nbsp;&nbsp;
+
+00:08:24.640 --> 00:08:30.960
+It actually worked too well because not only was&nbsp;
+this printed during the installation of this one&nbsp;&nbsp;
+
+00:08:30.960 --> 00:08:38.480
+cask but also during the cleanup so some users&nbsp;
+noticed that immediately. The change was quickly&nbsp;&nbsp;
+
+00:08:38.480 --> 00:08:44.480
+reverted and the bug was triaged. Homebrew&nbsp;
+only has a vulnerability disclosure program&nbsp;&nbsp;
+
+00:08:44.480 --> 00:08:51.200
+so no bounty was awarded for this report.&nbsp;
+As for the fix, review and automerge actions&nbsp;&nbsp;
+
+00:08:51.200 --> 00:08:57.680
+are no longer in the repository. That's it for&nbsp;
+this video. If you are a member of BBRE Premium,&nbsp;&nbsp;
+
+00:08:57.680 --> 00:09:02.400
+check out the member platform because&nbsp;
+soon, I will publish hands-on labs and&nbsp;&nbsp;
+
+00:09:02.400 --> 00:09:07.840
+you will be able to practice this vulnerability&nbsp;
+yourself. If you'd like to subscribe check out&nbsp;&nbsp;
+
+00:09:07.840 --> 00:09:14.080
+premium.bugbountyexplained.com. Anyway if you've&nbsp;
+learned something new today, leave a like and&nbsp;&nbsp;
+
+00:09:14.080 --> 00:09:21.200
+recommend this video to someone who will also like&nbsp;
+this. For now, thank you for watching and goodbye!
+

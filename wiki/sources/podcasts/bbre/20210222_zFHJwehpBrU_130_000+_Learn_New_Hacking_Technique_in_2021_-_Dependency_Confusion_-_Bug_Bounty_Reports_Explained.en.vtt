@@ -1,0 +1,351 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.480 --> 00:00:06.960
+Hello! In today's Bug Bounty Report Explained, you&nbsp;
+will learn dependency confusion. It's a new hacking&nbsp;&nbsp;
+
+00:00:06.960 --> 00:00:14.960
+technique that was revealed in 2021 and earned&nbsp;
+the researcher much more than $130k.&nbsp;&nbsp;
+
+00:00:14.960 --> 00:00:20.160
+The good news is that there are still hundreds of&nbsp;
+thousands to be earned. Watch the video till the&nbsp;&nbsp;
+
+00:00:20.160 --> 00:00:27.280
+end to get to know how to do it. The article was&nbsp;
+originally published on Medium by Alex Birsan&nbsp;&nbsp;
+
+00:00:27.280 --> 00:00:30.583
+Links, as always, are in the description. Enjoy! &nbsp;
+
+00:00:31.271 --> 00:00:35.440
+When&nbsp;creating applications in any programming language,&nbsp;
+
+00:00:35.440 --> 00:00:42.800
+we use many third-party libraries. They&nbsp;
+are pieces of code written by other users.&nbsp;&nbsp;
+
+00:00:43.760 --> 00:00:50.960
+And to use someone's library we must trust them&nbsp;
+enough to run their code on our machine or on&nbsp;&nbsp;
+
+00:00:50.960 --> 00:00:58.960
+our server. And there are tools that make using&nbsp;
+other libraries easier like npm for javascript&nbsp;&nbsp;
+
+00:00:58.960 --> 00:01:07.840
+pip for python or gem for ruby. In my examples, I&nbsp;
+will mostly stick to python's pip because it's&nbsp;&nbsp;
+
+00:01:07.840 --> 00:01:11.129
+probably what most of us is familiar with. &nbsp;
+
+00:01:12.404 --> 00:01:16.853
+When&nbsp;you want to install a library you run this command:
+
+00:01:17.120 --> 00:01:24.400
+It may seem like this package is official or at&nbsp;
+least verified by someone but it's not the case.&nbsp;&nbsp;
+
+00:01:25.680 --> 00:01:32.080
+Everyone can create their package if&nbsp;
+the name is not taken. You don't need&nbsp;&nbsp;
+
+00:01:32.080 --> 00:01:39.840
+anything besides a free account on PyPi website&nbsp;
+and organizing your project in specified structure.&nbsp;&nbsp;
+
+00:01:41.360 --> 00:01:49.280
+Attacking libraries is not a new idea. For years&nbsp;
+attackers have been creating malicious libraries&nbsp;&nbsp;
+
+00:01:49.280 --> 00:01:56.000
+with mistyped names of popular packages,&nbsp;
+creating malicious pull requests or somehow&nbsp;&nbsp;
+
+00:01:56.000 --> 00:02:01.600
+gaining a maintainer status and&nbsp;
+committing a bad code to known library.&nbsp;&nbsp;
+
+00:02:03.200 --> 00:02:09.840
+However, this researcher found a new attack&nbsp;
+vector which proved to be a goldmine.
+
+00:02:12.960 --> 00:02:19.600
+When you are a big company many of your systems&nbsp;
+do similar functionalities and integrate&nbsp;&nbsp;
+
+00:02:19.600 --> 00:02:27.040
+with the same solutions. It means a lot of code&nbsp;
+is rewritten or copied from product to project.&nbsp;&nbsp;
+
+00:02:28.080 --> 00:02:34.080
+So to make things more efficient and secure,&nbsp;
+you create private libraries that can be&nbsp;&nbsp;
+
+00:02:34.080 --> 00:02:40.800
+then reused across the whole company. You&nbsp;
+can't however publish this code to PyPi&nbsp;&nbsp;
+
+00:02:40.800 --> 00:02:48.560
+because it's confidential. So you create a&nbsp;
+private repository. Then, you can just add&nbsp;&nbsp;
+
+00:02:48.560 --> 00:02:56.240
+--extra-index-url parameter to pip install and pip&nbsp;
+will look there for the package you want to use.&nbsp;&nbsp;
+
+00:02:57.520 --> 00:03:04.640
+There is also --index-url parameter. The difference&nbsp;
+is that the former will look for the package&nbsp;&nbsp;
+
+00:03:04.640 --> 00:03:11.840
+both in the public and in the private repository&nbsp;
+while the latter will only look in the private one.&nbsp;&nbsp;
+
+00:03:11.840 --> 00:03:18.320
+So when you have mixed public and private&nbsp;
+dependencies you want to use --extra-index-url&nbsp;&nbsp;
+
+00:03:20.080 --> 00:03:26.320
+The question is what would happen if both&nbsp;
+the public and the private repository&nbsp;&nbsp;
+
+00:03:26.320 --> 00:03:33.280
+would have the dependency that you want to&nbsp;
+install. My logic would suggest that the package&nbsp;&nbsp;
+
+00:03:33.280 --> 00:03:40.800
+from the private repository would have higher&nbsp;
+priority, but it's not the case. Turns out that&nbsp;&nbsp;
+
+00:03:40.800 --> 00:03:48.720
+pip chooses the library with the higher version.&nbsp;
+And what's important, when publishing a new package&nbsp;&nbsp;
+
+00:03:48.720 --> 00:03:56.480
+user can specify any version that he wants.&nbsp;
+So if a company uses private python library&nbsp;&nbsp;
+
+00:03:56.480 --> 00:04:04.480
+called company-authentication, anyone can go to&nbsp;
+PyPi, create a public package with that name&nbsp;&nbsp;
+
+00:04:04.480 --> 00:04:12.960
+and when someone in this company runs this command&nbsp;
+to install the private dependency, the one created&nbsp;&nbsp;
+
+00:04:12.960 --> 00:04:19.920
+by a malicious user from the public repository&nbsp;
+will be downloaded, because it had higher version.&nbsp;&nbsp;
+
+00:04:21.040 --> 00:04:28.800
+You then gain RCEs on servers, on CI/CD pipelines and even on developer PCs.&nbsp;&nbsp;
+
+00:04:30.560 --> 00:04:36.320
+So the impact of this is even higher&nbsp;
+than the impact of RCE in webapp,&nbsp;&nbsp;
+
+00:04:37.520 --> 00:04:45.200
+because good webapps are created with the idea&nbsp;
+in mind that there might be an RCE so the network&nbsp;&nbsp;
+
+00:04:45.200 --> 00:04:51.440
+is separate from the corporate one, there are&nbsp;
+least privileges and the traffic is also limited.&nbsp;&nbsp;
+
+00:04:52.960 --> 00:04:59.600
+But executing code on developer PC&nbsp;
+is a lovely spot to run ransomware.
+
+00:05:03.200 --> 00:05:12.457
+That's the theory. Now, it was time for the&nbsp;
+researcher to start practical attacks in&nbsp;as automated way as possible. 
+
+00:05:13.610 --> 00:05:16.800
+When&nbsp;his malicious libraries were run,&nbsp;&nbsp;
+
+00:05:16.800 --> 00:05:23.840
+he only collected system's username, hostname&nbsp;
+and current path, so that he didn't possess&nbsp;&nbsp;
+
+00:05:23.840 --> 00:05:30.000
+any very confidential information but&nbsp;
+was still able to prove the vulnerability.&nbsp;&nbsp;
+
+00:05:31.440 --> 00:05:37.840
+And when creating a library you can create a&nbsp;
+script that will be executed upon installation,&nbsp;&nbsp;
+
+00:05:38.400 --> 00:05:45.920
+before even executing the library. That's what he&nbsp;
+used to send data back to him from those scripts.&nbsp;&nbsp;
+
+00:05:47.120 --> 00:05:55.280
+However, a lot of servers use firewalls that&nbsp;
+block outgoing HTTP traffic, so the researcher&nbsp;&nbsp;
+
+00:05:55.280 --> 00:06:02.880
+exfiltrated data using DNS protocol. It's&nbsp;
+normally used to resolve domain names&nbsp;&nbsp;
+
+00:06:02.880 --> 00:06:10.320
+and it's rarely blocked by firewall. So his&nbsp;
+scripts were trying to resolve domain names&nbsp;&nbsp;
+
+00:06:10.320 --> 00:06:18.640
+with those exfiltrated information that were&nbsp;
+also hex-encoded. The queries were eventually&nbsp;&nbsp;
+
+00:06:18.640 --> 00:06:25.600
+reaching his DNS server, where he collected&nbsp;
+all the data and inserted it into a database.
+
+00:06:28.160 --> 00:06:33.840
+But now came the biggest challenge.
+How to get those private package names?&nbsp;&nbsp;
+
+00:06:34.880 --> 00:06:42.240
+First, the researcher targeted some companies&nbsp;
+and tried to find their leaked names on GitHub,&nbsp;&nbsp;
+
+00:06:42.240 --> 00:06:48.960
+on package hosting services or even&nbsp;
+on different forums. But this approach&nbsp;&nbsp;
+
+00:06:48.960 --> 00:06:56.240
+was very time-consuming not really efficient&nbsp;
+and not at all automatable. The best source&nbsp;&nbsp;
+
+00:06:56.800 --> 00:07:04.240
+turned out to be JavaScript files. Because&nbsp;
+when you are creating a Node.js application,&nbsp;&nbsp;
+
+00:07:04.800 --> 00:07:12.160
+some of the javascript code gets bundled into the&nbsp;
+client-side javascript code which is of course&nbsp;&nbsp;
+
+00:07:12.160 --> 00:07:20.720
+available to the user. And npm uses package.json&nbsp;
+file to store those dependency names&nbsp;&nbsp;
+
+00:07:20.720 --> 00:07:27.440
+and apparently this file quite often&nbsp;
+gets bundled into this client-side code.&nbsp;&nbsp;
+
+00:07:28.160 --> 00:07:35.040
+And finding package names using this approach&nbsp;
+was much better because it's fully automatable.&nbsp;&nbsp;
+
+00:07:36.160 --> 00:07:42.640
+With help of his friend, Alex scanned&nbsp;
+thousands of domains of targeted companies&nbsp;&nbsp;
+
+00:07:42.640 --> 00:07:50.640
+that leaked hundreds of private package names.&nbsp;
+Then, when having names of those private packages,&nbsp;&nbsp;
+
+00:07:50.640 --> 00:07:57.840
+they created public ones with respective names&nbsp;
+and waited to hear from the callback scripts.
+
+00:08:00.480 --> 00:08:08.000
+Multiple RCEs on developer PCs. on-premise&nbsp;
+and cloud servers and development pipelines.&nbsp;&nbsp;
+
+00:08:09.040 --> 00:08:16.880
+At the moment of writing the article 35 companies&nbsp;
+were affected. Good thing about such attack&nbsp;&nbsp;
+
+00:08:16.880 --> 00:08:23.920
+is that it's usually big companies that use&nbsp;
+private packages so most of the targets were big&nbsp;&nbsp;
+
+00:08:23.920 --> 00:08:30.560
+corporations and good thing about big corporations&nbsp;
+is that they have back bounty programs with big&nbsp;&nbsp;
+
+00:08:30.560 --> 00:08:38.800
+payouts. And rewards for those reports were usually&nbsp;
+maximum and sometimes even higher than maximum.&nbsp;&nbsp;
+
+00:08:39.680 --> 00:08:46.800
+For example, Shopify was pwned with shopify-cloud library and paid $30k.&nbsp;&nbsp;
+
+00:08:47.760 --> 00:08:55.280
+Another $30k came from Apple&nbsp;
+and yet another one from Paypal. The biggest reward&nbsp;&nbsp;
+
+00:08:55.280 --> 00:09:03.280
+however came from Azure which paid $40k. So in total we have $130k&nbsp;&nbsp;
+
+00:09:03.280 --> 00:09:11.440
+and it's only 4 out of 35&nbsp;
+companies. The author also mentioned that he pwned&nbsp;&nbsp;
+
+00:09:11.440 --> 00:09:19.760
+Netflix, Yelp and Uber. If they would also pay&nbsp;
+their respective maximums we would have another $85k&nbsp;here.
+
+00:09:19.760 --> 00:09:31.520
+It would be a total of $215k&nbsp;for 7 out of 35 companies. Huge congratulations&nbsp;&nbsp;
+
+00:09:31.520 --> 00:09:38.080
+to the author from me. I think we have a strong&nbsp;
+contender for 2021 hacking technique here.
+
+00:09:41.280 --> 00:09:50.800
+The researcher only focused on npm, pip and&nbsp;
+gem, but 75% of all callbacks came from&nbsp;&nbsp;
+
+00:09:50.800 --> 00:09:58.320
+javascript libraries. Was the difference such big&nbsp;
+because of higher error rate in this technology?&nbsp;&nbsp;
+
+00:09:59.040 --> 00:10:07.360
+Likely - no. The reason is that for javascript it was&nbsp;
+the easiest to find package names. For example, for&nbsp;&nbsp;
+
+00:10:07.360 --> 00:10:14.400
+RubyGems, the researcher only found packages&nbsp;
+of 8 organizations out of which 4 were pwned.&nbsp;&nbsp;
+
+00:10:14.400 --> 00:10:21.360
+It means if you only knew those&nbsp;
+names you could make good money yourself.&nbsp;&nbsp;
+
+00:10:22.960 --> 00:10:28.080
+And there are still many unexplored&nbsp;
+areas in other programming languages.&nbsp;&nbsp;
+
+00:10:29.440 --> 00:10:35.840
+And keep in mind that the researcher pwned&nbsp;
+35 companies which is a huge achievement,&nbsp;&nbsp;
+
+00:10:35.840 --> 00:10:41.120
+but it's not a big number compared to the&nbsp;
+amount of bug bounty programs out there.&nbsp;&nbsp;
+
+00:10:42.320 --> 00:10:48.240
+That's why I think there is still a lot of&nbsp;
+money to be earned with dependency confusion.&nbsp;&nbsp;
+
+00:10:49.440 --> 00:10:56.400
+And that's it. It's by far the highest reward for a&nbsp;
+bug covered on my channel. I hope that some of you&nbsp;&nbsp;
+
+00:10:56.400 --> 00:11:02.160
+will also be able to report a few dependency&nbsp;
+confusion vulnerabilities. Let me know in the&nbsp;&nbsp;
+
+00:11:02.160 --> 00:11:07.680
+comment section if you will. Anyway, if you&nbsp;
+feel like you've learned something new today,&nbsp;&nbsp;
+
+00:11:07.680 --> 00:11:11.520
+leave a like and leave a subscription!&nbsp;
+Thanks for watching and goodbye!
+

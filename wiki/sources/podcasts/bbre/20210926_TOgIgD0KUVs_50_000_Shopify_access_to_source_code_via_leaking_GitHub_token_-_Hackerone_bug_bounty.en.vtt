@@ -1,0 +1,382 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.083 --> 00:00:04.416
+Hello! Welcome in the next episode of Bug
+ Bounty Reports Explained.
+
+00:00:04.708 --> 00:00:08.875
+Today you'll learn how Augusto
+ Zanellato accidentally
+
+00:00:09.041 --> 00:00:12.625
+found a bug that allowed him
+ to add a backdoor to Shopify.
+
+00:00:13.125 --> 00:00:16.708
+Make sure to stick until the end,
+ because I will show you step by step
+
+00:00:16.708 --> 00:00:18.000
+how you can check 
+
+00:00:18.000 --> 00:00:22.125
+the contents of Electron application
+ no matter what platform you use.
+
+00:00:22.833 --> 00:00:26.750
+Links to the original report and Augusto's
+ media are in the description.
+
+00:00:26.875 --> 00:00:29.833
+Enjoy! Electron is a Node.js
+
+00:00:29.833 --> 00:00:32.958
+framework that allows building
+ desktop applications
+
+00:00:32.958 --> 00:00:36.208
+using the same technologies
+ as when developing websites.
+
+00:00:36.791 --> 00:00:42.375
+Visual Studio Code, Slack, Discord
+ or WhatsApp are all built using Electron.
+
+00:00:43.250 --> 00:00:47.250
+The minimalistic
+ hello word app doesn't need much files.
+
+00:00:47.791 --> 00:00:49.750
+However, when you want to distribute, 
+
+00:00:49.750 --> 00:00:53.666
+your application, files
+ must have a specific structure.
+
+00:00:54.208 --> 00:00:58.500
+In case of this report,
+ the app was packaged for Mac OS system.
+
+00:00:59.125 --> 00:01:01.500
+You can use electron-packager module.
+
+00:01:02.041 --> 00:01:05.750
+This is the command that I used
+ to package my application.
+
+00:01:06.625 --> 00:01:11.541
+These options are not relevant
+ for this part, at least not yet.
+
+00:01:13.000 --> 00:01:14.125
+Then you need to create a 
+
+00:01:14.125 --> 00:01:17.666
+single .DMG file using yet another module.
+
+00:01:18.791 --> 00:01:22.208
+After you mount it,
+ you can finally use the application.
+
+00:01:23.000 --> 00:01:25.541
+It's inside /Volumes directory.
+
+00:01:26.375 --> 00:01:27.625
+Let's browse it. 
+
+00:01:27.625 --> 00:01:31.708
+The binary is inside
+ Contents/macOS directory.
+
+00:01:32.375 --> 00:01:37.875
+For us, however, the most important
+ is the Resources dir. Inside,
+
+00:01:37.958 --> 00:01:42.375
+you have the app folder that contains
+ all the files from your application.
+
+00:01:43.208 --> 00:01:45.708
+However, the application
+ that is the cause of
+
+00:01:45.708 --> 00:01:48.916
+this vulnerability
+ did not have such directory.
+
+00:01:49.291 --> 00:01:52.375
+Instead, it had app.asar file.
+
+00:01:53.958 --> 00:01:56.083
+It's an Electron archive. 
+
+00:01:56.083 --> 00:02:00.958
+It concatenates all the files
+ from your application into a single file.
+
+00:02:01.916 --> 00:02:04.750
+Somewhat like tar,
+ but without compression.
+
+00:02:05.666 --> 00:02:10.291
+To modify my application
+ so that it also uses asar file
+
+00:02:10.416 --> 00:02:14.833
+I had to add --asar flag
+ to electron-packager command.
+
+00:02:15.583 --> 00:02:18.000
+But what's the purpose of that? 
+
+00:02:18.000 --> 00:02:22.208
+To answer that question, I took a look
+ into the Electron documentation.
+
+00:02:23.291 --> 00:02:27.750
+Until the 2nd December
+ 2020, the documentation said
+
+00:02:28.416 --> 00:02:32.000
+"you can also package your app
+ into an asar archive
+
+00:02:32.000 --> 00:02:35.625
+to avoid exposing your app's
+ source code to users".
+
+00:02:37.041 --> 00:02:38.708
+Which was not true. 
+
+00:02:38.708 --> 00:02:42.208
+You can easily extract
+ the contents of the archive
+
+00:02:42.250 --> 00:02:45.125
+using "npx asar extract" command.
+
+00:02:45.958 --> 00:02:51.250
+Using this file format
+ does not protect the code in any way.
+
+00:02:52.791 --> 00:02:57.083
+The documentation was changed
+ only two months prior to this bug.
+
+00:02:57.916 --> 00:03:02.000
+Now it says "you can package
+ you app into an asar archive
+
+00:03:02.125 --> 00:03:06.708
+to improve the performance of reading
+ files on platforms like Windows".
+
+00:03:07.958 --> 00:03:11.083
+It's very interesting
+ how misguiding it was.
+
+00:03:12.208 --> 00:03:16.166
+If you enjoy that I dig deep
+ to find out such information
+
+00:03:16.291 --> 00:03:19.000
+make sure to like this video right now.
+
+00:03:21.041 --> 00:03:23.416
+Let's come back to our hunter. 
+
+00:03:23.416 --> 00:03:26.666
+He downloaded the application
+ and was analyzing it.
+
+00:03:27.416 --> 00:03:30.000
+The name of the application
+ is not disclosed
+
+00:03:30.083 --> 00:03:33.541
+but it was a random application
+ from the Internet and the hunter
+
+00:03:33.541 --> 00:03:37.416
+did not know it was related
+ to Shopify in any way.
+
+00:03:38.791 --> 00:03:41.125
+He just wanted to see how it works.
+
+00:03:41.375 --> 00:03:44.666
+So he started to review the contents
+ of the application,
+
+00:03:44.666 --> 00:03:46.791
+including the asar archive.
+
+00:03:48.208 --> 00:03:52.458
+Inside, he found .env file. What is that?
+
+00:03:53.083 --> 00:03:57.000
+One of the most popular
+npm packages is dotenv.
+
+00:03:57.000 --> 00:04:00.583
+It automatically loads
+ environment variables
+
+00:04:00.708 --> 00:04:04.058
+from .env file into process.env.
+
+00:04:04.500 --> 00:04:07.458
+So when you had TEST
+ the variable in the .env
+
+00:04:07.458 --> 00:04:12.869
+file, it's automatically loaded
+ into the process.env.TEST.
+
+00:04:13.458 --> 00:04:16.000
+We can't be 100% sure
+
+00:04:16.000 --> 00:04:20.125
+this application did use this package,
+ but one way or another,
+
+00:04:20.333 --> 00:04:24.833
+it used environmental variables
+ from the .env file.
+
+00:04:24.833 --> 00:04:27.625
+Inside, among other credentials,
+
+00:04:27.750 --> 00:04:30.583
+the hunter found a GH_TOKEN variable.
+
+00:04:32.041 --> 00:04:35.625
+As you might guess,
+ it was a GitHub rest API token.
+
+00:04:36.875 --> 00:04:41.208
+Augusto confirmed its valid
+ by hitting /user endpoint.
+
+00:04:41.875 --> 00:04:47.166
+At this point, it was only affecting
+ the developer who created the application,
+
+00:04:47.333 --> 00:04:52.000
+and nothing foreshadowed
+ that it affected Shopify in any way.
+
+00:04:53.541 --> 00:04:57.583
+Then, he tried to
+ query /user/orgs endpoint.
+
+00:04:57.583 --> 00:05:00.833
+And saw that this developer was a member
+
+00:05:00.833 --> 00:05:03.625
+of Shopify organization on GitHub.
+
+00:05:04.250 --> 00:05:07.500
+So it was looking
+ very promising at that point.
+
+00:05:08.000 --> 00:05:12.583
+As the next step,
+ he queried /orgs/shopify/repos.
+
+00:05:12.708 --> 00:05:17.583
+And what he saw was the list of many
+ public and private Shopify
+
+00:05:17.583 --> 00:05:20.625
+repositories with pull and push access.
+
+00:05:21.833 --> 00:05:24.083
+The impact of this is huge.
+
+00:05:24.375 --> 00:05:28.583
+You can read all the code of Shopify
+ closed-source repositories,
+
+00:05:28.750 --> 00:05:33.708
+but also you can commit a backdoor
+ to it, stealing millions of dollars
+
+00:05:33.708 --> 00:05:37.708
+and personal information
+ of millions of Shopify customers.
+
+00:05:38.333 --> 00:05:41.541
+The Shopify team was quick
+ to respond on Hackerone.
+
+00:05:41.833 --> 00:05:45.000
+The report was triaged
+ as critical the same day
+
+00:05:45.208 --> 00:05:49.250
+and the $50,000 bounty
+ was awarded a week later.
+
+00:05:50.875 --> 00:05:53.291
+How you can test for this bug? 
+
+00:05:53.291 --> 00:05:58.666
+After downloading .DMG file,
+ you can unpack it using 7z command
+
+00:05:58.666 --> 00:06:03.750
+both on Mac OS and on Linux
+ or using 7zip program on Windows.
+
+00:06:05.125 --> 00:06:08.375
+Then, you browse to the Contents/Resources
+
+00:06:08.375 --> 00:06:12.041
+and you run "npx asar
+ extract app.asar app".
+
+00:06:12.833 --> 00:06:16.541
+Then you will have the sources
+ of the application and you can review them
+
+00:06:16.541 --> 00:06:19.666
+as you normally would.
+ What an amazing bug!
+
+00:06:20.000 --> 00:06:24.500
+I also interviewed Agusto in my Bug
+ Bounty Reports Discussed podcast.
+
+00:06:24.500 --> 00:06:29.208
+Among others, you can hear about why
+ did he choose to review this application
+
+00:06:29.416 --> 00:06:32.833
+or what was his and his friend's
+ reaction to finding
+
+00:06:32.833 --> 00:06:35.500
+the $50,000 bug by accident.
+
+00:06:36.375 --> 00:06:39.625
+The podcast will be published shortly
+ after this video
+
+00:06:39.625 --> 00:06:43.166
+so make sure to subscribe
+ to Bug Bounty Reports Discussed
+
+00:06:43.166 --> 00:06:47.083
+in your favorite podcasting up
+ or here on YouTube, if you prefer.
+
+00:06:47.083 --> 00:06:49.333
+Links are in the description.
+
+00:06:49.875 --> 00:06:52.500
+For now, thank you
+ for watching and goodbye!
+

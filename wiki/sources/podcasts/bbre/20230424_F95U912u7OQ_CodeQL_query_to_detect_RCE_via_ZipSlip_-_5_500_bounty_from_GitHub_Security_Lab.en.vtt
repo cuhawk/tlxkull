@@ -1,0 +1,367 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:04.000
+CodeQL is a bug bounty program like no other.
+
+00:00:04.000 --> 00:00:08.000
+It's because you don't actually get paid for finding the bug.
+
+00:00:08.000 --> 00:00:14.000
+You get paid for writing the scanner query to detect a vulnerability.
+
+00:00:14.000 --> 00:00:18.000
+And it is very intimidating at first.
+
+00:00:18.000 --> 00:00:24.000
+But for some reason, I've always felt like it's something good for me and for my skillset.
+
+00:00:24.000 --> 00:00:36.000
+Recently, I finally invested more time into it and I wrote my first proper CodeQL query to detect RCE vulnerability via ZipSlip.
+
+00:00:36.000 --> 00:00:40.000
+In this video, I will explain the query to you. Enjoy!
+
+00:00:43.000 --> 00:00:48.000
+CodeQL has queries to detect many different kinds of vulnerabilities.
+
+00:00:48.000 --> 00:00:54.000
+But of course, no scanner is able to detect every single vulnerability.
+
+00:00:54.000 --> 00:01:04.000
+That's why GitHub, which is the owner of CodeQL, has GitHub Security Lab Bug Bounty Program, where they pay you for finding the query.
+
+00:01:04.000 --> 00:01:11.000
+So if you find a publicly known bug, a bug that has a CVE that's not detected by the scanner,
+
+00:01:11.000 --> 00:01:17.000
+you can add the query to the scanner to detect this bug and GitHub will pay you for this.
+
+00:01:17.000 --> 00:01:21.000
+It can be a new bug, but it can also be old bug.
+
+00:01:21.000 --> 00:01:25.000
+It can be your bug, but it can be someone else's bug. It doesn't matter.
+
+00:01:25.000 --> 00:01:31.000
+What matters is that your query must make sense in general for other projects.
+
+00:01:31.000 --> 00:01:38.000
+You can't just write a query that's directed into detecting a single bug in a single application.
+
+00:01:38.000 --> 00:01:40.000
+Nobody's going to pay for this.
+
+00:01:40.000 --> 00:01:48.000
+The query must be precise and must also detect this bug in other software.
+
+00:01:48.000 --> 00:01:57.000
+In my opinion, the hardest part of writing a CodeQL query is finding a bug that's not yet detected by CodeQL,
+
+00:01:57.000 --> 00:02:02.000
+but you can reliably detect it by looking at the source code.
+
+00:02:02.000 --> 00:02:07.000
+Because some bugs you just can't model. How do you model a business logic error?
+
+00:02:07.000 --> 00:02:14.000
+I don't think you can do it reliably, so it makes sense for all the software out there.
+
+00:02:14.000 --> 00:02:18.000
+And in this video, I will describe to you what the query does.
+
+00:02:18.000 --> 00:02:25.000
+But also in the last issue of BBRE Premium, I described the behind the scenes of writing the query,
+
+00:02:25.000 --> 00:02:31.000
+how I found the bug to model, what bugs I wanted to model, but I couldn't for some reason,
+
+00:02:31.000 --> 00:02:38.000
+why I made certain decisions, things I did to maximize payout. All those things are described in the article.
+
+00:02:38.000 --> 00:02:43.000
+If you are a BBRE Premium member, I will link this in the description down below.
+
+00:02:43.000 --> 00:02:46.000
+And if you're not, consider joining.
+
+00:02:46.000 --> 00:02:55.000
+The bug I decided to model was ZipSlip vulnerability in Discourse, which can lead to an RCE.
+
+00:02:55.000 --> 00:02:57.000
+How does it work?
+
+00:02:57.000 --> 00:03:03.000
+Normally, when we download a zip file from the internet, we just double click it and opening
+
+00:03:03.000 --> 00:03:07.000
+and extracting the files are the same operation.
+
+00:03:07.000 --> 00:03:14.000
+But in the code, it looks a bit different. First, you open the file that's an archive.
+
+00:03:14.000 --> 00:03:20.000
+Then, in the for loop, you access every single file from this archive.
+
+00:03:20.000 --> 00:03:26.000
+But before creating the file on the disk, you should verify if the path is secure.
+
+00:03:26.000 --> 00:03:31.000
+In this case, in the case of Discourse, this validation wasn't done.
+
+00:03:31.000 --> 00:03:38.000
+Using this ZipSlip vulnerability, you can create a file that has a dot dot slash sequence
+
+00:03:38.000 --> 00:03:44.000
+in the file name. And then even though your file is inside the archive,
+
+00:03:44.000 --> 00:03:48.000
+it will be unpacked to a completely different location.
+
+00:03:48.000 --> 00:03:56.000
+So this is an arbitrary file write vulnerability, which you can often turn into RCE in various ways.
+
+00:04:00.000 --> 00:04:04.000
+To detect any bug like this, we need three things.
+
+00:04:04.000 --> 00:04:12.000
+The first thing is the sink, which is a dangerous function to which malicious input should never go.
+
+00:04:12.000 --> 00:04:16.000
+And if it goes to this function, it means there's a vulnerability.
+
+00:04:16.000 --> 00:04:24.000
+Then we also need the source, which is a place where the server consumes our potentially malicious input
+
+00:04:24.000 --> 00:04:27.000
+so we can send some payloads.
+
+00:04:27.000 --> 00:04:35.000
+Finally, we also need the flow from the source to the sink because the source itself or the sink itself
+
+00:04:35.000 --> 00:04:41.000
+are not dangerous at all. And this is exactly how we'll write the CodeQL query.
+
+00:04:41.000 --> 00:04:48.000
+Let's start with the sink. You may think that the sink is the unpacking of the file,
+
+00:04:48.000 --> 00:04:56.000
+but it's not the case. The other way to think about the sink is the last place in the source code
+
+00:04:56.000 --> 00:05:02.000
+where I can look at it and say, OK, if my input gets to here, then I have the vulnerability
+
+00:05:02.000 --> 00:05:09.000
+and it doesn't matter what happens later. It is much more connected with the impact of the bug.
+
+00:05:09.000 --> 00:05:18.000
+In this case, the impact is arbitrary file, right? So our sink will be file creation call.
+
+00:05:18.000 --> 00:05:25.000
+As you see, code review is a fundamental skill if you want to think about writing CodeQL queries
+
+00:05:25.000 --> 00:05:32.000
+because first you have to understand where the bug happens in the code.
+
+00:05:32.000 --> 00:05:39.000
+To be more precise, the sink is not actually a function or a line. The sink is the path argument
+
+00:05:39.000 --> 00:05:45.000
+of the file creation call. So in this case, it's the first argument.
+
+00:05:45.000 --> 00:05:50.000
+You may ask, how about file contents? Do we somehow verify this as well?
+
+00:05:50.000 --> 00:05:57.000
+The answer is we don't. We care about the file path and we assume that if we control the file path,
+
+00:05:57.000 --> 00:06:04.000
+we probably also control the file contents. And even if we don't control file contents,
+
+00:06:04.000 --> 00:06:11.000
+if we can write a file to an arbitrary location, even if the content is empty or whatever,
+
+00:06:11.000 --> 00:06:16.000
+we can probably at least overwrite some files, leading to another vulnerability,
+
+00:06:16.000 --> 00:06:23.000
+leading to denial of service. So in this case, we only care about the file path.
+
+00:06:23.000 --> 00:06:31.000
+And this is the very simple definition of the sink in my query because I didn't have to model it from scratch.
+
+00:06:31.000 --> 00:06:36.000
+I used existing CodeQL models for this.
+
+00:06:40.000 --> 00:06:44.000
+We have the sink, so let's continue to model the source.
+
+00:06:44.000 --> 00:06:50.000
+The source should be the place where the server consumes the data from the attacker.
+
+00:06:50.000 --> 00:06:58.000
+In this case, however, it is just unpacking the file using one of the 3 libraries that I modeled
+
+00:06:58.000 --> 00:07:05.000
+for working with archives. The logic is actually exactly the same in all three of them.
+
+00:07:05.000 --> 00:07:12.000
+And you may ask, if we consider this as a source, how do we know that this file actually comes
+
+00:07:12.000 --> 00:07:16.000
+from the attacker and it's not a static file from the server?
+
+00:07:16.000 --> 00:07:23.000
+And you're actually right. This query is prone to false positives because I only excluded the case
+
+00:07:23.000 --> 00:07:32.000
+when it's called with a constant path. But it is still prone to situations where the server writes a file
+
+00:07:32.000 --> 00:07:40.000
+that's created by the admin or is just on the server. So it isn't perfect, but it's as good as I could write it.
+
+00:07:40.000 --> 00:07:48.000
+I actually also described the exact reason in the article. Without getting into much details,
+
+00:07:48.000 --> 00:07:51.000
+this is how it looks in the code.
+
+00:07:58.000 --> 00:08:04.000
+Okay, so we have the sink, we have the source. Now we need the third and final thing,
+
+00:08:04.000 --> 00:08:12.000
+which is the flow of data from the source to the sink. And here we mostly rely on CodeQL doing its job
+
+00:08:12.000 --> 00:08:17.000
+because CodeQL is not based on some simple regexes or something like this.
+
+00:08:17.000 --> 00:08:25.000
+CodeQL knows, understands the code and knows how the data flows from one place to another.
+
+00:08:25.000 --> 00:08:33.000
+And mostly in the case of finding the flow from the source to the sink, we rely on CodeQL.
+
+00:08:33.000 --> 00:08:41.000
+But in this case, it wasn't finding the bug. It was very frustrating because I had the bug just in front of me
+
+00:08:41.000 --> 00:08:49.000
+and I had the query and it wasn't working on the real code base. I spent days here feeling like banging my head
+
+00:08:49.000 --> 00:08:55.000
+against the wall, confirming if my sources are correct, if my sinks are correct.
+
+00:08:55.000 --> 00:09:04.000
+And it didn't make sense to me of why doesn't it work. But of course, turned out it made a lot of sense
+
+00:09:04.000 --> 00:09:13.000
+because the thing is that CodeQL understands the code, but it's not magic. It's just some operations
+
+00:09:13.000 --> 00:09:20.000
+are modeled in internal libraries that they allow the flow of the data from this place to this place.
+
+00:09:20.000 --> 00:09:29.000
+But in this case, I'm working on custom classes like tarReaderEntry and the tarReaderEntry class
+
+00:09:29.000 --> 00:09:36.000
+is not modeled inside CodeQL. So CodeQL doesn't know, so it doesn't understand it.
+
+00:09:36.000 --> 00:09:45.000
+And in case of this vulnerability, in every single case, the path was accessed using either the name
+
+00:09:45.000 --> 00:09:51.000
+or a full name function call. And CodeQL just didn't know what these functions are,
+
+00:09:51.000 --> 00:09:58.000
+so the flow was breaking in this step. But when we know where the flow breaks,
+
+00:09:58.000 --> 00:10:04.000
+it's usually quite easy to counteract this because we have another predicate called
+
+00:10:04.000 --> 00:10:11.000
+isAdditionalTaintStep where I can define exactly this. I can define the place where CodeQL thinks
+
+00:10:11.000 --> 00:10:18.000
+the flow breaks, but it actually doesn't break. So I just defined that the call to a function
+
+00:10:18.000 --> 00:10:26.000
+called fullName or name does not break the flow. Although this isn't yet the end of the job,
+
+00:10:26.000 --> 00:10:32.000
+my query finally was finding the vulnerability in discourse in the real code base,
+
+00:10:32.000 --> 00:10:38.000
+which made me really happy and relieved after days of frustration and disappointment
+
+00:10:38.000 --> 00:10:42.000
+because I thought that maybe I just won't be able to model this.
+
+00:10:46.000 --> 00:10:52.000
+It's not yet the end of the job because it's important for my query to find the bug when it's there,
+
+00:10:52.000 --> 00:10:57.000
+but it's also important that my query doesn't find the bug when it's not there
+
+00:10:57.000 --> 00:11:04.000
+because if there is a sanitization before creating the file, we should also detect this
+
+00:11:04.000 --> 00:11:12.000
+and tell CodeQL that the flow should break there. We basically do the reverse of what we did previously.
+
+00:11:12.000 --> 00:11:19.000
+Previously, the flow was breaking and we had to tell CodeQL that this operation does not break the flow.
+
+00:11:19.000 --> 00:11:25.000
+In this case, the CodeQL has the full flow and we have to tell it that this operation
+
+00:11:25.000 --> 00:11:30.000
+is probably sanitizing the file path, so the flow should break there.
+
+00:11:30.000 --> 00:11:35.000
+I used the existing definition of sanitizer from the path traversal query,
+
+00:11:35.000 --> 00:11:40.000
+but it wasn't enough to find the way the bug was fixed in discourse.
+
+00:11:40.000 --> 00:11:47.000
+So I also created another definition of sanitizer that matched how the bug was fixed in discourse.
+
+00:11:48.000 --> 00:11:58.000
+The only problem is it doesn't work at all. It would detect this fix if it was inline check,
+
+00:11:58.000 --> 00:12:02.000
+but it doesn't detect it when it's a separate function call.
+
+00:12:02.000 --> 00:12:06.000
+And to be honest, to this day, I don't know why this happens.
+
+00:12:06.000 --> 00:12:12.000
+And if you know, just hit me a message because I'm really, really curious.
+
+00:12:12.000 --> 00:12:19.000
+But despite this, GitHub Security Lab awarded me five and a half thousand dollars for this query,
+
+00:12:19.000 --> 00:12:24.000
+which made me really, really happy because it is my highest bounty.
+
+00:12:24.000 --> 00:12:31.000
+If you want to improve in CodeQL, maybe for getting bug bounty from GitHub Security Lab,
+
+00:12:31.000 --> 00:12:37.000
+but personally, I also start using it as a semi-automatic code review tool.
+
+00:12:37.000 --> 00:12:43.000
+If you're interested in CodeQL, I honestly recommend you to check out BBRE Premium.
+
+00:12:43.000 --> 00:12:50.000
+I write things that I would have liked to hear before because I just know how overwhelming CodeQL is
+
+00:12:50.000 --> 00:12:55.000
+and how underwhelming is the amount of articles out there.
+
+00:12:55.000 --> 00:13:03.000
+And if you want to improve your code review skills, first check out this video about my XSS in Golang.
+
+00:13:03.000 --> 00:13:20.000
+For now, thank you so much for watching and goodbye.
+

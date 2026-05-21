@@ -1,0 +1,126 @@
+Hello, in today's episode of Bug Bounty Reports Explained, I will show you how it was possible
+to send a malicious GIF image in WhatsApp that could take control over whole Android
+smartphone.
+The video is based on an article by a guy named Awakend, link as always is in the description.
+Low level bug is something new on my channel and I hope you will enjoy that.
+Let's start with a GIF file.
+It contains multiple images and when those frames are being shown one after another, they
+create an animation.
+Usually during such animation, frames have the same size.
+However, this is not enforced by GIF specifications.
+Frames can have different sizes, including frames of size 0.
+This is the structure used to store information about GIFs from native Android library.
+Most important for us is the Raster Beats buffer.
+It's where decoded frames are being stored.
+In a typical GIF where all frames have the same size, this buffer is just reused.
+However, when width or height of a new frame is greater than the previous one, the buffer
+must be reallocated.
+Reallocation is a combination of free and malloc functions.
+Malloc is a function used to allocate space.
+You need to use it every time you create a new variable or an object.
+Free is a function used to free the memory after it's no longer needed so that it can
+be assigned to another variable.
+And coming back to our GIFs, the amount of space to reallocate is just the size of the
+new frame.
+So if a GIF would have frames of sizes 4 on 4, 3 on 3 and 5 on 5, then after the first frame,
+there is no need for reallocation.
+But after the second frame, the buffer would be reallocated with 25 bytes of space.
+But what would happen if a new frame would have size 5 on 0?
+For the library, it was enough if a new width or new height was greater than the one in the
+previous frame.
+So with frame 5 on 0, the reallocation would happen.
+But the malloc would try to reallocate 5 times 0 equals 0 bytes, so it would simply
+do nothing.
+And the reallocation would only free the memory.
+So if we would have frames of sizes 4 on 4, 5 on 0, 5 on 0, info raster bits would be
+freed after the first and after the second frame.
+And this is the double free vulnerability.
+But the question is, why is that actually a problem?
+It's the problem because in Android it leads to two subsequent memory allocations returning
+the same address.
+Size of those two allocations must be the same as the size of double freed buffer.
+So when the first frame was 16 bytes and it was double freed, then the next two memory allocations
+of size 16 will return the same address.
+Now let's see how this worked in WhatsApp.
+When you opened preview of files from WhatsApp application, GIFs were parsed twice.
+Let's create a malicious GIF that will trigger the double free vulnerability.
+It contains 4 frames and their sizes are 168, 0 bytes, 0 bytes and the size of the 4 frame
+doesn't really matter.
+It's just there so the GIF is valid.
+For parsing frames, GIF info object is allocated with 168 bytes.
+This number is not dependent from the size of the first frame.
+It's just that the GIF info struct has 21 properties, 8 bytes each.
+And we chose the size of the first frame to match this number and not the other way around.
+You will see later why we needed that.
+Now it's time to parse the frames.
+First raster bits buffer is allocated 168 bytes for the first frame.
+Then it's freed twice while parsing frames 2 and 3.
+Parsing frame 4 does not cause any problems.
+So now, after this buffer was double freed, next to allocations of size 168 will return
+the same address.
+Let's now see what happens during the second parse.
+Again 168 bytes are allocated for a new GIF info object.
+Then the first frame is being parsed and again 168 bytes are allocated for it.
+So this is the moment when malloc returns the same address again.
+So now both info and info raster bits are pointing to the same address.
+So such GIF causes WhatsApp to crash.
+But it wasn't our goal.
+Our goal is to execute arbitrary comments.
+Let's now take a look how this could be achieved.
+Soon after parsing each frame, info rewind function was called.
+Since info object has the same size and address as our first frame, the program now thinks that
+our first frame is the info object.
+So we have a complete control over it.
+And the program remembers where the rewind function was.
+So now we can prepare our first frame so that when the program wants to execute that function,
+it executes whatever we want.
+And what do we want?
+We want a reverse shell.
+Now stay calm people, because it's time for some assembly.
+To reach our goal, we need to set proper values to PC and X0 registers.
+Registers in assembly are like special variables that contain specific information.
+PC program counter stores the address of the next instruction.
+So we will want the address of the system function there.
+And to get it there, we need to replace the address of rewind function.
+And X0 register stores the first function argument.
+So we want to put our reverse shell command in there.
+So now the researcher had to find a function that will set the X0 register to what he wanted
+and then jump to the system function.
+And this is the gadget that he found.
+I will explain it while at the same time creating the first frame of the GIF, which will at the
+same time be a GIF info object.
+The idea is that from rewind function, we jump to this gadget.
+It sets the proper X0 register.
+And then we go to the system function reaching our goal.
+Originally rewind function was at offset 0x80 of the info object.
+So this is the place where we put the address of this gadget.
+Then LDR instruction from this gadget loads the value from register X19 with offset 0x18 to
+register X8.
+X8 will be the address where we jump next.
+It's what BLR instruction at the end does.
+And X19 is our first frame.
+So at offset 0x18 we put the address of the system function.
+The second instruction loads the value from our first frame with offset 0x20 to register
+0x0 which will be our argument.
+So in our frame at this offset we put our command with reverse shell.
+And that's pretty much the whole exploit.
+The problem is that we need to get the addresses of our gadget and the system function.
+There are two practical attack scenarios for this.
+One of them is that a malicious application installed on the victim's phone gets those
+addresses easily because they are native libraries and the addresses only change while the phone
+is rebooted.
+Then this application would create a malicious gif, save it on the victim's phone and once the victim
+opened a preview in WhatsApp the exploit would get triggered.
+The other attack scenario is that the attacker gets those addresses using information disclosure
+vulnerability and then the attacker prepares the gif, sends it to the victim and once the victim
+opens the preview in WhatsApp it gets triggered.
+You can generate your own malicious gif using the repo that's linked in the description.
+But of course the vulnerability has been patched and latest versions of WhatsApp are no longer exploitable.
+The vulnerability affected WhatsApp but it was actually a bug in native Android library so
+I don't think the researcher got any bounty for it because WhatsApp security team just
+forwarded the report to library maintainers.
+Lately, both on YouTube and on Twitter I did a poll asking you what you would like to see
+more on my channel and low level bugs were highly rated so I hope you liked this video.
+But if you have any other suggestions feel free to comment them down below.
+If you have learned something new today leave a like and leave a subscription.
+Thanks for watching and goodbye.

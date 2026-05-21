@@ -1,0 +1,292 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.240 --> 00:00:06.480
+Hello! From this video, you will learn how it&nbsp;
+was possible to add infinite funds to your Steam&nbsp;&nbsp;
+
+00:00:06.480 --> 00:00:12.720
+account by exploiting a flaw in the integration&nbsp;
+with the payment service. The vulnerability was&nbsp;&nbsp;
+
+00:00:12.720 --> 00:00:20.160
+reported on Hackerone by 'drbrix' who got $7,500&nbsp;
+for it. The link to the original report is in the&nbsp;&nbsp;
+
+00:00:20.160 --> 00:00:25.680
+description. I also created hands-on labs&nbsp;
+where you can reproduce the vulnerability.&nbsp;&nbsp;
+
+00:00:25.680 --> 00:00:31.600
+Watch the video until the end to see how you can&nbsp;
+access them. I will also have a gift for you. But&nbsp;&nbsp;
+
+00:00:31.600 --> 00:00:38.320
+for now, enjoy the video! For those of you who&nbsp;
+don't know, Steam is a place where you buy games.&nbsp;&nbsp;
+
+00:00:39.200 --> 00:00:44.320
+The hunter wanted to find a bug in the&nbsp;
+functionality of adding funds. Let's&nbsp;&nbsp;
+
+00:00:44.320 --> 00:00:50.720
+see how the flow looked normally. First, in&nbsp;
+Steam, you choose the amount you want to add,&nbsp;&nbsp;
+
+00:00:50.720 --> 00:00:56.640
+fill in your address, choose the payment method&nbsp;
+and information like this. The process consists&nbsp;&nbsp;
+
+00:00:56.640 --> 00:01:04.720
+of multiple requests but for us the last two ones&nbsp;
+are the most important. POST to inittransaction&nbsp;&nbsp;
+
+00:01:04.720 --> 00:01:11.040
+with all this data as parameters. In response&nbsp;
+to that, there is a JSON which contains&nbsp;&nbsp;
+
+00:01:11.040 --> 00:01:17.360
+transaction_id. What probably happens on the&nbsp;
+backend, Steam adds this transaction to the&nbsp;&nbsp;
+
+00:01:17.360 --> 00:01:25.360
+database with the transaction_id, amount of funds&nbsp;
+to add, the user and other data about it. Next,&nbsp;&nbsp;
+
+00:01:25.360 --> 00:01:32.160
+there's a GET request to externallink endpoint&nbsp;
+with transaction_id as the parameter. In the&nbsp;&nbsp;
+
+00:01:32.160 --> 00:01:37.360
+HTML of the response, there is a form&nbsp;
+that will be sent to Smart2Pay server.&nbsp;&nbsp;
+
+00:01:38.720 --> 00:01:46.240
+I chose Przelewy24 as my payment provider. But&nbsp;
+that's a local polish company. For a global firm&nbsp;&nbsp;
+
+00:01:46.240 --> 00:01:51.680
+like Steam, it could be hard to integrate with&nbsp;
+different providers for different countries.&nbsp;&nbsp;
+
+00:01:53.120 --> 00:02:00.240
+That's why they use Smart2Pay. It's a bridge&nbsp;
+between Steam and payment methods in the whole&nbsp;&nbsp;
+
+00:02:00.240 --> 00:02:07.120
+world. Steam integrates with one Smart2Pay API&nbsp;
+which on the other side integrates with over&nbsp;&nbsp;
+
+00:02:07.120 --> 00:02:16.320
+200 payment methods for different countries. So&nbsp;
+Steam must somehow redirect me to Smart2Pay with&nbsp;&nbsp;
+
+00:02:16.320 --> 00:02:23.600
+proper parameters. Namely, there must be an amount&nbsp;
+which I am supposed to pay and the transaction_id.&nbsp;&nbsp;
+
+00:02:25.040 --> 00:02:33.200
+But I'm a hacker. You can't just tell me to not&nbsp;
+modify those parameters. What you can do, however,&nbsp;&nbsp;
+
+00:02:33.200 --> 00:02:39.680
+is sign them with a secret I don't&nbsp;
+know using a hash. Hash is a one-way&nbsp;&nbsp;
+
+00:02:39.680 --> 00:02:44.400
+function that takes some input and&nbsp;
+generates a hash which looks like this.&nbsp;&nbsp;
+
+00:02:45.120 --> 00:02:52.720
+For SHA256 it has 64 characters when&nbsp;
+written in hex format. It was generated&nbsp;&nbsp;
+
+00:02:52.720 --> 00:02:58.560
+based on the parameters I created in Steam&nbsp;
+and a secret value that I don't know.&nbsp;&nbsp;
+
+00:03:00.000 --> 00:03:07.680
+By seeing the hash, I can't guess the values used&nbsp;
+to generate it. And if I only change one character&nbsp;&nbsp;
+
+00:03:07.680 --> 00:03:14.320
+in any of those parameters, the hash would&nbsp;
+look completely different. How does this help?&nbsp;&nbsp;
+
+00:03:14.960 --> 00:03:22.080
+The secret is shared between Steam and Smart2Pay.&nbsp;
+When I send the POST request to Smart2Pay,&nbsp;&nbsp;
+
+00:03:22.800 --> 00:03:30.400
+it also creates a hash based on my values and&nbsp;
+the secret. It then compares the hash that I&nbsp;&nbsp;
+
+00:03:30.400 --> 00:03:38.560
+send with what Smart2Pay things it should be. If&nbsp;
+I would change the amount or any other parameter,&nbsp;&nbsp;
+
+00:03:38.560 --> 00:03:45.760
+the hash would no longer be valid and the&nbsp;
+transaction would be rejected. If it's valid,&nbsp;&nbsp;
+
+00:03:45.760 --> 00:03:51.680
+Smart2Pay communicates with the chosen payment&nbsp;
+provider and the transaction is finalised.&nbsp;&nbsp;
+
+00:03:52.800 --> 00:03:59.040
+In case of this bug, we don't really care about&nbsp;
+integrations between Smart2Pay and payment&nbsp;&nbsp;
+
+00:03:59.040 --> 00:04:08.560
+providers but rather between Steam and Smart2Pay.&nbsp;
+And after the transaction is completed, no data is&nbsp;&nbsp;
+
+00:04:08.560 --> 00:04:16.240
+sent to Steam on the client-side. What happens on&nbsp;
+the backend is that Smart2Pay sends an information&nbsp;&nbsp;
+
+00:04:16.240 --> 00:04:23.280
+to Steam that the transaction with specific&nbsp;
+id was completed. It can be done for example&nbsp;&nbsp;
+
+00:04:23.280 --> 00:04:30.720
+using a webhook. Then, Steam looks into its&nbsp;
+database for this transaction, adds funds to the&nbsp;&nbsp;
+
+00:04:30.720 --> 00:04:38.640
+proper user and marks the transaction as complete.&nbsp;
+So where's the bug? Let's take a closer look at&nbsp;&nbsp;
+
+00:04:38.640 --> 00:04:44.560
+how exactly do these systems create a string&nbsp;
+from parameters when calculating a signature.&nbsp;&nbsp;
+
+00:04:46.400 --> 00:04:52.560
+Turns out that they were using the parameters&nbsp;
+one next to another, without any separators.&nbsp;&nbsp;
+
+00:04:53.600 --> 00:05:02.080
+So for my body, the string would look like&nbsp;
+this. SHA256 hash is calculated using this value&nbsp;&nbsp;
+
+00:05:02.080 --> 00:05:11.280
+and a secret at the end. So this is the request&nbsp;
+that sent to Smart2Pay API. Then, Smart2Pay takes&nbsp;&nbsp;
+
+00:05:11.280 --> 00:05:20.800
+the whole request body and splits it first by&nbsp;
+&amp; and then by =. And those characters are not&nbsp;&nbsp;
+
+00:05:20.800 --> 00:05:27.600
+in the string used for calculation. Considering&nbsp;
+this, all these requests would be equivalent.
+
+00:05:29.760 --> 00:05:38.640
+What can you do with that? You can arbitrarily put&nbsp;
+&amp; and = in the body. However, you still can't add&nbsp;&nbsp;
+
+00:05:38.640 --> 00:05:46.400
+or modify any values. But if your email&nbsp;
+happened to contain a parameter name and value,&nbsp;&nbsp;
+
+00:05:46.400 --> 00:05:51.840
+you could overwrite the existing parameters&nbsp;
+that were used when generating a signature.&nbsp;&nbsp;
+
+00:05:53.120 --> 00:06:00.240
+So you can create a Steam account with&nbsp;
+email gregAmount100greg@example.com.&nbsp;&nbsp;
+
+00:06:01.280 --> 00:06:05.840
+Then, you can create a new transaction&nbsp;
+in Steam for as high value as you can.&nbsp;&nbsp;
+
+00:06:06.640 --> 00:06:14.640
+In Poland, it's 400 PLN so the amount parameter&nbsp;
+will be 40 000. Then, Steam creates a new&nbsp;&nbsp;
+
+00:06:14.640 --> 00:06:21.840
+transaction in the database with amount 40 000 and&nbsp;
+generates a valid signature for your parameters.&nbsp;&nbsp;
+
+00:06:22.720 --> 00:06:28.252
+Next, before sending the request to Smart2Pay,&nbsp;
+you modify the body.
+
+00:06:28.639 --> 00:06:32.556
+You move the = from the original amount parameter.
+
+00:06:33.030 --> 00:06:40.689
+Instead of&nbsp;
+Amount=40000 you want to have Amount4=0000.
+
+00:06:40.720 --> 00:06:45.840
+Because Amount4 is a parameter that&nbsp;
+will never be used by Smart2Pay API.&nbsp;&nbsp;
+
+00:06:46.960 --> 00:06:55.546
+Then, you add &amp; and = inside your email to&nbsp;
+add the new Amount parameter with the value&nbsp;100.
+
+00:06:56.037 --> 00:07:03.520
+You didn't modify anything besides&nbsp;
+&amp; and = so the signature is still valid&nbsp;&nbsp;
+
+00:07:04.560 --> 00:07:11.840
+But Smart2Pay sees the Amount parameter&nbsp;
+with value 100. So you proceed to pay 1 PLN.&nbsp;&nbsp;
+
+00:07:12.960 --> 00:07:19.280
+After the transaction is complete, Smart2Pay&nbsp;
+sends a webhook to Steam that the transaction&nbsp;&nbsp;
+
+00:07:19.280 --> 00:07:28.240
+with ID from step 3 is complete. Then, Steam takes&nbsp;
+a look into the database, finds a transaction with&nbsp;&nbsp;
+
+00:07:28.240 --> 00:07:37.520
+this ID and sees that it has an amount of 400 PLN&nbsp;
+so it adds 400 PLN to your account when you only&nbsp;&nbsp;
+
+00:07:37.520 --> 00:07:46.800
+paid 1 PLN. The vulnerability was classified&nbsp;
+as critical and hunter was awarded $7,500.&nbsp;&nbsp;
+
+00:07:49.040 --> 00:07:54.160
+Thank you for watching the video until the&nbsp;
+end. You can access hands-on labs if you are&nbsp;&nbsp;
+
+00:07:54.160 --> 00:08:01.120
+a subscriber of BBRE Premium. Apart from that,&nbsp;
+you will also receive even better version of&nbsp;&nbsp;
+
+00:08:01.120 --> 00:08:07.600
+my newsletter with the best hacking tips and&nbsp;
+tricks, tool tutorials and many many more. And&nbsp;&nbsp;
+
+00:08:07.600 --> 00:08:14.640
+to show how much I appreciate you for watching&nbsp;
+the whole video, here is a code for 25% off:&nbsp;&nbsp;
+
+00:08:14.640 --> 00:08:22.640
+AMOUNT100. With that, you can get BBRE Premium&nbsp;
+for only $5 a month. You can only use the code&nbsp;&nbsp;
+
+00:08:22.640 --> 00:08:29.440
+until 9th September but it will be valid forever&nbsp;
+which means you will get 25% off every single&nbsp;&nbsp;
+
+00:08:29.440 --> 00:08:36.400
+recurrence of the subscription. Find more&nbsp;
+details at premium.bugbountyxplained.com
+
+00:08:36.400 --> 00:08:39.213
+For now, thank you for watching and goodbye!
+
+00:08:41.193 --> 00:08:46.258
+If&nbsp;they use secrets that are as complex as these examples from the documentation,
+
+00:08:46.258 --> 00:08:51.040
+then&nbsp;you could easily break those hashes...
+

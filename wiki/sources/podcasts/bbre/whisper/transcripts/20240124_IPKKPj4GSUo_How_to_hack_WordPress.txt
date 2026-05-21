@@ -1,0 +1,332 @@
+WordPress powers over 40% of the internet today.
+And while WordPress core is quite secure by now,
+if you've ever done anything on WordPress like I did,
+you know that you need WordPress plugins
+for even small things.
+And those plugins, they are not that secure,
+but the problem was not finding bugs for them in my past.
+The problem was monetizing them well,
+but it has changed now.
+And in this video, I will show you both how to start auditing WordPress plugins
+and how to monetize them,
+even if the plugin itself does not have a bug bounty program.
+Enjoy.
+This video is sponsored by WordFence,
+but I will tell you more about it later.
+So the first thing that you need for hacking WordPress
+is the WordPress instance.
+For this, I recommend you to use Docker.
+And I actually use a Docker compose file
+created by Justin from the Critical Thinking Back Bounty podcast.
+You just save this file locally,
+the Docker compose YAML,
+and then you run Docker compose app,
+and it does everything for you.
+And your instance is ready in...
+It can take even a few minutes if you don't have the resources downloaded.
+And then you can access the local instance on localhost port 1337.
+You just have to go through the usual installation steps.
+Doesn't matter things that you put in here, because it's only for you anyway.
+And then you log in, you have your instance of WordPress.
+Then we are interested in WordPress plugins.
+So we'll just go to the...
+to the plugins part and install...
+I click add new plugin and install a plugin.
+I have a prepared one for...
+for the presentation.
+Is this one just click install?
+Then you possibly have to click activate or something like this.
+And then the plugin is installed.
+And always as with every website or every target that I test,
+the first thing is to just start using the thing.
+So in this case, I just need to use this shortcode
+on a page that will...
+So I can just see how normally the requests are sent.
+I can just paste it somewhere here.
+Click update.
+And then when I see this page, I must be unauthenticated.
+So I will open it in the incognito window.
+Then I will see the...
+the feedback part.
+And I can also submit...
+any response.
+I can submit any response.
+response.
+And now I finally have some request in burp with my response.
+It's this one.
+Here's my response.
+Here's everything.
+And when doing the...
+when auditing the source code, one of the first things I do,
+the big thing is I have a request here.
+And now I want to find the part of the source code
+that's responsible for this response.
+And usually the best...
+your best bet to do this in pretty much any technology
+is to just look by using the endpoint name.
+In this case, it's responses,
+because we can also see this...
+this endpoint has the one number.
+It's probably the parameter.
+It's probably the form ID.
+So, you can also see...
+and if you install the docker the way I showed you,
+it creates the vpwp content directory.
+And then the plugins are downloaded here.
+So, you don't even have to, you know, download them manually to your...
+to your computer.
+They are just synchronized in the...
+in the folder outside docker.
+And this is the plugin that I'm interested in.
+So, I will mark find in folder.
+And now I'm only finding stuff inside this folder.
+I also want to limit this to PHP files.
+So, I will do this.
+And it gives us a few responses.
+Now, the part you are looking for now
+in WordPress is register rest route.
+Because this plugin created sort of a new endpoint in WordPress.
+And this is one of the ways that WordPress plugins use to do this.
+I will also show you another way to achieve this later.
+And the syntax of this is basically...
+Here is the base path, which in this case is just a string.
+Possibly it can be a constant or a variable or something.
+Then you have the endpoint name,
+which does match the endpoint I am looking for.
+Because I'm looking for this.
+And it looks correctly.
+And then there are another arguments.
+Among others, there is an argument called methods.
+And we can see that this particular piece refers to a get method.
+But the request I am looking for is actually a post.
+Which means this is not the part that I'm looking for.
+We can also see here a post.
+But this one is to responses slash trash.
+Or we can see responses restore also post.
+But none of these match my results.
+So I will go to another results here.
+And I can finally find another rest route that matches the route I am looking for.
+And matches the method I am looking for.
+So I'm pretty convinced this is the one that I'm interested in.
+Now, the very important thing in the syntax of this register rest route arguments array
+is the permission callback.
+So I'm going to go to another one that I'm looking for.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+And I'm looking for this.
+But if we take a look at these endpoints.
+There is an actual function that does a permission check.
+Let's see how this looks like.
+We can find this function in the same file.
+Which calls other function with this argument.
+So we have to look for this.
+It doesn't really tell us anything.
+There is a strange capabilities array.
+So this is what we are looking for now.
+And finally, after some time, we get to an array of what roles can perform what actions.
+Or what actions can be performed by what roles.
+This is not a standard way.
+There is no one specific way to do this.
+But generally, by looking for the strings like I just did.
+I just searched for strings in this code.
+I can see that the view results capability,
+which is the one I'm interested in,
+can be performed by administrator or editor.
+Administrator, by default in WordPress administrator, can install plugins.
+So the administrator can execute code.
+So any vulnerability that requires the administrator capability
+is out of scope.
+At least the server side vulnerability, where the attacker needs this account.
+Editor, it's a bit better, because it's not the highest privilege level.
+But it's definitely better if you can exploit the bug unauthenticated or with the minimal permission level.
+So we'll come back to the code we're interested in.
+So this these endpoints, they can be executed by administrators or editors.
+So I'm not looking at for them at the moment because I want to find an unauthenticated vulnerability.
+So I come back to this route.
+So now we know what's permission callback.
+We know all the other parts.
+And then there is the callback argument,
+which is actually the function that processes the response.
+So I can I can look for the function with the name.
+It's very often in the same file.
+And now I have just found the oops,
+I have just found the the function that processed my response.
+We won't get into details of this because it's not that interesting, actually,
+at least at the moment.
+But I have just found the code that processed this request.
+And this is for me always the first step when doing any kind of source code review.
+Before I get to another way that plugins can define routes,
+and I will also show you an actual bug in one of the plugins.
+Why to even look for them?
+Because as I as I've told you in the intro, it used to be quite difficult to monetize them.
+Of course, if you have an authenticated severe bug like server side bug or an XSS,
+you can report the zero day to many companies and possibly get paid for them.
+But there are a few problems with this.
+One problem is that often WordPress is out of scope,
+and you will just not get paid for these bugs.
+The other problem is you need the bug to be either a server side bug or an XSS,
+because it cannot be anything with user interaction.
+Even if you have like an account takeover that only requires one click
+or requires the victim to open a website, that's too much for you to get paid.
+And the plugin developers usually don't host a bug bounty program.
+So these plugins, even though they power big part of the internet, were hard to monetize.
+But now there is a WordPress bug bounty program, which covers every single plugin above 50,000 installs.
+And I think it's a really, really great opportunity.
+WordPress actually sponsors this video, and I'm really happy to collaborate with them,
+because I genuinely, I genuinely think it's a good opportunity to make money to learn source code review,
+because these plugins, they are not very secure.
+I looked at some of them and there are really, really a lot of holes in them.
+And above 50,000 installs, there are over 800 plugins, which means millions of lines of PHP code,
+that's potentially vulnerable. And if you're interested in taking part, go to bbre.dev slash wf, like wordfence.
+So let's come back to another way that a plugin might define a route.
+Let's install a plugin that you maybe know from the Bounty Vlog, if you, if you watched it carefully,
+the Monster Insights plugin for Google Analytics.
+It's one of the most popular plugins out there.
+And the way this plugin works is a bit different.
+When you interact with it, there are no requests to the endpoint like before with the restaurant.
+There are only requests to admin ajax.php.
+And there's the action parameter, which is actually crucial here,
+because the other way I observed plugins defining routes was using the addAction function.
+And the way it works is a bit similar to the restaurant.
+First, there's the action name, which is actually the parameter that we can see here,
+the action. And then there is the callback function that will serve a particular request.
+And one difference between the register restaurant and this,
+that you should immediately see that first there is no method here, but it's not as big of a problem.
+But there's also no defined way for the permission check.
+In the register restaurant, we saw the particular argument, which was a function to verify permissions.
+In this case, there is nothing like this.
+So in every single controller, the code should verify if the current user has capabilities or has permissions
+to make a particular action.
+If you are in security for a longer time, you know that if developers have to do something over and over
+and over again like this in the if statement, eventually they will forget about it.
+So there are definitely loads of access control bugs with this.
+And apart from this, there is PHP code, which processes the response.
+And unfortunately, I can't tell you how to start hacking WordPress plugins.
+I can tell you how to define routes.
+But eventually what you need is you need to be able to read this code, analyze it and find bugs.
+So let's let's come back to the user feedback plugin and let's actually find a real, a real vulnerability.
+One of the ways that I like to search the code for vulnerabilities is to use a regular expression like this.
+So let's look at this.
+It means there's an apostrophe, which means I am looking for something inside the string.
+If the target would be using double quotes, I would also have double quotes here.
+If it would be JavaScript, I will also probably have backticks here.
+Then I'm looking for for opening the HTML tag, then for anything.
+And then I'm looking for the way to insert user data.
+So essentially I'm looking for string concatenation that uses HTML tags, because then I know that if HTML
+tags will be inside concatenated strings, potentially I can look for excesses.
+And in PHP that they use percent s to define the variable inside the string.
+So that's why I just have the percentage because sometimes it's not s, it's something else.
+So that's why I'm looking for a few results.
+And I want to look at this one in particular, because I know it leads somewhere.
+It's it has the age, the a element with the href attribute that uses the mail to protocol,
+which means when you click on the link like this, the application to send an email is being opened.
+And we can see that this this syntax.
+I'm not really sure what this one means, but it does mean user user data because they use the sprint
+function and they put the row value there.
+So let's review what's the the row value, what happens here.
+And the the function is called get question answer HTML.
+And it just takes the question as the as the parameter.
+And we can see that the row value is just the value of the question.
+And if we take a look at the request we sent earlier to this endpoint when when submitting the response.
+It looked like this.
+We had the our answers.
+We had the question ID and we had the value where the string that I put in.
+So now we can see that the row value that we are interested in.
+This is potentially the culprit of this vulnerability is just the response.
+But we also see the if statement here that the question type must be an email.
+So now let's get to the to the back end.
+Let's get to the form that that we are or the survey that we are using.
+So we have the the email email capture the name of the question.
+I'll just name it the email.
+And then we can save it to make changes.
+Please duplicate the server.
+Create a new one.
+We can create a new one.
+We don't we'll duplicate this this survey because there we already have some responses.
+And now we can use the email capture field and the email name to to create a new survey.
+We don't really care about many of these, but we want this to be published.
+Save and publish.
+Nice.
+And then we have to open our page and change the short short code to two.
+Then we update it.
+And when we open the other the other website, we can see that it allows us to input the email
+here.
+Now when we come back to to burp and find this response and send it to intruder
+to to repeater, we can see the value of our response.
+Let's now just try to inject an arbitrary email, followed by escaping the
+the attribute and injecting another one.
+And we send it.
+We wait for a little bit because it sends an email.
+In the meantime, when you went in the in the cut, I also configured the email client because
+this code
+is actually triggering in the email generation.
+You can see we are in the emails director in the user feedback email response notification class
+because this bug only shows in the email.
+It's unexploitable.
+As far as I know, that's the only reason why I'm showing you this.
+I cannot show you a real bug.
+And we can see that
+the email was sent.
+I have my my environment to see the emails here.
+And if we take a look at the HTML source,
+it loads for a little bit.
+But
+we can see that we did inject a new attribute into here.
+Now, in emails, usually email clients do something to prevent this.
+Here as well, here is a CSP on the on this website that I use for testing emails that
+prevents me from prevents this alert from actually popping up.
+And the same goes for and WordPress plugins that I used to,
+to, you know, test,
+test these things here.
+If we see the the response, it's sanitized.
+So the alert.
+So here it's like we didn't have the injection of the of the attribute,
+but before sanitization we had.
+So this is this bug, as far as I know, has no impact because it's only injecting attributes
+into the email and email are untrusted by default.
+But if you can find the email plugin for WordPress that allows you to see the emails
+that you are sending and does not sanitize them properly,
+feel free to use the part, the half of the bug that I've shown you to basically exploit this and
+and get the bounty.
+And that's it.
+It's as simple as this.
+So now what's what's left to be done for you is to actually go and hack WordPress yourself.
+Remember that by hacking on this program, you can make money yourself.
+But also since WordPress WordPress is sponsoring this video, you also support me.
+So if you are interested, go to bbary.dev slash wf and just start hacking.
+They are now running a promotion and you can get up to $10,000 for vulnerabilities in WordPress
+plugins.
+It's a crazy good opportunity and I'm definitely going to participate myself.
+For now, thank you for watching this video and goodbye.

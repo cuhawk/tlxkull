@@ -1,0 +1,152 @@
+Hello everyone, so I'm here in Gettynbra with Johan Carlsson recording the podcast,
+but he was also kind enough to show us the SSRF in GitLab that he exploited in a very clever way.
+It's not the typical full read SSRF where you just read the metadata and you have the impact.
+It's the one when he actually had to work hard to get the critical impact and the good payout,
+and he will walk us through the bug today. So enjoy the video.
+Can you tell us please what's the functionality where the bug started?
+So this bug was in a fairly new functionality that was, they called it analytic dashboards.
+It's sort of like a third-party integration thing where you could get data and send data to an
+analytic service that would monitor how your application is used.
+Sort of.
+And that's something that you configure as a URL as a third-party website, right?
+Yeah, exactly.
+So, and for the context of this bug a bit later, I think that originally you configured this as an
+administrator on the platform. So you configured a set of an analytic dashboard, a set of features
+that GitLab also provides as a Docker or not the Docker, even worse, like Kubernetes cluster thing.
+And so, and then you, so yeah, so you, you provide it with like four different URLs to four different
+services running inside of this Kubernetes cluster on different ports and stuff like that.
+
+And what I found then was that all of these were in different ways suspect to SSRF, but only one of them
+were like a full read where you can actually get the error back. The other ones were blind and like
+semi-blind and really blind.
+Yeah. How did it happen that one of them returned the body?
+Yeah. That was, when you look at the source code, it was just like one of them had,
+just that it was treating, it was trying to treat whatever it got back as JSON. And they had a,
+not their like general error message when things break, they just sent you back whatever the JSON
+parsing did.
+
+So you got back like an error, like we cannot parse this. And then you got like this giant
+payload back.
+Yeah. At the best. And so how did you show the impact of this?
+Yeah. So I think it's the reason why I chose to highlight this bug is because I think it,
+it proves how you can gain a higher impact by knowing your target. And in this particular case,
+this bug went from, I reported this as high because I had a full read and I thought that
+that's usually a high or it at least could be. And then it got,
+I managed to first move it to critical and then it get pushed down to medium again. And then I
+threw some fighting, got it back to critical again.
+Yeah. It was a long read.
+Yeah. It was a long ride.
+So the, the idea here was that I could get a full read both on my internal or like my self-hosted
+instance, but also on the, the prod instance where I could actually like poke around in whatever they
+have in their infrastructure. I didn't really find anything super sensitive. They have had one critical
+SSRF in the past, which was this Grafana SSRF thing where I think that Justin managed to actually show
+some real impact in the production, at least poke at some real systems there. And I think they've hardened
+it quite a lot since then. So I focused a bit more on my self-hosted instance.
+Yeah. How does, if I can interrupt, how does GitLab rate the severity more based on the,
+the GitLab common instance or the self-hosted one, which, which is the most important one?
+No, it's actually the same. You can get the, the, the highest bounty both for the, the self-hosted and
+the, the.com one. You just have to prove that it's not something that you have to like misconfigure,
+then it might be lowered even for the, so in this case, I wanted to show like, if you just install it
+normally using their, like the packaged version they have. And if I just install it and I could
+trigger this and it could get like a critical impact, then that's enough to get a full critical
+on the, on GitLab as well. So how did you achieve this? Yeah. So I started to look at different services
+that are, so when you install GitLab locally or as a Docker instance, they spin up a bunch of services
+that they actually list in their documentation, like all the ports where things are running. So you
+don't really have to do any scanning or whatever. You can just try it out and see if any of them have
+something interesting to use. So I, I looked at that list and I also tried to read all of the old
+SSRF reports I could find from GitLab. And I didn't find anything that managed to put it higher than
+a high essentially. But I did find, which I think you kind of corrected me before, but the, someone has
+collected like a list of blind SSRF gadgets. Yeah, the asset nodes blind SSRF chain. Yeah, exactly.
+Yeah. So on that list, there's actually like a, a small SSRF gadget from GitLab, where they mentioned the,
+the, the Redis exporter, which is a, a small tool that is used by, I think it's used by Prometheus to gain
+like statistics, to show you about your instance. And this Redis exporter has a, a path that is called
+slash scrape. And then you can give it a URL as a query parameter. Yeah. And in the old asset note,
+the list, they just show you that you can point it to a, an IP address of the Redis instant. And then you can
+get like keys and values from the Redis instance back. Oh, so it's like designed to pull things out of the Redis instance.
+Yeah. Okay. And it's quite different from the other, they have a lot of exporters,
+but, and usually because Prometheus is supposed to show like metadata and statistics and stuff like
+that. So usually they don't contain anything sensitive, the things that you can export. But
+this Redis exporter is a bit different because it gives you keys and values. And that's sort of what you
+use Redis for, you store these keys and values in there and potentially they could be dangerous.
+And what's my thought? Yeah. But it, so it happened now that
+nowadays, apparently they are not exposing Redis on an IP anymore. I guess they used to do it when
+AssetNote found this gadget. But what I found out was that this Redis exporter also could work with
+Unix sockets. Yeah. Which is, if you're, I'm not like a low level
+Me neither. Network hacker, but a Unix socket is some sort of network low level piece.
+It's something I didn't know you can talk to when you have the SSRF, that's for sure. No, no.
+And I guess you cannot really do it usually from like a web context, but this exporter is built in a
+way that it can talk to Redis through a socket as well. Because Redis is also talking this really
+low level TCP language. Yeah. Which also, previously you could get RCE just by talking to a Redis through
+HTTP. Yeah. But they have removed that exploitation vector as well. No, but I figured out that I could
+point to this Redis instance. And then you could also, when you give it this URL, you could also give
+it another parameter that limits sort of what you search for. So you can search for a word and put a
+star in and you can like search for different keys in the Redis instance. And at that point, I thought it
+was high again, because you can get data, but I don't really know what they store in the, in Redis, in
+GitLab. So I wanted to find something juicy in there. So I started, you can also then, when you host your own
+GitLab instance, you can monitor, so you can log into the instance through SSH and you can start
+monitoring the logs from Redis. And I just started like tailing and repping through the logs while
+using GitLab to see if like something interesting. So I like created tokens, like connected some tokens
+to my account and stuff like that to see if something of it like ended up in, in Redis. And I got some hits,
+somewhere like ephemeral, I guess, like you could see them for like a really short period and then
+they disappeared. Yeah. So that could be something you could report, I guess. And then I also found
+that you could get like SSRF, no, CSRF tokens for all sessions. So you could get the IP and the CSRF token
+that is connected to that session. Yeah. So you could sort of scrape all of the CSRF tokens and then make a
+POC page where you match the IP who's coming in. Is in GitLab CSRF token enough to get the CSRF?
+Yeah. Yeah. Because the cookies are none. Oh, that's very kind. Yeah. So, I mean, that vector could be
+abused as well. Yeah. So I kind of wrote that first, but that's also not really critical because you have
+to have a lot of user interaction. Yeah. And also you would have to have the JavaScript code. Yeah.
+That would match the IP of the CSRF token and hold it enough. Yeah. It's a bit, it's a bit complex. Yeah. Complex.
+But then eventually I stumbled on to something because I was like going through all of the tokens and stuff
+in my head, like sensitive things that you can do with GitLab. And then I tried out creating and
+connecting a GitLab runner. And the GitLab runner is when you're working on GitLab or GitHub or anything
+else, you have this concept of like storing your code, but then you also have the concept of running
+pipelines or like build jobs or all of these other like CI, CD, DevOps things. Yeah.
+And those, in the context of GitLab, these are running on separate servers that are called
+runners. And a runner is registered with the token. And then when the runner is idle, it will start
+like pulling the GitLab instance, like I'm ready for work. And then if someone has a project that is
+connected to this runner and they have a job, they will say like, this is my new job. Yeah. And the runner
+will say like, okay, I take that job, it will pull the session and it can pull the code and it will run
+the code and do the all the CI things. So the runner authenticates using the token. Yeah, exactly. Yeah.
+Okay. And it starts like picking jobs using that. And then the idea is that you shouldn't really need
+to care which runner you are using, like they are the same if you have like allowed them to be used in your
+project. Yeah. So what I found then was quite interesting was that they actually used that token as
+a part of the ID in the key value in Redis. Yeah. So that was stored like indefinitely
+for what I could see. So you can actually like ask for, you would ask for the beginning of the key,
+which was always the same and then you would put a star there. Yeah. And then you would get a list of
+like all the runner tokens on the instance. And using these runner tokens, you could then create your own
+runner, connect to the GitLab instance and say like, okay, I want all of these jobs. Yeah. So there was no sort of IP
+validation of the runners. It was just any runner at the token. No, at least not like in the base scenario.
+And this is also something they warn about in the documentation. They say like this token
+is supposed to be secret because if you find it, you will be able to impersonate the runner and run jobs.
+Yeah. And what that sort of creates in the end is actually RCE then in all of the runner jobs on the GitLab.
+Yeah. Because runner has access to all the source code. Yeah. Does it have like push access as well?
+Yeah. Yeah. Depending on what it's supposed to do, but it will definitely be, I mean,
+what a runner job usually does is that it's build things, it runs tests and stuff. It might push artifacts
+and it will, it could deploy code in production or in different places. And so, yeah, you are,
+yes, in a way you have like all the keys to the kingdom. Yeah. So that's, that's the best thing.
+How much time did it take? Because I assume you had the SSRF and then you just spend a lot of time
+using different features to see if there's something sensitive in the redis. Yeah. So how much time did it
+take for you to finally find this feature that, that gave you the critical? I think I spent like a week
+or two, I also had to do, but not like full time, it's like tinkering on like thinking about new ways
+of exploiting, because I also was at the same time like fighting with the triagers. So GitLab hadn't
+even seen the bug yet really. Yeah. So I just had it like in the back of my mind, like I want to
+exploit this more. So I just thought about different things and test it out. And so from the beginning,
+I actually found this through code review because they were using a feature, they were actually using
+a safe wrapper to send HTTP requests, which they always use. But they had put in the flag, allow
+local requests or something like that. Yeah. And that flag is used only when they know that it's safe
+to do this. So I kind of assumed that they first built this for the admin side of GitLab, and then
+they exposed it to like groups and projects to configure on their own. Because could any user
+configure this? Yeah. At the point where I found it, you can just be a regular user with your own
+project and you can... So that's why it was critical, because there was no privilege required. Yeah,
+they will put it as privilege required low. But it is a self-registration, no? So this is the... Yeah,
+but on the self... So they have in their scope policy, like a special edge case that they always treat...
+If you need an account, it will be low. And that's because on self-hosted instances, it's not
+guaranteed... Because there's no always self-signup. No, exactly. Okay, fair enough. Yeah. But the rest was
+like top. So that's why. Yeah, so exactly. So then you could just go in there and you could get...
+I don't think that they put anything else any lower. Yeah, and the scope was changed then. I guess that's
+part of SSRF to begin with. Okay. I'm not sure. Scope is really hard to... Yeah, but I guess if you have
+different components, you can leak data from Redis. Yeah, and I mean, and you're actually in the runner then,
+which is a separate application as well. Yeah. So, yeah. Cool. Nice. Congratulations for that.
+Thank you. If you enjoyed it, listen to our whole interview that will be published about two weeks
+after this bug is published. We'll talk about way more interesting things. So for now, thank you for
+watching and goodbye.

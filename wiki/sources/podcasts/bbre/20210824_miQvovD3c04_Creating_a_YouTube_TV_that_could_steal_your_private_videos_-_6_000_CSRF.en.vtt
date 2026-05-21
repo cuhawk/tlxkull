@@ -1,0 +1,300 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.240 --> 00:00:06.160
+Hello! In this video you will learn how it was&nbsp;
+possible to steal all your private and unlisted&nbsp;&nbsp;
+
+00:00:06.160 --> 00:00:13.520
+videos from YouTube by spoofing a YouTube TV&nbsp;
+and exploiting a CSRF vulnerability. Unlike the&nbsp;&nbsp;
+
+00:00:13.520 --> 00:00:18.400
+previous write-up I covered on my channel&nbsp;
+about the topic, this bug allows to steal&nbsp;&nbsp;
+
+00:00:18.400 --> 00:00:24.080
+the whole video with sound, with original&nbsp;
+quality and without knowing the video ID.&nbsp;&nbsp;
+
+00:00:24.720 --> 00:00:31.520
+It was identified by a hunter who knows everything&nbsp;
+about YouTube - David Schütz. Link to his blog&nbsp;&nbsp;
+
+00:00:31.520 --> 00:00:38.720
+post is in the description. Enjoy! On YouTube,&nbsp;
+you can pair your phone or your browser with the&nbsp;&nbsp;
+
+00:00:38.720 --> 00:00:46.160
+TV to control it remotely. To do this you can&nbsp;
+be signed to a different account and you can be&nbsp;&nbsp;
+
+00:00:46.160 --> 00:00:54.000
+on a different network than the TV. Interestingly,&nbsp;
+on the TV you can also play your private videos.&nbsp;&nbsp;
+
+00:00:54.880 --> 00:01:02.240
+And I'm not gonna lie, a few times I was wondering&nbsp;
+how does this work but I thought that in order to&nbsp;&nbsp;
+
+00:01:02.240 --> 00:01:09.520
+test this, I would need to somehow attach to my&nbsp;
+TV so i didn't do that. But the truth is that&nbsp;&nbsp;
+
+00:01:09.520 --> 00:01:17.280
+YouTube TV app just uses a WebView. WebView allows&nbsp;
+the application to embed a website and YouTube TV&nbsp;&nbsp;
+
+00:01:17.280 --> 00:01:25.680
+app just embeds youtube.com/tv URL this way.&nbsp;
+While visiting this address from your browser,&nbsp;&nbsp;
+
+00:01:25.680 --> 00:01:30.800
+you can just change the user-agent and you will&nbsp;
+be served the TV version of the application.&nbsp;&nbsp;
+
+00:01:31.760 --> 00:01:40.480
+Then, you can pair a TV with the browser or the&nbsp;
+phone. The process looks like this: First, the TV&nbsp;&nbsp;
+
+00:01:40.480 --> 00:01:48.080
+requests a screen_id from generate_screen_id&nbsp;
+endpoint. Then, using this screen_id,&nbsp;&nbsp;
+
+00:01:48.080 --> 00:01:54.560
+the TV requests a lounge_token. This token&nbsp;
+will be very important later in the exploit.&nbsp;&nbsp;
+
+00:01:55.680 --> 00:02:02.480
+Next, the TV sends a request to get_pairing_code&nbsp;
+endpoint with the lounge_token and in the response&nbsp;&nbsp;
+
+00:02:02.480 --> 00:02:11.120
+there's a 9 digit PIN code. This PIN code is&nbsp;
+presented on the screen. Then, the user fills in&nbsp;&nbsp;
+
+00:02:11.120 --> 00:02:18.320
+this PIN code in the browser. The browser makes a&nbsp;
+request to get_screen endpoint with this PIN code.&nbsp;&nbsp;
+
+00:02:19.200 --> 00:02:26.080
+if the PIN code is valid, the response contains&nbsp;
+a lounge_token for the user. It's the same token&nbsp;&nbsp;
+
+00:02:26.080 --> 00:02:34.640
+as in step 3 and it allows the user to control&nbsp;
+the TV. From now on, the TV periodically sends&nbsp;&nbsp;
+
+00:02:34.640 --> 00:02:39.920
+requests to the /bind endpoint to see if&nbsp;
+there are any new commands from the user.&nbsp;&nbsp;
+
+00:02:41.280 --> 00:02:48.320
+When the user clicks on "watch on TV" button, the&nbsp;
+browser makes a POST request to the /bind endpoint&nbsp;&nbsp;
+
+00:02:48.320 --> 00:02:56.640
+with the ID of the video and the lounge_token.&nbsp;
+Then, the lounge API responds to the TV&nbsp;&nbsp;
+
+00:02:56.640 --> 00:03:03.840
+with ID of that video which is then played for the&nbsp;
+user. So we can just change the ID of the video to&nbsp;&nbsp;
+
+00:03:03.840 --> 00:03:10.240
+a private, one you might think... but it's not&nbsp;
+that easy because when the video is private,&nbsp;&nbsp;
+
+00:03:10.240 --> 00:03:18.240
+the response from the lounge API contains an&nbsp;
+additional parameter: ctt. It's a token that&nbsp;&nbsp;
+
+00:03:18.240 --> 00:03:27.440
+allows the TV to access the private video. The&nbsp;
+hunter did not identify any bugs on this side&nbsp;&nbsp;
+
+00:03:27.440 --> 00:03:33.760
+of the process, at least in this write-up.&nbsp;
+But there was a problem on the client-side&nbsp;&nbsp;
+
+00:03:33.760 --> 00:03:40.240
+of the flow. Namely, the POST request to the&nbsp;
+/bind endpoint had no CSRF protection at all.&nbsp;&nbsp;
+
+00:03:42.160 --> 00:03:49.280
+So let's change the attitude here. Instead of&nbsp;
+attacking the YouTube server to give us access&nbsp;&nbsp;
+
+00:03:49.280 --> 00:03:56.640
+to private videos of other users, we will attack&nbsp;
+the user and play his private video on our TV.&nbsp;&nbsp;
+
+00:03:58.160 --> 00:04:05.680
+What do I mean by our TV? Well, YouTube TV&nbsp;
+is just a website. To play the video as a TV&nbsp;&nbsp;
+
+00:04:05.680 --> 00:04:12.000
+you don't need any hardware token or anything.&nbsp;
+You just need to make a few API calls to be&nbsp;&nbsp;
+
+00:04:12.000 --> 00:04:19.600
+able to communicate with YouTube API. High-level&nbsp;
+overview of the attack looks like this:&nbsp;&nbsp;
+
+00:04:21.280 --> 00:04:28.640
+First, we create a malicious TV or rather just&nbsp;
+a script that communicates with YouTube API&nbsp;&nbsp;
+
+00:04:28.640 --> 00:04:34.960
+like a TV. Then, we pair the victim's&nbsp;
+browser with our TV from step 1.&nbsp;&nbsp;
+
+00:04:36.720 --> 00:04:42.960
+Next, using the CSRF attack, we make the&nbsp;
+victim play their private videos on our TV,&nbsp;&nbsp;
+
+00:04:43.520 --> 00:04:51.360
+thus bypassing the access control. Let's take a&nbsp;
+closer look at pairing the victim with our TV.&nbsp;&nbsp;
+
+00:04:51.920 --> 00:04:58.480
+It's a five-step process and the user must&nbsp;
+fill in the PIN code first. It would be hard&nbsp;&nbsp;
+
+00:04:58.480 --> 00:05:06.480
+to perform this using just a CSRF. But in our&nbsp;
+case, we don't need it. Actually, the process&nbsp;&nbsp;
+
+00:05:06.480 --> 00:05:13.600
+is created like this so that the normal user only&nbsp;
+needs to rewrite nine digits into their browser.&nbsp;&nbsp;
+
+00:05:14.960 --> 00:05:18.800
+Then, the browser exchanges&nbsp;
+the PIN for a lounge_token.&nbsp;&nbsp;
+
+00:05:20.080 --> 00:05:28.000
+Obviously, it would be insane to make the user&nbsp;
+rewrite the whole lounge_token but in our case,&nbsp;&nbsp;
+
+00:05:28.000 --> 00:05:36.000
+when we are executing a CSRF attack, the victim&nbsp;
+will be on our website anyway. So we can skip this&nbsp;&nbsp;
+
+00:05:36.000 --> 00:05:42.320
+part with PIN codes and just put the lounge_token&nbsp;
+on the CSRF proof of concept website for the&nbsp;&nbsp;
+
+00:05:42.320 --> 00:05:50.240
+victim to use. With this, we have the pairing&nbsp;
+process taken care of. How about the video ID?&nbsp;&nbsp;
+
+00:05:50.960 --> 00:05:56.960
+At the beginning, I told you that this&nbsp;
+attack doesn't require leaking the video ID.&nbsp;&nbsp;
+
+00:05:58.160 --> 00:06:02.400
+What do we then send to the /bind&nbsp;
+endpoint in context of the victim?&nbsp;&nbsp;
+
+00:06:02.960 --> 00:06:10.640
+Instead of video ID, we can send ID of the&nbsp;
+playlist. When you create a new playlist,&nbsp;&nbsp;
+
+00:06:10.640 --> 00:06:17.840
+it gets an identifier that is not predictable.
+However, you have a few playlists that YouTube&nbsp;&nbsp;
+
+00:06:17.840 --> 00:06:25.920
+creates for you by default: watch later&nbsp;
+playlist with identifier WL, liked videos with&nbsp;&nbsp;
+
+00:06:25.920 --> 00:06:34.320
+identifier LL, but the most useful for us is&nbsp;
+Uploads playlist with all your videos, including&nbsp;&nbsp;
+
+00:06:34.320 --> 00:06:44.160
+private ones. You can create the playlist ID based&nbsp;
+on the channel ID of the victim. For example, this&nbsp;&nbsp;
+
+00:06:44.160 --> 00:06:52.240
+is my channel ID. You can see it by just visiting&nbsp;
+my channel, it's not secret. And this is the ID&nbsp;&nbsp;
+
+00:06:52.240 --> 00:06:59.520
+of my Uploads playlist. They differ only on the&nbsp;
+second character: instead of C there is U letter.&nbsp;&nbsp;
+
+00:07:01.120 --> 00:07:08.320
+If you open that playlist, you can only see my&nbsp;
+public and unlisted videos but I will also see&nbsp;&nbsp;
+
+00:07:08.320 --> 00:07:16.160
+the private ones there. So in our exploit, instead&nbsp;
+of requesting a video ID, we request a list&nbsp;&nbsp;
+
+00:07:16.160 --> 00:07:23.120
+ID with the uploads playlist ID. You can hardcode&nbsp;
+it onto the web page when targeting a victim.&nbsp;&nbsp;
+
+00:07:24.480 --> 00:07:31.600
+Then, this request will be sent from our website&nbsp;
+in the context of the victim. The authentication&nbsp;&nbsp;
+
+00:07:31.600 --> 00:07:37.520
+cookie will be attached. How does this happen&nbsp;
+with SameSite cookie attribute? Well, Google&nbsp;&nbsp;
+
+00:07:37.520 --> 00:07:44.320
+doesn't seem to particularly like this security&nbsp;
+mechanism and sets the SameSite value to None&nbsp;&nbsp;
+
+00:07:44.320 --> 00:07:52.480
+for most cookies which makes the CSRF possible.&nbsp;
+After the request is sent to the lounge API,&nbsp;&nbsp;
+
+00:07:52.480 --> 00:07:59.440
+our TV makes a request to the /bind endpoint&nbsp;
+which responds with the video ID for the first&nbsp;&nbsp;
+
+00:07:59.440 --> 00:08:06.480
+video from the Uploads playlist and a ctt token&nbsp;
+that allows watching a video if it was private.&nbsp;&nbsp;
+
+00:08:07.360 --> 00:08:13.680
+David created a proof of concept script that does&nbsp;
+this whole exfiltration phase for you and reads&nbsp;&nbsp;
+
+00:08:13.680 --> 00:08:19.440
+all victim's private and unlisted videos. You&nbsp;
+can read the script yourself if you want. The&nbsp;&nbsp;
+
+00:08:19.440 --> 00:08:26.000
+link is in the description. It also contains all&nbsp;
+the steps required to communicate with YouTube&nbsp;&nbsp;
+
+00:08:26.000 --> 00:08:34.960
+API like a TV. He was rewarded $6,000 for&nbsp;
+that report. The fix was simple - now the&nbsp;&nbsp;
+
+00:08:34.960 --> 00:08:41.200
+/bind endpoint requires a Bearer Authentication&nbsp;
+header, making the CSRF impossible. That's it&nbsp;&nbsp;
+
+00:08:41.200 --> 00:08:45.840
+for this video. If you've made it that&nbsp;
+far, feed the YouTube algorithm with a&nbsp;&nbsp;
+
+00:08:45.840 --> 00:08:52.000
+like so that it recommends the video to other&nbsp;
+hackers that can learn something from it. Also,&nbsp;&nbsp;
+
+00:08:52.000 --> 00:08:58.160
+sign up for my newsletter. Apart from getting more&nbsp;
+tips and tutorials from me, you can also get there&nbsp;&nbsp;
+
+00:08:58.160 --> 00:09:05.120
+the best deals for any products that I create.&nbsp;
+But for now, thank you for watching and goodbye!
+

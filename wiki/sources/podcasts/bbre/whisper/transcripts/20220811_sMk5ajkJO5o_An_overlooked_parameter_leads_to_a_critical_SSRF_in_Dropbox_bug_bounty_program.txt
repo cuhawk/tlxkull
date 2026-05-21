@@ -1,0 +1,64 @@
+Hello! In this episode of Bug Bounty Reports Explained, I will show you a way to steal documents
+and data of other users from Dropbox-owned Helusign application by exploiting an SSRF
+in the integration with Google Drive. I am sure that this bug is still present in many integrations
+out there, so make sure to stick until the end of the video where I will show you how you should
+test for this bug. Link to the original post by Harsh, also known as HTTP Void, is in the description.
+Enjoy! This episode is sponsored by Integrity. Integrity is Europe's biggest bug bounty platform
+with over 400 programs to hack on. I hugely appreciate Integrity for investing a lot in
+community enablement. They create an awesome Bug Bites newsletter, they create monthly access challenges,
+they even have a great YouTube channel. If you are not one of over 50 000 hunters, check out Integrity
+now using the link from the description. Helusign is an application owned by Dropbox that's used to
+sign documents. It also integrates with Google Drive, so you can ask someone to sign a document
+that you store on your Google Drive. Helusign must somehow access files from your drive,
+and there are a few ways to do this integration, but let's see how it worked in this example. Of course,
+first you must authenticate to your Google account and authorize Helusign to access your files. Then,
+this iframe pops up with the list of your files. When you finally choose a file that you would like to
+sign, the iframe sends a post message to Helusign which contains the file ID of the file that you've chosen.
+Then, you send the request with this file ID to Helusign and Helusign communicates with Google Drive API
+to fetch this file on the server and then serves you this file. So, Helusign here acts as a proxy.
+And of course, I'm simplifying this process a bit. It takes a few requests, but there is nothing
+interesting or worth mentioning in between the first and the last one. But let's take a closer look at
+what actually Helusign server does to fetch this file. Before the attack was successful, the hunter
+had to assume these facts, which we now know for certain. This is Google Drive API endpoint to serve
+a file. It contains the file ID which you had to send to Helusign server first. But this endpoint does
+not respond directly with a file content. It returns a JSON with metadata about the file. This metadata
+contains the download URL which is an actual address to the file contents. So, Helusign must make another
+request to this URL to fetch the file which can eventually be served to you. So, here Helusign makes
+two requests. And whenever you have a functionality where the server makes HTTP requests to the URL which
+you at least partially control, you should be thinking about SSRFs. About the possibility to trick
+the server into sending these requests to other locations. And when we look at these two addresses,
+the second one doesn't seem to be our under control at all because we can't influence the URL where our
+files is stored by Google Drive. The first one is a bit better because at least we control the file ID,
+but unfortunately it's not possible to trick the server into sending this request to other hosts if you
+only control the part after the slash. What you can do however is you can try to control the path and
+parameters of the request. So, let's take a look at the reference of this endpoint to see if there's
+anything that could give us for example an open redirect. On the first side it doesn't look like so.
+None of these parameters looks to be particularly interesting. However, when we scroll back to the top
+we can see a mention of an alt equals media parameter. When it's provided, the server doesn't return a JSON
+with metadata about the file, but it returns the file itself. If HelloSign application would use this
+parameter, they wouldn't have to make two requests to first fetch the metadata and then fetch the file,
+but they could fetch the file with a single request.
+So, let's think about what would happen if we would inject this parameter into the file ID and it would
+not be encoded properly. The server would return a whole file to the first request by HelloSign,
+but HelloSign would not know about it and it would try to parse JSON thinking it's metadata. So, all you
+could do with an image or a PDF is to force a JSON parsing error. Nothing interesting. But if you do this
+to an actual valid JSON, then HelloSign will try to parse this JSON, extract things like the title and
+other metadata from the file, and most importantly, it would also extract the download URL and send a
+request to this address to then fetch you the response. So, this is a full read SSRL. You can
+trick the server into sending requests to arbitrary locations and the server gives you the response.
+What's the impact of this? The HelloSign application is hosted on AWS.
+You can use the metadata URL which contains AWS credentials which you can use to log in to the
+server. From there, you have multiple ways to steal data of other users of HelloSign application.
+That's why this vulnerability was classified as critical and rewarded over $17,500.
+Note the fact that Google Drive API was not vulnerable. It behaved exactly like its documentation says.
+It's a bug in the integration. There are probably thousands of applications that integrate with Google
+Drive. A part of them uses the same flow that HelloSign application use and a part of this surely is still
+vulnerable to this attack. So, whenever you see an application that works like this that it takes the
+file ID from you, fetches the file on the server, you should try adding alt equals media parameter to the
+file ID to see what happens. If you see an error, particularly about JSON parsing, then it's a good
+chance that you just found this SSRF. What you should do then is you should prepare a JSON that looks like a
+metadata about the file. For that, refer to Google Drive API documentation.
+If you want to learn even more about SSRFs, check out this video about my report to Stripe.
+Already, two people have watched this video and found bypasses that I had missed, making $500 each.
+If you want to see if you can find another one, click the card on your screen right now.
+For now, that's all. Thank you for watching and goodbye.

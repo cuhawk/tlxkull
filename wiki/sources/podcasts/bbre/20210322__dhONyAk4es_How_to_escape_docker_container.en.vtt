@@ -1,0 +1,243 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.440 --> 00:00:06.487
+Hello! In this video you will learn how to escape a privileged&nbsp;docker container. 
+
+00:00:06.487 --> 00:00:13.940
+Before I understood how docker containes work. I thought that they are insanely complicated. They are surely not easy, but they are also 
+
+00:00:13.940 --> 00:00:21.290
+not that hard. This video will give you an idea about it.&nbsp;
+This episode based on a blogpost by Disconnect3d
+
+00:00:21.290 --> 00:00:27.680
+from Trail of Bits. He's also my friend and he hugely helped my to start by cybersecurity career,
+
+00:00:27.680 --> 00:00:33.169
+so make sure to give him a follow! Links, as always, are in the description. Enjoy!
+
+00:00:33.555 --> 00:00:42.680
+Docker containers are somewhat similar to virtual machines - each one is better for different use-cases. The difference is, among others,
+
+00:00:42.680 --> 00:00:47.952
+that VMs virtualise the hardware and have separate kernel. 
+
+00:00:48.168 --> 00:00:57.690
+Containers, on the other hand, are much ligher. On the lower level, they are just processes isolated from the rest of the system.
+
+00:00:57.690 --> 00:01:02.323
+It has many benefits when you want to create an application.
+
+00:01:02.323 --> 00:01:11.300
+For example, container will be much lighter than the VM and much easier&nbsp;
+to deploy. However, from the security point of
+
+00:01:11.300 --> 00:01:17.990
+view, it is more risky because there's less isolation between the container and the host operating system.
+
+00:01:19.610 --> 00:01:27.020
+It is possible to configure your container securely.&nbsp;
+Then, even if you would have an RCE in the webapp
+
+00:01:27.020 --> 00:01:32.840
+that's inside the container, the attacker wouldn't be able to escalate his privileges
+
+00:01:32.840 --> 00:01:39.816
+to the host machine. However, creating a secure container is not trivial.
+
+00:01:40.248 --> 00:01:47.640
+Often, the easiest way to solve some problem is by giving the&nbsp;
+container additional privileges.
+
+00:01:48.382 --> 00:01:55.382
+In today's episode you see how easy it is to escape a container&nbsp;
+that has too much permissions.
+
+00:01:55.382 --> 00:02:04.022
+Keep in mind, I am not showing you a docker vulnerability that only works in outdated versions.
+
+00:02:04.022 --> 00:02:13.660
+It's a repeatable way to escape the container with specific privileges in the newest version of docker.
+
+00:02:13.660 --> 00:02:20.560
+Precisely, we need to run in the container as root user&nbsp;
+and we need the ability to use the mount command.
+
+00:02:22.300 --> 00:02:29.046
+Let's start by explaining control groups or just cgroups&nbsp;
+It's a Linux feature
+
+00:02:29.046 --> 00:02:37.540
+that allows grouping processes and limiting resources like CPU time&nbsp;
+of those groups. It's also one of mechanisms
+
+00:02:37.540 --> 00:02:43.638
+with which docker isolates processes inside the container from those of the host. 
+
+00:02:43.978 --> 00:02:53.020
+And there's a feature that allows to execute a specific command once&nbsp;
+all processes in the cgroup are terminated.
+
+00:02:53.020 --> 00:02:59.920
+For example, this can be used to notify the kernel&nbsp;
+that all processes in the cgroup are terminated
+
+00:02:59.920 --> 00:03:01.948
+and the group can be removed.
+
+00:03:01.948 --> 00:03:10.721
+This is the feature that will be exploited to escape the container, because this command will be executed on the host.
+
+00:03:11.462 --> 00:03:15.961
+Let's jump to the exploit and explain it step by step.
+
+00:03:19.618 --> 00:03:28.683
+So we start an ubuntu container. These are the insecure options that will allow us to use the mount command.
+
+00:03:29.193 --> 00:03:34.247
+--cap-add is for adding capabilities. Now what are capabilities? 
+
+00:03:34.525 --> 00:03:41.820
+Before them, each process would be either non-privileged, subject to all permission checks, or privileged -
+
+00:03:41.820 --> 00:03:50.580
+efectively run as root, bypassing all kernel permission checks. Capabilities divide those privileges
+
+00:03:50.580 --> 00:03:58.890
+and allow more granular granting. For example, CHOWN capability allows changing file's owner
+
+00:03:58.890 --> 00:04:07.290
+while KILL capability allows sending any signals. SYS_ADMIN is a very powerful capability
+
+00:04:07.290 --> 00:04:14.160
+which will give us the ability to use the mount syscall. Deciding on granting or restricting 
+
+00:04:14.160 --> 00:04:20.700
+each capability upon creation of a new container would be very time-consuming. This problem is
+
+00:04:20.700 --> 00:04:29.545
+partially solved by AppArmor. Among other things, AppArmor can specify a list of restricted capabilities.
+
+00:04:29.545 --> 00:04:36.030
+This command turns off docker-default AppArmor profile, because it restricts
+
+00:04:36.030 --> 00:04:39.334
+the SYS_ADMIN capability which we need.
+
+00:04:39.507 --> 00:04:44.610
+Running this command gives us a shell inside the container
+
+00:04:44.610 --> 00:04:49.769
+and our goal is to execute a command on the host.
+
+00:04:49.769 --> 00:05:01.620
+The first step of the exploit is creating a new cgroup and, using mount command, telling de system&nbsp;
+where are the files that describe this cgroup.
+
+00:05:01.620 --> 00:05:07.803
+Because in practice, cgroup is just a bunch of files and this is its structure.
+
+00:05:08.524 --> 00:05:14.846
+There's one file particularly interesting to us - notify_on_release.
+
+00:05:14.846 --> 00:05:18.577
+When the value inside this file is 0
+
+00:05:18.757 --> 00:05:23.252
+nothing happens when all processes from the cgroup are terminated.
+
+00:05:23.252 --> 00:05:34.157
+However, when the value is 1, upon terminating all processes, a command from release_agent file from upper directory is executed.
+
+00:05:34.157 --> 00:05:43.390
+So in our exploit, we put the value 1 inside notify_on_release file in our cgroup.
+
+00:05:43.390 --> 00:05:50.796
+The command that we will want to execute will be put in&nbsp;the /cmd file inside the container.
+
+00:05:51.600 --> 00:05:57.734
+If our attack will be successful, this file will be executed by the host.
+
+00:05:57.734 --> 00:06:09.585
+However, if we run /cmd on the host, there will be "No such file" error, because the host won't know that this file is inside the container.
+
+00:06:09.585 --> 00:06:16.760
+And obviously, being in the container we can't just write a file on the host OS.
+
+00:06:17.366 --> 00:06:25.258
+So we need to find under what path files from inside the container are reachable on the host.
+
+00:06:25.258 --> 00:06:33.718
+For this, we need to look in the /etc/mtab file. And we'll use a handy regex to extract this path.
+
+00:06:34.430 --> 00:06:39.393
+Next, we put this path inside the release_agent file.
+
+00:06:39.393 --> 00:06:46.151
+Then, we put our command that will be executed on the host inside this /cmd file.
+
+00:06:46.151 --> 00:06:56.533
+In this case, we'll just list processes of the host and put the result inside the /output file inside the container so we can read it later. 
+
+00:06:57.386 --> 00:07:03.798
+So for this whole thing to be triggered, all processes from the cgroup must be terminated.
+
+00:07:03.798 --> 00:07:07.423
+But there are no processes in the cgroup yet.
+
+00:07:07.423 --> 00:07:15.882
+To add process to the cgroup, we need to put this process' id inside the cgroup.procs file.
+
+00:07:15.882 --> 00:07:24.935
+So we create a new process and all it does is putting its PID inside this cgroup.procs file.
+
+00:07:24.935 --> 00:07:31.460
+$$ is a special bash variable that contains each process' own id.
+
+00:07:32.360 --> 00:07:40.405
+And that process is terminated just after doing that. And that's the moment when the release_agent is executed.
+
+00:07:40.979 --> 00:07:45.530
+And in this case, the release_agent is out /cmd file.
+
+00:07:45.743 --> 00:07:54.325
+So on the host the ps command is executed and the result is put inside the /output file inside the container.
+
+00:07:54.325 --> 00:08:03.764
+We can then cat this file and see the result which proves that the attack was successful and we were able to escape the container.
+
+00:08:05.030 --> 00:08:11.096
+To prevent such attack from happening, when creating a docker container, always remember
+
+00:08:11.096 --> 00:08:19.100
+to avoid using --privileged flag, because is basically gives the container full access to the host.
+
+00:08:19.100 --> 00:08:26.054
+Also, never mount docker socket inside the container, because then, the attacker would be able
+
+00:08:26.054 --> 00:08:30.630
+to create a new privileged container himself and use this technique.
+
+00:08:30.630 --> 00:08:39.551
+And also, never run as root inside the container, because it opens a lot of potential attack vectors to escalate privileges.
+
+00:08:39.551 --> 00:08:45.122
+Because keep in mind that the root inside the container is not some different root.
+
+00:08:45.122 --> 00:08:50.252
+By default, its exactly the same user as root on the host.
+
+00:08:50.252 --> 00:08:56.251
+I hope that after watching the video, you understand container escapes a little bit better.
+
+00:08:56.251 --> 00:09:01.683
+If you do, support the channel by leaving a like or maybe even buying me a coffe.
+
+00:09:01.683 --> 00:09:07.067
+Also, sign up for my mailing list to not miss any of my videos or other products.
+
+00:09:07.198 --> 00:09:11.740
+Anyway, for now thanks for watching and goodbye!
+

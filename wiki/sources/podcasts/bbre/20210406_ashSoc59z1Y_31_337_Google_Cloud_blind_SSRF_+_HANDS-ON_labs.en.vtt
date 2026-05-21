@@ -1,0 +1,340 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.960 --> 00:00:06.720
+Hello! In today's Bug Bounty Report Explained
+you will learn how it was possible to exploit&nbsp;&nbsp;
+
+00:00:06.720 --> 00:00:14.240
+blind SSRF vulnerability in Google Cloud. Blind&nbsp;
+SSRFs often have little to no impact but this&nbsp;&nbsp;
+
+00:00:14.240 --> 00:00:20.640
+time the researcher was able to exploit it&nbsp;
+successfully and he got $31,000 for it. Link&nbsp;&nbsp;
+
+00:00:20.640 --> 00:00:27.200
+to his original blogpost is in the description.&nbsp;
+Also, I've recreated the vulnerability and created&nbsp;&nbsp;
+
+00:00:27.200 --> 00:00:32.480
+hands-on labs. You can try them for free using the&nbsp;
+link in the description. You only have to leave&nbsp;&nbsp;
+
+00:00:32.480 --> 00:00:39.760
+your email. But for now, enjoy the video! Google&nbsp;
+cloud monitoring is a service that allows you to&nbsp;&nbsp;
+
+00:00:39.760 --> 00:00:46.160
+see metrics for your Google Cloud infrastructure.&nbsp;
+And Uptime Checks is a functionality that can&nbsp;&nbsp;
+
+00:00:46.160 --> 00:00:52.800
+send a request to your server to check if it's&nbsp;
+okay and potentially notify if your server is&nbsp;down. 
+
+00:00:52.800 --> 00:00:59.760
+Basic settings allow you to choose the&nbsp;
+protocol, hostname and path of your server's&nbsp;&nbsp;
+
+00:00:59.760 --> 00:01:06.160
+endpoint. So this sounds like a perfect&nbsp;
+situation to look for SSRF vulnerability.&nbsp;&nbsp;
+
+00:01:07.200 --> 00:01:13.760
+And instances that perform those uptime checks&nbsp;
+as well work on Google Cloud infrastructure&nbsp;&nbsp;
+
+00:01:14.400 --> 00:01:18.880
+and as all other virtual machines&nbsp;
+they have metadata endpoints on&nbsp;&nbsp;
+
+00:01:18.880 --> 00:01:25.680
+internal IPs. If we could read a response&nbsp;
+from this endpoint using SSRF vulnerability,&nbsp;&nbsp;
+
+00:01:25.680 --> 00:01:32.320
+we could, for example, steal service account tokens.&nbsp;
+So impact of such vulnerability would be critical.&nbsp;&nbsp;
+
+00:01:33.040 --> 00:01:41.040
+But to protect against SSRFs those endpoints&nbsp;
+require a specific header. This can successfully&nbsp;&nbsp;
+
+00:01:41.040 --> 00:01:47.280
+prevent attacks when the attacker can only&nbsp;
+control the URL of the request, but it&nbsp;&nbsp;
+
+00:01:47.280 --> 00:01:55.040
+won't prevent SSRFs here it's because the uptime&nbsp;
+checks feature allows user to set custom headers.&nbsp;&nbsp;
+
+00:01:56.480 --> 00:02:04.400
+So the researcher tried to request this endpoint&nbsp;
+and he saw 200 OK response within 2 milliseconds.&nbsp;&nbsp;
+
+00:02:04.400 --> 00:02:10.480
+It was a concrete evidence that the server&nbsp;
+indeed made the request to the internal IP.&nbsp;&nbsp;
+
+00:02:11.920 --> 00:02:18.000
+But so far it's only a blind SSRF and&nbsp;
+we are not able to show any impact here.&nbsp;&nbsp;
+
+00:02:18.000 --> 00:02:22.320
+The question is if we can&nbsp;
+somehow read the response.&nbsp;&nbsp;
+
+00:02:22.320 --> 00:02:28.720
+And here, another advanced feature of uptime&nbsp;
+checks comes into play - response validation.&nbsp;&nbsp;
+
+00:02:29.520 --> 00:02:35.680
+You can write a string that you expect to be&nbsp;
+present in the response. This could be useful, for&nbsp;&nbsp;
+
+00:02:35.680 --> 00:02:43.520
+example, in a situation where your server returns&nbsp;
+always 200 response code even for 404 responses.&nbsp;&nbsp;
+
+00:02:44.640 --> 00:02:50.560
+So the easiest way of exfiltrating data&nbsp;
+using such functionality looks like this:&nbsp;&nbsp;
+
+00:02:50.560 --> 00:02:56.960
+we have a part of the response that we know. In&nbsp;
+this case, let's assume it's a beginning of JSON&nbsp;&nbsp;
+
+00:02:56.960 --> 00:03:03.520
+that looks like this. And when you tell the uptime&nbsp;
+text feature that you expect this to be present in&nbsp;&nbsp;
+
+00:03:03.520 --> 00:03:10.480
+your response it's always true because it's always&nbsp;
+in the response. But what if we try to search for&nbsp;&nbsp;
+
+00:03:10.480 --> 00:03:18.480
+such string with "a" as the first letter of the&nbsp;
+actual access token? If the uptime check fails&nbsp;&nbsp;
+
+00:03:18.480 --> 00:03:25.680
+it means that the access token doesn't start&nbsp;
+with "a" letter. So then you try with letter "b",&nbsp;&nbsp;
+
+00:03:25.680 --> 00:03:33.920
+"c", "d" and so on and finally you hit a match,&nbsp;
+let's say with letter "e". So now your known part&nbsp;&nbsp;
+
+00:03:33.920 --> 00:03:41.040
+of the response is one character bigger. So now&nbsp;
+you try the same with the access token that starts&nbsp;&nbsp;
+
+00:03:41.040 --> 00:03:48.880
+with "ea", "eb", "ec" and so on and so forth.&nbsp;
+You go over and over again until you exfiltrate&nbsp;&nbsp;
+
+00:03:48.880 --> 00:03:56.000
+the whole token. That's basically how blind&nbsp;
+sql injection is being exploited. This way the&nbsp;&nbsp;
+
+00:03:56.000 --> 00:04:02.640
+researcher was able to exfiltrate some data but&nbsp;
+unfortunately not all of it. Because there was&nbsp;&nbsp;
+
+00:04:02.640 --> 00:04:08.480
+a small problem - uptime checks are performed&nbsp;
+from different instances all over the world.&nbsp;&nbsp;
+
+00:04:09.680 --> 00:04:14.800
+There were about 54 of them and&nbsp;
+each of them has unique access token.&nbsp;&nbsp;
+
+00:04:16.480 --> 00:04:22.960
+So if your uptime check fails you don't know if&nbsp;
+you just tried incorrect character or if you just&nbsp;&nbsp;
+
+00:04:22.960 --> 00:04:32.000
+hit another instance. In fact, with 54 instances&nbsp;
+the chance of hitting another instance is much&nbsp;&nbsp;
+
+00:04:32.000 --> 00:04:39.120
+much higher than hitting the one you want to hit.&nbsp;
+The researcher stopped here, submitted the report&nbsp;&nbsp;
+
+00:04:39.120 --> 00:04:46.960
+and got the reward of $31.000. The next part of&nbsp;
+the video is based on the comment from Google&nbsp;&nbsp;
+
+00:04:46.960 --> 00:04:54.000
+itself who tried to escalate the issue and created&nbsp;
+a proof of concept that was actually able to steal&nbsp;&nbsp;
+
+00:04:54.000 --> 00:05:03.120
+the access token. One idea is to send 54 requests.&nbsp;
+Then, statistically you would hit your instance at&nbsp;&nbsp;
+
+00:05:03.120 --> 00:05:09.840
+least once. But in practice you wouldn't have the&nbsp;
+guarantee and with multiple characters this surely&nbsp;&nbsp;
+
+00:05:09.840 --> 00:05:16.960
+wouldn't work well. To solve this problem you can&nbsp;
+use positive and negative regular expressions.&nbsp;&nbsp;
+
+00:05:18.160 --> 00:05:24.720
+So in previously mentioned situation you just&nbsp;
+sent two filters. Square brackets in regexes&nbsp;&nbsp;
+
+00:05:25.440 --> 00:05:34.400
+indicate a range of characters. For example, [a-z]&nbsp;
+indicates all lowercase letters. A caret means&nbsp;&nbsp;
+
+00:05:34.400 --> 00:05:42.720
+negative search so [^a-z] matches everything but&nbsp;
+a lowercase letter. In this example, we are only&nbsp;&nbsp;
+
+00:05:42.720 --> 00:05:48.080
+using the "a" character so we don't really need&nbsp;
+the square brackets but we will need them in a&nbsp;&nbsp;
+
+00:05:48.080 --> 00:05:54.240
+second. In such case, when you hit a positive&nbsp;
+regex it's awesome you have the next character&nbsp;&nbsp;
+
+00:05:54.240 --> 00:05:58.960
+of the token. In case you don't have the&nbsp;
+positive match but you have the negative&nbsp;&nbsp;
+
+00:05:58.960 --> 00:06:05.840
+it means that this character is not the next in&nbsp;
+the token and you have to try "b", "c" and so on.&nbsp;&nbsp;
+
+00:06:06.880 --> 00:06:12.240
+If you get neither of those matches you need to&nbsp;
+send the same request again, because it means&nbsp;&nbsp;
+
+00:06:12.240 --> 00:06:19.440
+that you hit the wrong instance. At the beginning&nbsp;
+when you only have a few characters of the token&nbsp;&nbsp;
+
+00:06:19.440 --> 00:06:25.680
+it's possible that tokens from different machines&nbsp;
+will have collisions, but we don't care about it,&nbsp;&nbsp;
+
+00:06:25.680 --> 00:06:31.427
+because we don't target a specific instance but&nbsp;
+we want to leak any token. 
+
+00:06:31.427 --> 00:06:41.760
+According to Google,&nbsp;&nbsp;after about 10 characters the token gets unique.&nbsp;
+And statistically you would need 54 requests&nbsp;&nbsp;
+
+00:06:41.760 --> 00:06:48.400
+to hit the correct instance. This means you would&nbsp;
+need to send thousands of requests to reveal&nbsp;&nbsp;
+
+00:06:48.400 --> 00:06:55.280
+the whole token. And those access tokens are&nbsp;
+only valid for 60 minutes. So with rate limiting&nbsp;&nbsp;
+
+00:06:55.280 --> 00:07:02.080
+it's likely that the token would be expired before&nbsp;
+you are able to leak it to the end. But we can use&nbsp;&nbsp;
+
+00:07:02.080 --> 00:07:08.400
+regular expressions to speed-up this process&nbsp;
+significantly. First, we can brute force not&nbsp;&nbsp;
+
+00:07:08.400 --> 00:07:15.680
+only the next character but we can brute force the&nbsp;
+whole token using wildcards. The dot stands for&nbsp;&nbsp;
+
+00:07:15.680 --> 00:07:23.360
+any character in regexes so you can use multiple&nbsp;
+dots to brute force all characters in parallel.&nbsp;&nbsp;
+
+00:07:23.360 --> 00:07:30.240
+This reduces the time of requests significantly.&nbsp;
+Another useful trick is using binary search.&nbsp;&nbsp;
+
+00:07:30.240 --> 00:07:37.520
+We don't need to check each character one by one&nbsp;
+like first "a", then "b", then "c" and so on.&nbsp;&nbsp;
+
+00:07:37.520 --> 00:07:43.840
+Using regexes we can specify ranges of&nbsp;
+characters. So we can implement binary search.&nbsp;&nbsp;
+
+00:07:44.560 --> 00:07:50.640
+First, we can send such request to determine&nbsp;
+if the next character is a lowercase letter,&nbsp;&nbsp;
+
+00:07:50.640 --> 00:07:58.160
+uppercase letter, a digit or any character that&nbsp;
+can be inside the token. Let's assume it's a&nbsp;&nbsp;
+
+00:07:58.160 --> 00:08:05.280
+lowercase letter. The next step is verifying if&nbsp;
+the character is within the first or the second&nbsp;&nbsp;
+
+00:08:05.280 --> 00:08:12.960
+half of the alphabet. Then, you divide that into&nbsp;
+further halves until you get to a single letter.&nbsp;&nbsp;
+
+00:08:14.160 --> 00:08:18.720
+This way you also reduce the number&nbsp;
+of requests that you have to send&nbsp;&nbsp;
+
+00:08:18.720 --> 00:08:25.440
+to determine each character. Of course, the&nbsp;
+final exploit must have been really complicated,&nbsp;&nbsp;
+
+00:08:25.440 --> 00:08:31.280
+because you have to combine all those three&nbsp;
+techniques at once. So positive-negative regexes,&nbsp;&nbsp;
+
+00:08:31.840 --> 00:08:36.560
+binary search and using wildcards to&nbsp;
+probe multiple characters at once.&nbsp;&nbsp;
+
+00:08:38.240 --> 00:08:45.360
+This way the exploit was able to leak the access&nbsp;
+token within 15 minutes, including rate limiting.&nbsp;&nbsp;
+
+00:08:46.320 --> 00:08:52.400
+I recreated the vulnerability in the lab so&nbsp;
+you can try your own skills. And you can try&nbsp;&nbsp;
+
+00:08:52.400 --> 00:08:59.440
+writing your own exploit. You can easily run this&nbsp;
+task using docker. To receive the instruction,&nbsp;&nbsp;
+
+00:08:59.440 --> 00:09:04.560
+you need to leave your email. If you&nbsp;
+don't succeed in writing the exploit,&nbsp;&nbsp;
+
+00:09:04.560 --> 00:09:12.560
+visit my twitter, I will publish my exploit&nbsp;
+in a few days. Recreating the vulnerability&nbsp;&nbsp;
+
+00:09:12.560 --> 00:09:18.880
+in a new application is not an easy task but if&nbsp;
+many people will be interested I might do this&nbsp;&nbsp;
+
+00:09:18.880 --> 00:09:24.400
+more often so let me know in the comments&nbsp;
+what do you think about it. And that's it.&nbsp;&nbsp;
+
+00:09:24.400 --> 00:09:30.560
+I think this way of exfiltrating data will also&nbsp;
+allow exploiting other blind vulnerabilities.&nbsp;&nbsp;
+
+00:09:31.200 --> 00:09:35.920
+Anyway, if you've learned something new today&nbsp;
+or you've enjoyed the hands-on labs, leave&nbsp;&nbsp;
+
+00:09:35.920 --> 00:09:42.880
+a like under this video or maybe even buy me a&nbsp;
+coffee. For now, thanks for watching and goodbye!
+

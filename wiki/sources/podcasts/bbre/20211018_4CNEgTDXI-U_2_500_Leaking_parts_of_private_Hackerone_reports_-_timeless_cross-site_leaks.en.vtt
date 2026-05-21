@@ -1,0 +1,536 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.458 --> 00:00:04.916
+Hello! Welcome to another episode of Bug
+ Bounty Eeports Explained.
+
+00:00:05.166 --> 00:00:10.791
+Today, I will show you how Tom Van Goethem
+ was able to leak parts of undisclosed
+
+00:00:10.791 --> 00:00:15.125
+Hackerone reports by using a novel
+ method of cross-site leaks.
+
+00:00:15.625 --> 00:00:19.333
+Make sure to watch the video
+ until the end, because I will show
+
+00:00:19.333 --> 00:00:23.458
+the outstanding trick, which
+ he used to have a little bit of control
+
+00:00:23.541 --> 00:00:26.000
+over TCP protocol from the browser.
+
+00:00:26.458 --> 00:00:30.083
+Links to the report
+ and to his media are in the description.
+
+00:00:30.208 --> 00:00:35.791
+Enjoy! On Hackerone,
+ there is a /bugs.json endpoint.
+
+00:00:36.041 --> 00:00:40.041
+It's used under the hood
+ when you use the search feature on inbox.
+
+00:00:40.500 --> 00:00:45.291
+It has text_query parameter,
+ which you can use to query all the bugs
+
+00:00:45.416 --> 00:00:49.916
+to which you have access
+ to as a reporter, triager or whoever else.
+
+00:00:51.000 --> 00:00:55.083
+The endpoint used the GET method
+ and no CSRF protection.
+
+00:00:55.958 --> 00:00:58.750
+As the attacker,
+ you were able to send requests
+
+00:00:58.750 --> 00:01:02.125
+to this endpoint
+ if a victim visited your website.
+
+00:01:02.958 --> 00:01:07.875
+Same origin policy would allow you
+ to query reports to which the victim
+
+00:01:07.875 --> 00:01:12.041
+had access to and cookies
+ would be attached to the request.
+
+00:01:12.958 --> 00:01:17.791
+However, same origin policy
+ would not allow you to read the response,
+
+00:01:18.000 --> 00:01:21.916
+so you can't actually disclose
+ report contents this way.
+
+00:01:22.875 --> 00:01:27.250
+But there are methods to exfiltrate data
+ in such a scenario.
+
+00:01:27.750 --> 00:01:30.500
+Those attacks are called cross-site leaks.
+
+00:01:31.625 --> 00:01:34.708
+The most common approach
+ is looking at the timing.
+
+00:01:34.958 --> 00:01:40.583
+It works this way: the victim visits
+ your website, your JavaScript, sends
+
+00:01:40.583 --> 00:01:44.333
+two requests, one with searching a string
+
+00:01:44.458 --> 00:01:47.458
+that will never be present in any report.
+
+00:01:48.458 --> 00:01:51.708
+The other one with a string
+ that you want to confirm
+
+00:01:51.708 --> 00:01:56.250
+if it's inside an undisclosed report
+ to which the victim has access.
+
+00:01:57.000 --> 00:02:01.500
+When one response will return your results
+ while the other will not,
+
+00:02:01.750 --> 00:02:06.166
+the processing time of the one with 
+ reports will be longer.
+
+00:02:07.000 --> 00:02:10.041
+You can measure the response
+ time of each request,
+
+00:02:10.041 --> 00:02:12.625
+even if you can't read
+ the response itself.
+
+00:02:13.416 --> 00:02:16.166
+So if one was longer than the other,
+
+00:02:16.458 --> 00:02:21.125
+you know the string is present
+ somewhere in the undisclosed report.
+
+00:02:21.958 --> 00:02:25.125
+If both responses
+ had roughly the same time,
+
+00:02:25.291 --> 00:02:28.916
+that means your string is not present
+ in any of the reports.
+
+00:02:29.750 --> 00:02:35.458
+This way, you could brute force parts of
+ reports contents, one character at a time.
+
+00:02:36.791 --> 00:02:39.750
+But it's not as easy as I made it look.
+
+00:02:40.916 --> 00:02:44.833
+Differences in the time that the server
+ will take to process
+
+00:02:44.875 --> 00:02:50.416
+such a simple operation are measured
+ in microseconds or even in nanoseconds.
+
+00:02:51.083 --> 00:02:53.458
+Considering that the network delay
+
+00:02:53.458 --> 00:02:57.875
+is order of magnitude
+ higher, in milliseconds, the difference
+
+00:02:57.875 --> 00:03:01.083
+from a single request
+ doesn't mean anything.
+
+00:03:01.875 --> 00:03:05.291
+However, when you send many parts
+ of such requests,
+
+00:03:05.541 --> 00:03:09.708
+you can measure averages
+ and come up with significant differences.
+
+00:03:10.541 --> 00:03:15.000
+Behind this report, there's
+ a bigger reseach regarding these attacks.
+
+00:03:15.583 --> 00:03:20.541
+Researchers determined that depending
+ on the network location and processing
+
+00:03:20.541 --> 00:03:24.958
+time, you must send hundreds
+ or thousands of requests to get
+
+00:03:24.958 --> 00:03:29.666
+meaningful averages, which will tell you
+ if you did leak something or not.
+
+00:03:30.875 --> 00:03:35.583
+And that's only to tell
+ if one character is in one position.
+
+00:03:36.000 --> 00:03:41.291
+You'd have to send thousands of requests
+ to tell if A is the next character,
+
+00:03:41.458 --> 00:03:46.416
+then thousands of requests to tell
+ if B is the next character and so on.
+
+00:03:47.416 --> 00:03:49.500
+Exfiltrating even a short
+
+00:03:49.500 --> 00:03:52.583
+token would require millions of requests.
+
+00:03:53.333 --> 00:03:55.833
+And this is a client-site attack.
+
+00:03:55.958 --> 00:04:00.208
+So the victim would have to
+ stay on your website for this whole time,
+
+00:04:01.333 --> 00:04:04.583
+not to even mention
+ rate limits on Hackerone.
+
+00:04:05.250 --> 00:04:08.000
+So the time attack wouldn't work here.
+
+00:04:09.083 --> 00:04:11.458
+Take a look at that from this perspective.
+
+00:04:11.916 --> 00:04:15.083
+You send two requests
+ and the time difference
+
+00:04:15.125 --> 00:04:18.208
+you're interested in
+ is here, on the server.
+
+00:04:18.958 --> 00:04:22.000
+But the place you try
+ to measure it is here.
+
+00:04:22.375 --> 00:04:24.666
+Many routers and switches away.
+
+00:04:25.916 --> 00:04:27.875
+But it has to be that way. 
+
+00:04:27.875 --> 00:04:31.458
+You can't measure the time
+ directly on the server.
+
+00:04:33.041 --> 00:04:37.416
+But actually, you are not interested
+ in the time it took.
+
+00:04:38.500 --> 00:04:42.541
+You are interested
+ in which of these two took longer?
+
+00:04:43.708 --> 00:04:49.541
+Researchers idea was to see which of these
+ two responses would come back earlier.
+
+00:04:50.791 --> 00:04:53.708
+So the hunter would send two requests.
+
+00:04:54.875 --> 00:04:57.541
+When both where it would yield no results,
+
+00:04:57.750 --> 00:05:00.958
+there was about 50 percent chance response
+
+00:05:00.958 --> 00:05:03.791
+1 would come back after response 2.
+
+00:05:04.625 --> 00:05:08.166
+However, when request
+ one would return a bug,
+
+00:05:08.375 --> 00:05:12.583
+there was about 80 percent chance
+ it would come back second.
+
+00:05:13.750 --> 00:05:19.208
+This still doesn't allow you to determine
+ the character after one pair of requests,
+
+00:05:19.208 --> 00:05:25.208
+but this time, instead of hundreds
+ or thousands, 20 requests was enough.
+
+00:05:25.833 --> 00:05:29.291
+And your location
+ or your connection didn't matter.
+
+00:05:30.416 --> 00:05:36.000
+For that to work, he would have to lock
+ the order of responses at this point
+
+00:05:36.041 --> 00:05:39.291
+to make sure it's
+ not affected on the road home.
+
+00:05:40.166 --> 00:05:42.875
+Let me show you how he achieved it.
+
+00:05:42.875 --> 00:05:47.458
+HTTP requests are transmitted
+ in TCP packets.
+
+00:05:48.375 --> 00:05:50.666
+You can think of it as the letters.
+
+00:05:51.375 --> 00:05:57.083
+The HTTP request is the letter itself
+ and TCP packet in the envelope.
+
+00:05:57.708 --> 00:06:01.583
+If your letter is long,
+ it will be sent in multiple envelopes.
+
+00:06:02.333 --> 00:06:05.708
+But if you have two short
+ letters to the same address,
+
+00:06:05.708 --> 00:06:08.958
+you can send both of them
+ in a single envelope.
+
+00:06:09.666 --> 00:06:13.333
+So what do you need to do
+ is to bundle both HTTP
+
+00:06:13.333 --> 00:06:16.041
+requests in a single TCP packet.
+
+00:06:16.875 --> 00:06:21.208
+In case of an attack against the server,
+ without the client interaction,
+
+00:06:21.208 --> 00:06:24.458
+this is easy-peasy
+ because you can write a low level
+
+00:06:24.458 --> 00:06:26.875
+script that will do whatever you want.
+
+00:06:27.625 --> 00:06:30.541
+But in this attack, we are in the browser
+
+00:06:30.541 --> 00:06:34.666
+and we have little control over low level
+ network protocols.
+
+00:06:35.333 --> 00:06:40.458
+How do you then force the browser
+ to send both letters in a single envelope?
+
+00:06:41.666 --> 00:06:46.875
+The browser has built in mechanism
+ to prevent sending too many envelopes
+
+00:06:47.000 --> 00:06:50.541
+before the server acknowledges
+ that they were received.
+
+00:06:51.583 --> 00:06:54.416
+So the server will send as many envelopes
+
+00:06:54.416 --> 00:06:59.458
+as it can and the rest will be stored
+ in the queue, waiting for the server
+
+00:06:59.458 --> 00:07:02.416
+to acknowledge receiving
+ those sent envelopes.
+
+00:07:03.208 --> 00:07:08.708
+Normally, the browser would envelope
+ the first HTTP request straight away
+
+00:07:08.875 --> 00:07:11.041
+without waiting for the second one.
+
+00:07:11.833 --> 00:07:16.625
+But when your two letters will be queued,
+ they will be packed in a single envelope,
+
+00:07:16.791 --> 00:07:18.958
+which is exactly what we need.
+
+00:07:20.000 --> 00:07:23.625
+But how do you force the browser
+ to queue your requests?
+
+00:07:24.000 --> 00:07:27.000
+By sending a big HTTP request first,
+
+00:07:27.041 --> 00:07:30.083
+which will be too big
+ to be sent in one go.
+
+00:07:30.916 --> 00:07:35.541
+Part of the request will be sent,
+ but the remaining packets will be queued.
+
+00:07:36.208 --> 00:07:39.625
+Immediately after you send
+ your pair of requests.
+
+00:07:39.791 --> 00:07:44.333
+One with the baseline query and the one
+ with the query you are interested in.
+
+00:07:44.958 --> 00:07:48.416
+Both of them will be added
+ to the end of the queue.
+
+00:07:49.375 --> 00:07:52.250
+After the sender acknowledges,
+ that it received
+
+00:07:52.250 --> 00:07:56.291
+the first batch of packets, ones from
+ the queue will be sent
+
+00:07:56.291 --> 00:08:01.708
+and your pair of HTTP requests
+ will be bundled into a one TCP packet.
+
+00:08:02.541 --> 00:08:05.333
+Then you repeat the operation 20 times
+
+00:08:05.333 --> 00:08:09.416
+and you look how often the response with
+ the query was second.
+
+00:08:10.500 --> 00:08:13.666
+If it was second
+ in about half of requests,
+
+00:08:14.333 --> 00:08:17.541
+your query did not return any reports.
+
+00:08:17.541 --> 00:08:22.666
+If it was second in about 16 requests,
+ that means that the string
+
+00:08:22.708 --> 00:08:27.625
+you are looking for is present
+ in at least one of the victims reports.
+
+00:08:28.750 --> 00:08:32.416
+You can move on to the next character
+ or the next word.
+
+00:08:33.458 --> 00:08:36.416
+This way, it was possible to exfiltrate
+
+00:08:36.541 --> 00:08:39.625
+parts of private reports from Hackerone.
+
+00:08:39.625 --> 00:08:44.875
+Still, even this optimized
+ technique requires a lot of requests.
+
+00:08:45.416 --> 00:08:49.833
+The reporter estimated about 1,5 to 3,5
+
+00:08:49.833 --> 00:08:53.916
+minutes per character,
+ assuming you know the first two.
+
+00:08:55.000 --> 00:08:58.166
+This way, you could target, for example,
+ authorization headers,
+
+00:08:58.750 --> 00:09:04.125
+some endpoints, specific vulnerability
+ classes or whatever comes to your mind.
+
+00:09:05.083 --> 00:09:09.750
+But whatever you chose, the attack
+ would still probably take a few hours.
+
+00:09:10.875 --> 00:09:13.291
+So by no means this is a high risk bug
+
+00:09:13.291 --> 00:09:16.541
+but Hackerone staff
+ wrote in the comments
+
+00:09:16.541 --> 00:09:20.333
+that there were about 8 reports
+ about this behavior,
+
+00:09:20.666 --> 00:09:24.791
+and this was the first one
+ that presented a feasible attack.
+
+00:09:24.916 --> 00:09:28.791
+Hence, this one was awarded $2,500.
+
+00:09:29.625 --> 00:09:35.375
+As for the fix, the /bugs.json endpoint
+ now uses the POST method and thus,
+
+00:09:35.416 --> 00:09:40.083
+it requires a CSRF token,
+ making this attack impossible.
+
+00:09:40.666 --> 00:09:43.333
+And that's it. I'm always a bit sad
+
+00:09:43.333 --> 00:09:47.125
+when the complex bug doesn't
+ have the critical impact.
+
+00:09:47.458 --> 00:09:52.375
+But anyway, I learned a lot while
+ studying this report, and I hope you, too.
+
+00:09:52.708 --> 00:09:56.666
+If you did make sure to feed the YouTube
+ algorithm with a like
+
+00:09:56.666 --> 00:09:59.583
+so that it recommends
+ the video to other hackers.
+
+00:10:00.041 --> 00:10:03.708
+I also encourage you
+ to watch the whole presentation about this
+
+00:10:03.708 --> 00:10:07.083
+timeless technique
+ where you can also find Wi-Fi attacks.
+
+00:10:07.291 --> 00:10:09.791
+The video is on the card right now.
+
+00:10:10.208 --> 00:10:12.708
+For now, thank you
+ for watching and goodbye.
+

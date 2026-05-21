@@ -1,0 +1,318 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.240 --> 00:00:07.200
+Hello! This episode of Bug Bounty Reports&nbsp;
+Explained has the highest bounty of all my videos:&nbsp;&nbsp;
+
+00:00:07.200 --> 00:00:14.640
+$3.4 million. The reason is it's a bug&nbsp;
+in a blockchain network called Polygon&nbsp;&nbsp;
+
+00:00:14.640 --> 00:00:22.400
+and it allowed stealing about $20 billion.&nbsp;
+It was discovered by Leon Spacewalker.&nbsp;&nbsp;
+
+00:00:22.400 --> 00:00:26.480
+Link to the original blogpost&nbsp;
+is in the description. Enjoy!
+
+00:00:28.080 --> 00:00:33.360
+This video is sponsored by Immunefi,&nbsp;
+the leading bug bounty platform for Web3&nbsp;&nbsp;
+
+00:00:34.000 --> 00:00:41.120
+with the world’s largest bounties. In the regular,&nbsp;
+Web2 industry, we are used to most programs&nbsp;&nbsp;
+
+00:00:41.120 --> 00:00:48.720
+having a maximum of 4-digit payouts or 5-digit at&nbsp;
+best. On Immunefi, there are programs that pay&nbsp;&nbsp;
+
+00:00:48.720 --> 00:00:57.040
+up to $10 mln dollars. It's life-changing money.&nbsp;
+And web3 is an exciting technology. Personally, I've&nbsp;&nbsp;
+
+00:00:57.040 --> 00:01:04.240
+already started learning it. If you to join me and&nbsp;
+get ahead of everyone else, check out Immunefi.
+
+00:01:05.360 --> 00:01:08.720
+Polygon is a network built on top of Ethereum.&nbsp;&nbsp;
+
+00:01:09.520 --> 00:01:14.080
+It allows making more transactions with&nbsp;
+cheaper fees than on Ethereum itself.&nbsp;&nbsp;
+
+00:01:15.120 --> 00:01:23.360
+The main token of the Polygon network is called&nbsp;
+MATIC and, interestingly, apart from being the&nbsp;&nbsp;
+
+00:01:23.360 --> 00:01:31.520
+main token, it's also an MRC20 contract deployed&nbsp;
+on the network. It allows transferring MATIC funds&nbsp;&nbsp;
+
+00:01:31.520 --> 00:01:40.240
+without paying a fee. The network also allows&nbsp;
+you to purchase an NFT. And let's imagine it's&nbsp;&nbsp;
+
+00:01:40.240 --> 00:01:48.160
+2030 and BBRE Premium is sold as an NFT in the&nbsp;
+Polygon network. You want to purchase it. You&nbsp;&nbsp;
+
+00:01:48.160 --> 00:01:54.880
+have some cryptocurrency but in USDT coin which&nbsp;
+is not on the Polygon network but is mapped to it.&nbsp;&nbsp;
+
+00:01:55.680 --> 00:02:05.840
+Polygon allows us to swap your tokens for my&nbsp;
+NFT. Of course, the naive way to do this is that&nbsp;&nbsp;
+
+00:02:05.840 --> 00:02:12.880
+I could tell you to send me tokens first and then&nbsp;
+you would hope that I would send you the NFT back.&nbsp;&nbsp;
+
+00:02:13.680 --> 00:02:20.800
+And I'm honest, you can trust me but we discovered&nbsp;
+smart contracts for a reason. It's to do&nbsp;&nbsp;
+
+00:02:20.800 --> 00:02:28.240
+such transactions without having to trust the&nbsp;
+other person. And the way we could do this&nbsp;&nbsp;
+
+00:02:28.240 --> 00:02:35.840
+in Polygon network is as follows. First, we have&nbsp;
+a Marketplace contract that's between me and you.&nbsp;&nbsp;
+
+00:02:36.400 --> 00:02:45.520
+This contract will first generate an order of&nbsp;
+you swapping your tokens for my NFT. It will also&nbsp;&nbsp;
+
+00:02:45.520 --> 00:02:53.200
+assign an order ID. Then, the marketplace&nbsp;
+will ask you to generate a signature&nbsp;&nbsp;
+
+00:02:53.760 --> 00:03:00.880
+that you indeed want to swap your 500&nbsp;
+USDT tokens for the BBRE Premium NFT.&nbsp;&nbsp;
+
+00:03:02.640 --> 00:03:09.520
+The signature will contain the address of the&nbsp;
+marketplace contract, the order id from step 2,&nbsp;&nbsp;
+
+00:03:09.520 --> 00:03:17.840
+the expiration and, most importantly, how many&nbsp;
+of what tokens you want to swap for what NFT.&nbsp;&nbsp;
+
+00:03:18.640 --> 00:03:25.600
+And you sign all that with your private key.&nbsp;
+And the marketplace will ask me to do the same&nbsp;&nbsp;
+
+00:03:25.600 --> 00:03:34.000
+thing but instead I will swap my NFT for your&nbsp;
+tokens. With these two signatures, the contract&nbsp;&nbsp;
+
+00:03:34.000 --> 00:03:42.800
+will now carry out both transfers and make sure&nbsp;
+that either both or none go through. And for this&nbsp;&nbsp;
+
+00:03:42.800 --> 00:03:49.920
+the transferWithSig function is used. And pay&nbsp;
+attention because this is the most important one&nbsp;&nbsp;
+
+00:03:49.920 --> 00:03:55.440
+in the context of this bug. It takes&nbsp;
+these parameters: the signature,&nbsp;&nbsp;
+
+00:03:56.320 --> 00:04:04.240
+the amount to transfer, the data parameter&nbsp;
+is only a hash that contains the order id,&nbsp;&nbsp;
+
+00:04:04.240 --> 00:04:09.600
+amount and the token. It's not created&nbsp;
+with a private key or anything like this.&nbsp;&nbsp;
+
+00:04:09.600 --> 00:04:15.680
+It only prevents using this transferWithSig&nbsp;
+function multiple times for the same order.&nbsp;&nbsp;
+
+00:04:17.040 --> 00:04:23.680
+Then, there is the expiration in the form of a&nbsp;
+block number and finally, the address to which&nbsp;&nbsp;
+
+00:04:23.680 --> 00:04:30.960
+to send the funds. The function makes checks if&nbsp;
+the amount is greater than zero, if the order&nbsp;&nbsp;
+
+00:04:30.960 --> 00:04:39.040
+hasn't expired and if the same transfer isn't&nbsp;
+being replayed. But notice it doesn't take the&nbsp;&nbsp;
+
+00:04:39.040 --> 00:04:46.880
+address from which to carry out the transfer.&nbsp;
+And this is a crucial information. So before&nbsp;&nbsp;
+
+00:04:46.880 --> 00:04:53.440
+it finally calls the transferFrom function,&nbsp;
+it has to recover the address of the sender.&nbsp;&nbsp;
+
+00:04:54.960 --> 00:05:02.080
+ecrecover is the function that takes the signature&nbsp;
+and data of the order to retrieve the address&nbsp;&nbsp;
+
+00:05:02.080 --> 00:05:10.560
+of the wallet used to create the signature.&nbsp;
+Actually, it's not ecrecover but ecrecovery&nbsp;&nbsp;
+
+00:05:10.560 --> 00:05:16.960
+function that is used. It's only a wrapper&nbsp;
+around ecrecover to make it more user-friendly.&nbsp;&nbsp;
+
+00:05:18.080 --> 00:05:24.880
+And one of the first things it does is checking&nbsp;
+if the signature is invalid. But if it is,&nbsp;&nbsp;
+
+00:05:25.600 --> 00:05:33.040
+instead of throwing an error, the function&nbsp;
+returns a 0x0 address. Now, in itself&nbsp;&nbsp;
+
+00:05:33.040 --> 00:05:40.480
+it wouldn't be a problem. Until we take a look&nbsp;
+at the _transfer function. There is only a check&nbsp;&nbsp;
+
+00:05:40.480 --> 00:05:46.560
+if the transfer isn't done to the same contract&nbsp;
+which is absolutely not a problem for us.&nbsp;&nbsp;
+
+00:05:48.160 --> 00:05:54.960
+In the second line, it transfers funds from&nbsp;
+the contract to the recipient. Of course,&nbsp;&nbsp;
+
+00:05:54.960 --> 00:06:01.120
+_transfer and transferFrom functions are only&nbsp;
+created to be used internally and you can't&nbsp;&nbsp;
+
+00:06:01.120 --> 00:06:08.800
+just call them with whatever parameters. But&nbsp;
+if you could force the ecrecovery function to&nbsp;&nbsp;
+
+00:06:08.800 --> 00:06:15.600
+return a 0x0 address, you could transfer all the&nbsp;
+funds from the contract to an arbitrary address.&nbsp;&nbsp;
+
+00:06:16.720 --> 00:06:23.120
+How to do it? The first line of that function&nbsp;
+checks if the signature is 65 characters.&nbsp;&nbsp;
+
+00:06:23.840 --> 00:06:33.280
+So if you submit anything other than 65 characters&nbsp;
+long, you are good to go. While all that swapping,&nbsp;&nbsp;
+
+00:06:33.280 --> 00:06:40.240
+marketplaces may have sound complicated to&nbsp;
+you, the proof of concept is ridiculously&nbsp;&nbsp;
+
+00:06:40.240 --> 00:06:46.640
+simple. And to be honest, I don't even know if&nbsp;
+the attacker really went through all these steps.&nbsp;&nbsp;
+
+00:06:47.280 --> 00:06:54.160
+Maybe, he just noticed this function and&nbsp;
+exploited it straight away. But personally,&nbsp;&nbsp;
+
+00:06:54.160 --> 00:07:01.680
+I wanted to know how this transferWithSig function&nbsp;
+is used in the real life. That's probably why it&nbsp;&nbsp;
+
+00:07:01.680 --> 00:07:07.840
+took me twice more time than usual to create notes&nbsp;
+for this video but I hope you appreciate that.&nbsp;&nbsp;
+
+00:07:09.600 --> 00:07:14.720
+So transferWithSig is an external&nbsp;
+function. You can call it without&nbsp;&nbsp;
+
+00:07:14.720 --> 00:07:21.120
+making any marketplace transactions. Here is&nbsp;
+the repository which you can clone. It creates&nbsp;&nbsp;
+
+00:07:21.120 --> 00:07:27.280
+the fork of the network before the patch and&nbsp;
+gives you the script to reproduce the attack.&nbsp;&nbsp;
+
+00:07:28.080 --> 00:07:34.640
+Forking is also a way to test your smart contract&nbsp;
+bugs before submitting vulnerability reports.&nbsp;&nbsp;
+
+00:07:36.240 --> 00:07:42.880
+And this is how to call the transferWithSig&nbsp;
+function. As the first argument, the signature,&nbsp;&nbsp;
+
+00:07:42.880 --> 00:07:50.240
+use any buffer that's not 65 characters. As the&nbsp;
+second, choose the amount you want to transfer.&nbsp;&nbsp;
+
+00:07:50.880 --> 00:07:57.600
+Or, in other words, how much money you would like&nbsp;
+to make. At the moment of the fix, December 5th,&nbsp;&nbsp;
+
+00:07:57.600 --> 00:08:03.920
+the contract had over 9 billion MATIC&nbsp;
+tokens. You could steal all of them.
+
+00:08:06.160 --> 00:08:08.800
+The third argument is the hash of the data&nbsp;&nbsp;
+
+00:08:09.360 --> 00:08:16.400
+but actually, the function only checks if the hash&nbsp;
+wasn't used previously so you can use the hash of&nbsp;&nbsp;
+
+00:08:16.400 --> 00:08:23.840
+almost anything. Expiration also doesn't matter&nbsp;
+as long as it's a block number from the future.&nbsp;&nbsp;
+
+00:08:24.800 --> 00:08:30.320
+And finally, the recipient address which&nbsp;
+means where you want to transfer the money.&nbsp;&nbsp;
+
+00:08:31.840 --> 00:08:37.760
+And with this single function call you could&nbsp;
+steal all the money that were in the contract.&nbsp;&nbsp;
+
+00:08:37.760 --> 00:08:46.960
+At the moment of the fix it was worth around,&nbsp;
+$21 billion. And actually, before the fix was&nbsp;&nbsp;
+
+00:08:46.960 --> 00:08:54.320
+deployed, over eight 800,000 MATIC tokens&nbsp;
+were stolen which was worth around $2 mln.&nbsp;&nbsp;
+
+00:08:56.320 --> 00:09:03.520
+The hunter who found the bug was rewarded&nbsp;
+with $2.2 million of bounty which was above&nbsp;&nbsp;
+
+00:09:03.520 --> 00:09:08.400
+the Polygon's maximum payout.&nbsp;
+Even the hunter who duplicated&nbsp;&nbsp;
+
+00:09:08.400 --> 00:09:13.680
+this report got the bounty of $1.2&nbsp;
+million as an exception to the rule.&nbsp;&nbsp;
+
+00:09:15.120 --> 00:09:22.160
+And as for the fix, the transferWithSig&nbsp;
+function was removed. Lately I've been learning&nbsp;&nbsp;
+
+00:09:22.160 --> 00:09:28.400
+smart contract security myself. So far, I only&nbsp;
+document my learning journey but with time,&nbsp;&nbsp;
+
+00:09:28.400 --> 00:09:34.560
+I will also start creating more content. If&nbsp;
+you want to learn with me, subscribe to BBRE&nbsp;&nbsp;
+
+00:09:34.560 --> 00:09:42.160
+Newsletter. The link is in the description.&nbsp;
+For now, thank you for watching and goodbye!
+

@@ -1,0 +1,165 @@
+Spending time on setting up the environment and installing tools before I can even start testing
+is the part that I truly dislike. Luckily we have things like Kali Linux that comes with a bunch of
+tools pre-installed. For Web3 we have Zion and today I'm joined by André from Halborn who will
+show us how we can spend minimum time on setting up the environment for testing Web3. Enjoy!
+Hello André, thank you so much for joining me today. Today we'll talk about a set of tools that
+you've built for testing blockchain. I struggled a lot when I was reproducing blockchain vulnerabilities
+with all the setup steps, different blockchains and everything. And from what I've heard you
+created something that is supposed to solve all these problems. Can you talk me some about it?
+Yes, of course Greg. So thank you for having me. I'm the product owner of Zion which is a virtual
+machine that includes all the tools necessary to do smart contract auditing. And you can have a chain
+in Solidity, so EVM, Rust, Solana, Polkadot, Substrate. We have all those protocols already integrated
+and all the tools to audit them. Awesome, sounds awesome. So without further ado, can you show me
+how to find bugs with Zion? Of course. Okay. So we have the null on CTF 2022 which has already been
+solved and published so we are not going to spoil anything. If you look, you have two folders. One is the
+server and the other one is the solve and then you have a script that simply compile the solve and just run it.
+So if we look into the framework, we can run lowering fruit tools, for example, to find vulnerabilities in the
+crates and the dependencies or things like that. We have Cargo Audit, we have Cargo Geiger for anything unsafe.
+We have Cidero Field for potential fuzzing targets, even though a manual review is always better for this.
+We have many other tools that are available like Soteria, you have other things like that.
+So let's do, for example, Cargo Audit.
+So let's do this.
+And we'll see that it will find some vulnerabilities in the crates that this code uses, which is pretty common,
+simply because you have dependencies that have some vulnerabilities that doesn't mean necessarily that
+your contract is insecure. For example, you have this one, the time, which is a potential segfault, which is
+quite high vulnerability, yet doesn't mean that you are vulnerable to it. You have other ones, risk conditions, etc.
+But for each of them, you need to ensure that by checking the adversary that your contract is not vulnerable
+through the dependency.
+Yeah, that's great. Tools are always good starting points.
+But I imagine if it's not the most basic CTF task or in the work itself, we do need to do manual analysis.
+Do we have some tools in Zion to also do this?
+Of course. So, yeah, in most contract audits, this is just the first few tools that you run to get
+a quick low-hanging fruits that are pretty standard into a report. But we have VS Code, actually VS Codeium.
+So that way it is open source and with a bit less tracking than the Microsoft version of VS Code.
+You can see here by opening the CTF that you have a library. You also have a main contract there.
+And basically, most of the time of the smart contract auditor will be spent in Codeium doing manual code review.
+Because even though AI tools are big now, etc., nothing beats the human yet.
+So here you can see that you have a main program that is a server.
+So here you have a server. It is listening on the port 8080.
+Creates a connection. You can see that it's initialized environment, mint some token,
+and register an employee A, for example, from the organization product.
+It then deposits a thousand token, meets a thousand token, and deposits 500 token
+into that account for the employee A.
+This is the account we don't have control over.
+Is it correct?
+
+Is it the account?
+Exactly. This is the account that is created automatically by the program right now.
+So we have no access to it. We must create a new account.
+So once the setup is done for that account, we have now the player account, basically,
+that has 100 tokens. So 100 tokens is available to the player.
+And the goal is to get more tokens, obviously.
+So how do we do it?
+So that's a great question. How do you find vulnerabilities in contracts in general?
+Well, first you have to check the different functions of the contracts.
+So you can see that there are three main functions.
+One is register function after the initialization, of course.
+You can see that it requires the employee ID to be a certain length, the organization to be a certain length, too.
+And then it ensures that this already exists. Otherwise, it is duplicated.
+So otherwise, it says that it's a duplicate employee.
+Then we have the register function, which...
+...deposit function, sorry, my bad. We have the deposit function.
+Then we can deposit tokens to that employee.
+You can see that it requires that the employee is already in the system.
+And it checks that the employee record, the organization, and the ID is already there.
+Then it does the transfer. And it ensures that the vault amount is superior at the amount that we are actually depositing.
+Then you have the withdraw function.
+And same thing. It does the checks to be sure that this employee exists.
+It ensures that we can't withdraw more than what the vault has in the correct order.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So we can see that the user is already in the right place.
+So the SID is used for the creation of the PDA, which is a program derived address.
+So basically in Solana, everything is an account.
+And so the program has a PDA to do its bidding, basically in terms of transfers.
+You can see you have different constraints here that the employee record must be the
+organization name and it must be also the ID.
+So we can't really fake the PDA.
+We can't really fake the token itself.
+This is, there are some restrictions which prevent it to simply allow us to hack this.
+So if we run, for example, the script, which simply run the solve,
+we can see that the player has 100 tokens.
+That's our basic amount.
+So right now we don't have the flag or anything simply because we don't have more than 100 tokens.
+So in order to do that, we have to check how can we withdraw more without encountering those constraints.
+The key here is in the way that the SID is generated.
+So the SID is generated simply with org name as bytes and employee ID as bytes,
+concatenated basically together.
+So when you...
+And if we predict the SID, does it automatically mean we can withdraw money from a different account?
+We withdraw tokens, sorry.
+Exactly.
+So we basically do some kind of SID collision by doing that.
+And you can see that the original SID, when you look here,
+SID is based on product and employee in the program by default.
+So to solve that, we need to reproduce this string, product and employee together.
+Well, that's actually quite simple and at the same time a bit sneaky.
+So we have to do some kind of thing.
+So we have to do some kind of thing.
+And also something that the automatic tools wouldn't find.
+You simply need to first find the program address, which is with that SID product employee.
+And then into the solving program, which is here, you can see that that's where we're at.
+We have employee B and then our instructions go here.
+Well, we don't want to be employee B.
+We want the funds from employee A.
+Yeah, but there was a check for if employee ID is unique, no?
+Actually, yes, it is.
+But the SID itself is what allows the transfer.
+So here, if you change the strings to do this, it will work.
+Or you can also simply do that and it will work because the SID in the end is the same
+when you add those two strings together.
+So...
+Yeah, because there's a check if the employee ID is unique,
+but there's no check if these two things concatenated are...
+Exactly. And that's exactly why it is vulnerable.
+So if we complete the withdraw function, we saw how the struct is and what are the parameters.
+I'm pasting here the different parameters for the account withdraw, which is pretty standard there.
+So if we have a file, we can do that.
+And here, we're going to withdraw 500 tokens.
+We could withdraw less if we want, but we know that this employee A has 500 tokens.
+Here, I just saved the files and you can see that there's an error here.
+It's simply because we need to clone those variables.
+Because in Rust, you have to borrow or clone the different variables.
+Now that it's saved, this is good.
+And if we run it, it should normally bypass the security and give us the flag, hopefully.
+And as you can see, this time we have 600 tokens and the flag is downloadzion at zion.org.
+That's awesome. That's great. And speaking of downloadzion, how does this work?
+Is it the Docker image? Is it the virtual machine?
+Where do people go to install this and basically start testing web-free vulnerabilities?
+Sure. So we can download a VM directly. I will show you.
+So we go to the website, we click on download. We choose the architecture that we want.
+For example, Intel and AMD. And we want from the VirtualBox one, because that's what we have installed.
+Double click on it. It launches VirtualBox. You can check the different parameters.
+You can adjust how many CPUs or RAM you want to put to assign to this VM, for example.
+And once that's fully imported, you can simply just start it.
+That's simple and easy. Just like I like it.
+Yep. You simply double click on things and somehow it all happens.
+Awesome. Looks really good. Thank you so much for joining me today and explaining to us how to use this.
+I will definitely use it the next time I'm explaining or looking for web-free vulnerabilities.
+For people, they go to zion.org to install this tool. Is this correct?
+Yes, it's correct. You go to zion.org and you can click on the download button just as we showed earlier.
+You can also register on our newsletter by going on to alborn.com and subscribing there.
+We also have a blog on the zion.org website so you can check your content from time to time there.
+Awesome. Thank you again for joining me today.
+My pleasure. Thank you for having me, Greg.
+If you're interested in web-free vulnerabilities, check out this video about a bug in Polygon blockchain
+that was rewarded 3.4 million dollars.
+For now, thank you for watching and goodbye.

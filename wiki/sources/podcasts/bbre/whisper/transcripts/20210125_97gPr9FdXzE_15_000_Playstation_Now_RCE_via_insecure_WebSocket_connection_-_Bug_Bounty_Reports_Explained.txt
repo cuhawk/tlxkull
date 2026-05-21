@@ -1,0 +1,76 @@
+Hello, in today's bug bounty report explained you will learn how it was possible to achieve
+local remote code execution in PlayStation Now application due to insecure WebSocket
+server.
+The vulnerability was reported on HackerOne by Parsia Hackman and he got $15,000 for it.
+Links to the original report and to his Twitter are in the description.
+Enjoy!
+PlayStation Now is a cloud gaming subscription service developed by Sony.
+It allows streaming games from PS2, 3 and 4 on newer consoles and most importantly for
+us on PCs.
+It has a desktop application that users open when they want to play a game.
+The main application is called QAS and it's written in C++.
+It also runs a local WebSocket server on port 1235.
+But there is also another application, AGL and by default QAS runs it with this URL argument.
+It's written in Electron which uses Chromium browser inside.
+It loads the website from the URL and presents it to the user.
+I've mentioned that the main application runs the WebSocket server.
+Let's now explain what it means.
+With HTTP it's always the browser sending a request and the server can only send responses.
+And WebSockets were created to allow browsers to establish a synchronous connection with the
+server.
+It means that both sites can send messages wherever they want.
+However, there are security concerns because HTTP traffic is protected by same origin policy.
+It's a mechanism that protects websites from different domains from stealing each other's data.
+But WebSocket connections do not obey same origin policy rules.
+And the WebSocket connection is initiated by the following JavaScript code.
+When it gets executed such HTTP request is being sent.
+And in the origin header the browser will put the domain from which this code was executed.
+And it's the server's responsibility to verify if this origin is trusted or not.
+If it's valid the server responds with appropriate response and the WebSocket connection is then
+established and both sites can communicate.
+But the PlayStation Now application did not verify the origin.
+So when a user opened the attacker's website while the PS Now application was running in the
+background the attacker could write this JavaScript code and it would allow to establish the connection
+with the local WebSocket server.
+It's because this code would be executed in the user's browser meaning that the local host
+refers to his machine.
+But just establishing a WebSocket connection does not really have an impact.
+Let's see what we can do with it.
+Embedding untrusted website inside Electron application can be very harmful but it's not always the case.
+It depends on Electron security settings in the application.
+If you've watched my video about RCE in Microsoft Teams you know how Electron is built and what
+Node integration security does.
+If you didn't I highly recommend watching it.
+It's available in the cart right now but I will remind those facts anyway here.
+So Electron application is composed of Node main process and the renderer which is a headless
+chromium browser.
+And when Node integration is disabled there is a separation between the main process and
+the renderer.
+It prohibits the website opened in the renderer from accessing Node.js API because it could lead
+to remote code execution.
+Without it the website opened in the renderer can't just import child process and execute code.
+Without the AGL application used Node integration equals true setting which means that the website
+opened in the renderer can do anything using Node.js API and this includes importing child process
+and executing code which is presented at the moment on the screen.
+Let's now put this all together and see how the full exploit looked.
+Normally messages sent via the WebSocket connection looked like this.
+We have a command, its parameters, the application that calls the command and the target application.
+And one of the commands looked particularly interesting for us.
+It was set URL.
+It made the target application open the provided website and embed its content to present it to
+the user.
+By default it was some site from PlayStation server.
+But it was also possible to set this URL to the exploit you've seen seconds ago.
+So the full exploit would look like this.
+The attack scenario is that the victim opens this website while PSNow application is running
+in the background.
+Those first two lines establish a connection with the local WebSocket server.
+Then we send a WebSocket message with set URL command and the parameter is URL that points
+to our RCE exploit.
+As the target application we choose AGL because this is the one that runs with Electron.
+And when our website is opened the RCE gets triggered and the attack is successful.
+The vulnerability was fixed and updated versions of PSNow application are no longer exploitable.
+The report was triaged as critical and was rewarded $15,000 but the researcher is from Canada
+so after taxes he maybe got half of it to his pocket.
+Anyway, if you've learned something new today, leave a like and leave a subscription.
+Bye.

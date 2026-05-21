@@ -1,0 +1,182 @@
+Privilege escalation is a bug class that comes in a lot of variations and
+to know best what we should focus on I did the case study of 162 public bug bounty reports
+and in this video I will show you which ones get the highest bounties. Enjoy!
+So I have nine different groups of what the attacker was able to do with the attack and we'll
+go through them one by one starting with the most common one which was reading victims data.
+It was the bug class that it's kind of overlaps with EIDORs but because I already have done the EIDOR
+case study I tried to focus on a bit different things in this case study. As the example I have
+this report by Yousef Samuda from Facebook where there was a free request process to upload the file
+and these are always always interesting because when you have your data in the system it's stored
+in some kind of database where it's tied to to your user id and it's it's still possible to make a
+mistake and and have the EIDOR there but it's way harder to do something secure with files because
+files they don't have metadata files only have the file name and the file content and that's usually it
+so any request that handles files is interesting especially like here we had one request where
+the user would upload the file to a CDN then in the response they would get the video id then in the
+second request they would exchange the video id for some other identifier that looked like this
+and then there is the third request which connects the uploaded file uploaded video with the with the
+user's profile and in these types of requests of course in the first one you should always try different
+things with the file path path traversals and stuff like this but this second and third one here always
+try to see if you can access other users file id especially if it's a predictable predictable one
+and in this case the second request was probably secure because it's not mentioned in the blog post
+but in the third one yousef could just exchange the video id for another user's id and then
+other file would be appended to normal user's profile would be normally shown on the user's profile
+in this case i think yousef appended some kind of internal crash log screenshot
+and he was rewarded 12 and a half thousand dollars bounty by facebook
+now some of these reports will be similar to idors but because i think every single idor is a kind of
+privilege escalation back i did not want to include them again because i already did either case study
+so i keep this in mind when looking at these statistics the next group that that we have is
+creating or modifying resources with only one less report but a lot higher bounty which is kind of
+interesting because it is not due to the fact that creating or modifying resources is by cvss more
+impactful because if we take a look at cvss this is the typical setting that you would use for
+any kind of either so this this would be for creating or modifying resources and this would
+be for reading and both have the rating of seven and a half so cvss wise there is no difference in the
+impact between these two groups but in practice we can see that there's a clear difference in in the
+average bounty maybe it's because of the fact that if you can modify or create resources likely you can
+at least partially read something so then the impact increases but one way or another um it's always worth
+to to look for for the bugs in in all the possible actions of creating and reading as well and i have this
+report by teddy cats as the as a great example this one was in github and uh yeah systems that uh maintain version control are especially interesting because of how comits work
+i won't go into the detail of of how this particular report worked uh the tldr is that teddy could add himself as the maintainer to somebody else's repository
+but the the thing i want to mention about um about these systems is when you have a target that works with files from one particular repository from one particular organization
+it may seem that it is secure because they will not pull files from your repository but if you control the commit hash
+know that if you fork the repository and create a commit on your fork and never merge this fork never make a pull request
+the commit will be available on the main repository using the same hash that's how how git works and this is
+this is the feature not the bug and developers that create um that create some apps forget about this and
+they do not know that that if you control the commit hash you kind of control the whole the whole repository
+because you can then just pull your own fork with whatever you want inside so keep this in mind we're testing
+for uh for anything that works with with git when you control the the commit hash
+the the the next group is permanently escalate permissions within the organizations so these are
+the attacks where the attacker is somebody that's inside the organization but they have low privileges
+and by executing the attack they can escalate their privileges to admin to manager whatever the role is
+and these attacks are that much impactful that the two previous groups they were only working for
+one one particular request you could read one thing or modify one thing and if you elevate your
+permissions from now on you have elevated permissions and you can do anything that the admin can do so
+most of the time if we take a look at cvss most of the time you will be confidentiality and integrity high
+but because you have to be part of the organizations you will have privileges required low
+or in some cases even high it is very dependent if you can escalate from let's say admin to owner that's
+privilege is required high but one way or another these attacks are are definitely great and we have
+30 reports so this is a common problem and most of these were happening inside the functionality of
+organization or user management so these are quite it's good to test for them because you just have these
+functionalities that you have to audit it's not like you have to see every single request and before
+somebody asking the comments you can access this database in the bbr premium archive that's linked
+in the description the example i have is very very simple attack in facebook you just have this request
+and analyst can elevate their permissions to admin you just use your own user id add account id permission
+id and that's it and a lot of privilege escalations look simple but the real value that the hunter did
+was just browsing the app auditing a lot of endpoints seeing which ones are secure and then all of a sudden
+finding the vulnerable one and then report is often as simple as this one but yeah the real value is
+outside of this write-up so don't be fooled that it's so easy to look for for privilege escalations
+the next group that we have is deleting resources which sort of completes our four actions that you
+can do with the object create read update delete and there are fewer reports than the two previous groups
+but i still think you should spend a lot of time testing for deleting resources the first reason is
+it is less obvious as the less experienced version of me i used to kind of ignore the delete actions
+because i thought there is very little impact if we take a look at at cvss again keep in mind that if you can delete a resource
+there's not an availability impact availability refers to availability of the system and not availability of the data
+which means even if again if you can delete all the data in the system availability impact is none
+of the same thing that you can do with the same information deleting data is integrity impact so cvss wise you're in the same sort of bracket as updating or creating resources of course if what you can delete is is not very sensitive
+it's maybe integrity low or it might even be a non-qualifying vulnerability but in other systems it will be maybe even more dangerous than than other actions
+and one other aspect why i think this deleting is you're more likely to find it especially in hardened targets is because it's harder to test for because if you have the
+read action it's fairly easy to automate this you can do it with authorize you can write your own script that just
+has the ids of different objects you just send the request from a different session and that's pretty much the check done
+when you have updating or creating is a bit harder because you need the proper body of the request
+and even if you can automate some fetching from javascript or by whatever other means you can enumerate
+names of the parameters likely you will still not know what are the values of those parameters
+so it's harder to automate this and deleting i would say is even a little bit harder
+because if you send the request from the original session you cannot replay replay this this request
+from the attacker session because the object is already deleted so we need to find another one and
+these things even though if you're just testing you know one resource it's not a problem to do this
+but if you think about you know multiplying this process times 300 endpoints 400 endpoints 1000 endpoints
+that's a lot so that's why there's definitely more privilege escalation bugs and idors in those actions
+that modify something than in the read and especially if you have graphql it is possible that
+you can not only delete the data but also read it at the same time in this example you could just delete it
+but when you have a graphql mutation that looks like this here you ask the system about what it should
+return in the response after deleting the object and here is just error so this is only deleting the
+the resource but in some cases you will also be able to see the contents of the object that you just
+deleted so then you have both the confidentiality and integrity impacts
+the objects so yeah when you have when you have graphql always pay even more attention than normally
+to to deleting objects even if they are they may not be sensitive to delete if you're able to read them
+that's definitely sensitive so pay attention to to this the next group is something interesting
+because i've never actually tested for this at least i haven't spent a lot of time testing for this
+so the attack scenario is that the attacker already has some privileges in the application
+but it's impossible for the legitimate user to to remove the attacker from the organization or remove
+attackers permissions so sometimes it's it's as simple as just the session token not being invalidated for
+for a long time where the attacker can refresh it over and over again but we also have a very interesting
+report here in reddit where the hunter 41 bin found something that seems like not something severe
+they found a way to create the user that would be hidden from the user list and probably it's something
+that i wouldn't even report i would probably brush it off as maybe a low risk vulnerability that the
+company will not reward or at least not reward well but the attack scenario that the hunter came up with
+is to as the attacker that already is the admin in the organization create another admin in the same
+organization but the one that's hidden so then when let's say in the real world the attacker leaves the
+company and the company uh the user with the owner permission wants to remove them from the organization
+on on reddit or on reddit ads in this case they remove the attacker but because the hidden user created
+by the attacker is not is not visible to the to the owner the hidden user is not deleted and of course
+the attacker has credentials to this account so they can keep those permissions forever
+and it's also kudos to to reddit here because they rewarded it five thousand dollars as a high
+and i want to appreciate it because i feel that sometimes even though we say in backbound the impact
+is the king i still feel that often it's hard to get paid well for something that's not a standard
+vulnerability when you do something that's out of the box or something that doesn't have a back class
+name or something like this it's harder to get this through triage and it's harder to get this paid
+well even if the impact is there just because it's non-standard but it's not the case here here reddit
+took a look at it at the impact standpoint not at the back last standpoint and they rewarded it fairly so
+so well well done reddit then joining another organization and you can see that there is way way
+fewer reports of this type nine versus 30 of escalating privileges within the organization
+so even though joining another organization is more risky and you can even see the average bounty
+is way higher than than other back classes here even though it's a small small sample size is the best we
+can get but take it with a grain of salt but you can see that it is not as easy to perform an attack that
+allows you to join another organization now why is the average bounty so high
+that's probably because there are four shopify reports rewarded in total over 65k
+and also 35 000 of facebook reports and
+the ones in shopify there are a few reports by ron chan that are kind of related i covered them on my
+channel you can see them the link is in the description just if you watch it remember that it's it's one of the
+the first videos on my channel so you will see how much the quality of the videos have improved
+but i still recommend you to watch the because this chain is incredible it's a race condition
+where with the email confirmation process where ron was able to confirm another email by
+you change it at the correct time and uh specifically in shopify bypassing email confirmation allow you to
+take over the the whole shop so it is a big thing and if i think three of these reports in total that i
+covered were were rewarded 37 000 so yeah it's it's definitely something to to pay attention to
+next we have paywall bypasses and it's a bad class that i was very curious about because it's not
+something that i test a lot and i wanted to see if i should and to be honest if anything this case study
+convinced me that i shouldn't spend a lot of time here we have only seven reports in this group and they
+are not really rewarded that well um we can see two reports rewarded two thousand dollars from shopify
+which doesn't sound bad but it's still rewarded as a low and i imagine a lot of companies just didn't
+accept them at all so yeah to sum it up it's not something that that i'm gonna be spending my time on
+the next group that that's kind of named a bit strangely bypassing victims confirmation it's it's
+attacks where i wasn't really able to determine the the immediate impact um an example we have here in
+slack where if you invite somebody to the slack workspace they have to accept the invitation
+and you could bypass this accepting the invitation so you could invite the victim to the workspace
+and have them automatically accept the invitation by i think changing their role immediately so there's
+no immediate impact to this because it's the victim joining your slack workspace but because there is the
+confirmation it is there for some reason so some companies will will pay for this if you can bypass
+that it's probably not something i'm gonna spend a lot of time on as well but it's something to to be
+aware of that if there is a confirmation it might be there for a reason and in some cases we might not
+even understand the business impact and the real implications so yeah keep this keep this in mind
+and finally the last group which for me is a very important one because it's not something that i used
+to test for and i probably will start from now on oath app that has too many privileges and i'm if you know
+me you know that i love oath it's probably the first functionality that i test on every target
+but these scenarios it's not something that i really considered so what happens here is when you
+log into example com with your twitter account in this example you are being shown this consent screen
+and when you authorize the app what happens on the back end the app the example com gets the access
+token with which it can communicate with the twitter api and fetch some information about you modify some
+information on your behalf and do other actions and exact actions are being shown on this consent screen so
+here it clearly says what the application can and cannot do and the attack scenario here is that
+this access token that the application has actually can do the actions that this screen says it it mustn't so
+the the access token allowed the app to access person's direct messages while the the permission for this was not
+given on the consent screen and twitter rewarded this three thousand dollars almost three thousand dollars
+and it's interesting for me because it's kind of hard to test because you have to create your own
+application which also means you're limited to targets that allow to to do this so it's like facebook
+twitter google and other big applications that allow to use themselves as authorization server to log into
+other websites and the attack scenario is that you have to create the app and go through the flow and
+fetch the token and a lot of people just won't do it so they won't test for this scenario and this is
+this is one case that can happen that the token has too many privileges compared to what was shown on the
+consent screen but it gets even better here we have a github report from tanner which was even better
+because the application to which you granted permissions had more permissions than the user giving
+the permission so the attack scenario changes here significantly because now the user can just create their
+own application in the organization and all of a sudden this user's application has more permissions
+than the user themselves so it's a normal privilege escalation inside the organization and that's why
+this scenario is is more dangerous because it's it in the at the end of the day the user can just
+escalate their privileges um but the the sort of way to do it is very creative and it's probably not
+something that that a lot of people test for and in this case it was rewarded ten thousand dollars so
+a really really nice attack and definitely something for me to add to my to my testing methodology and
+that's it these are all the groups that i have prepared for you today if you want to see the full case
+study it's available in the bb area premium archive and if you enjoyed listening about privilege
+escalations check out this episode of the podcast that i recorded with douglas day who's the absolute
+best hunter when it comes to looking for privilege escalations the link is on the screen right now
+and in the description and for now thank you so much for watching and goodbye

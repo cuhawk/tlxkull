@@ -1,0 +1,148 @@
+Hello! In this video, I will show you the results of me spending 100 hours reviewing the source code
+of Elastic applications to score some bounties in Elastic Back Bounty Program. Unfortunately,
+my result is not great and if you're only interested in success stories, then this video
+is not for you. But if you also want to see what I did wrong, what I did well and what I did learn,
+then stay with me. Enjoy! So first two days were pretty much spent on the whole setup.
+I wanted to be able to debug Kibana to just have an edge over other hunters and setting up is never a
+pleasurable activity for me, but when doing back bounty, every time I spend some time preparing
+myself, I know that I will be ahead of those hunters who didn't want to invest this time now
+and will have worse environment for testing later. I wanted to be able to debug both Kibana and
+Elastic Search because Kibana is an application to present data, but the data is actually stored in
+Elastic Search database. I chose Kibana as my main target, but I also wanted to be able to debug Elastic
+Search, but it was quite hard to set up and at the end I was able to debug Kibana, but not Elastic
+Search, I only used Docker image there. Then I read some reports from HackerOne to know what to expect,
+what are the weak sides of Kibana and I started testing. The way I would test the application is
+I would simply start using it from the browser and choose a functionality that I would like to
+test and then I would start understanding what happens. I would start reading the code,
+putting in breakpoints to see what issues can be in this place of code and I really enjoyed this phase.
+Every day I was understanding more and more functionalities, I saw how they work and to be
+honest Kibana seemed a little bit sketchy to me. You know, sometimes when you test an application or look
+at the source code, you just feel it's secure that the developers show everything you can try. In this case,
+I felt it was written really badly. For example, there are a lot of past traversals and you see that
+someone wrote this application without this security issue in mind, but those traversals are fixed in
+places where user input could actually reach those dangerous places. For example, here is a code that
+takes Kibana takes the request from the user and forwards it to Elasticsearch. This is quite common
+actually. And there is path traversal in this functionality, but this input has to be an ID of
+an object that already exists. So you can't use the dot dot slash because there is no such object.
+But there is another way that this function allows, which is using a wildcard. And without getting into
+details of this logic, I was able to prepare this payload, which would both look to Kibana like a wildcard,
+not throw an error. And most importantly, it would also give me the path traversal. The thing is that
+after writing this, I was already happy. I thought that I will submit my first report. But turned out
+that this function by default has allow wildcards argument set to false. And there is not a single
+place in Kibana source code where this function is called with allow wildcards argument. It's therefore
+a reason for a reason. So it was used sometime in the past, but apparently it is no longer vulnerable,
+but it was. And that's pretty much sums up a lot of my time spender. So I saw a place which looked like
+it's vulnerable, but it wasn't. Next, after finding out that this particular spot is not vulnerable,
+I would try to create a code signature, which is just a proper search to find a similar vulnerability
+in other place of the source code where maybe it would be vulnerable. Here is another example which I
+found by looking for similar code patterns. This is a functionality which allows you to browse some
+external packages on Kibana and those files are stored on another server on elastic package registry.
+And this is the way that the path is created to make a request to to EPR. But you can see that there
+is no URL encoding. So there is path traversal here. However, elastic package registry is public anyway. So
+there is no impact to this. If you could find an open redirect on package registry, it would be an SSRF.
+But I looked through the whole source code of the package registry and I didn't find an open redirect.
+But if you want, you can give it a try. And here is another case where the code looks bad.
+So instead, there is a vulnerability, but it is not exploitable. So perhaps it's not a vulnerability after all.
+And after a few cases like this, I started questioning my choice to stick to Kibana and I wanted to look for
+for other targets. And I was very hopeful when I found out about enterprise search application.
+Unlike most elastic products, it is not open source, but you can install it from Docker image. And you know
+that if you can install something using Docker image, you can extract at least some kind of byte code.
+And I wanted to extract this byte code and maybe attack this application, which is not as easy to get.
+But turns out this is how the jar files look after the compilation.
+And every single file looks exactly the same. But the only difference is this string or these bytes.
+Turns out that this technology is called JRuby. And the way it works is you have some kind of Ruby
+byte code or although byte code isn't the valid word to describe this. And it is executed by a Java
+program. And the problem is there are no public JRuby decompilers available in the Internet.
+So the first result that pops up when Google this is a private repository from GitLab from the guy,
+which by no accident is top one hacker on Elastic Bug Bounty program.
+And I say it's no accident because I talked with him and he told me that Kibana is quite hardened at the
+moment. And he finds most of most of his bugs on enterprise search due to the fact that he's the only one
+that has the source code access to that. I also thought about writing the decompiler myself,
+but I decided that maybe 100 hours is not enough for that. So I ended up not doing this.
+And those situations showed me that my hacker instincts are correct. I'm just too late to the
+party. But even though I wasn't finding a lot of bugs, you probably know that not finding bugs motivates
+you more than finding bugs because then you try to go deeper, you try to research new attack techniques.
+And I was learning a lot and I had quite a lot of materials to share in BBR newsletter in BBR premium.
+For example, take this one from BBR premium 25. You have these three regexes and think about which of
+them, which will match which of these inputs. Specifically, the question is which regexes have
+escaped dots and which are wildcards. The first one obviously matches wildcards, which means that the dot
+is matched to any character. I'm sure that you knew that already. The third one matches escaped dots,
+which means the dot only matches the dot. But the middle one, I would think it would also match a
+literal dot, but turns out it doesn't. And in this case, the dot is the wildcard. I am not the only one
+who doesn't know this because Kibana developers don't know this either. This is the code where they have
+badly written regexes. Unfortunately, to my knowledge, this is not in a place which is a security
+vulnerability. And after some time, I found a bug. I was able to control the source of the image.
+It doesn't allow you to execute XSS, but it allows you to point this URL to a logout. And then every
+single person that visits this address, visits the website where your payload is presented, are logged
+out of the application. So this is a functionality level denial of service. It can be a medium risk bug
+if it's in a critical functionality, maybe even high sometimes. In this case, it wasn't, but it was a bug.
+But the denial of service bugs were out of scope of Elastic. And I would probably ignore this rule
+if I would really find like one click denial of service bug for the whole application. But in this
+case, I decided that it is not risky enough for me to ignore the policy. So I didn't report this.
+But after a few weeks, I checked the policy again and turned out that they made a change effectively
+removing denial of service from out of scope vulnerabilities. So I started writing the report.
+I confirmed that other users can also see my payload. And I started to write the report. But
+unfortunately, turned out that I copied the wrong session cookie when confirming this bug. And I was
+the only one who could see my payload. So I could only log out myself of the application. So there is no
+impact to this. So I ended up not reporting this bug, which wasn't a high risk. Anyway, it was definitely
+a low risk bug. But I hope that I will at least report something finally, which was a bit discouraging.
+So again, I started jumping between different assets of Elastic that included Elastic Cloud. And quickly,
+I found a low risk vulnerability there. But unfortunately, it was a duplicate. And this time,
+I did submit the report, but it was a duplicate. And judging by the report ID, it was a duplicate of a bug
+from a year before. So they probably just don't care about it, which was yet another discouraging
+moment. And after that, I decided that I will stick with Kibana until the end. And I think I spent these last
+hours really well. At the beginning, I told you that I browsed hacker once for public bug bounty reports.
+But of course, there aren't many bugs disclosed there. But turns out that Elastic has its own bug
+tracker and there are other vulnerabilities. And of course, there are no proof of concepts there,
+but they are public. So I started to look at bugs from this tracker and to reverse patches to these
+bugs to maybe find similar ones and understand the application better. And I think it was really good.
+I think it taught me a lot. And it gave me much better understanding of the bug actually,
+than just reading the hacker one report, because I had to understand the whole context. I had to
+understand the source code around this bug. And this gave me really good understanding. For example,
+here is an interesting access, which doesn't exist in the default configuration, because it is in the
+code written by Kibana. But to use this code, you have to create your own plugin. So there is a code in
+Kibana, you have to create your own plugin. And you have to use one particular library, one particular
+function that Kibana gives you. So this bug is actually present. So you don't misuse the library,
+you use it properly. And there is an XSS. So what I started to do after this was I started to create
+my own plugins. It was a little bit hard for me, especially that I'm not a TypeScript developer,
+I can read the code, but I'm not that good at writing. And I think I started doing this too late.
+I was able to create my plugins, but it was not enough time to experiment with using different libraries,
+different use cases. But it was definitely, definitely worth it. And then finally, after 92 hours out of 100,
+I found a valid bug. I actually found it by accident. I was looking for something else. And I noticed in the
+file next to the one I was inspecting, there was a vulnerable code, which I immediately spotted. And even
+though it was barely exploitable, it was a valid bug. So I submitted it. They didn't resolve it yet
+and didn't disclose it. So I can't tell you what it was from the technical standpoint. It's not very
+interesting. Unfortunately, they paid me $584 for it. And unfortunately, that's the final result of my
+of my challenge. For those of you who don't know how this works. 100 hours for me is a full time,
+is a month of full time work. So obviously, I do other things, which includes these videos. So it was
+spread across four months for me. But if I would only do bug bounty, then this challenge would take me one
+month. So that's how I compare these results to simply one month salary of a full time job. Actually,
+I would expect such challenge to take me about two months. But this one took me almost four, just
+because I procrastinated a lot, which was simply caused by not finding bugs. So what are the lessons
+that I learned from this challenge? The first one is to not go for programs about which you hear from
+someone else, because they tend to be overhyped. I started hacking on Elastic because I heard about
+it on Twitter or in some talk. And I see this as a mistake, because if someone mentions a program that
+is cool, it automatically means that a lot of people are jumping on it, making it not cool anymore. Of
+course, it doesn't apply to huge programs like Google or Facebook. But if I will be choosing my next
+program, I will not go for one that someone recommends me. And also, if you ever ask someone
+which program to choose to start bug bounty, I get asked this a lot. Don't do this and don't go for a
+program that someone recommends to you. But if I would hunt on Elastic again, what would I do differently?
+First, it's definitely worth it to invest time to prepare your environment, prepare your tools,
+write your own deck compiler, maybe it's definitely pays off. I would also spend more time trying to
+understand the business side because from the technical standpoint, of course, I can understand
+the functionality and what Kibana is. But I don't even know what is its place in a company, what do the
+roles mean in real life? And also, how does Kibana integrate with other products of Elastic? I think I
+could have done a better job of also learning what Logstash is. I know there is the there is Beats
+application in scope that is a whole whole infrastructure around Elasticsearch. And I
+probably should have invested more time into understanding this and maybe not choosing the most
+commonly hacked and the easiest to set up, which was Kibana. And also, I think writing my own plugins
+is definitely a good way because first, you start to understand the application from the developer
+perspective. But also, you can reach the code which is not reachable the other way. So we are pretty sure
+that there are bugs to be found there. If you want to try to find a bug that I've missed,
+or maybe you just want to see how I organize my notes, you can access my whole Notion page from
+Hunting on Elastic under this URL bbre.dev slash elastic. And in the next Bounty vlog, I challenge
+myself to jump from different private programs on HackerOne to test completely different approach. In fact,
+I already uploaded one vulnerability that I found during doing this challenge. It was quite a nice
+SSRF which I escalated to account takeover. You can watch it by clicking the card which is on your
+screen right now. And if you don't want to miss the next Bounty Vlogs, subscribe to the channel. For now,
+thank you for watching and goodbye!

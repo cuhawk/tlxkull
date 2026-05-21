@@ -1,0 +1,105 @@
+Hello! In this episode of Bug Bounty Reports Explained, I will show you an incredible puzzle
+of low-risk bugs that chained together led to an account takeover on Facebook.com. The hunter who
+founded Yusef Sumuda got almost $45,000 for it. Link to his blog post is in the description. Enjoy!
+This episode is sponsored by Integrity. Integrity is Europe's biggest bug bounty platform with
+over 400 programs to hack on. I hugely appreciate Integrity for investing a lot in community
+enablement. They create an awesome bug bites newsletter, they create monthly exercise challenges,
+they even have a great YouTube channel. If you are not one of over 50,000 hunters, check out Integrity
+now using the link from the description. On Facebook you can log in using your password, but you can also
+link your account with Gmail to login with your Gmail account. The protocol to do this is off and
+is widely used across the web. Very simplified flow of this process looks like this. You are on Facebook
+and you click Login with Gmail button. Facebook generates some parameters for you and redirects
+you to Gmail. Then in Gmail you have to log in. But usually you are logged in already, so you only
+choose the account and if you only have one account Gmail will just flash in front of you and you will
+be redirected back to Facebook. The parameters among others will contain the code. Importantly, up until
+now Facebook and Gmail servers did not communicate with each other. Only now when Facebook receives the code,
+sends the request to Gmail server and gives you back the session token if it's okay. So this code is very
+valuable because it allows you to exchange it for the session cookie. So if the attacker would see it,
+they could also take over your account. And across the years we saw many attacks that looked more or less
+like this. The attacker has to trick the victim into visiting their website. The attacker's website
+sends the victim into the authentication flow but before the original website consumes the code,
+the attacker takes it over and hijacks user's account. And this is exactly what we'll try to do today.
+However, in modern web and on a hardened target like Facebook, it is not easy. Definitely much harder
+than in the early days of OOF. In particular, there are two problems that we need to solve. The first one
+is that the code is one-time use only. It means if the victim consumes the code, sends this code to Facebook,
+the attacker can't do anything even if they have the code. And the other is, of course, leaking the code
+somehow. So to prevent the code from being used by the victim, we need to stop this flow somewhere
+between Gmail or Facebook. On Facebook, if you make too many requests, your account will enter a state
+where you need to fill in the captcha. I will call it the captcha state. Whatever you will try to do on
+Facebook, you will be shown this window. And it is a very good candidate to solve the first problem
+because if the victim's account will be in the lockout state, in the captcha state, after they finish
+the authentication flow, they won't use the code and importantly, the code will be in the URL of the
+website giving us some chance to leak it. But how do we force victims account into the captcha state?
+The answer to that is that we don't. Instead, we'll introduce the captcha state into our own account
+and then we'll use two bugs to log out the victim from their account using one CSRF and then logging the
+victim into our account using another CSRF. These two bugs, even though they are very low risk by themselves,
+chained together here, will allow us to move the victim's Facebook into the captcha state.
+Now, you might be asking yourself, how do we take over victim's account if they are logged in to our account?
+But the thing is that in case of this attack, Facebook won't actually take part in this process.
+We are interested in Gmail generating the code and taking over this code which will allow us to take over the account.
+So it doesn't matter what account is the victim logged in on facebook.com.
+So we are able to log out the victim from their account, logging them to our account which is in the captcha state,
+we can send them into the authentication flow and we'll make sure that they come back to Facebook,
+they don't consume the code and the code is in the URL. Now the question is, how to leak this code from this URL?
+Normally, if you want to add a captcha functionality from a third-party provider to your website,
+you have to import their scripts on your website. It requires some level of trust and to be even more
+secure. Facebook didn't host this window, this iframe on facebook.com domain but on their sandbox domain.
+Sandbox domains often improve security of websites because even though Facebook owns these two domains,
+browsers don't know about it and they treat them like they would be completely different ones.
+They have different cookies, different storage, different everything. They just have one communication
+channel to establish if the captcha was filled in or not. But for the sandbox to be an improvement
+of security of the website, it can't be used in too many contexts. But in this case it was, because it was
+also used on a testing websites when the developers can see how a particular website will see inside the
+Facebook mobile app. And this allowed them to upload HTML files which would be stored on the same sandbox domain.
+And even though the sandbox domain is separate from facebook.com, the sandbox domains can somehow
+communicate with each other because they are the same origin. And this is the last piece of our puzzle.
+Now let's combine them all together to see the whole exploit.
+Usually in case of a client side attack, you create your own website and you have to trick the victim into visiting,
+for example, attacker.com domain. In this case, we'll instead host the whole exploit on the Facebook sandbox domain
+because it will be helpful later.
+So let's go ahead and see if we have a new one.
+
+
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+So let's go ahead and see if we have a new one.
+They land on the captcha screen and importantly, the URL with the code is inside the iframe's address.
+Now from the original window, we have the reference to the newly opened window.
+These two are now in separate domains because our website is on the sandbox domain
+and the victim is now on the facebook.com domain.
+So we only have limited access to properties from facebook.com.
+However, those limited properties include the list of iframes on that website.
+And we know that the first iframe, the iframe of index 0 is the captcha window,
+which is also on the sandbox domain.
+And all of a sudden, our exploit website and the iframe with the sensitive code in the address
+are on the same origin, meaning they can communicate with each other.
+And our exploit website has access to the address of the iframe, which contains the code.
+We now send the code to our server and we need a script to exchange this code for a victim session
+cookie taking over their account.
+So the bug allowed to take over any facebook account of someone that uses Gmail to log in.
+The reward for it was almost 45,000 dollars.
+Of course, the bug is already fixed.
+Check out this playlist to see two more account takeovers on facebook
+that were rewarded 25 and 55 thousand dollars.
+And if you enjoyed this video, leave a like and subscribe to the channel.
+For now, thank you for watching and goodbye.

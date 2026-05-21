@@ -1,0 +1,44 @@
+Security code review of a big codebase is very difficult. In the beginning, you are just
+overwhelmed by the amount of things you don't understand. However, there are things you can do
+to make it easier and find more bugs by reviewing the code. In this video, I will show them on the
+example of my bug in Golang's HTML parser which is in scope of Google open source bug bounty. Enjoy!
+The first step is understanding on a high level what are you reviewing. I usually do this by just
+using the product and by reading the documentation. But by no means this one step is enough to make a
+complex codebase easy to review. Especially here when we are talking about HTML parser because HTML
+is extremely complex with hundreds of states, with namespaces, different parsing rules. But the fact
+that the whole library is complex doesn't mean that every single line does crazy things. The whole library
+is composed of many small pieces which by themselves are easy to understand. And the first thing that I do
+when I'm jumping to reviewing a code like this is I find a small piece like this, a piece that fits onto
+a single screen and I try to understand what happens there. This gives my brain the signal that it's not
+as overwhelming as I initially thought and this does not have to lead me to a bug straight away.
+Let's be honest, when I'm approaching a target like this, I am not hoping to find an easy bounty in one day,
+especially that I am not an HTML expert or an XSS god. The code I stumbled upon is this function
+that's used to parse HTML comments. This is how HTML comments normally look like.
+And you may be wondering, what's the point of messing up with comments? What could I potentially achieve?
+So imagine I have a website where I allow users to use simple HTML in their descriptions. For simplicity,
+let's only allow header tags. So I write some code that takes the description from the user,
+parses the HTML and checks whether all tags that are in this HTML are allowed or not.
+If they are not, I forbid the user from saving this description. If they are, I consider this
+description safe and I show it to other users where this HTML is being parsed in their browsers.
+So the HTML is parsed twice. Once by my code, which uses Golang's HTML parser and then by the browser
+of my potential victim. If I can find any inconsistency between these parsers, I can hide some XSS payloads
+so that the validator doesn't see those payloads, but they are executed in the browsers in the context of
+the victim. When you are looking for bugs in libraries like this, you have to come up with these attack
+scenarios yourself. Just make sure that you are using the library correctly because if you misuse it,
+you will not be rewarded. So let's come back to the comment syntax. This is the typical comment,
+but the specifications of how parsers should parse the comments mention a few exceptions. One rule says
+that if a greater than character is immediately after the beginning, this is considered an empty comment.
+Another rule says that if a comment is closed with this sequence with the exclamation mark inside,
+it is also considered a valid comment closing. And Golang library had no problems with applying these two rules.
+But tell me, what do you think should happen with this? If you combine the logic from these two rules,
+you should interpret this as a valid empty comment. However, there is nothing in the specification
+saying that these two can be used together. It means this is only a comment opening. And that's also how
+browsers process this. But Golang's HTML parser show this as an empty comment. So if I use a payload like this,
+then my hypothetical validator would see an empty comment first, and then an h1 tag with some
+attributes which are considered safe. So this description would be allowed. But then it would be
+shown to users and processed by their browsers. And the browser would see here only a comment opening,
+and the h1 tag would be the comments content. Then the comment would be closed, and the rest would be
+processed as valid HTML. This way, we smuggled an a tag past the validator, and the XSS can execute in
+the Victips browser if they click on this link.
+Google paid me over $3000 for this bug. If you want to learn more about XSS, check out this video with
+some of my conclusions after studying 174 bug bounty XSS reports. For now, thank you for watching and goodbye.

@@ -1,0 +1,205 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.400 --> 00:00:03.300
+Hello! Today, for the third time on my channel,
+
+00:00:03.500 --> 00:00:07.500
+I have as SSRF vulnerability in Gitlab. This time,
+
+00:00:07.500 --> 00:00:11.300
+however, it was found in the external component called Grafana.
+
+00:00:11.900 --> 00:00:15.900
+It was reported by Justin Gartner and he got $12,000 for it.
+
+00:00:16.500 --> 00:00:20.200
+Links to the report as well as to his blog post and his talk
+
+00:00:20.200 --> 00:00:22.300
+about the topic are in the description.
+
+00:00:22.500 --> 00:00:23.600
+Enjoy the video!
+
+00:00:24.300 --> 00:00:25.800
+Let's start with grafana.
+
+00:00:26.200 --> 00:00:29.800
+It's a software used for monitoring and creating graphs.
+
+00:00:30.000 --> 00:00:34.900
+with analytics data. And it's open source, which means
+
+00:00:34.900 --> 00:00:38.600
+it's a little bit easier to look for vulnerabilities, because
+
+00:00:38.600 --> 00:00:43.300
+we can see the source code. And the researcher noticed the
+
+00:00:43.300 --> 00:00:44.500
+root /avatar/:hash
+
+00:00:44.500 --> 00:00:49.800
+where hash is the parameter. And after receiving such
+
+00:00:49.800 --> 00:00:54.400
+requests grafana took the hash and made the request to
+
+00:00:54.400 --> 00:00:55.700
+gravatar website.
+
+00:00:56.200 --> 00:01:02.000
+It's used for storing avatars. The URL for this request.
+
+00:01:02.200 --> 00:01:04.000
+Is created like this:
+
+00:01:05.099 --> 00:01:09.700
+The first part is hard-coded and the second part is our hash.
+
+00:01:11.100 --> 00:01:16.100
+What's important here is that the hash is everything after
+
+00:01:16.100 --> 00:01:20.700
+the last slash of the first request, which means it includes any
+
+00:01:20.700 --> 00:01:25.700
+parameters after the question mark. Then there is question
+
+00:01:25.700 --> 00:01:30.400
+mark appended and value of reqParams, which are hard-coded
+
+00:01:30.500 --> 00:01:37.300
+parameters d, size and r. So we can only control the last
+
+00:01:37.300 --> 00:01:41.600
+part of the path and the parameters, which means that we are
+
+00:01:41.600 --> 00:01:47.100
+far from SSRF vulnerability. Unless we can find an open
+
+00:01:47.100 --> 00:01:51.300
+redirect vulnerability on a gravatar website and then we
+
+00:01:51.300 --> 00:01:56.100
+could use it to redirect the server to the internal location
+
+00:01:56.200 --> 00:01:59.200
+achieving our server site request forgery.
+
+00:02:00.300 --> 00:02:04.900
+For this purpose a gravatar documentation about the default
+
+00:02:04.900 --> 00:02:10.699
+URL might be very useful. The D or default parameter that
+
+00:02:10.699 --> 00:02:15.600
+you saw earlier is used when gravatar doesn't find the image
+
+00:02:15.700 --> 00:02:17.000
+on his own server.
+
+00:02:18.100 --> 00:02:22.700
+It can be some predefined value like retro, but it can also
+
+00:02:22.700 --> 00:02:27.000
+be an URL which is very promising when you're looking for
+
+00:02:27.000 --> 00:02:28.100
+open redirects.
+
+00:02:29.300 --> 00:02:34.100
+But when you provide the URL you get redirected to yet another domain. 
+
+00:02:34.100 --> 00:02:39.800
+This is the way that you would tell this domain where
+
+00:02:39.900 --> 00:02:41.300
+to look for your image.
+
+00:02:42.400 --> 00:02:46.635
+It would try to go to this location and give you back the image.
+
+00:02:51.379 --> 00:02:56.000
+But if it would be on the domain bp.blogspot.com
+
+00:02:56.300 --> 00:02:58.700
+instead of fetching this image for you,
+
+00:02:59.000 --> 00:03:03.800
+It would redirect you to that domain. But you could exploit
+
+00:03:03.800 --> 00:03:08.400
+this functionality by using bp.blogspot.com as the
+
+00:03:08.400 --> 00:03:14.400
+path achieving an open redirect. So we can use this chain
+
+00:03:14.400 --> 00:03:19.600
+of redirects to make the server send the request to specified
+
+00:03:19.600 --> 00:03:21.100
+by us host.
+
+00:03:22.000 --> 00:03:24.300
+However, there is still one problem.
+
+00:03:24.600 --> 00:03:29.200
+There will always be that bp.blogspot.com part in the
+
+00:03:29.200 --> 00:03:35.100
+path. But this is easy to resolve. We can just introduce yet
+
+00:03:35.200 --> 00:03:40.000
+another redirect, this time to our server, and on our server
+
+00:03:40.100 --> 00:03:44.300
+we can host the code that will strip this part and send the
+
+00:03:44.300 --> 00:03:49.200
+one last open redirect to the arbitrary host and arbitrary path.
+
+00:03:49.200 --> 00:03:55.000
+Chaining this all together the final exploit URL would
+
+00:03:55.000 --> 00:03:56.000
+look like this:
+
+00:03:59.000 --> 00:04:03.100
+However, if we would send it like this then grafana would
+
+00:04:03.100 --> 00:04:06.100
+think that only this part is the hash.
+
+00:04:07.000 --> 00:04:10.620
+So we need to remember to URL encode some values, sometimes
+
+00:04:10.620 --> 00:04:13.820
+even more than once.
+
+00:04:14.160 --> 00:04:20.300
+On Gitlab it was exploitable by requesting a standard AWS metadata
+
+00:04:20.300 --> 00:04:24.500
+endpoint which usually allows to take over the whole server.
+
+00:04:25.200 --> 00:04:28.000
+And that's it! If you're interested in more ways.
+
+00:04:28.400 --> 00:04:29.000
+of exploiting
+
+00:04:29.000 --> 00:04:32.500
+This grafana vulnerability, check out Justin's blog post
+
+00:04:32.500 --> 00:04:34.000
+or his talk about the topic.
+
+00:04:34.000 --> 00:04:37.300
+They are linked in the description, but for now, thanks for
+
+00:04:37.300 --> 00:04:39.400
+watching. Happy hunting and goodbye!
+

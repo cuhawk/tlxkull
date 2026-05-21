@@ -1,0 +1,469 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.640 --> 00:00:03.919
+Hello! How do you feel when you find a
+vulnerability
+
+00:00:03.919 --> 00:00:07.839
+with cool filter bypass? Because I feel
+absolutely amazing!
+
+00:00:07.839 --> 00:00:12.719
+But today i have for you a vulnerability
+where four filters were bypassed
+
+00:00:12.719 --> 00:00:17.680
+to exploit XSS on airbnb website.
+The vulnerability was found by Brett
+
+00:00:17.680 --> 00:00:22.720
+Bauerhaus and Ben Sadeghipour
+aka NahamSec. He also has a youtube
+
+00:00:22.720 --> 00:00:25.279
+channel
+full of talks with great bug bounty
+
+00:00:25.279 --> 00:00:28.400
+hunters.
+And my today's video is based on a
+
+00:00:28.400 --> 00:00:32.880
+write-up from Brett's blog.
+The link as always is in the description.
+
+00:00:32.880 --> 00:00:35.440
+enjoy!
+
+00:00:35.680 --> 00:00:41.760
+so on embeddable/listing_frame endpoint
+on airbnb, data from parameter
+
+00:00:41.760 --> 00:00:48.320
+city-link-index was reflected inside
+the JSON body and the first thing
+
+00:00:48.320 --> 00:00:52.000
+that you need to know is that there is
+script with type
+
+00:00:52.000 --> 00:00:59.600
+application/json and inside such tag
+no javascript code gets executed.
+
+00:00:59.600 --> 00:01:03.199
+But if you can smuggle a closing script
+tag,
+
+00:01:03.199 --> 00:01:07.520
+even inside the string in the json, the
+tag gets closed.
+
+00:01:07.520 --> 00:01:13.439
+And then you can open another script tag,
+this time the normal one and execute
+
+00:01:13.439 --> 00:01:18.240
+javascript code inside.
+But of course it didn't work in this
+
+00:01:18.240 --> 00:01:22.479
+case, because if it would
+I wouldn't make a video about it.
+
+00:01:22.479 --> 00:01:26.640
+Let's start
+with bypassing xss filter
+
+00:01:26.640 --> 00:01:31.439
+so if you send any HTML tag in the value
+of the parameter
+
+00:01:31.439 --> 00:01:37.040
+it got deleted, but if you would put
+a semicolon at the beginning of the
+
+00:01:37.040 --> 00:01:41.920
+parameter value,
+the tag would not be deleted. And one
+
+00:01:41.920 --> 00:01:45.920
+thing to notice
+is that previously the payload was in
+
+00:01:45.920 --> 00:01:50.399
+the JSON value,
+but the semicolon made the parser think
+
+00:01:50.399 --> 00:01:54.240
+that this value is ended and another key-value pair
+
+00:01:54.240 --> 00:01:57.840
+is created and likely this is what
+confused
+
+00:01:57.840 --> 00:02:05.040
+the xss filter. And you might be thinking
+why are they using a &lt;u&gt; tag instead of a
+
+00:02:05.040 --> 00:02:09.200
+&lt;script&gt; tag.
+The reason is that if you have
+
+00:02:09.200 --> 00:02:13.440
+multiple filters present,
+you want to separate them and bypass
+
+00:02:13.440 --> 00:02:18.400
+them one by one.
+So first you need to see if you can
+
+00:02:18.400 --> 00:02:22.319
+inject
+any HTML code and for that purpose
+
+00:02:22.319 --> 00:02:29.680
+the least dangerous tags are the best.
+So we have bypassed one protection and
+
+00:02:29.680 --> 00:02:33.200
+we can
+close the &lt;script&gt; tag and now it's time
+
+00:02:33.200 --> 00:02:38.800
+to open another tag
+with our javascript code. But this time
+
+00:02:38.800 --> 00:02:44.879
+web application firewall prevents us.
+Now what's the difference between xss
+
+00:02:44.879 --> 00:02:48.800
+filter
+and web application firewall? The former
+
+00:02:48.800 --> 00:02:52.560
+works inside the application code and
+it's only used
+
+00:02:52.560 --> 00:02:56.879
+in some specific places. Whereas web
+application firewall
+
+00:02:56.879 --> 00:03:00.319
+or WAF is more like a plugin to the
+server
+
+00:03:00.319 --> 00:03:06.319
+which analyzes all the requests.
+And it was rather secure because it
+
+00:03:06.319 --> 00:03:12.080
+prevented the researchers
+from using an opening script tag.
+
+00:03:12.080 --> 00:03:18.239
+The only way it was possible to smuggle
+the script tag, was using url encoded
+
+00:03:18.239 --> 00:03:26.400
+null byte inside it. It got converted,
+but it was not a valid HTML script tag.
+
+00:03:26.400 --> 00:03:30.640
+But luckily javascript code can also be
+executed
+
+00:03:30.640 --> 00:03:34.159
+in other places, for example in
+attributes
+
+00:03:34.159 --> 00:03:40.319
+of another tags. Example of that
+is image tag with onerror attribute
+
+00:03:40.319 --> 00:03:45.840
+that gets triggered.
+WAF also blocked function calls, but
+
+00:03:45.840 --> 00:03:49.760
+luckily
+this could be bypassed by inserting
+
+00:03:49.760 --> 00:03:55.240
+a comment between the function name
+and the parenthesis.
+
+00:03:55.380 --> 00:03:59.680
+So now, it was time to try different HTML
+attributes
+
+00:03:59.680 --> 00:04:06.720
+to execute code. And up to this point
+the payload was always in JSON key,
+
+00:04:06.720 --> 00:04:10.560
+but when an equal sign was sent, then
+everything
+
+00:04:10.560 --> 00:04:15.120
+before it was treated as the JSON key
+and everything after
+
+00:04:15.120 --> 00:04:21.919
+was treated as the value. So the first
+attribute would always be ignored by the
+
+00:04:21.919 --> 00:04:25.759
+browser,
+because there would be no equal sign but
+
+00:04:25.759 --> 00:04:29.600
+using forward slashes as attribute
+separators,
+
+00:04:29.600 --> 00:04:37.120
+it was possible to inject more than one
+attribute. But of course the attributes
+
+00:04:37.120 --> 00:04:41.680
+were also blocked by the firewall. And
+the same bypass
+
+00:04:41.680 --> 00:04:45.040
+that did not work with the script tag,
+now
+
+00:04:45.040 --> 00:04:49.600
+worked with the attributes because the
+null bytes were getting discarded
+
+00:04:49.600 --> 00:04:56.479
+leaving valid attribute names.
+So finally we have a way to smuggle
+
+00:04:56.479 --> 00:05:00.400
+arbitrary attributes so we can send a
+classic
+
+00:05:00.400 --> 00:05:06.880
+image payload and it should work.
+But it didn't as there was also content
+
+00:05:06.880 --> 00:05:14.080
+security policy.
+What is it? CSP limits what resources you
+
+00:05:14.080 --> 00:05:18.639
+can use on the website.
+It's additional layer of security that
+
+00:05:18.639 --> 00:05:21.120
+helps
+to mitigate cross-site scripting
+
+00:05:21.120 --> 00:05:25.440
+vulnerabilities.
+You can define domains that you trust
+
+00:05:25.440 --> 00:05:28.800
+and you only want to execute scripts
+from that site.
+
+00:05:28.800 --> 00:05:32.240
+You can also tell the browser that you
+do not trust
+
+00:05:32.240 --> 00:05:36.880
+any inline scripts on the website and
+you do not want browser to
+
+00:05:36.880 --> 00:05:43.360
+execute them. And on airbnb
+the CSP part that's interesting to us
+
+00:05:43.360 --> 00:05:50.479
+looked like this. And the sha-256
+part tells the browser that it can only
+
+00:05:50.479 --> 00:05:54.080
+execute
+scripts that have checksum equal to this
+
+00:05:54.080 --> 00:05:58.720
+value.
+And this includes both standard script
+
+00:05:58.720 --> 00:06:03.600
+tags,
+as well as javascript in the attributes.
+
+00:06:03.600 --> 00:06:06.720
+And without getting deep into
+cryptography
+
+00:06:06.720 --> 00:06:09.759
+we can say that it's impossible to
+create
+
+00:06:09.759 --> 00:06:17.280
+a script that would have a valid checksum.
+And if a script element could be used
+
+00:06:17.280 --> 00:06:22.639
+it would be possible to find some
+bypasses to the content security policy,
+
+00:06:22.639 --> 00:06:25.759
+but previous attempts have already shown
+this
+
+00:06:25.759 --> 00:06:32.560
+to be a really tall order.
+So the xss has to be exploited using
+
+00:06:32.560 --> 00:06:36.880
+another tag. And at the time of recording
+this video,
+
+00:06:36.880 --> 00:06:41.520
+in 2020, flash is being dropped by modern
+browsers,
+
+00:06:41.520 --> 00:06:47.039
+but back in 2017, when this report was
+initially submitted, flash could be
+
+00:06:47.039 --> 00:06:52.319
+widely used
+to exploit XSS or JSON CSRFs.
+
+00:06:52.319 --> 00:06:59.199
+And using an embed tag it's possible
+to use swf file to execute
+
+00:06:59.199 --> 00:07:04.800
+an actionscript file. This is the code
+that was used by the hackers.
+
+00:07:04.800 --> 00:07:08.160
+i won't go into the detail all that's
+important
+
+00:07:08.160 --> 00:07:12.800
+is that this line executes javascript
+code.
+
+00:07:12.800 --> 00:07:19.199
+And finally the alert popped up,
+but the web application firewall
+
+00:07:19.199 --> 00:07:22.240
+happened out
+to be really annoying and the same
+
+00:07:22.240 --> 00:07:26.240
+payload
+sometimes worked and sometimes didn't.
+
+00:07:26.240 --> 00:07:31.759
+And this is the payload that would work
+every single time.
+
+00:07:31.759 --> 00:07:35.919
+And at this point you might be thinking
+what was the process
+
+00:07:35.919 --> 00:07:40.080
+of getting from one payload to another.
+And the truth is
+
+00:07:40.080 --> 00:07:44.000
+in such case the process is simply trial
+and error.
+
+00:07:44.000 --> 00:07:48.479
+You just have to submit many many
+payloads and suddenly
+
+00:07:48.479 --> 00:07:52.800
+one of them works, because in such
+complicated case,
+
+00:07:52.800 --> 00:07:57.599
+when the same payload one time works and
+one time doesn't,
+
+00:07:57.599 --> 00:08:01.440
+it's impossible to reverse engineer and
+understand
+
+00:08:01.440 --> 00:08:05.120
+what actually gets filtered and what
+doesn't.
+
+00:08:05.120 --> 00:08:10.879
+And this payload only worked in firefox
+as in google chrome there was xss
+
+00:08:10.879 --> 00:08:15.199
+auditor,
+which is also dropped in 2020.
+
+00:08:15.199 --> 00:08:21.199
+And after another series of payloads
+sent to the server this is what worked
+
+00:08:21.199 --> 00:08:26.960
+both in chrome and firefox
+every single time. And as the site relied
+
+00:08:26.960 --> 00:08:30.879
+on those protections the researchers
+managed to find
+
+00:08:30.879 --> 00:08:37.039
+seven more occurrences of this xss
+including store ones, which of course
+
+00:08:37.039 --> 00:08:41.839
+have bigger impact.
+The exact amount of bounty rewarded for
+
+00:08:41.839 --> 00:08:45.839
+this report
+is not known. Back then airbnb paid five
+
+00:08:45.839 --> 00:08:49.600
+thousand dollars
+for simple stored xss and a little less
+
+00:08:49.600 --> 00:08:52.880
+for reflected one.
+Here, in total, we have eight
+
+00:08:52.880 --> 00:08:56.399
+vulnerabilities,
+but they have the same root cause so my
+
+00:08:56.399 --> 00:09:00.720
+guess the vulnerability was paid
+around fifteen thousand dollars and
+
+00:09:00.720 --> 00:09:04.959
+that's definitely
+the best XSS I have ever seen.
+
+00:09:04.959 --> 00:09:09.360
+If you've enjoyed it as much as i did
+or you've liked my explanation leave a
+
+00:09:09.360 --> 00:09:13.680
+like and a subscription down below
+and for now i wish you happy hunting and
+
+00:09:13.680 --> 00:09:16.240
+goodbye!
+

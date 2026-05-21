@@ -1,0 +1,149 @@
+Many hunters, maybe even including you, don't hunt for denial of service vulnerabilities
+because they think you cannot get good bounties for them.
+But I went on the internet and I extracted 138 paid bug bounty reports.
+So this assumption just isn't true. There are many interesting and complex
+denial of service bugs for which you can get great bounties.
+In this video, I will show you some types of denial of service bugs as usual with a few tips from my site.
+Enjoy. So out of those 138 reports, over half were regular types of DOS which I called server side DOS,
+which means that you send something to the server and it stops responding.
+But usually it wasn't just a simple, you know, send a lot of requests and the server is down.
+Type of bugs. There are a lot of interesting ones.
+And one of my favorite bugs that I encountered is this one by TeddyCats in GitHub,
+where you had the GitHub actions functionality.
+And often you indicate the version that you want to use with a shorthash like this.
+If you don't know what shorthash is,
+every commit is identified by a regular 40 hexadecimal character string like this,
+which let's be honest, it's impossible to find a collision in this.
+However, in many places like here in this example, we are not using the full 40 character hashes,
+but we are using shorthash of only seven characters.
+And Teddy was simply curious what will happen if he finds a collision.
+And he did find the collision and turned out that he thought that GitHub will either choose one of
+these versions or do something else. But it started throwing a 404 error, which caused GitHub actions to
+build, which actually caused GitHub actions to be unavailable for everyone. So it was a type of DOS,
+which simply broke one functionality for everyone. So it was, it was quite a nice bug.
+He got, I think, $5,000 for this. And a lot of denial of service bugs that I encountered
+were bugs like this, where you just send one good request. And there's, you know, some broken logic or
+some invalid assumption, which makes the server vulnerable. But there were also more, let's say,
+brute force type of of doses, but they weren't the simplest one that you just send out of the request.
+For example, here, we have a case in GitLab, and specifically in their markdown parsing functionality,
+where you would send this sequence a lot of times, this sequence in markdown, it's opening of an image,
+and the hunter would send description full of these characters. And precisely, he used as many of them
+as would fit into the description of GitLab length limit. And if he would send this, the server would
+just time out after one minute. So it's, let's say, more regular type of DOS. It's something I would
+think about before when I would think about DOS bugs, where you sort of overload the server with this.
+Probably there were, there was some recursive looking for these patterns or something like this, which,
+which caused the CPU to work really hard. And there was a good bounty, he was rewarded $7,500.
+Another, another, again, one click denial of service here. This is actually my first paid back bounty
+report, also submitted to GitLab. And the thing here was, in the OAuth functionality, you had different clients
+in the database, which you could use. And to be secure, when you would use any client ID, along with a redirect
+URI, it would take the redirect URI that saved in the database, and it would compare it if the redirect URI that you sent
+the client was the same. But there was one client called web internal, which wasn't used this way.
+It was never used like I'm using it here. But it still had the record in the database. But this record
+didn't have the redirect URI. And when I sent a request like this, the app would, the client would exist,
+so we wouldn't get into an error that would handle completely invalid client. And that it tried to
+extract a registered redirect URI, which would later cause trying to access a property of an undefined
+object, which would just shut down the whole server, and they paid $1,000 for it, which was great. At
+that time, I was just a student working part time. So $1,000 then, I think was not much less than my
+monthly salary working as a part time. So I was really happy. Although now I look at this, at these
+reports, and I see, you know, they paid 2.3k here, 3k here, 7k here for also one click doses. So now,
+I wonder why they decided to only reward that one $1,000. But whatever. The next group that I have
+is called client side DOS. And the difference here is that the server responds normally, the server is
+not broken, let's say, in this category, but the whole bug is happening on the client side. For example,
+here we have the case in PayPal, where you would just use an invalid country as a locale parameter.
+And it would start to redirect you save that country in the cookie and it would start to redirect you to
+this URL with the country in the URL. Even if the country you would use was invalid, it would still keep
+doing this. So if you trick the victim into visiting a URL like this with this parameter, the victim would
+just keep being redirected to this not existing page. So they would just get a 404 not found. We know that
+both you and me, we would know how to solve this problem if it would happen to us, because it's just in
+the client side JavaScript, but normal users, they don't. They just want to use the website. And for
+them, it doesn't really matter. If the website doesn't work because of something that happens on
+the client side, or something that happens on the server side for them, the website doesn't work, period.
+So it's also a fun bug here, we have 3.2k bounty. And another, this is a really interesting bug.
+This is actually not in the JavaScript, it's in the mobile Instagram app. And the thing that happened
+here is turns out that Instagram allowed accounts without the username for some testing purposes for
+developers. And I don't even know what's the advantage of using account without the username
+instead of generating something random as a username. But turned out they use it for some reason. There's
+probably a very logical explanation of why they need this. But when this username would be shown to a
+normal user on Instagram, the app, the mobile app would just crash, dosing the dosing the application
+for them, dosing Instagram for the victim. And how do you get the victim to be shown your profile without
+the username? You can, for example, join the same group as them. You can, I think, send them a message
+request or something like this. And their application would just crash and they couldn't use Instagram.
+So this is also a type of a client side dos bug. The next group with 18 reports is our software bugs.
+And you know, when I do these case studies, I focus on web related vulnerabilities. So we'll not dive deep
+into a use after free vulnerability or something, but just take a look at how many of these reports are in
+Shopify scripts back bounty program. It was a separate program from Shopify itself. Turned out that they had
+some scripts, some SDK or some scripts to work with the Shopify store. And there were a lot of bugs in
+those scripts. And those bugs were paid really, really well. We see 20, 20, 10k, 8k, 8k, 8k, 8k, 8k for those bugs.
+And then the next highest bound is 2.4k from internet back bounty. So quite an interesting,
+interesting one. But we'll skip to the next category, which is much more relevant for us web
+hackers because it's cash poisoning denial of service. We had 12 reports like this, five of which came from
+the original article by James Kettle, who discovered the technique or at least brought it to mainstream,
+let's say. And to remind you how this technique works is something like this, where when you have cash,
+the goal of cash is to serve the same response for equivalent requests. And what does equivalent
+requests mean? You know, no two requests are the same. If they are sent from different users, they will
+always be a little bit different. You know, at least the cookie will be different. So every cache server
+creates something that's called cache key. So for example, it saves there the host, maybe the path
+path parameters that are used. Basically, it should save in the cache key everything that influences
+the response. And then whenever another request comes, it creates the cache key, compares if it's
+the same and if it's the same, it serves the cached response. Now, when you find an input that does
+influence the response, but it's not in the cache key, that's where you can get a cache poisoning back.
+And in this case, you can get a cache poisoning dos. For example, we have hacker one as an example here.
+And the X forwarded port would be used when redirecting the user, we can see that port one to three,
+which of course is an invalid one, would be used in the redirect location, but it will not be in the
+cache key, which means that any other person that would visit this endpoint would get served an invalid
+redirect to the one to three port, which would, of course, dos the functionality for them.
+I think this is a great bug because it's a dos which definitely has a great impact. And also,
+we can test it reliably without poisoning, without risking that we will break the application for all
+users. Take a look here, James uses do not poison everyone parameter, which of course is not used by
+the application. It's there. So that a user which is a regular user visits this endpoint. This, this
+parameter will make their cache key different. So the real user that visits this website will not be served
+this, let's say malicious response. But if James would actually intend to break the website for everyone,
+he would remove this, this parameter and break the website for everyone. But this, this small thing,
+this is called a cache buster parameter allows us to reliably test for those cache poisoning bugs without,
+you know, risking that will break the website for anyone will make the program angry and will not get
+the bounty. So always, always remember about this. I think this one was rewarded to two and a half K. There's
+also seven and a half K from another company 10 K from another company. So quite a good, good bounties he got
+from them. And there was also a blog post of finding cache poisoning at scale. There were also quite a few
+reports there. And always when I do these case studies, someone asks me in the comment section if they can
+access this notion database with all the reports. The answer is yes, you can. I always share these
+databases in the BBR premium archive because the case studies is actually the part of BBR premium.
+And I only share usually about one third of the case study publicly. So this is the one third of the case
+study. And the full version is in BBR premium. And if you're thinking about joining in about two weeks,
+there is Black Friday and it will be the only time in 2023 that there is any promotion for BBR premium.
+It will be as usual $20 off and probably before the next Black Friday, there will be a price rise.
+So this Black Friday will be the last time that you can get access to BBR premium for a year for $80.
+And also even if the price rises and you subscribe before you keep the lower price forever. So it's the good
+time to join during the Black Friday promo. Coming back to our reports, the next category that I have was
+XML RPC. There were free reports like this. And to be honest, it's a bug that even though here we see that there
+were bounties awarded for this, I don't really recommend you report this. So the bug is that you can make
+WordPress send a ping to another website. And it sounds like SSRF. But what you are what hunters were reporting here is not
+actually an SSRF. It's just the ability to send a request to another website, which I think doesn't have doesn't carry a lot of risk.
+The the rationale for reporting this is that you can create a botnet and you can create a distributed denial of service attacks.
+And I'm not saying this is not true. But if you if you're reporting a bug like this,
+I think you will get many more NAs or informationals than you will get actual bugs. So I don't think you should be reporting just this
+just this functionality. If you could, however, find a zero day in WordPress and make it an actual SSRF, you would be you would be a rich person.
+Definitely. And the last group that I have here, which maybe it only has one report that I found that was disclosed.
+But there is also a blog post which which talks about it, which mentioned mentions a lot of reports,
+but it doesn't name those targets. So I couldn't, you know, extract and put those reports in the
+in the table. But but he speaks about, I think 62 reports. But what's the bug? The bug is exposed Google
+Maps API key. So when you want to embed Google Maps on your website, you need Google Maps API key to be
+embedded in the JavaScript file. And if it's embedded in JavaScript file, by definition, it is accessible to
+all users, including attackers. Now, the thing that can go wrong here is that this Google API key, it can
+be scoped for different services. If you're using Maps embed API, you should only limit usage of this API key
+to this one functionality to this one scope. But sometimes developers forget about this. And also the
+same key can be used for different services like BigQuery, like cloud, like computer engine, like
+something else. And this is this is the bug. This is sort of an overscoped API key. But it's reported as a
+denial of service. The reason why it popped in this case study is that it can lead to exhausting your
+funds on your on your Google Cloud key or just using your your funds as and sort of using the Google API
+from your website. And the stats here are quite interesting. We have in total 62 reports, I calculated
+these 40 were accepted, which gives us about two thirds of those reports and a total of about 11 and a half
+thousand dollars for them or about three hundred dollars per per one report. Seems like mostly SYNAC
+accept this. So keep this in mind when when working. To be honest, personally, I wouldn't spend my time
+trying to report this bug and trying to argue my way my way in the report that this is a severe bug. But as
+you see, you can make money from it. So so I'm not denying that it is actually a valid bug. That's it for this
+case study. I think it's just smart to look for bugs in bug bounty, which other hunters overlook to to maybe focus
+on them, focus on bugs that that other hunters miss. And I think those qualifies as a bug class that that other people
+overlook. So I hope this video was useful to you. Remember that in BBR Primum Archive, you can also
+access case studies of SSRFs, RCEs, XSSs, account takeovers and more and more will be coming in the future
+as well. And for now, if you want to check out another free video, I suggest you this one about
+account takeover case study. For now, thank you for watching and goodbye.

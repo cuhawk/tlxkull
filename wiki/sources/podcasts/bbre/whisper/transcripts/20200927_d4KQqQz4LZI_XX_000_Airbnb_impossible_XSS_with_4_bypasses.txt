@@ -1,0 +1,68 @@
+Hello! How do you feel when you find a vulnerability with cool filter bypass?
+Because I feel absolutely amazing. But today I have for you a vulnerability
+where four filters were bypassed to exploit XSS on Airbnb website.
+The vulnerability was found by Brett Bauerhaus and Ben Sadegipur aka Nahamsiek.
+He also has a YouTube channel full of talks with great bug bounty hunters.
+And my today's video is based on a write-up from Brett's blog. The link as always is in the description. Enjoy!
+So on Embedible Listing Frame Endpoint on Airbnb data from parameter
+CT link index was reflected inside the JSON body. And the first thing that you need to know
+is that there is a script with type application JSON and inside such tag no JavaScript code gets executed.
+But if you can smuggle a closing script tag, even inside the string in the JSON,
+the tag gets closed and then you can open another script tag, this time the normal one,
+and execute JavaScript code inside. But of course it didn't work in this case because if it would,
+I wouldn't make a video about it. And let's start with bypassing XSS filter.
+So if you send any HTML tag in the value of the parameter, it got deleted. But if you would put a
+semicolon at the beginning of the parameter value, the tag would not be deleted.
+And one thing to notice is that previously the payload was in the JSON value, but the semicolon
+made the parser think that this value is ended and another key value pair is created. And likely
+this is what confused the XSS filter. And you might be thinking, why are they using a U tag
+instead of a script tag? And the reason is that if you have multiple filters present, you want to separate
+them and bypass them one by one. So first you need to see if you can inject any HTML code. And for that
+purpose, the least dangerous tags are the best. So we have bypassed one protection and we can close the
+script tag. And now it's time to open another tag with our JavaScript code. But this time web application
+firewall prevents us. Now what's the difference between XSS filter and web application firewall?
+The former works inside the application code and it's only used in some specific places. Whereas web
+application firewall or WAF is more like a plug into the server which analyzes all the requests.
+And it was rather secure because it prevented the researchers from using an opening script tag.
+The only way it was possible to smuggle the script tag was using URL encoded nullbyte inside it.
+It got converted, but it was not a valid HTML script tag. But luckily, JavaScript code can also be executed
+in other places, for example, in attributes of another tags. Example of that is image tag with onerror attribute
+that gets triggered. WAF also blocked function calls. But luckily, this could be bypassed by inserting a
+comment between the function name and the parentheses. So now it was time to try different HTML attributes to
+execute code. And up to this point, the payload was always in JSON key. But when an equal sign was sent,
+then everything before it was treated as the JSON key and everything after was treated as the value.
+So the first attribute would always be ignored by the browser because there would be no equal sign.
+But using forward slashes as attribute separators, it was possible to inject more than one attribute.
+But of course, the attributes were also blocked by the firewall. And the same bypass that did not work
+with the script tag now worked with the attributes because the null bytes were getting discarded,
+leaving valid attribute names. So finally, we have a way to smuggle arbitrary attributes. So we can send a
+classic image payload and it should work. But it didn't, as there was also content security policy.
+What is it? CSP limits what resources you can use on the website. It's additional layer of security that
+helps to mitigate cross-site scripting vulnerabilities. You can define domains that you trust and you only
+want to execute scripts from that site. You can also tell the browser that you do not trust any inline scripts
+on the website and you do not want browser to execute them. And on Airbnb, the CSP part that's interesting to us
+look like this. And the SHA-256 part tells the browser that it can only execute scripts that have checksum equal to this value.
+And this includes both standard script tags as well as JavaScript in the attributes. And without getting deep
+into cryptography, we can say that it's impossible to create a script that would have a valise checksum.
+And if a script element could be used, it would be possible to find some bypasses to the content
+security policy. But previous attempts have already shown this to be a really tall order. So the XSS has to
+be exploited using another tag. And at the time of recording this video in 2020, flash is being dropped by
+modern browsers. But back in 2017, when this report was initially submitted, flash could be widely used
+to exploit XSS's or JSON CSRF's. And using an embed tag, it's possible to use svf file to execute an
+action script file. This is the code that was used by the hackers. I won't go into the detail. All that's
+important is that this line executes JavaScript code. And finally, the alert popped up. But the web
+application firewall happened out to be really annoying. And the same payload sometimes worked and
+sometimes didn't. And this is the payload that would work every single time. And at this point, you might be
+thinking, what was the process of getting from one payload to another? And the truth is, in such case, the
+process is simply trial and error. You just have to submit many, many payloads and suddenly one of them works.
+Because in such complicated cases, when the same payload one time works and one time doesn't,
+it's impossible to reverse engineer and understand what actually gets filtered and what doesn't.
+And this payload only worked in Firefox, as in Google Chrome, there was XSS Auditor, which is also
+dropped in 2020. And after another series of payloads sent to the server, this is what worked both in
+Chrome and Firefox every single time. And as the site relied on those protections, the researchers managed
+to find seven more occurrences of this XSS, including store ones, which of course, have bigger impact.
+The exact amount of bounty rewarded for this report is not known. Back then, Airbnb paid $5,000 for
+simple stored XSS and a little less for reflected one. Here, in total, we have eight vulnerabilities,
+but they have the same root cause. So my guess, the vulnerability was paid around $15,000. And that's
+definitely the best XSS I have ever seen. If you've enjoyed it as much as I did, or you've liked my
+explanation, leave a like and a subscription down below. And for now, I wish you happy hunting and goodbye.

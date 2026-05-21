@@ -1,0 +1,430 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:05.440
+Hello everyone, so we are here with Arthur in Montreal for the HackerOne Advisory Board meeting
+
+00:00:05.440 --> 00:00:12.240
+and he agreed to not only have an interview with me for the podcast but also show us a great bug,
+
+00:00:12.240 --> 00:00:18.799
+actually more than one bug, about Java deserialization. We'll start by saying how to
+
+00:00:18.799 --> 00:00:24.320
+discover it, how to notice it in a little bit different way, that is the most common giveaway,
+
+00:00:24.320 --> 00:00:27.760
+and also how to bypass it, what to do when ysoserial doesn't work.
+
+00:00:27.760 --> 00:00:32.560
+Hello Arthur, thank you so much for joining me for the explanation and can you please start by
+
+00:00:33.200 --> 00:00:38.160
+telling us what made you think there's a deserialization going on, because it's a
+
+00:00:38.160 --> 00:00:42.320
+specific bug class where you only hunt for it when you have a suspicion it exists.
+
+00:00:43.119 --> 00:00:48.560
+So thank you for having me and thank you for the invite, I was really excited about this interview.
+
+00:00:48.560 --> 00:00:55.439
+So in this specific case it was really awesome, in this case I first found this domain and I
+
+00:00:55.439 --> 00:01:00.720
+did some fuzzing, after fuzzing I found this specified path with the older application inside
+
+00:01:00.720 --> 00:01:07.839
+this path and after seeing this application I saw some requests and this request has some
+
+00:01:07.839 --> 00:01:15.120
+a curious object in the path. So I'm not only looking for this kind of vulnerability
+
+00:01:15.120 --> 00:01:22.800
+but when I saw this object my eyes, oh probably here it has good thing and I
+
+00:01:22.800 --> 00:01:32.480
+reworking that, so what I see on the path was the start H4S, so this is a good
+
+00:01:32.480 --> 00:01:39.279
+thing to stay worried when you are looking for deserialization with
+
+00:01:39.279 --> 00:01:46.480
+vulnerability, because this start is when you have some java object
+
+00:01:46.480 --> 00:01:52.559
+and after this java object has been compressed by gzip and after compressed by gzip
+
+00:01:53.279 --> 00:02:00.400
+you have encoded in base64 and this object
+
+00:02:00.400 --> 00:02:09.520
+H4S probably will be a java object. So it's a little less common one than RO0, which is the
+
+00:02:09.520 --> 00:02:15.039
+typical but without the compression. Yeah, it's because there is a compression here, so if
+
+00:02:15.039 --> 00:02:22.080
+in this case didn't have any compression, the path probably will be RO0 in this case.
+
+00:02:22.080 --> 00:02:25.919
+Yeah, which of course from our perspective, from the vulnerability perspective doesn't make any
+
+00:02:25.919 --> 00:02:32.960
+difference, just one more step for exploiting it. Yeah, so in this case you only need
+
+00:02:32.960 --> 00:02:38.800
+when you are using the ysoserial, an example if you are using the ysoserial command, you pipe with
+
+00:02:38.800 --> 00:02:45.520
+gzip, if you are using bash in a pipe to gzip and after that pipe to base64 and you have
+
+00:02:45.520 --> 00:02:52.479
+the payload. So in that case, I really like an extension called Java Deserialization Scanner
+
+00:02:52.479 --> 00:02:59.600
+I like this extension because when I have some of this kind of vulnerability, I can use
+
+00:02:59.600 --> 00:03:06.240
+that and you need to set in the extension the path to ysoserial and with that extension you have
+
+00:03:06.240 --> 00:03:12.960
+more abilities and you have a graphical interface to deal with the deserialization. So I like
+
+00:03:12.960 --> 00:03:22.639
+that you are capable to set the insertion points or the place to the java object in the
+
+00:03:22.639 --> 00:03:29.440
+extension and you are capable to set the ysoserial command in the extension too. So in
+
+00:03:29.440 --> 00:03:36.800
+this case of this report, I set the DNS with my out of band server only to get the result
+
+00:03:36.800 --> 00:03:42.320
+of this request. So basically this extension under the hood still uses ysoserial.
+
+00:03:42.320 --> 00:03:51.039
+Yeah, it's a graphical interface. It's just easier to use this. Yeah, it's better. Maybe it helps if you
+
+00:03:51.039 --> 00:03:55.919
+don't like to use commands a lot. So I like because I have this graphical interface, I can send to
+
+00:03:55.919 --> 00:03:59.600
+Burp Suite the request. So this is important to me because sometimes when you
+
+00:03:59.600 --> 00:04:04.320
+copy the object from the terminal, sometimes maybe it's not right or the object is not complete. So
+
+00:04:04.320 --> 00:04:08.720
+you can use this extension to get the request complete on the Burp Suite. So I use a lot of
+
+00:04:08.720 --> 00:04:14.479
+Burp Suite and maybe combine these two things and in that case I have the jzip compress so
+
+00:04:14.479 --> 00:04:22.239
+I set the insertion point, put the ysoserial gadget in the extension,
+
+00:04:22.239 --> 00:04:28.559
+compress it using gzip, and after that encode it by base64, send the request, and we have the
+
+00:04:28.559 --> 00:04:37.119
+code. Yeah, we have the out of band. So yeah, this is a good way of getting this.
+
+00:04:37.119 --> 00:04:44.000
+Oh, there's another thing here. Some cases when you have some problems with encoding,
+
+00:04:44.559 --> 00:04:53.679
+an example, you have slashes and plus and equal. In this case, it was important to
+
+00:04:53.679 --> 00:04:59.040
+encode these chars because the payload was not processed in the right way if you didn't code
+
+00:04:59.040 --> 00:05:07.279
+these chars. So I encoded these chars and the break lines to encode changed to, I didn't
+
+00:05:07.359 --> 00:05:12.480
+saw the name, but these chars. Yeah, so sometimes callback is enough to prove the
+
+00:05:12.480 --> 00:05:17.359
+deserialization and sometimes it's enough to get the report triaged, but sometimes the
+
+00:05:17.359 --> 00:05:24.959
+problem requires us to go further and it's not always as easy. Yeah, this case was
+
+00:05:24.959 --> 00:05:32.559
+easy and the triage and the team agreed you don't need to go more far because we know
+
+00:05:32.559 --> 00:05:36.720
+your deserialization, you prove this to us and this is a critical vulnerability.
+
+00:05:36.720 --> 00:05:39.519
+Yeah, it's rewarded as a 10 out of 10 critical. Nice.
+
+00:05:39.519 --> 00:05:45.600
+Yeah, so yeah, the vulnerability was triaged with the CVSS10.
+
+00:05:45.600 --> 00:05:49.519
+Yeah, it's a lovely feeling. Yeah, it's a really good sensation.
+
+00:05:51.359 --> 00:05:57.119
+Also, sorry to keep you waiting, but finally I can announce that again it's possible to get
+
+00:05:57.119 --> 00:06:02.720
+access to case studies, the OAuth course and the DevTools course. The link is in the description.
+
+00:06:05.760 --> 00:06:13.200
+Sometimes when you are facing this Java deserialization vulnerabilities, you are able
+
+00:06:13.200 --> 00:06:21.839
+to access some gadgets like JMRP Client. It's another gadget on ysoserial, so you can use
+
+00:06:21.839 --> 00:06:29.440
+these gadgets to try and understand if you are deserialized or not, if deserialization is
+
+00:06:29.440 --> 00:06:36.320
+occurring or not in the backend of the application. But sometimes there is some way to fix
+
+00:06:36.880 --> 00:06:46.480
+deserialization using the lookahead object input. I've never encountered this, to be honest.
+
+00:06:46.480 --> 00:06:54.720
+Yeah, so sometimes when, for example, you try URL DNS works, you try JMRP Client, it works because
+
+00:06:54.720 --> 00:07:01.839
+you have a timeout. This gadget is interesting because you didn't receive
+
+00:07:01.839 --> 00:07:10.399
+out-of-band with URL DNS, but you can receive some connection from the server or you can see
+
+00:07:10.399 --> 00:07:20.160
+if you receive a timeout, because sometimes your servers are blocked. And if you use JMRP Client
+
+00:07:20.160 --> 00:07:25.519
+to test deserialization, probably if the servers are blocked or any TCP connection out-of-band
+
+00:07:25.519 --> 00:07:31.600
+are blocked, you will be receiving timeout or 10 seconds or 12 seconds, 11 seconds.
+
+00:07:32.320 --> 00:07:40.880
+An example, the page needs 200 milliseconds to load, but when you use that payload,
+
+00:07:40.880 --> 00:07:46.720
+JMRP Client, the page needs 10 seconds to load or 11 seconds to load, because probably the Java is
+
+00:07:46.720 --> 00:07:52.880
+trying to connect to your server or something and the connection didn't work, but probably
+
+00:07:52.880 --> 00:07:59.600
+deserialization is happening here. And you have these gadgets working, but the other classes
+
+00:07:59.600 --> 00:08:06.480
+like common collections or other things are not working, and probably there is some fix here or
+
+00:08:06.480 --> 00:08:13.600
+maybe they use some fix using lookahead object input, because with this fix,
+
+00:08:13.600 --> 00:08:20.720
+what Java is going to do is check if the class is allowed to deserialize or not.
+
+00:08:20.720 --> 00:08:29.359
+So this is what this fix does. Because when you have a Java object,
+
+00:08:29.359 --> 00:08:33.919
+in this Java object, you have the name of the class. So with this method, you check the name
+
+00:08:33.919 --> 00:08:39.280
+of the class. Oh, probably this is a malicious class, it's not in our allow list.
+
+00:08:40.239 --> 00:08:50.159
+If it's not in our allow list, probably it's a malicious gadget, you will not
+
+00:08:50.159 --> 00:08:58.320
+deserialize this guy. So when we have these problems, a good way to bypass this is
+
+00:08:58.320 --> 00:09:06.159
+using our repository called serial killer bypass gadget collection. It's a good way to bypass,
+
+00:09:06.159 --> 00:09:14.640
+because what is happening here is a guy called Alvaro Muñoz.
+
+00:09:14.640 --> 00:09:20.559
+I think this guy has had more reports, not only in Java, but in .NET deserialization, I think.
+
+00:09:20.559 --> 00:09:26.239
+I don't know, but I remember to see anything like that. So this guy has this repository with a lot
+
+00:09:26.320 --> 00:09:34.960
+of bypasses, and these bypasses are using native libraries like a bridge.
+
+00:09:37.359 --> 00:09:44.880
+Because when lookahead method will check if the class is allowed or not to deserialize,
+
+00:09:45.760 --> 00:09:52.799
+you have the bypass class in the front, and when the lookahead method will check,
+
+00:09:52.799 --> 00:10:00.239
+oh, this gadget is okay, when deserialization will happen, you will execute not the class,
+
+00:10:00.239 --> 00:10:08.640
+but the malicious gadget with the class, and you can reach the remote code execution.
+
+00:10:08.640 --> 00:10:15.760
+So does this lookahead fix, does it look at, let's say we create an object of
+
+00:10:16.640 --> 00:10:22.000
+allow listed class, does it also look at what objects does this class create,
+
+00:10:22.000 --> 00:10:24.159
+or does it only look at the first one?
+
+00:10:24.159 --> 00:10:27.520
+Yeah, probably it's the first one, the importance of the first one.
+
+00:10:27.520 --> 00:10:32.400
+So we only need like one bridge here, and then once we are there, we can do whatever we want.
+
+00:10:32.400 --> 00:10:37.200
+Probably, maybe it can be more complicated than we are talking about, maybe it's that.
+
+00:10:37.200 --> 00:10:40.559
+Look at the first, if the first is allowed, okay, you can pass,
+
+00:10:40.559 --> 00:10:44.080
+and this first can be used to call other gadgets.
+
+00:10:44.080 --> 00:10:44.719
+Yeah, cool.
+
+00:10:45.440 --> 00:10:52.719
+And the gadgets are in the code of the application, because the ysoserial gadgets,
+
+00:10:55.119 --> 00:11:00.559
+they are really code native in the libraries.
+
+00:11:00.559 --> 00:11:04.159
+These codes are only used to get the remote code execution.
+
+00:11:04.159 --> 00:11:07.919
+So this is the reason why there are a lot of common collections,
+
+00:11:07.919 --> 00:11:11.280
+common collections 2, 3, 4, I think there is a lot,
+
+00:11:11.280 --> 00:11:15.919
+because these common collections maybe work in different versions of Java.
+
+00:11:17.919 --> 00:11:20.719
+Probably, if you have ysoserial and you have a
+
+00:11:21.520 --> 00:11:24.880
+deserialization with a possible deserialization vulnerability,
+
+00:11:24.880 --> 00:11:27.520
+you try all to see all.
+
+00:11:27.520 --> 00:11:28.239
+Usually you do.
+
+00:11:28.239 --> 00:11:29.440
+Yeah, you try all.
+
+00:11:30.159 --> 00:11:35.280
+The same thing with the SerialKillerBipedGadgetCollection, I showed to you that example.
+
+00:11:35.280 --> 00:11:40.080
+We use the command ping, and with the ping we use ping,
+
+00:11:40.080 --> 00:11:43.919
+GadgetClass, GadgetBypass in our out-of-band server,
+
+00:11:43.919 --> 00:11:49.359
+and we create a Python script with all the ysoserial gadgets
+
+00:11:49.359 --> 00:11:53.840
+and all the bypasses in the SerialKiller,
+
+00:11:53.840 --> 00:11:58.719
+and we write all the commands to generate all the payloads and send them through there,
+
+00:11:58.719 --> 00:12:03.599
+and after that we just save a lot of ping with all the bypasses working in the web server.
+
+00:12:03.599 --> 00:12:04.960
+Yeah, so you have the RCE.
+
+00:12:04.960 --> 00:12:08.239
+Was this one also rewarded as a 10 out of 10 critical?
+
+00:12:08.880 --> 00:12:17.599
+Yeah, so this case I showed you, it was more funny because it was an engagement,
+
+00:12:17.599 --> 00:12:23.840
+and after that we need to deal with the SOC,
+
+00:12:23.840 --> 00:12:26.320
+because we are working in a pentest,
+
+00:12:26.320 --> 00:12:30.799
+and deal with the SOC and have a lot of bypass to SOC,
+
+00:12:30.799 --> 00:12:34.479
+and buy new domains because they are blocking our domains.
+
+00:12:34.479 --> 00:12:36.799
+Yeah, they are blocking our domains.
+
+00:12:36.799 --> 00:12:42.400
+We need to up new AWS instance, buy new domains,
+
+00:12:42.400 --> 00:12:49.840
+because the idea is if the SOC allows us to continue,
+
+00:12:49.840 --> 00:12:55.200
+when we try to close the contract with Brazil,
+
+00:12:55.200 --> 00:12:59.520
+all these are allowed tests, and we are dealing with the SOC
+
+00:12:59.599 --> 00:13:08.080
+because the idea is we didn't have any help from the SOC.
+
+00:13:08.080 --> 00:13:13.119
+We do all these things bypassing the SOC and all the things we can do there.
+
+00:13:17.119 --> 00:13:20.719
+Our out-of-band is blocked
+
+00:13:20.719 --> 00:13:25.200
+because we only have out-of-band and didn't have persistence at that time,
+
+00:13:25.200 --> 00:13:29.599
+so we use some commands
+
+00:13:29.599 --> 00:13:33.520
+for example, read some file, compressing to gzip,
+
+00:13:33.520 --> 00:13:36.320
+using xdd to convert in hexadecimal,
+
+00:13:36.320 --> 00:13:41.119
+and a loop to break, and step by step send to our server,
+
+00:13:41.119 --> 00:13:43.919
+and we do the reverse process to get the other file.
+
+00:13:45.039 --> 00:13:47.119
+Yeah, it was really, really cool.
+
+00:13:47.119 --> 00:13:50.239
+Very cool. Thank you so much for going through it.
+
+00:13:50.239 --> 00:13:54.000
+If you enjoyed it, make sure to subscribe to also watch our full interview
+
+00:13:54.000 --> 00:13:56.640
+that will be published two weeks after this video.
+
+00:13:56.640 --> 00:14:05.039
+For now, thank you so much for watching and goodbye.
+

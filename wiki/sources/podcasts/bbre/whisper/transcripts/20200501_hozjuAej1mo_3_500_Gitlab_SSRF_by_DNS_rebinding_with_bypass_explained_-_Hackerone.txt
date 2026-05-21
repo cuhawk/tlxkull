@@ -1,0 +1,43 @@
+Hello, today I have for you another DNS rebinding vulnerability that led to SSRF on GitLab.
+It is actually a bypass of the vulnerability I have already described on this channel
+and I highly encourage you to watch that video first.
+It's only 3 minutes, there are links now on the screen as well as in the description.
+However, here is a quick reminder for those of you who have not seen the first video.
+SSRF is acronym for server-side request forgery.
+It occurs when the attacker has the ability to make a request on behalf of the server
+and he also can poke internal network and local addresses.
+It's most impactful when the server is in the cloud and it is possible to request a metadata endpoint
+which often leads to takeover of the whole cloud instance.
+Now, what is the DNS rebinding technique?
+It occurs when the server makes two DNS queries.
+One, when validating the address and check whether the IP is not from internal network
+and second DNS query when the server makes an actual HTTP request.
+And this was the original vulnerability.
+If you are not 100% sure you understand it, again, I encourage you to watch the first video
+and then move on to watching the next part of this one.
+Let's see how this vulnerability was first fixed.
+So here we have a getAdderInfo function which makes a DNS query and returns the IP address
+and later all the validations are performed on this IP address and if they pass, this IP address along with the hostname is returned
+but the HTTP request is not made to the actual domain but to the IP address
+and the domain is only used to validate the SSL certificate.
+And on the surface it seems like a good fix.
+There is no obvious vulnerability here.
+But let's focus on this part here.
+If this block returns a socket error, then the URI is returned by the validating function just as it was a valid one.
+So now let's see when this function throws the socket error.
+One situation is when we provide the invalid IP address, for example 12345.
+But what's more important for us, it also throws socket error when the domain does not get resolved.
+So if we modify our DNS rebinding setup to not resolve the first DNS query,
+this validating function will return it just as it was a valid one.
+And later when performing an HTTP request, another DNS query will be made
+and then we can return the internal IP address and voila, we have our server-side request folder again.
+And the fix for this vulnerability was rather straightforward.
+Simply, when the getAdderInfo function throws socket error, the code throws blocked URL error,
+which was a standard exception thrown when the URL was considered malicious.
+And there is a small adjustment which allows to disable this protection in testing environment.
+So that's it for today's video.
+Thanks for watching.
+If you have enjoyed, leave a like.
+Leave a subscription if you do not want to miss any new vulnerability explained.
+I post one every week.
+And for now, thank you.

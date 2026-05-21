@@ -1,0 +1,571 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.150 --> 00:00:00.916
+Hello!
+
+00:00:00.916 --> 00:00:03.450
+In this episode of Bug Bounty Reports
+Explained,
+
+00:00:03.716 --> 00:00:07.616
+I will show you an incredible
+puzzle of low risk bugs
+
+00:00:07.733 --> 00:00:12.500
+that's chained together, led to an account
+takeover on Facebook.com.
+
+00:00:13.050 --> 00:00:18.233
+The hunter who found it, Yousef Sammouda,
+got almost $45,000 for it.
+
+00:00:18.416 --> 00:00:20.866
+Link to his blog
+post is in the description.
+
+00:00:21.016 --> 00:00:22.216
+Enjoy!
+
+00:00:22.816 --> 00:00:25.550
+This episode is sponsored by Intigriti.
+
+00:00:26.216 --> 00:00:29.366
+Intigriti is Europe's
+biggest bug bounty platform,
+
+00:00:29.366 --> 00:00:31.916
+with over 400 programs to hack on.
+
+00:00:32.416 --> 00:00:37.166
+I hugely appreciate Intigriti for
+investing a lot in community enablement.
+
+00:00:37.316 --> 00:00:41.533
+They create an awesome bug
+bytes newsletter, they create monthly XSS
+
+00:00:41.550 --> 00:00:45.000
+challenges,
+they even have a great YouTube channel.
+
+00:00:45.683 --> 00:00:49.316
+If you are not one of over 50,000 hunters,
+
+00:00:49.316 --> 00:00:52.633
+check out Intigriti
+now using the link from the description.
+
+00:00:54.300 --> 00:00:57.566
+On Facebook,
+you can log in using your password, 
+
+00:00:57.566 --> 00:01:02.000
+but you can also link your account with Gmail
+to log in with your Gmail account.
+
+00:01:03.233 --> 00:01:04.550
+The protocol to do this
+
+00:01:04.550 --> 00:01:07.700
+is Oauth
+and it is widely used across the web.
+
+00:01:08.450 --> 00:01:11.600
+Very simplified flow of this process
+looks like this.
+
+00:01:11.933 --> 00:01:15.266
+You are on Facebook
+and you click log in with Gmail button.
+
+00:01:15.600 --> 00:01:19.950
+Facebook generates some parameters for you
+and redirects you to Gmail.
+
+00:01:20.416 --> 00:01:22.550
+Then in Gmail, you have to log in.
+
+00:01:23.000 --> 00:01:25.216
+But usually you are logged in already.
+
+00:01:25.433 --> 00:01:27.316
+So you only choose the account
+
+00:01:27.316 --> 00:01:31.016
+and if you only have one account,
+Gmail will just flash in front of you
+
+00:01:31.016 --> 00:01:33.533
+and you will be redirected back
+to Facebook.
+
+00:01:35.066 --> 00:01:36.866
+The parameters, among others,
+
+00:01:36.866 --> 00:01:39.983
+will contain the code.
+
+00:01:39.983 --> 00:01:42.000
+Importantly, up until now,
+
+00:01:42.000 --> 00:01:45.616
+Facebook and Gmail servers
+did not communicate with each other.
+
+00:01:46.200 --> 00:01:50.966
+Only now, when Facebook receives
+the code, sends the request
+
+00:01:51.416 --> 00:01:56.000
+to Gmail server and gives you back the
+session token if it's okay.
+
+00:01:57.533 --> 00:01:58.466
+So this code
+
+00:01:58.466 --> 00:02:03.300
+is very valuable because it allows you
+to exchange it for the session cookie.
+
+00:02:03.683 --> 00:02:08.150
+So even the attacker would see it,
+they could also take over your account.
+
+00:02:09.050 --> 00:02:13.216
+And across the years, we saw many attacks
+that looked more or less like this.
+
+00:02:13.583 --> 00:02:17.400
+The attacker has to trick the victim
+into visiting their website.
+
+00:02:17.783 --> 00:02:21.766
+The attacker's website sends the victim
+into the authentication flow.
+
+00:02:22.200 --> 00:02:26.400
+But before the original website consumes
+the code,
+
+00:02:26.900 --> 00:02:30.350
+the attacker takes it over
+and hijacks user's account.
+
+00:02:31.916 --> 00:02:35.183
+And this is exactly what we'll try to do
+today.
+
+00:02:36.650 --> 00:02:38.300
+However, in modern web
+
+00:02:38.300 --> 00:02:41.783
+and on a hardened target like Facebook,
+it is not easy.
+
+00:02:42.000 --> 00:02:46.265
+Definitely much harder
+than in the early days of Oauth.
+
+00:02:46.817 --> 00:02:50.183
+In particular, there are two problems
+that we need to solve.
+
+00:02:50.600 --> 00:02:54.050
+The first one is that the code is one time
+use only.
+
+00:02:54.450 --> 00:02:59.300
+It means if the victim consumes
+the code - sends this code to Facebook,
+
+00:02:59.750 --> 00:03:03.383
+the attacker can't do anything
+even if they have the code.
+
+00:03:04.850 --> 00:03:05.816
+And the other is,
+
+00:03:05.816 --> 00:03:08.100
+of course, leaking the code somehow.
+
+00:03:09.650 --> 00:03:12.916
+So to prevent the code
+from being used by the victim,
+
+00:03:13.066 --> 00:03:17.777
+we need to stop this flow somewhere
+between Gmail and Facebook.
+
+00:03:20.750 --> 00:03:22.583
+On Facebook,
+If you make too many requests,
+
+00:03:22.583 --> 00:03:26.483
+your account will enter a state
+where you need to fill in the CAPTCHA.
+
+00:03:26.566 --> 00:03:29.900
+I would call it the captcha state.
+
+00:03:29.900 --> 00:03:33.316
+Whatever you will try to do on Facebook,
+you will be shown this window.
+
+00:03:34.583 --> 00:03:37.700
+And it is a very good candidate
+to solve the first problem
+
+00:03:37.850 --> 00:03:42.433
+because if the victim's account will be in
+the lockout state, in the captcha state,
+
+00:03:42.950 --> 00:03:47.516
+after they finish the authentication flow,
+they won't use the code.
+
+00:03:47.516 --> 00:03:51.566
+And importantly, the code will be
+in the URL of the website,
+
+00:03:51.600 --> 00:03:53.933
+giving us some chance to leak it.
+
+00:03:55.516 --> 00:03:56.550
+But how do
+
+00:03:56.550 --> 00:03:59.550
+we force the victim's account
+into the CAPTCHA state?
+
+00:04:00.466 --> 00:04:02.566
+The answer to that is that we don't.
+
+00:04:02.933 --> 00:04:07.916
+Instead, we will introduce
+the CAPTCHA state into our own account.
+
+00:04:08.250 --> 00:04:13.133
+And then we'll use two bugs
+to log out the victim from their account
+
+00:04:13.133 --> 00:04:19.683
+using one CSRF and then log in the victim
+into our account using another CSRF.
+
+00:04:19.683 --> 00:04:25.286
+These two bugs, even though they are very low
+risk by themselves, chained together here
+
+00:04:25.286 --> 00:04:27.716
+will allow us to move
+
+00:04:27.716 --> 00:04:30.316
+the victim's Facebook
+into the captcha state.
+
+00:04:31.666 --> 00:04:33.883
+Now, you might be asking yourself,
+
+00:04:33.883 --> 00:04:38.116
+how do we take over a victim's account
+if they are logged in to our account?
+
+00:04:38.600 --> 00:04:41.100
+But the thing is that
+in case of this attack,
+
+00:04:41.566 --> 00:04:44.600
+Facebook
+won't actually take part in this process.
+
+00:04:45.233 --> 00:04:47.900
+We are interested in Gmail
+generating the code
+
+00:04:48.016 --> 00:04:51.950
+and taking over this code, which
+will allow us to take over the account.
+
+00:04:52.500 --> 00:04:57.716
+So it doesn't matter what account is
+the victim logged in on Facebook.com.
+
+00:04:58.800 --> 00:05:01.683
+So we are able to log out the victim
+from their account,
+
+00:05:01.683 --> 00:05:04.766
+log in them to our account
+which is in the captcha state.
+
+00:05:05.116 --> 00:05:07.733
+We can send them
+into the authentication flow
+
+00:05:08.366 --> 00:05:11.233
+and we make sure
+that they come back to Facebook,
+
+00:05:11.250 --> 00:05:14.700
+they don't consume the code
+and the code is in the URL.
+
+00:05:15.116 --> 00:05:17.866
+Now the question is how to leak this code
+
+00:05:17.966 --> 00:05:20.550
+from this URL.
+
+00:05:21.566 --> 00:05:25.200
+Normally,
+if you want to add a CAPTCHA functionality
+
+00:05:25.200 --> 00:05:27.416
+from a third party
+provider to your website,
+
+00:05:27.566 --> 00:05:30.450
+you have to import their scripts
+on your website.
+
+00:05:30.983 --> 00:05:35.000
+It requires some level of trust
+and to be even more secure,
+
+00:05:35.400 --> 00:05:40.850
+Facebook didn't host this window, this iframe, on Facebook.com domain,
+
+00:05:41.250 --> 00:05:44.100
+but on their sandbox domain.
+
+00:05:44.100 --> 00:05:47.416
+Sandbox
+domains often improve security of websites
+
+00:05:47.566 --> 00:05:51.050
+because even though Facebook owns
+these two domains,
+
+00:05:51.616 --> 00:05:53.483
+browsers don't know about it
+
+00:05:53.483 --> 00:05:57.066
+and they treat them like they would be
+completely different ones.
+
+00:05:57.083 --> 00:06:00.200
+They have different cookies,
+different storage, different everything.
+
+00:06:00.533 --> 00:06:03.866
+They just have one communication
+channel to establish
+
+00:06:03.950 --> 00:06:05.933
+if the captcha was filled in or not.
+
+00:06:06.983 --> 00:06:09.016
+But for the sandbox to be an improvement
+
+00:06:09.016 --> 00:06:12.766
+of security of the website,
+it can't be used in too many contexts.
+
+00:06:14.333 --> 00:06:17.866
+But in this case it was
+because it was also used
+
+00:06:18.050 --> 00:06:21.266
+on the testing website
+when the developers can see
+
+00:06:21.616 --> 00:06:25.883
+how a particular website
+will look inside the Facebook mobile app.
+
+00:06:26.666 --> 00:06:30.016
+And this allowed them to upload
+HTML files,
+
+00:06:30.016 --> 00:06:32.966
+which would be stored
+on the same sandbox domain.
+
+00:06:34.433 --> 00:06:36.166
+And even though the sandbox
+
+00:06:36.166 --> 00:06:40.483
+domain is separate from Facebook.com,
+the sandbox domains
+
+00:06:40.616 --> 00:06:44.866
+can somehow communicate with each other
+because they are the same origin.
+
+00:06:46.400 --> 00:06:49.016
+And this is the last piece of our puzzle.
+
+00:06:49.216 --> 00:06:52.816
+Now let's combine them all together
+to see the whole exploit.
+
+00:06:54.150 --> 00:06:56.566
+Usually, in case of a client side attack,
+
+00:06:56.600 --> 00:06:59.933
+you create your own website
+and you have to trick the victim
+
+00:06:59.933 --> 00:07:02.900
+into visiting, for example, attacker.com
+domain.
+
+00:07:03.450 --> 00:07:06.833
+In this case, we'll instead
+host the whole exploit
+
+00:07:06.983 --> 00:07:10.500
+on the Facebook sandbox domain
+because it will be helpful later.
+
+00:07:12.000 --> 00:07:12.833
+Before we attack
+
+00:07:12.833 --> 00:07:16.400
+the victim, we have to force our account
+into the captcha state.
+
+00:07:17.100 --> 00:07:20.033
+Then, when the victim visits our exploit,
+
+00:07:20.366 --> 00:07:24.100
+first, we have to log them out
+from their account using the CSRF.
+
+00:07:24.100 --> 00:07:29.166
+Then, we have to log them into our account
+using another CSRF.
+
+00:07:29.166 --> 00:07:31.433
+Then, we have this URL.
+
+00:07:31.700 --> 00:07:34.466
+Importantly, we open this in a new tab and
+
+00:07:34.466 --> 00:07:38.150
+we save the reference to that window.
+
+00:07:38.550 --> 00:07:41.450
+If the victim is already logged
+in, in Gmail, Gmail
+
+00:07:41.450 --> 00:07:44.966
+just flashes in front of them
+and redirects back to Facebook.
+
+00:07:45.466 --> 00:07:49.916
+Facebook is in the captcha state,
+which means they land on the captcha
+
+00:07:49.916 --> 00:07:52.933
+screen and importantly, the URL with
+
+00:07:52.950 --> 00:07:55.883
+the code is inside the iframe's address.
+
+00:07:57.300 --> 00:07:59.366
+Now from the original window,
+
+00:07:59.366 --> 00:08:02.183
+we have the reference
+to the newly opened window.
+
+00:08:03.116 --> 00:08:07.550
+These two are now in separate domains
+because our website is on the sandbox
+
+00:08:07.550 --> 00:08:10.966
+domain and the victim is now
+on the Facebook.com domain.
+
+00:08:11.300 --> 00:08:15.766
+So we only have limited access
+to properties from Facebook.com.
+
+00:08:17.400 --> 00:08:19.050
+However, those limited
+
+00:08:19.050 --> 00:08:22.983
+properties include the list of frames
+on that website.
+
+00:08:23.000 --> 00:08:27.083
+And we know that the first iframe,
+the ifame with the index zero,
+
+00:08:27.416 --> 00:08:30.783
+is the captcha window,
+which is also on the sandbox domain.
+
+00:08:32.366 --> 00:08:35.183
+And all of a sudden, our exploit website
+
+00:08:35.783 --> 00:08:39.383
+and the iframe
+with the sensitive code in the address
+
+00:08:40.066 --> 00:08:43.516
+are on the same origin, meaning
+they can communicate with each other.
+
+00:08:43.966 --> 00:08:46.816
+And our exploit website has access
+
+00:08:47.150 --> 00:08:50.533
+to the address of the iframe,
+which contains the code.
+
+00:08:51.566 --> 00:08:53.750
+We now send the code to our server
+
+00:08:54.000 --> 00:08:56.816
+and we need a script to exchange this code
+
+00:08:57.016 --> 00:09:00.533
+for a victim's session cookie,
+taking over their account.
+
+00:09:01.550 --> 00:09:03.983
+So the bug allowed to take over
+any Facebook
+
+00:09:03.983 --> 00:09:06.900
+account
+of someone that uses Gmail to log in.
+
+00:09:07.216 --> 00:09:10.400
+The reward for it was almost $45,000.
+
+00:09:11.300 --> 00:09:13.466
+Of course, the bug is already fixed.
+
+00:09:14.550 --> 00:09:15.266
+Check out this
+
+00:09:15.266 --> 00:09:18.500
+playlist to see two more account
+takeovers on Facebook
+
+00:09:18.650 --> 00:09:22.616
+that were rewarded $25k and $55k.
+
+00:09:22.950 --> 00:09:26.700
+And if you enjoyed this video
+leave a like and subscribe to the channel.
+
+00:09:27.016 --> 00:09:29.600
+For now,
+thank you for watching and goodbye!
+

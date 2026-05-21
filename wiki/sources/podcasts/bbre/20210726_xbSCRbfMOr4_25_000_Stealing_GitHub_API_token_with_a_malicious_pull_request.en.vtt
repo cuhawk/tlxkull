@@ -1,0 +1,356 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.320 --> 00:00:06.400
+Hello! In this episode of Bug Bounty Reports&nbsp;
+Explained, you will learn how "try weird stuff and&nbsp;&nbsp;
+
+00:00:06.400 --> 00:00:13.920
+see what happens" methodology led the bughunter,&nbsp;
+Teddy Katz to a critical vulnerability in GitHub.&nbsp;&nbsp;
+
+00:00:13.920 --> 00:00:20.080
+it allowed stealing GitHub api token and other&nbsp;
+secrets from GitHub actions using a malicious&nbsp;&nbsp;
+
+00:00:20.080 --> 00:00:28.160
+pull request. The reward for the bug was $25,000.&nbsp;
+Link to the original report is in the description.&nbsp;&nbsp;
+
+00:00:28.800 --> 00:00:34.320
+Make sure to check out other write-ups on Teddy's&nbsp;
+blog because those are one of the coolest bugs&nbsp;&nbsp;
+
+00:00:34.320 --> 00:00:42.000
+I have ever seen. But for now, enjoy the video!&nbsp;
+First, I am going to explain commits, branches,&nbsp;&nbsp;
+
+00:00:42.000 --> 00:00:48.240
+pull requests and forks in git. If you are already&nbsp;
+familiar with these topics, skip this part of the&nbsp;&nbsp;
+
+00:00:48.240 --> 00:00:55.760
+video using chapters feature on YouTube. Git is&nbsp;
+a system version control. It allows developers&nbsp;&nbsp;
+
+00:00:55.760 --> 00:01:00.880
+to work on the product together simultaneously&nbsp;
+by synchronizing changes between them.&nbsp;&nbsp;
+
+00:01:01.920 --> 00:01:09.200
+After creating some code, a developer creates&nbsp;
+a commit. It's a snapshot of the project after&nbsp;&nbsp;
+
+00:01:09.200 --> 00:01:16.320
+his changes. Even if developers start adding more&nbsp;
+code on top of this, this commit with the project&nbsp;&nbsp;
+
+00:01:16.320 --> 00:01:23.120
+at this exact stage will always stay there and you&nbsp;
+will be able to come back to it. And commits are&nbsp;&nbsp;
+
+00:01:23.120 --> 00:01:30.000
+identified using 40 character hex strings.&nbsp;
+And sometimes, when you develop a feature,&nbsp;&nbsp;
+
+00:01:30.000 --> 00:01:36.320
+you might want to commit your work at the end of&nbsp;
+the day even though the code doesn't work yet.&nbsp;&nbsp;
+
+00:01:37.520 --> 00:01:44.240
+But committing such code may break the program&nbsp;
+for other users. To avoid that you may create a&nbsp;&nbsp;
+
+00:01:44.240 --> 00:01:50.240
+separate branch where you develop the feature.&nbsp;
+In the meantime, the main branch will live its&nbsp;&nbsp;
+
+00:01:50.240 --> 00:01:57.840
+own life. For example, a critical security&nbsp;
+vulnerability might be fixed there. Now, what&nbsp;&nbsp;
+
+00:01:57.840 --> 00:02:03.280
+happens when you finished developing your feature&nbsp;
+and you want to merge it into the main branch?&nbsp;&nbsp;
+
+00:02:04.560 --> 00:02:11.440
+You create a pull request. It's a way to notify&nbsp;
+other developers in the project that the feature&nbsp;&nbsp;
+
+00:02:11.440 --> 00:02:18.480
+is ready to be in the main branch. After the pull&nbsp;
+request is accepted, the feature gets merged and&nbsp;&nbsp;
+
+00:02:18.480 --> 00:02:25.520
+it's available to other users. But what if you&nbsp;
+are using your favourite script from GitHub&nbsp;&nbsp;
+
+00:02:25.520 --> 00:02:32.720
+and you notice a bug. You may be the good guy and&nbsp;
+you don't want to just notify the project that&nbsp;&nbsp;
+
+00:02:32.720 --> 00:02:39.520
+there is an issue but you are good enough to fix&nbsp;
+it yourself. And maybe you'd like to push this fix&nbsp;&nbsp;
+
+00:02:39.520 --> 00:02:46.560
+to other users as well. But, of course, you don't&nbsp;
+have access to the main repository because no one&nbsp;&nbsp;
+
+00:02:46.560 --> 00:02:55.120
+knows you. You may then fork the repository. It&nbsp;
+means copy it to your own GitHub account. You may&nbsp;&nbsp;
+
+00:02:55.120 --> 00:03:01.120
+implement the fix there and once it's finished you&nbsp;
+can create a pull request to the main repository.&nbsp;&nbsp;
+
+00:03:02.160 --> 00:03:10.400
+Importantly, each pull request has a base branch.&nbsp;
+So when creating a pull request you tell git&nbsp;&nbsp;
+
+00:03:10.400 --> 00:03:14.720
+to which branch of the main project&nbsp;
+you'd like to merge your code into.&nbsp;&nbsp;
+
+00:03:15.600 --> 00:03:23.040
+And here is where our hunter comes in. This is the&nbsp;
+part of the request that creates a pull request.&nbsp;&nbsp;
+
+00:03:24.160 --> 00:03:29.440
+baseRefName is the parameter which tells&nbsp;
+git to which branch you want to merge.&nbsp;&nbsp;
+
+00:03:30.640 --> 00:03:34.400
+The hunter asked himself a&nbsp;
+question: what would happen&nbsp;&nbsp;
+
+00:03:34.400 --> 00:03:40.640
+if instead of putting the branch name there he&nbsp;
+would put a 40 character commit hash instead.&nbsp;&nbsp;
+
+00:03:42.240 --> 00:03:49.520
+It would be a bug but it's unclear what would be&nbsp;
+the impact of this. But he didn't have to worry&nbsp;&nbsp;
+
+00:03:49.520 --> 00:03:55.440
+about the potential impact because it didn't&nbsp;
+even work. The response contained a message&nbsp;&nbsp;
+
+00:03:56.320 --> 00:04:02.480
+"base must be a branch". But you wouldn't be&nbsp;
+watching this video if it ended like this...
+
+00:04:04.640 --> 00:04:09.440
+Turned out that the check was there when&nbsp;
+creating a pull request but there was no&nbsp;&nbsp;
+
+00:04:09.440 --> 00:04:16.960
+validation when editing it. So you could create a&nbsp;
+valid pull request to the branch and then edit it&nbsp;&nbsp;
+
+00:04:16.960 --> 00:04:22.720
+so that the baseRefName is a commit hash.&nbsp;
+But there is still no impact to this.&nbsp;&nbsp;
+
+00:04:23.520 --> 00:04:30.960
+So it's time to introduce GitHub actions.&nbsp;
+It's a way to automate processes on GitHub.&nbsp;&nbsp;
+
+00:04:30.960 --> 00:04:38.160
+You can specify some action, for example running&nbsp;
+tests on your code, that occurs after a specific&nbsp;&nbsp;
+
+00:04:38.160 --> 00:04:45.840
+event, for example creating a pull request. The&nbsp;
+action may also do things like adding labels to&nbsp;&nbsp;
+
+00:04:45.840 --> 00:04:51.440
+issues or deploying your code to a&nbsp;
+server. And when GitHub runs your code,&nbsp;&nbsp;
+
+00:04:51.440 --> 00:04:57.520
+for example to run tests, it does that in a&nbsp;
+sandbox environment in order to be more secure.&nbsp;&nbsp;
+
+00:04:58.400 --> 00:05:04.320
+But some of your actions like deploying your code&nbsp;
+to a server may require some credentials to be&nbsp;&nbsp;
+
+00:05:04.320 --> 00:05:11.840
+accessible from the workflow. That's why in the&nbsp;
+repository you can define some secrets. Those are&nbsp;&nbsp;
+
+00:05:11.840 --> 00:05:19.200
+of course confidential and not accessible when&nbsp;
+you clone or fork the repository. By default,&nbsp;&nbsp;
+
+00:05:19.200 --> 00:05:26.080
+one secret is created for each repository -&nbsp;
+GitHub API token with write access to the repo.&nbsp;&nbsp;
+
+00:05:27.280 --> 00:05:33.200
+And when you create a pull request, repo&nbsp;
+maintainers may want to run tests on your code&nbsp;&nbsp;
+
+00:05:33.200 --> 00:05:40.480
+to see if it didn't break anything. This triggers&nbsp;
+the pull_request action and the workflow starts.&nbsp;&nbsp;
+
+00:05:41.120 --> 00:05:48.160
+It simulates merging your code with the base&nbsp;
+branch and running the application. In your fork,&nbsp;&nbsp;
+
+00:05:48.160 --> 00:05:54.480
+you may make some changes to the workflow&nbsp;
+configuration. In case of the pull_request event,&nbsp;&nbsp;
+
+00:05:54.480 --> 00:06:01.280
+your code will be used to run the workflow. This,&nbsp;
+obviously, creates a huge risk because you could&nbsp;&nbsp;
+
+00:06:01.280 --> 00:06:08.400
+achieve a remote code execution in many ways.&nbsp;
+That's why this action doesn't have access to&nbsp;&nbsp;
+
+00:06:08.400 --> 00:06:15.600
+secrets from the repository. There is only GitHub&nbsp;
+API token but only with read access to the repo.&nbsp;&nbsp;
+
+00:06:16.400 --> 00:06:20.640
+This can be used to securely&nbsp;
+run tests on untrusted code.&nbsp;&nbsp;
+
+00:06:21.520 --> 00:06:27.360
+But without the GitHub API token with write&nbsp;
+access, the workflow will not be able to,&nbsp;&nbsp;
+
+00:06:27.360 --> 00:06:34.240
+for example, add label to the pull request. That's&nbsp;
+why there is another type of action triggered&nbsp;&nbsp;
+
+00:06:34.240 --> 00:06:41.280
+after a pull request: pull_request_target. The&nbsp;
+difference is that when you create a pull request,&nbsp;&nbsp;
+
+00:06:41.280 --> 00:06:47.840
+this action doesn't run your code. It runs the&nbsp;
+code from the branch to which you want to merge.&nbsp;&nbsp;
+
+00:06:48.480 --> 00:06:56.080
+The code just before your changes. It's usually&nbsp;
+used to add labels or comments to pull requests&nbsp;&nbsp;
+
+00:06:57.200 --> 00:07:02.080
+because the code just before your&nbsp;
+changes was created by someone with write&nbsp;&nbsp;
+
+00:07:02.080 --> 00:07:07.360
+access to the repo which means that&nbsp;
+this code is trusted and secure.That's&nbsp;&nbsp;
+
+00:07:07.360 --> 00:07:12.000
+why this type of workflow will have&nbsp;
+access to secrets from GitHub repo.
+
+00:07:14.800 --> 00:07:18.240
+Let's now connect all the&nbsp;
+dots together for an exploit.&nbsp;&nbsp;
+
+00:07:19.760 --> 00:07:25.360
+So first, you fork victim repository which&nbsp;
+means you copy it to your GitHub account.&nbsp;&nbsp;
+
+00:07:26.320 --> 00:07:30.480
+Then, you make some changes that are&nbsp;
+completely irrelevant at the moment.&nbsp;&nbsp;
+
+00:07:31.440 --> 00:07:35.920
+Then, you create a pull request to&nbsp;
+victim repository, to the main branch.&nbsp;&nbsp;
+
+00:07:36.880 --> 00:07:44.480
+This triggers the pull_request action that runs&nbsp;
+your code but without access to secrets. Next,&nbsp;&nbsp;
+
+00:07:44.480 --> 00:07:50.480
+coming back to your forked repository, you&nbsp;
+create a malicious commit. You create a&nbsp;&nbsp;
+
+00:07:50.480 --> 00:07:58.080
+workflow that steals GitHub API token and sends&nbsp;
+it to your server. This workflow is triggered&nbsp;&nbsp;
+
+00:07:58.080 --> 00:08:04.800
+by the pull_request_target action and this is&nbsp;
+an example configuration file with the workflow.
+
+00:08:07.200 --> 00:08:14.240
+Next, you come back to the pull request in victim&nbsp;
+repository. You edit the base branch of the pull&nbsp;&nbsp;
+
+00:08:14.240 --> 00:08:20.720
+request but now instead of putting the branch&nbsp;
+you put there a hash of your malicious commit&nbsp;&nbsp;
+
+00:08:20.720 --> 00:08:27.440
+from the previous step. It works because for&nbsp;
+GitHub commit for a repo is a commit and doesn't&nbsp;&nbsp;
+
+00:08:27.440 --> 00:08:34.720
+matter if it was in fork or not. So now you have&nbsp;
+the strange situation where you have the pull&nbsp;&nbsp;
+
+00:08:34.720 --> 00:08:42.320
+request in the victim repository where you make&nbsp;
+some changes to your own code. But importantly,&nbsp;&nbsp;
+
+00:08:42.320 --> 00:08:48.640
+GitHub doesn't know that. Usually, the&nbsp;
+base of the pull request is trusted code&nbsp;&nbsp;
+
+00:08:48.640 --> 00:08:55.120
+so in this case GitHub treats your&nbsp;
+malicious commit as trusted. That's why&nbsp;&nbsp;
+
+00:08:55.120 --> 00:09:01.440
+it can trigger the pull_request_target&nbsp;
+action using configuration from your&nbsp;&nbsp;
+
+00:09:01.440 --> 00:09:09.200
+malicious commit. Then, your code is run&nbsp;
+with full access to repository secrets.&nbsp;&nbsp;
+
+00:09:11.040 --> 00:09:18.160
+Then, you can exfiltrate GitHub API token and&nbsp;
+other secrets to your server thus taking over the&nbsp;&nbsp;
+
+00:09:18.160 --> 00:09:26.800
+repository and potentially other services as well.&nbsp;
+The reward for the bug was $25,000 which was the&nbsp;&nbsp;
+
+00:09:26.800 --> 00:09:34.240
+middle of the range for critical vulnerabilities&nbsp;
+on GitHub. As for the fix, the base branch of the&nbsp;&nbsp;
+
+00:09:34.240 --> 00:09:41.440
+pull request must actually be a branch now. And&nbsp;
+that's it. For me, it happened a few times that I&nbsp;&nbsp;
+
+00:09:41.440 --> 00:09:47.600
+identified a strange behaviour in the application&nbsp;
+but there was no real impact. I'm also interested&nbsp;&nbsp;
+
+00:09:47.600 --> 00:09:53.200
+in your stories of strange bugs with or without&nbsp;
+the impact. I will be waiting for you in the&nbsp;&nbsp;
+
+00:09:53.200 --> 00:10:00.080
+comments down below. I will start with one of my&nbsp;
+stories first. Anyway, if you enjoyed the video,&nbsp;&nbsp;
+
+00:10:00.080 --> 00:10:05.440
+leave a like and leave a subscription. For&nbsp;
+now thank you for watching and goodbye!
+

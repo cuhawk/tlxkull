@@ -1,0 +1,230 @@
+There are infinite combinations of bugs that can result in account takeovers and the truth is that
+we will never be able to test for all of them. So to learn which techniques actually make people
+money, I studied 1.3 million dollars worth of bug bounty account takeover reports and I studied them.
+In this video I will show you what are the most common ways to take over an account. Enjoy!
+I will start in reverse order from the least common method that I found to the most common one and the
+least common one was clickjacking with only two reports and this is a vulnerability class I had
+absolutely zero respect some time ago and I actually gained it when I was covering this back when I was
+covering the MetaMask clickjacking which they're allowed to transfer funds to anyone so this report
+is not part of this case study but it's an excellent example of an actual clickjacking attack with a real
+serious impact. In this case, here is a nice blog post. There are three different write-ups here which
+usually is a huge pain for me. It's usually the hardest write-ups to understand when doing this case study
+when it's like a mass write-up of a few bugs. There are often details missing and things like that but
+this is actually a really good one by Renva. No idea how to read this and we had this clickjacking attack
+where here is a nice visualization. At the end clickjacking becomes impactful when the victim only has
+to click a button to confirm some action. In this case it it the victim has to confirm changing the email
+address. I assume that the attacker had a way to to somehow feel this but the victim has to click change
+email and obviously normally they will not do this because they see the that it's changing the email to
+someone else's address but you can manipulate with transparent iframes and put this with transparency
+and put this in front so that the user actually sees on the website something that's under this iframe
+but but this this is invisible and then it's the victim has to click the button and then this way they
+change the email of the of the victim and they can then change their passwords. Usually for for clickjacking
+proof of concepts it's enough to just show something click here in the real attack obviously
+you would have to create some social engineering idea on how to get a user to click something but it
+shouldn't be that difficult and a cookie pop-up or an advertisement pop-up should should do the job.
+So this is the the clickjacking this is the first first category.
+The next vulnerability class is pre-account takeover with free reports in the case study.
+This back class is a bit controversial because
+some companies do not reward this vulnerability class. Some people say it shouldn't be rewarded.
+In my opinion this is a very good example of a low risk attack with quite a good impact actually but very unlikely exploitation
+So this is the way the victim is the victim. And the way this the pre-account takeover works
+is somehow you have to register either a particular username or a particular email
+and then when the victim comes to the website and wants to use this website
+your accounts kind of get merged. The one one way it can happen is if the victim logs in using Facebook
+but before you created an account using the email using victims unconfirmed email
+and then when they log in with Facebook using the same email your accounts get merged
+and you still have access using the password to the account that the victim actually uses.
+So it is not an easy attack to perform but in my opinion it's a very
+good example of a low risk vulnerability that should be rewarded because the impact is there.
+In this case we have one report in in github and the way it works is is quite interesting because
+you have to create an account obviously and then you have to remove this account but when you remove
+the account your session still was still a valid session for an account that doesn't exist but it was
+still valid and later when someone would create an account with the same username your session would
+become the session of the new user. So it sounds like a very unlikely attack because
+you not only have to know the username of the victim that will start using npmjs because it was the
+vulnerable website but you also have to still keep this session alive and I'm not sure how how long the
+the session is alive or how can you keep it alive but it sounds like a really difficult attack to
+perform but it was rewarded four thousand dollars of bounty so quite a nice quite a nice reward.
+Next we will step to first back class that has more reports and is more has more variety in it
+because when I do these case studies I always try to maintain a good level good balance between being
+too specific and too broad and sometimes I just have to merge things together. Now we come to direct
+authentication bypass which just means that the authentication mechanism was in some way broken.
+One example of a bug like this is this one. It's a one hundred thousand dollars bug in Apple
+which is a lot and it's actually a super super simple bug. That pretty much this is this is what it is.
+There is just a request with an email and in the response there is a token which you can use to log
+in and that's pretty much the bug. Unfortunately the the gold of this write-up is hidden behind
+this path because probably if it would be a path that's normally used someone would detect it already
+because it's quite a straightforward bug so it's very interesting what's this path and and how did the
+hunter find it but this was this is the highest paid report from from all this from the whole case study.
+I'm not surprised that the impact is absolutely huge but but this is the one this is another one it was
+a common scenario where you could copy the cookie from one application to another and it would work.
+This particular report I covered on my channel already I will link the video in the description
+and the way it works is there was there were two different applications on this using the same machine
+and turned out that they used the same secret for signing the cookie or encrypting the cookie or whatever
+and you could log in to one website using account from another website using the the session from
+another website there was also some ssrf skill not not interesting today. It's interesting for me because
+it's an attack I've never I don't think I've ever tried to do it I've never like tried to copy a cookie
+from one application to another and apparently I should. Here's this absolutely the same situation in
+Starbucks where the Singapore website worked in another website I believe
+KU2SAC whatever whatever it is worked with Starbucks Singapore there was also at least one other report
+where you could copy a cookie from one country website to another maybe it was Starbucks as well I don't remember
+other kinds of bypasses because there were a lot of bugs like like these these two types where you would
+copy the cookie or you would just get the token basically what happened with Apple there were also some
+reports where you would somehow break the flow of authentication so I don't know there are three
+three steps of three requests of authentication you would send the second one instead of the first one or
+something like this this is this it was also quite quite a common situation but I'm showing you this report
+uh to tell you to that there is no vulnerability class called response manipulation there is no
+vulnerability class response manipulation and if you use it in write-ups or whatever
+please stop um response manipulation is something you can use to help you detect the vulnerability
+but essentially what happens is usually you do something like this you change error false to error true or
+success false to success true and the application the the client-side javascript in your browser
+thinks that the request was successful so it sends the next request whatever it is so if you change the
+response is not actually response manipulation the bug here the bug is that the next request that gets sent
+does not have authentication check or authorization check and this is the vulnerability it's in the next request
+that's that's vulnerable not the one that you change the response to so please just stop stop using
+response manipulation as a title of the bug of course it's a perfectly valid strategy to look for bugs personally
+so i mostly i mostly use this when i'm testing like client-side code for xss or whatever
+most of the time when when the situation like this when i have a flow that's that has a few different
+requests i prefer to first just go through the flow legitimately with my credentials or whatever and then
+like send the same request with different cookies or whatever if that's possible i would prefer to do
+this over changing the the response and hoping that the client-side js will will do the job for me
+but in some situations you you have to do this uh but remember it's not actually this request that's
+vulnerable it's the next one and one final type of report that i saw a few times was just insecure session cookie
+and in no report i saw an actually advanced cryptographic attack for these cookies
+it was usually something very simple sometimes it was just an id
+um or like in this case just a very short string that can be brute forced i didn't find
+an an a disclosed report where it would be actually like cryptographically complex stuff breaking the cookie
+so so when you're testing session id when it's long just just assume that you can't modify it then
+prefer to like uh come up with an application from which you can copy the whole cookie
+rather than hoping that you can magically like bypass it so these are a few types of of bugs that
+i saw a few times that caught my attention that resulted in direct authentication bypass of course
+this video is about the free chapter of the case study the whole case study is a part of a bb re
+premium subscription you can access the whole article there i also this time included a checklist with
+things that you should check for when looking for account takeovers i think it is is really nice and
+really helpful so make sure to check this out you also get access to all these reports so if you want
+to study them more carefully or you're looking for a particular exploit in in your application you're testing
+just open all those reports and find the one relevant to you
+in the meanwhile we'll step to the second most popular uh way to take over the account which is sso
+takeover and take a look at what happens here take a look i i interviewed yusef samuda a few weeks ago
+um he's the author of many of these bugs in facebook and i knew he has a lot of reports in facebook but i
+had no idea he has that many uh like all the links here that that say why some it's his box in in facebook
+and take a look at the bounties it's absolutely insane and to be honest these reports completely skewed
+all the statistics in the in this case study i also did um in the in the premium chapters like a
+breakthrough of client side server side vulnerabilities type of interaction and average bounties for for
+these different reports just look um completely ruined by how many great 40 000 reports uh yousef submitted to
+to facebook of course i encourage you to to listen to to the podcast that um that i've recorded with
+yousef it was very interesting one and he just explained how did this how did this happen
+uh so stepping into to concrete um examples of reports the sso takeover in most cases if not all cases
+means that you can leak the code the authentication code that's part of the of flow i will not go into
+the detail of the whole flow because it deserves a video on its own and i actually created a video on its
+own about this very report on your screen right now which allowed to take over a facebook account if
+someone used gmail to log in it's quite a complex one and um to be honest i had there's no doubt in my
+mind that yousef deserves all these great reports because none of these reports is straightforward there are
+always a few steps there is always a chain some some magic trick uh and here as well we have multiple
+steps for this attack to work it's not easy so um in this case you could just leak the code and take
+over the account but this is just the the end result uh for example here take a look at the at this
+and this at this trick that he used uh here there was a redirect uri but when he would send redirect uri
+as an array with the zero of index it would confuse the server side and client side and the server would
+verify a different redirect uri parameter than the client would redirect to because uh one of these
+these components considered this to be the redirect uri there was also normal redirect uri and there was
+inconsistency in how do they treat this strange input which resulted in open redirect which resulted in
+quite a typical account takeover so very one of very nice tricks this also i think i've never tried
+in my life i tried some i usually try some type of http parameter pollution but never this this variation so
+i i will definitely start start doing it the next time i'm hunting here is another report i i really liked
+also some of these account takeovers happened due to csrfs in some part of the flow you could either add
+your apple account or your facebook account to to victims normal account or do something else and this
+happens for for various reasons usually there is just no csrf protection but i really like this attack
+it's in in github by teddy cats and the way it works is or rather the reason it works is that
+when you would send when you would click this button to authorize a user a request would be sent to the
+login of authorize and this is this is the way it's defined in short so you have the route you have
+methods that that you want to route to this particular controller and inside the controller you have a code
+like this and it should be quite obvious what happens because you only route two methods here
+and now you check if request is get we get to this code so if it's get we just serve the authorization
+page html so nothing happens no sensitive action is done nothing is modified but else all this flow happens
+which should happen when the post is sent here and it should be straightforward because we have two
+methods here get and post so if it's get we go here if it's not get it should only mean that it's post
+but it doesn't mean that it's post because there's also head method head method is like a get but without
+body and no developers actually actively supported the get method unless they absolutely have to the way
+frameworks work is they treat head method the same way as they should get just the difference is that at the
+end they drop the body and only send headers because http head method means that you should only get headers
+but this means that when the request is routed here a head method will always also be routed to this
+controller but the head method will not get through this if statement it will not satisfied this check so it will land in the else block
+and for head method the csrf protection is not enabled by default and in this case you could just
+send parameters in the url as the url parameters after the question mark and it worked i actually used this
+trick very recently actually maybe most of you don't know about it because i don't speak about it very often
+but i play ctfs in just cut the fish team and recently we we organized our ctf i created one task and i
+used this very trick to as not the whole task as half of the task i actually had a different idea about the task
+and last last minute i had to change it because i saw too many unintended solutions
+and i was actually doing this case study and i saw this report and i thought that this is a great
+thing to introduce in the challenge i link the challenge in the description because the
+the source code of the challenge is available or will be available
+so you can you can thrive and solve it as much as i saw loads of all of reports there was only one single
+report with samuel i only saw this one from uber from 2017 where it would be the most basic samuel attack
+where just the assertion wouldn't be verified so you can pretty much send anything there i was really
+really surprised by this because i thought that there will be i knew that there will be more of
+vulnerabilities than samuel but i had no idea the difference will be that huge and it really is the
+only one that i found which is very very surprising to me and if you are a developer if you're watching
+this as a developer maybe think about using samuel because apparently it is easier to implement than
+or else and here it's like the more typical uh vulnerability for uh for 2023 because no longer the the
+redirect uri seems to be vulnerable to open redirect when you can just put the attackers url or burp
+of collaborator url and link the code this way but often like in the uh yousef's report to to facebook
+with gmail like in the the famous blog post by franz rosen you can still somehow control at least the
+path of the request like in this case this is a report from from 2023 you can't you don't have a full
+open redirect to to just send the code to you but there is path traversal which allows you to
+make the the code be sent to another website within the target website and then
+in this case using google analytics you had the way to to exfiltrate the code
+and this is like the the modern way of of account takeovers and this is very very prevalent
+and now with that said let's go to the most common way to take over account which was
+to change victim's password it was the most common however the average bounty is much lower but this is
+uh in big part due to the amount of of facebook uh facebook reports the intuition would tell me this
+will be the more impactful one because usually this does not require user interaction and because these
+are mostly server-side attacks and in the of takeover you always need the interaction so it's always a
+little bit lower severity here uh a very common common attack that that i saw in this category category had to
+do with otp codes and actually a very simple i would even say almost a naive attack would be to just brute
+force the otp codes in this case we have 50 000 bounty to microsoft and the hunter was just able to to
+to brute force seven digit code usually these are not as naive brute forces from a single ip address
+usually these involve renting multiple cloud computing instances to to attack the server from different ip
+addresses and often hunters just include some estimations or some calculations of how many
+codes they can predict in what time it also depends on the the lifespan of the otp code but there were a
+lot of um a lot of bugs like this there was also instagram um i think it was it was one of these attacks
+where which i saw big companies making mistakes the otp codes were in a lot of situations there were also
+very interesting reports like this one i also covered it on my channel very early so if you watch this video
+it will probably be much lower quality but it was also some kind of strange order of of uh signing up
+changing the email having some race conditions in um in the timing of where is the password
+or address the link send or or whatever in this case um you had to change the the email
+and send the i think confirmation email in the correct time and you could take over the account
+it's a report by uh by ron chan i actually missed the guy because he's not hunting anyone and
+and i loved his reports so ron if you're watching this please come back to hunting because i need your reports to to have interesting
+uh videos there were also simpler simpler bugs but these often happened in uh lower lower bounty this
+usually had lower bounties which meant they were in smaller applications here we have avatar whatever this
+is i have no idea what avatar is and just this is the attack uh just the password reset request has
+new password has no old password and has an email so it's like very straightforward thing to do to
+to just change the email to the victim and uh and it worked and there were a lot of reports like this
+but often or always it wasn't big companies it was even though the attack has great impact because it's um
+it just allows you to take over anyone's account instantly without the interaction these weren't
+often super high bounties in this case it's four and a half thousand which is uh on the which is
+actually quite quite good but there were a lot like one thousand five hundred dollars for these reports
+another thing that was was present a few times was aws cognito on the ctf i've mentioned my friends had a
+task with with cognito i will also link this i'm not sure if this is online or not but you can at least see
+the source code this is this allows the developer to like outsource the the authentication to to the
+the service from amazon and you can also interact with with cognito using aws cli which which can be a
+really really nice attack and the last type of of vulnerabilities which is which i want to talk about
+is host header poisoning this is also very much related to to changing the uh the email because in the
+uh in the case study i say that the way to take over account is to change victim's password but some of
+these attacks actually resulted in changing the email or changing the phone number and only then the attacker
+would have to reset the password from from there so it were was not always directly connected
+functionalities to password reset uh but they resulted in in password reset as i've said the next
+chapter of the case study was about the root cause of the bug where i where i dig deep into what was the
+actual reason for the bug to happen and the way i wrote it is as a checklist for things to check so so
+if you are a member of vbr premium check this out but in this report as i've mentioned this is very much
+related to the password reset functionality because the way it works is um you change the value of the
+host header and then the password reset link has your malicious host in the link to me personally this is
+the attack i i think i would barely reward or i would reward really low because um it requires the victim
+to click this link even though they didn't reset the password and uh and not notice the domain which i
+think is even less likely than the pre-account takeover scenario but it works and here it was rewarded
+two thousand dollars if you enjoyed this one chapter of the case study i guarantee that you will learn much
+more when you finally join bb area premium and get access to the full article the checklist and the
+database of those reports in the meantime if you want to listen to our podcast with yousef semuda it's on
+your screen at the moment for now thank you for watching and goodbye
+
+

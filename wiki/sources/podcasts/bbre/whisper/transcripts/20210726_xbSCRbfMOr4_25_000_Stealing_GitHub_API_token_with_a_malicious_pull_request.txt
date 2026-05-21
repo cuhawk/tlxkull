@@ -1,0 +1,192 @@
+Hello, in this episode of Bug Bounty Report Explained, you will learn how try weird stuff
+and see what happens methodology led the bug hunter Teddy Katz to a critical vulnerability
+in GitHub. It allowed stealing GitHub API token and other secrets from GitHub actions using a
+malicious pull request. The reward for the bug was $25,000. Link to the original report is in
+the description. Make sure to check out other write-ups on Teddy's blog because those are one
+of the coolest bugs I have ever seen. But for now, enjoy the video. First, I am going to explain commits,
+branches, pull requests and forks in Git. If you are already familiar with these topics, skip this part
+of the video using chapters feature on YouTube. Git is a system version control. It allows developers to
+work on the project together simultaneously by synchronizing changes between them. After
+creating some code, a developer creates a commit. It's a snapshot of the project after his changes.
+Even if developers start adding more code on top of this, this commit with the project at this exact
+stage will always stay there and will be able to come back to it. And commits are identified using 40
+character hex strings. And sometimes when you develop a feature, you might want to commit your work at the
+end of the day even though the code doesn't work yet. But committing such code may break the program
+for other users. To avoid that, you may create a separate branch where you develop the feature. In the
+meantime, the main branch will live its own life. For example, a critical security vulnerability might be
+fixed there. Now, what happens when you finished developing your feature and you want to merge it
+into the main branch? You create a pull request. It's a way to notify other developers in the project
+that the feature is ready to be in the main branch. After the pull request is accepted, the feature gets merged
+and it's available to other users. But what if you are using your favorite scripts from GitHub and you notice a bug?
+You may be the good guy and you don't want to just notify the project that there is an issue, but you are good enough
+to fix it yourself. And maybe you'd like to push this fix to other users as well. But of course, you don't have access to the main repository
+because no one knows you. You may then fork the repository. It means copy it to your own GitHub account.
+You may implement the fix there and once it's finished, you can create a pull request to the main repository.
+Importantly, each pull request has a base branch. So when creating a pull request, you tell git to
+which branch of the main project you'd like to merge your code into. And here is where our hunter comes in.
+This is the part of the request that creates a pull request. Base ref name is the parameter which tells git
+to which branch you want to merge. The hunter asks himself a question what would happen if instead
+of putting the branch name there, he would put a 40 character commit hash instead. It would be a bug,
+but it's unclear what would be the impact of this. But he didn't have to worry about the potential impact
+because it didn't even work. The response contained a message, base ref name must be a branch. But you
+wouldn't be watching this video if it ended like this. Turned out that the check was there when creating
+a pull request, but there was no validation when editing it. So you could create a valid pull request to
+the branch and then edit it so that the base ref name is a commit hash. But there is still no impact to this.
+So it's time to introduce GitHub actions. It's a way to automate processes on GitHub. You can specify
+some action, for example, running tests on your code that occurs after a specific event, for example,
+creating a pull request. The action may also do things like adding labels to issues or deploying your
+code to a server. And when GitHub runs your code, for example, to run tests, it does that in a sandbox
+environment in order to be more secure. But some of your actions like deploying your code to a server
+may require some credentials to be accessible from the workflow. That's why in the repository you can
+define some secrets. Those are of course confidential and not accessible when you clone or fork the
+repository. By default, one secret is created for each repository. GitHub API token with right access to
+the repo. And when you create a pull request, repo maintainers may want to run tests on your code to see
+if it didn't break anything. This triggers the pull request action and the workflow starts.
+It simulates merging your code with the base branch and running the application. In your fork,
+you may make some changes to the workflow configuration. In case of the pull request event,
+your code will be used to run the workflow. This obviously creates a huge risk because you could
+achieve a remote code execution in many ways. That's why this action doesn't have access to secrets from
+the repository. There is only GitHub API token but only with read access to the repo. This can be used to
+securely run tests on untrusted code. But without the GitHub API token with right access, the workflow will not be
+able to for example add label to the pull request. That's why there is another type of action triggered after
+a pull request. Pull request target. The difference is that when you create a pull request, this action
+doesn't run your code. It runs the code from the branch to which you want to merge. The code just before your changes.
+It's usually used to add labels or comments to pull requests. Because the code just before your changes was created by
+someone with right access to the repo, which means that this code is trusted and secure. That's why this
+type of workflow will have access to secrets from GitHub repo. Let's now connect all the dots together for an exploit.
+So first you fork victim repository, which means you copy it to your GitHub account. Then you make some
+changes that are completely irrelevant at the moment. Then you create a pull request to victim repository to
+the main branch. This triggers the pull request action that runs your code but without access to secrets.
+Next, coming back to your files, you create a malicious commit. You create a workflow that steals GitHub API token and sends it to your server.
+This workflow is triggered by the pull request target action. And this is an example configuration file with the workflow.
+Next, you come back to the pull request in victim repository. You edit the base branch of the pull request. But now, instead of putting the branch, you put there a hash of your malicious commit from the previous step.
+It works because for GitHub, commit for a repo is a commit and doesn't matter if it was in fork or not.
+So now, you have the strange situation where you have the pull request in the victim repository where you make some changes to your own code.
+But importantly, GitHub doesn't know that. Usually, the base of the pull request is trusted code. So in this case, GitHub treats your malicious commit as trusted.
+That's why it can trigger the pull request target action using configuration from your malicious commit.
+Then, your code is run with full access to repository secrets.
+Then, you can exfiltrate GitHub API token and other secrets to your server, thus taking over the repository and potentially other services as well.
+The reward for the bug was $25,000, which was the middle of the range for critical vulnerabilities on GitHub.
+So, as for the fix, the base branch of the pull request must actually be a branch now.
+And that's it. For me, it happened a few times that I identified a strange behavior in the application, but there was no real impact.
+I'm also interested in your stories of strange bugs with or without the impact. I'll be waiting for you in the comments down below.
+I will start with one of my story first. Anyway, if you enjoyed the video, leave a like and leave a subscription.
+For now, thank you for watching and goodbye.
+Bye.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Bye.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Bye.
+
+
+Bye.
+
+
+
+Bye.
+
+
+Bye.
+
+
+
+Bye.
+
+Bye.
+
+
+
+Bye.
+Bye.
+
+
+
+
+!
+!
+
+
+
+
+.
+

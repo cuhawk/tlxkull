@@ -1,0 +1,535 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.100 --> 00:00:01.566
+Hello! Welcome to
+
+00:00:01.566 --> 00:00:04.366
+another episode of Bug Bounty Reports Explained.
+
+00:00:04.700 --> 00:00:07.000
+Today, I will show you how Frans Rosén
+
+00:00:07.000 --> 00:00:08.966
+broke shared Apple Shortcuts
+
+00:00:08.966 --> 00:00:10.733
+by exploiting improper
+
+00:00:10.733 --> 00:00:12.133
+access control bug.
+
+00:00:12.300 --> 00:00:13.700
+If you stay until the end,
+
+00:00:13.700 --> 00:00:18.133
+you will also see why he got the bounty of $28,000
+
+00:00:18.133 --> 00:00:21.233
+despite violating Apple bug bounty rules.
+
+00:00:21.500 --> 00:00:24.633
+Link to the original report is in the description.
+
+00:00:24.633 --> 00:00:25.566
+Enjoy!
+
+00:00:27.733 --> 00:00:29.533
+Unlike other tools out there,
+
+00:00:29.533 --> 00:00:33.100
+Detectify that is both asset discovery by,
+
+00:00:33.166 --> 00:00:35.400
+for example, crawling your DNS,
+
+00:00:35.400 --> 00:00:38.600
+and then it also does vulnerability scanning.
+
+00:00:39.133 --> 00:00:42.666
+Of course, it can do simple things from OWASP top 10
+
+00:00:42.666 --> 00:00:46.133
+like CORS misconfiguration or check vulnerable versions,
+
+00:00:46.133 --> 00:00:47.533
+but the cool part is
+
+00:00:47.700 --> 00:00:48.533
+they are working
+
+00:00:48.533 --> 00:00:51.200
+with a private community of ethical hackers
+
+00:00:51.333 --> 00:00:54.900
+who submit payloads or POCs with automate
+
+00:00:54.900 --> 00:00:56.233
+web vulnerabilities.
+
+00:00:56.633 --> 00:00:57.533
+After the review,
+
+00:00:57.533 --> 00:01:00.966
+Detectify runs the attack on all their customers
+
+00:01:00.966 --> 00:01:02.866
+and every time there is a hit,
+
+00:01:02.866 --> 00:01:04.600
+the hacker gets a bounty.
+
+00:01:05.066 --> 00:01:06.333
+So if you are a defender
+
+00:01:06.333 --> 00:01:08.133
+and you want to protect your apps,
+
+00:01:08.133 --> 00:01:10.433
+check out free 2 week trial at
+
+00:01:10.433 --> 00:01:12.999
+detectify.com/bbre
+
+00:01:13.266 --> 00:01:15.666
+And, remember go hack yourself.
+
+00:01:16.633 --> 00:01:17.666
+Apple shortcuts
+
+00:01:17.666 --> 00:01:20.666
+is a platform that allows you automating stuff
+
+00:01:20.733 --> 00:01:21.833
+on your iPhone
+
+00:01:22.400 --> 00:01:25.966
+For example, I use it for my morning automation
+
+00:01:26.000 --> 00:01:27.666
+where it asks me for my weight,
+
+00:01:27.700 --> 00:01:29.800
+if I ate supplements and so on.
+
+00:01:30.066 --> 00:01:33.666
+And then communicates with API to insert data
+
+00:01:33.666 --> 00:01:36.966
+into spreadsheets or mark to those tasks as done.
+
+00:01:37.366 --> 00:01:40.700
+In my case, it's mostly iPhone to server communication,
+
+00:01:40.700 --> 00:01:43.033
+but there are tons of interactions that
+
+00:01:43.033 --> 00:01:46.233
+can be done between different apps on your phone.
+
+00:01:47.233 --> 00:01:51.033
+And your shortcuts are start using Apple's CloudKit.
+
+00:01:51.133 --> 00:01:54.899
+It's a cloud database storage that allows many apps
+
+00:01:54.900 --> 00:01:57.433
+to save the user's data and authenticate
+
+00:01:57.733 --> 00:02:00.800
+directly from the phone using apple single sign on.
+
+00:02:02.033 --> 00:02:05.233
+And this data is stored inside containers,
+
+00:02:05.366 --> 00:02:09.766
+Apple shortcuts used COM.APPLE.SHORTCUTS container
+
+00:02:10.466 --> 00:02:13.700
+Inside, you have three different databases.
+
+00:02:13.866 --> 00:02:17.300
+Private to which only the owner has access.
+
+00:02:17.366 --> 00:02:21.166
+Shared which can be, well... shared with other users.
+
+00:02:21.500 --> 00:02:24.633
+and Public to which everyone has access.
+
+00:02:25.500 --> 00:02:26.233
+Normally,
+
+00:02:26.233 --> 00:02:29.233
+your shortcuts are stored in the Private database
+
+00:02:29.233 --> 00:02:31.700
+and you must authenticate as yourself
+
+00:02:31.700 --> 00:02:32.733
+to access them.
+
+00:02:34.600 --> 00:02:37.066
+Shortcuts can be very complex.
+
+00:02:37.433 --> 00:02:38.833
+To make things easier,
+
+00:02:38.833 --> 00:02:42.566
+you don't need to create all of them from scratch.
+
+00:02:42.900 --> 00:02:45.633
+There is a whole ecosystem of sharing them.
+
+00:02:45.900 --> 00:02:48.566
+You can find and use shortcuts created by
+
+00:02:48.566 --> 00:02:51.133
+others on websites like RoutineHub.
+
+00:02:51.700 --> 00:02:54.866
+Some of them include thousands of steps
+
+00:02:55.433 --> 00:02:56.933
+maybe you would think that
+
+00:02:56.933 --> 00:02:58.833
+Shared cloud database
+
+00:02:58.833 --> 00:03:01.133
+sounds like a perfect fit for that,
+
+00:03:01.500 --> 00:03:03.533
+but apparently it wasn't.
+
+00:03:03.800 --> 00:03:05.766
+When you want to share your shortcut
+
+00:03:05.766 --> 00:03:07.700
+a new record with type
+
+00:03:07.700 --> 00:03:11.566
+shared shortcut is created in the public database,
+
+00:03:11.933 --> 00:03:13.533
+it gets a GUID
+
+00:03:13.533 --> 00:03:14.400
+and a link
+
+00:03:14.400 --> 00:03:17.233
+which you can use to send it to other people.
+
+00:03:18.700 --> 00:03:20.400
+You must know that this
+
+00:03:20.433 --> 00:03:23.233
+is the third vulnerability that Frans found
+
+00:03:23.233 --> 00:03:25.233
+and described in the blog post.
+
+00:03:25.633 --> 00:03:29.600
+Others allowed modifying the data on iCrowd website and
+
+00:03:29.600 --> 00:03:32.500
+deleting articles from Apple news.
+
+00:03:32.833 --> 00:03:36.733
+So he had some ideas on how to work with CloudKit.
+
+00:03:36.933 --> 00:03:37.733
+It's important,
+
+00:03:37.866 --> 00:03:39.900
+because it's not always easy
+
+00:03:39.966 --> 00:03:42.400
+to query the CloudKit database.
+
+00:03:43.233 --> 00:03:45.000
+For example, the Notes app
+
+00:03:45.000 --> 00:03:47.966
+would communicate with the CloudKit using a request
+
+00:03:47.966 --> 00:03:49.133
+that looks like this:
+
+00:03:50.166 --> 00:03:52.533
+While the request from the developer portal
+
+00:03:52.566 --> 00:03:53.766
+looked more like this:
+
+00:03:55.233 --> 00:03:57.999
+Apple Shortcuts on the other hand talked to
+
+00:03:58.000 --> 00:04:00.033
+gateway.icloud.com
+
+00:04:00.033 --> 00:04:01.866
+Using protobuf messages
+
+00:04:01.866 --> 00:04:04.900
+which made it significantly harder to fiddle.
+
+00:04:06.000 --> 00:04:08.900
+However, it was possible to connect
+
+00:04:08.900 --> 00:04:10.466
+to the shortcuts container
+
+00:04:10.466 --> 00:04:13.333
+by talking to the endpoint originally used
+
+00:04:13.333 --> 00:04:14.966
+by the developer portal.
+
+00:04:15.700 --> 00:04:18.966
+What you needed to do is modifying the container name
+
+00:04:19.066 --> 00:04:20.000
+in the request.
+
+00:04:20.566 --> 00:04:22.400
+This way, it was possible
+
+00:04:22.433 --> 00:04:24.800
+to communicate with the shortcuts container
+
+00:04:24.833 --> 00:04:26.900
+using simple JSON bodies.
+
+00:04:27.866 --> 00:04:31.966
+The obvious and very impact attacks that come to mind
+
+00:04:32.000 --> 00:04:36.433
+are adding modifying or deleting other users' shortcuts.
+
+00:04:37.500 --> 00:04:39.233
+However, access control
+
+00:04:39.233 --> 00:04:42.666
+was properly enforced on all those scenarios.
+
+00:04:43.400 --> 00:04:45.466
+And one more thing you need to know
+
+00:04:45.466 --> 00:04:47.800
+about CloudKit are zones.
+
+00:04:48.233 --> 00:04:51.466
+Public and shared databases can only use
+
+00:04:51.533 --> 00:04:52.700
+the default zone.
+
+00:04:52.966 --> 00:04:55.033
+But in private one, you can create
+
+00:04:55.166 --> 00:04:58.600
+new zones to group related objects together.
+
+00:04:59.400 --> 00:05:02.366
+At least, that's what the documentation says.
+
+00:05:03.366 --> 00:05:04.466
+But turned out
+
+00:05:04.466 --> 00:05:07.500
+that the public database in shortcuts container,
+
+00:05:07.600 --> 00:05:09.166
+did use more than that.
+
+00:05:09.566 --> 00:05:11.866
+It also had metadata_zone.
+
+00:05:12.733 --> 00:05:16.800
+It was even possible to add new zones to the database,
+
+00:05:16.800 --> 00:05:18.766
+but there was no impact to this
+
+00:05:18.766 --> 00:05:21.766
+as your zone wouldn't be used by anyone.
+
+00:05:22.666 --> 00:05:25.466
+You could also delete the zone you created,
+
+00:05:25.466 --> 00:05:28.666
+but only when authenticated as the same user.
+
+00:05:29.300 --> 00:05:31.533
+It hinted that access control is
+
+00:05:31.533 --> 00:05:34.100
+properly enforced on those zones.
+
+00:05:34.700 --> 00:05:37.700
+But anyway, Frans wanted to test if it was
+
+00:05:37.700 --> 00:05:40.533
+also possible to delete the metadata_zone.
+
+00:05:41.233 --> 00:05:43.433
+There was no other way to test this,
+
+00:05:43.633 --> 00:05:45.666
+other than trying to delete it.
+
+00:05:46.233 --> 00:05:48.266
+But he got an error saying
+
+00:05:48.533 --> 00:05:52.000
+user updates to system zones are not allowed
+
+00:05:52.900 --> 00:05:54.366
+which was the next hint
+
+00:05:54.366 --> 00:05:57.400
+that access control is properly enforced here.
+
+00:05:58.333 --> 00:06:01.933
+But anyway, he tried to delete the _defaultZone as well.
+
+00:06:02.300 --> 00:06:03.200
+It was the last
+
+00:06:03.333 --> 00:06:06.133
+idea he had for testing this functionality.
+
+00:06:06.833 --> 00:06:07.800
+And this time,
+
+00:06:08.266 --> 00:06:09.266
+it worked...
+
+00:06:10.000 --> 00:06:11.000
+or it didn't?!
+
+00:06:11.433 --> 00:06:14.700
+Listing zones still returned the _defaultZone
+
+00:06:14.700 --> 00:06:16.600
+like nothing was changed.
+
+00:06:17.266 --> 00:06:20.233
+So he started looking into other functionalities,
+
+00:06:21.000 --> 00:06:22.433
+but he realized that
+
+00:06:22.433 --> 00:06:25.033
+one of his shared shortcuts was gone...
+
+00:06:25.866 --> 00:06:28.033
+So did the shortcut gallery...
+
+00:06:28.566 --> 00:06:30.866
+Shortcut sharing website as well...
+
+00:06:32.233 --> 00:06:36.266
+Turned out that all of the short shortcuts were deleted.
+
+00:06:38.000 --> 00:06:41.466
+Only those shared after the deletion were working.
+
+00:06:41.933 --> 00:06:45.900
+My guess is that the new _defaultZone was created just
+
+00:06:46.033 --> 00:06:48.033
+after the previous one was deleted.
+
+00:06:48.200 --> 00:06:51.600
+Hence, it was present in the zone listing response.
+
+00:06:52.133 --> 00:06:54.333
+It was that much more problematic,
+
+00:06:54.333 --> 00:06:55.933
+because Apple couldn't just
+
+00:06:55.933 --> 00:06:58.300
+restore shortcuts from that moment,
+
+00:06:58.433 --> 00:07:00.766
+because the new ones would be then removed.
+
+00:07:01.166 --> 00:07:03.966
+They had to merge the old ones with the new ones,
+
+00:07:03.966 --> 00:07:05.766
+which took a few days.
+
+00:07:06.633 --> 00:07:09.700
+Obviously, this is something you never want to see
+
+00:07:09.800 --> 00:07:10.966
+when bughunting.
+
+00:07:11.300 --> 00:07:14.766
+Frans wrote an email to Apple a few minutes later
+
+00:07:14.766 --> 00:07:16.433
+explaining what happened.
+
+00:07:17.633 --> 00:07:19.166
+Later, he followed up
+
+00:07:19.166 --> 00:07:21.100
+clarifying the steps he took
+
+00:07:21.100 --> 00:07:23.433
+to prevent any service interruption,
+
+00:07:23.433 --> 00:07:26.000
+and try to explain how limited he was
+
+00:07:26.233 --> 00:07:29.933
+to confirm if the deletion call had worked or not.
+
+00:07:30.833 --> 00:07:31.666
+Thanks to that,
+
+00:07:31.700 --> 00:07:36.133
+he got the bounty of $28,000 for this vulnerability.
+
+00:07:36.866 --> 00:07:38.100
+This shows that
+
+00:07:38.200 --> 00:07:40.933
+even if you go a little too far with your testing,
+
+00:07:40.933 --> 00:07:42.466
+you can still get a reward
+
+00:07:42.466 --> 00:07:45.133
+if you justify that you did what you could
+
+00:07:45.266 --> 00:07:46.300
+to avoid that.
+
+00:07:47.166 --> 00:07:49.266
+Thank you for watching this episode!
+
+00:07:49.266 --> 00:07:52.866
+I wish your bugs will never cause such problems.
+
+00:07:52.866 --> 00:07:54.400
+If you enjoyed this video,
+
+00:07:54.400 --> 00:07:56.266
+you may also like this one
+
+00:07:56.266 --> 00:07:58.966
+about 50k remote code execution
+
+00:07:58.966 --> 00:08:00.933
+in Apple Bug Bounty Program.
+
+00:08:01.133 --> 00:08:03.600
+For now, thank you for watching and goodbye!
+

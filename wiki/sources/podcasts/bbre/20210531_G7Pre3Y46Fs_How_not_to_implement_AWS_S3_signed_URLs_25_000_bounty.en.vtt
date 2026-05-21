@@ -1,0 +1,196 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.880 --> 00:00:06.080
+Hello! In today's episode of Bug Bounty&nbsp;
+Reports Explained, you will learn how&nbsp;&nbsp;
+
+00:00:06.080 --> 00:00:14.080
+Frans Rosen was able to access millions of&nbsp;
+files by bypassing AWS S3 signed URLs. The&nbsp;&nbsp;
+
+00:00:14.080 --> 00:00:21.200
+vulnerability was rewarded $25,000. The write-up,&nbsp;
+originally published at Detectify's blog,&nbsp;&nbsp;
+
+00:00:21.200 --> 00:00:28.720
+is linked in the description. Detectify is also&nbsp;
+a sponsor of today's video. It's a DAST scanner&nbsp;&nbsp;
+
+00:00:28.720 --> 00:00:35.200
+powered by leading ethical hackers in the world.&nbsp;
+Their payload-based testing finds undocumented&nbsp;&nbsp;
+
+00:00:35.200 --> 00:00:42.320
+vulnerabilities from OWASP top 10, vulnerabilities&nbsp;
+behind authentication, misconfigurations in CORS, S3&nbsp;&nbsp;
+
+00:00:42.320 --> 00:00:48.640
+buckets, encryption and much more. Detectify&nbsp;
+puts hacker knowledge into hands of security&nbsp;&nbsp;
+
+00:00:48.640 --> 00:00:57.120
+engineers to fix their applications. Start a free,&nbsp;
+2-week trial on detectify.com/bbre to see what&nbsp;&nbsp;
+
+00:00:57.120 --> 00:01:05.760
+it finds on your website. AWS S3 is Amazon's&nbsp;
+service used for storing files in the cloud.&nbsp;&nbsp;
+
+00:01:06.960 --> 00:01:14.080
+When the application needs to show the user a file&nbsp;
+that's stored there, the developer has at least&nbsp;&nbsp;
+
+00:01:14.080 --> 00:01:20.960
+two options. Let's say it's an image. One&nbsp;
+option is to basically stream the file&nbsp;&nbsp;
+
+00:01:20.960 --> 00:01:27.040
+from the S3 through the server. But you can&nbsp;
+probably tell that this is not the most optimal&nbsp;&nbsp;
+
+00:01:27.040 --> 00:01:34.720
+solution. It adds latency and uses resources of&nbsp;
+the server. It would be much better to let the&nbsp;&nbsp;
+
+00:01:34.720 --> 00:01:42.480
+user download the file from S3 bucket directly.&nbsp;
+However, how do you then make sure that users only&nbsp;&nbsp;
+
+00:01:42.480 --> 00:01:48.560
+download their own files? If you make the bucket&nbsp;
+public then there is no access control at all.&nbsp;&nbsp;
+
+00:01:50.480 --> 00:02:00.240
+This issue can be solved using S3 signed URLs. It&nbsp;
+works this way: a user wants to download a file&nbsp;&nbsp;
+
+00:02:00.240 --> 00:02:05.920
+that's stored on s3 bucket. The server&nbsp;
+generates a specific link for that user&nbsp;&nbsp;
+
+00:02:05.920 --> 00:02:12.640
+that's only valid for a limited time and&nbsp;
+for the one specified file. With that link,&nbsp;&nbsp;
+
+00:02:12.640 --> 00:02:19.520
+the user can access the file from S3 bucket&nbsp;
+directly. But what is that special in this link?&nbsp;&nbsp;
+
+00:02:21.120 --> 00:02:28.640
+Among other parameters, this link contains a&nbsp;
+signature. The signature is only valid for this&nbsp;&nbsp;
+
+00:02:28.640 --> 00:02:35.920
+one file. If you try to access different one with&nbsp;
+the same signature, it will not work. The same&nbsp;&nbsp;
+
+00:02:35.920 --> 00:02:43.940
+goes for accessing a file after the expiration&nbsp;
+period. The signature is generated on the backend.
+
+00:02:54.560 --> 00:03:00.240
+To create it, the server uses a secret&nbsp;
+key which, as the name strongly suggests,&nbsp;&nbsp;
+
+00:03:00.240 --> 00:03:08.480
+is secret and not present in the link. It is 40&nbsp;
+characters long and the signature uses SHA-256.&nbsp;&nbsp;
+
+00:03:09.280 --> 00:03:15.840
+The brute-force of this would take ages, so for&nbsp;
+sure we will not be able to generate our own&nbsp;&nbsp;
+
+00:03:15.840 --> 00:03:20.800
+valid signature. We need to find&nbsp;
+another way to hack this mechanism.&nbsp;&nbsp;
+
+00:03:21.440 --> 00:03:27.920
+With such things, it's usually better to not&nbsp;
+look for a vulnerability in AWS' mechanism&nbsp;&nbsp;
+
+00:03:27.920 --> 00:03:34.720
+but in its implementations by developers.&nbsp;
+We know that we won't break SHA-256,&nbsp;&nbsp;
+
+00:03:34.720 --> 00:03:42.080
+but what if we would just ask the server to&nbsp;
+create a link to a different file. For example&nbsp;&nbsp;
+
+00:03:42.080 --> 00:03:47.920
+you can use path traversal to get a signed URL&nbsp;
+to a file from completely different directory&nbsp;&nbsp;
+
+00:03:47.920 --> 00:03:54.800
+that the developers wanted to allow. But the&nbsp;
+problem is, even if we can read arbitrary file,&nbsp;&nbsp;
+
+00:03:54.800 --> 00:04:00.640
+we don't know what files are stored there. We&nbsp;
+would have to blindly brute-force file names which&nbsp;&nbsp;
+
+00:04:00.640 --> 00:04:07.440
+would significantly reduce the impact. However,&nbsp;
+if you could get a signature for a directory,&nbsp;&nbsp;
+
+00:04:07.440 --> 00:04:13.840
+not a file, and the server would have ListObjects&nbsp;
+permission, you could get directory listing.&nbsp;&nbsp;
+
+00:04:15.680 --> 00:04:19.920
+And I know from experience that&nbsp;
+some developers absolutely love&nbsp;&nbsp;
+
+00:04:19.920 --> 00:04:28.320
+storing everything just in one bucket: receipts&nbsp;
+and reports mixed with css and javascript files,&nbsp;&nbsp;
+
+00:04:28.320 --> 00:04:35.280
+separated only by different directory. But&nbsp;
+coming back to our undisclosed application.&nbsp;&nbsp;
+
+00:04:35.280 --> 00:04:43.520
+There, you requested a file using s3_key with&nbsp;
+the filename and random_key parameters. Then, the&nbsp;&nbsp;
+
+00:04:43.520 --> 00:04:50.240
+application opened the URL with this random key in&nbsp;
+the path which then redirected to the signed URL.&nbsp;&nbsp;
+
+00:04:51.440 --> 00:04:56.800
+Why did they take this additional step? I&nbsp;
+don't know but what i know for sure is that&nbsp;&nbsp;
+
+00:04:56.800 --> 00:05:05.440
+s3_key was not validated at all. You could just&nbsp;
+put the / there, follow the redirect and there&nbsp;&nbsp;
+
+00:05:05.440 --> 00:05:12.560
+was directory listing of the whole bucket. And&nbsp;
+inside... millions of files. Basically all of the&nbsp;&nbsp;
+
+00:05:12.560 --> 00:05:22.320
+data was stored in this bucket. The hunter quickly&nbsp;
+reported it and got $15,000 plus $10,000 of bonus.&nbsp;&nbsp;
+
+00:05:23.200 --> 00:05:29.360
+To fix this, you mustn't store internal files&nbsp;
+along with user files in the same bucket with&nbsp;&nbsp;
+
+00:05:29.360 --> 00:05:35.760
+the same permissions, you must somehow separate&nbsp;
+it. I think the main takeaway from this report is&nbsp;&nbsp;
+
+00:05:35.760 --> 00:05:42.000
+that if something is signed or encrypted doesn't&nbsp;
+automatically mean that it's secure. Anyway,&nbsp;&nbsp;
+
+00:05:42.000 --> 00:05:47.520
+if you've learned something new today, leave a&nbsp;
+like or leave a subscription. Also, sign up for&nbsp;&nbsp;
+
+00:05:47.520 --> 00:05:54.560
+BBRE newsletter to get more tips and tricks.&nbsp;
+For now, thank you for watching and goodbye!
+

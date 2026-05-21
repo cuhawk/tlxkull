@@ -1,0 +1,88 @@
+Hello, this episode of Bug Bounty Report Explained has the highest bounty of all my videos – 3.4
+million dollars. The reason is it's a bug in a blockchain network called Polygon and it allowed
+stealing about 20 billion US dollars. It was discovered by Leon Spacewalker. Link to the
+original blog post is in the description. Enjoy! This video is sponsored by Immunify,
+the leading bug bounty platform for Web3 with the world's largest bounties. In the regular Web2
+industry, we are used to most programs having a maximum of 4-digit payouts or 5 digits at best.
+On Immunify, there are programs that pay up to 10 million dollars. It's life-changing money.
+And Web3 is an exciting technology. Personally, I've already started learning it. If you want to join me
+and get ahead of everyone else, check out Immunify. Polygon is a network built on top of Ethereum.
+It allows making more transactions with cheaper fees than on Ethereum itself. The main token of the
+Polygon network is called MATIC. And interestingly, apart from being the main token, it's also an MRC20
+contract deployed on the network. It allows transferring MATIC funds without paying a fee.
+The network also allows you to purchase an NFT.
+And let's imagine it's 2030 and BBRE Premium is sold as an NFT in the Polygon network. You want to
+purchase it. You have some cryptocurrency, but in USDT coin, which is not on the Polygon network,
+but is mapped to it. Polygon allows us to swap your tokens for my NFT.
+Of course, the naive way to do this is that I could tell you to send me tokens first,
+and then you would hope that I would send you the NFT back. And I'm honest, you can trust me,
+but we discovered smart contracts for a reason. It's to do such transactions without having to trust
+the other person. And the way we could do this in Polygon network is as follows. First, we have a
+marketplace contract that's between me and you. This contract will first generate an order of you
+swapping your tokens for my NFT. It will also assign an order ID. Then the marketplace will ask you to
+generate a signature that you indeed want to swap your 500 USDT tokens for the BBRE Premium NFT.
+The signature will contain the address of the marketplace contract, the order ID from step 2,
+the expiration and most importantly, how many of what tokens you want to swap for what NFT. And you sign
+all that with your private key. And the marketplace will ask me to do the same thing. Instead, I will swap
+my NFT for your tokens. With these two signatures, the contract will now carry out both transfers and make
+sure that either both or none go through. And for this, the transfer with seek function is used. And pay
+attention because this is the most important one in the context of this bug. It takes these parameters.
+The signature, the amount to transfer, the data parameter is only a hash that contains the order ID,
+amount and the token. It's not created with a private key or anything like this. It only prevents using this
+transfer with seek function multiple times for the same order. Then there is the expiration in the form
+of a block number. And finally, the address to which to send the funds. The function makes checks if the
+amount is greater than zero, if the order hasn't expired and if the same transfer isn't being replayed.
+But notice, it doesn't take the address from which to carry out the transfer. And this is a crucial
+information. So, before it finally calls the transfer from function, it has to recover the address of the
+sender. EasyRecover is the function that takes the signature and data of the order to retrieve the address
+of the wallet used to create the signature. Actually, it's not EasyRecover but EasyRecovery function that is used.
+It's only a wrapper around EasyRecover to make it more user-friendly. And one of the first things it does
+is checking if the signature is invalid. But if it is, instead of throwing an error, the function returns a zero address.
+Now, in itself, it wouldn't be a problem. Until we take a look at the transfer function. There is only a check
+if the transfer isn't done to the same contract, which is absolutely not a problem for us.
+In the second line, it transfers funds from the contract to the recipient. Of course, transfer and
+transfer from functions are only created to be used internally and you can't just call them with
+whatever parameters. But if you could force the EasyRecovery function to return a zero address,
+you could transfer all the funds from the contract to an arbitrary address. How to do it? The first line of that function
+checks if the signature is 65 characters. So, if you submit anything other than 65 characters long, you are good to go.
+While all that swapping marketplaces may have sounded complicated to you, the proof of concept is ridiculously simple.
+And to be honest, I don't even know if the attacker really went through all these steps. Maybe he just noticed
+this function and exploited it straight away. But personally, I wanted to know how this transfer
+with seek function is used in real life. That's probably why it took me twice more time than usual
+to create nodes for this video, but I hope you appreciate that.
+So, transfer with seek is an external function. You can call it without making any marketplace transactions.
+Here is the repository which you can clone. It creates the fork of the network before the patch and gives you the
+script to reproduce the attack. Forking is also a way to test your smart contract bugs before submitting vulnerability reports.
+And this is how to call the transfer with seek function. As the first argument, the signature, use any buffer
+that's not 65 characters. As the second, choose the amount you want to transfer. Or in other words, how much money
+you would like to make. At the moment of the fix, December 5th, the contract had over 9 billion MATIC tokens.
+You could steal all of them.
+The third argument is the hash of the data. But actually, the function only checks if the hash wasn't
+used previously. So, you can use the hash of almost anything.
+Expiration also doesn't matter as long as it's a block number from the future. And finally, the recipient
+address, which means where you want to transfer the money. And with this single function call, you could steal
+all the money that were in the contract. At the moment of the fix, it was worth around 23 billion dollars.
+And actually, before the fix was deployed, over 800,000 MATIC tokens were stolen, which was worth around 2 million dollars.
+The hacker who found the bug was rewarded with 2.2 million dollars of bounty, which was above the
+Polygon's maximum payout. Even the hunter who duplicated this report got a bounty of 1.2 million dollars,
+as an exception to the rule. And as for the fix, the transfer with seek function was removed.
+Lately, I've been learning smart contract security myself. So far, I only document my learning journey,
+but with time, I will also start creating more content. If you want to learn with me, subscribe to
+BBR newsletter. The link is in the description. For now, thank you for watching and goodbye.
+Thank you.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

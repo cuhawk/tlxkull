@@ -1,0 +1,150 @@
+In the era of chatbots with every single company having a chatbot that can access user data,
+there's a lot of new attack services.
+And I don't only mean AI related attacks like prompt injection,
+it's even a lot of new regular web vulnerabilities that arise.
+It's especially dangerous when these chatbots can access critical user information,
+like the Azure Health Bot service that is created to answer questions of patients
+based on their medical history.
+A hunter called Yanir Tsaremi found a total of 4 bucks allowing him to steal data of other users,
+for which he was awarded a total of $203,000.
+I will explain this in this video.
+Enjoy!
+Azure Health Bot is a service that can respond to customers' basic questions
+based on the medical database and based on their medical history.
+It was actually built pre-chatgbt or pre-LLM era.
+So it was not everything based on the LLM.
+For example, you can control the flow of the conversation using just different expressions in
+JavaScript.
+And of course, this is meant to be used by hospital and medical facilities.
+So then the attack scenario could you could think that attack scenario is only one hospital
+attacking another.
+But the truth is everyone can go to Azure website and create their own Azure Health Bot.
+So the attacker can do it as well.
+So the attack scenario of one tenant attacking data of another is very, very critical and can be very
+dangerous.
+But of course, developers were aware of this risk because as I've told you,
+you can create your own JavaScript expressions to control the flow of the conversation.
+But to mitigate the risk of the JavaScript code, just reading data of other users,
+this code runs in the isolated environment using the VM tool library.
+The way it works is it overrides a lot of built-in JavaScript functions and access to the prototype
+so that you cannot execute whatever code you want.
+For example, the require function which is used to import modules is overridden so that you cannot
+import any module.
+And this is robust.
+This is secure.
+But Microsoft wanted to change it slightly.
+They wanted to disallow importing most of the modules while still being able to import some of them.
+So they overridden the require function again.
+And this is the code that they used.
+At the first site, it looks pretty secure.
+It checks if there is a white list of modules.
+And if there is, it checks if the currently imported module is on that white list.
+We don't have access to modify the white list.
+So there is not much we can do.
+There is only one function call to the index of function.
+Can you override the index of function?
+Well, actually, you can.
+If you start developer tools right now, you can, using this code, you can override the index of
+function to do whatever you want.
+But the thing is, one of the main features of the VM2 library is to restrict the access to the
+prototype.
+So this would not work in the VM2 environment.
+But if you take a look at this code again, it's not the built-in index of function that
+was used, but instead is the index of function from the underscore library.
+And access to this is not restricted at all.
+So using this code, you could overwrite the index of function to always return a number.
+So this check would always be true for any module, even those from outside this allow list,
+which allowed you to import any module, which then allowed you to execute arbitrary code,
+which you could use to steal data of other patients.
+And after Microsoft fixed this particular flaws, the hunter did not find a way to bypass this.
+He did not find a way to import modules from outside the allow list.
+So then he decided, OK, I cannot import any other modules.
+So let's see if I can do anything interesting with those that are allow listed.
+Because the way VM2 works is the code of those allow listed modules is run in the unisolated
+context, which means it's not restricted at all, which means you do not want to be running
+any user code there.
+Why does it work in this particular way?
+To be honest, I'm not sure, but maybe it was due to a lot of dependencies.
+If you wanted to run the module in the isolated context, you would also have to allow list all
+the dependencies of this module.
+Maybe it was something like this.
+I'm not sure.
+But it's also worth pointing out that the whole VM2 library, if you go to your NPM page,
+it says it's deprecated and it contains known sandbox escapes or isolation escapes or whatever
+you want to call it.
+And if you go to GitHub, you can literally see two escapes that were found in 2023 that are not fixed
+and that will not be fixed.
+So I'm quite interested.
+How did Microsoft deal with these?
+But coming back to our case, to the blog post by the hunter,
+he found that one of the import allow listed libraries was underscore, which is the same
+library he exploited in the first step.
+He found that the underscore library contains the template function, which just consumes a template,
+which can contain JavaScript code.
+So it's a pretty straightforward code execution.
+And as I've told you before, this code is run in the unisolated context, which means you can just
+read data of other tenants, read data of other patients and send it to you.
+So it's another way to execute code.
+So Microsoft fixed this one as well.
+And the hunter no longer could import arbitrary modules.
+He also didn't find another way to execute code.
+So he decided to look at other ways to leak data, because after all,
+executing arbitrary code is not the only way to leak data.
+And he found that he can unsafely allocate a buffer.
+Because normally when you do this with a call like this,
+what happens is the buffer is zero out.
+The memory in the buffer is zeroed out.
+Which means if you read it just after initialization,
+it's empty.
+It contains only zeros.
+But if you do exactly the same thing with the unsafe method to allocate a buffer,
+it's basically the same just without the memory zeroing step,
+which means you are reading a random part of the memory with some data that was processed
+fairly recently by the server.
+And when he repeated this process of your times,
+he could find JWT tokens from internal Azure identity calls.
+He could find Kubernetes calls.
+He found data of the customers of another hospitals and stuff like this.
+So even though it didn't allow him to execute code,
+he could read a lot of sensitive information in this way.
+And for the fourth one, which is to be honest, my favorite of these four,
+we'll step a little bit back.
+We'll let go of the code execution functionality.
+And we'll take a look at how did this bot fetch data of users.
+And this is the URL which would be sent to fetch this data.
+Importantly, three of these parts of the URL are static.
+And two of them are parameters.
+One of these parameters is the tenant name,
+which would be the name of your tenant.
+And the other would be ID of the particular row that you want to fetch.
+And at this point, there was the authorization check.
+If the tenant ID that's in the URL is your tenant ID or the tenant you're authorized to.
+If you try to put the name of another hospital here, another medical facility here,
+it would not work.
+If it was the authorization check was good,
+it would proceed to make this underlying call.
+You wouldn't see this as a user, it would be somewhere on the backend.
+But this is the URL that would be constructed.
+And kudos to researcher for finding this out because likely he could not see this.
+He could just guess it's what happens under the hood.
+And this is the URL that's Azure table API call.
+And again, we have the tenant ID.
+And then we have the row ID which was sent in the previous step.
+Then when this call is made, the user data is returned.
+And the user data is then forwarded back to you or back to your bot to be more precise.
+So now think what would happen if you send the request to a URL like this.
+The authorization check would still be okay because it's still the tenant parameter.
+It still points to your tenant.
+So you wouldn't be denied access to this.
+However, after this, in the second step, when the internal request would be sent,
+this is the URL that would be constructed.
+And this part would be cancelled due to the path traversal.
+So this URL would be equivalent to this one, which is a URL that fetches data of another customer.
+And then this response is sent back to you, thus giving you data of arbitrary tenant of Azure Healthbot.
+We do not know what were the exact bounties awarded for these four vulnerabilities,
+but we know that the total was $203,000.
+And that's it for today's video.
+If you've learned something new, leave a like.
+And if you want to watch another video about a path traversal,
+check out this one about my $20,000 path traversal in the Amazon S3 integration.
+For now, thank you for watching and goodbye.

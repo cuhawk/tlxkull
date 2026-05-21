@@ -1,0 +1,838 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:03.900
+CSRFs used to be a really popular bug class,
+
+00:00:03.900 --> 00:00:08.220
+but then browser developers did something really smart
+
+00:00:08.220 --> 00:00:12.140
+and they introduced a cookie attribute called SameSite
+
+00:00:12.140 --> 00:00:16.139
+that was supposed to prevent these vulnerabilities.
+
+00:00:16.139 --> 00:00:18.500
+But did it really kill CSRFs?
+
+00:00:18.500 --> 00:00:23.500
+Can you still get good bounties for CSRFs in 2024?
+
+00:00:23.780 --> 00:00:26.700
+Well, there's only one way to find out,
+
+00:00:26.700 --> 00:00:29.639
+to do the case study, and so I did.
+
+00:00:29.639 --> 00:00:32.599
+In this video, I will tell you what techniques
+
+00:00:32.599 --> 00:00:36.560
+still work in 2024 and how you can still get
+
+00:00:36.560 --> 00:00:38.880
+good bounties for CSRFs.
+
+00:00:38.880 --> 00:00:39.720
+Enjoy.
+
+00:00:40.720 --> 00:00:44.720
+And the first label that I have in this category
+
+00:00:44.720 --> 00:00:48.040
+is very optimistic for the future of CSRFs
+
+00:00:48.040 --> 00:00:53.040
+because in 38 reports, I decided that the SameSite cookie
+
+00:00:53.959 --> 00:00:56.840
+would not, SameSite lags to be more precise,
+
+00:00:56.840 --> 00:01:01.680
+would not help because the request with CSRF
+
+00:01:01.680 --> 00:01:03.919
+was using the get method.
+
+00:01:03.919 --> 00:01:07.000
+And there were a few different types of attacks here,
+
+00:01:07.000 --> 00:01:09.959
+different types of get requests.
+
+00:01:09.959 --> 00:01:13.400
+I broke this down in the other part of the case study
+
+00:01:13.400 --> 00:01:16.959
+that's in BBRE Premium Archive, but for example,
+
+00:01:16.959 --> 00:01:21.080
+it was a report like this one in Facebook
+
+00:01:21.080 --> 00:01:24.959
+where the hunter would send a get request,
+
+00:01:25.599 --> 00:01:30.080
+that wouldn't directly make any modifications on the server,
+
+00:01:30.080 --> 00:01:33.839
+but it would cause the client-side JavaScript
+
+00:01:33.839 --> 00:01:36.720
+to immediately, without any user interaction,
+
+00:01:36.720 --> 00:01:39.959
+send the request to the server.
+
+00:01:39.959 --> 00:01:43.120
+And this request done by JavaScript would be a POST request
+
+00:01:43.120 --> 00:01:46.779
+and it would have the proper CSRF token and everything,
+
+00:01:46.779 --> 00:01:51.480
+but the attacker would control the path of this request
+
+00:01:51.480 --> 00:01:53.760
+and potentially parameters as well.
+
+00:01:53.800 --> 00:01:57.040
+So the attacker would control everything,
+
+00:01:57.040 --> 00:02:00.440
+the client-side JavaScript would automatically append
+
+00:02:00.440 --> 00:02:02.480
+the CSRF token.
+
+00:02:02.480 --> 00:02:07.480
+And in this case, SameSite attribute with the lag setting
+
+00:02:07.500 --> 00:02:12.500
+or with the strict, to be honest as well, does not help you.
+
+00:02:12.520 --> 00:02:15.520
+And this report, it was submitted in 2022
+
+00:02:15.520 --> 00:02:18.440
+when SameSite was already working.
+
+00:02:18.440 --> 00:02:22.360
+It was $18,750.
+
+00:02:22.360 --> 00:02:23.559
+So quite a good report.
+
+00:02:24.320 --> 00:02:26.279
+We see that Facebook, I think, has problems
+
+00:02:26.279 --> 00:02:29.600
+with these types of CSRFs because,
+
+00:02:29.600 --> 00:02:32.559
+take a look at how many Facebook reports we have here.
+
+00:02:32.559 --> 00:02:36.720
+That's eight reports, a few of them in five-digit bounties.
+
+00:02:36.720 --> 00:02:39.800
+So quite an important backlash.
+
+00:02:42.360 --> 00:02:45.679
+The next category that I found here
+
+00:02:45.679 --> 00:02:48.800
+was before SameSite defaulting to lags,
+
+00:02:48.800 --> 00:02:53.800
+because if we take a look at the CSRF reports by year,
+
+00:02:56.720 --> 00:03:00.800
+SameSite attribute was introduced in Chrome back in 2016,
+
+00:03:00.800 --> 00:03:04.619
+but for four years, it was pretty irrelevant
+
+00:03:04.619 --> 00:03:08.039
+because only Chrome supported it
+
+00:03:08.039 --> 00:03:12.600
+and also developers had to actively implement this,
+
+00:03:12.600 --> 00:03:15.820
+which developers are not really eager
+
+00:03:15.820 --> 00:03:18.000
+to implement new defense mechanisms
+
+00:03:18.000 --> 00:03:19.880
+until they have to.
+
+00:03:19.880 --> 00:03:23.919
+And it makes a lot of sense from the business perspective.
+
+00:03:23.919 --> 00:03:27.679
+And in this period, you couldn't even properly recommend
+
+00:03:27.679 --> 00:03:30.479
+SameSite cookie as a CSRF prevention
+
+00:03:30.479 --> 00:03:31.960
+because it only worked in Chrome.
+
+00:03:31.960 --> 00:03:34.220
+So for four years, it was quite irrelevant.
+
+00:03:34.220 --> 00:03:39.220
+Then in 2020, Chrome started defaulting to lags
+
+00:03:39.520 --> 00:03:43.059
+when the SameSite attribute was not present.
+
+00:03:43.059 --> 00:03:46.940
+And then Firefox followed up in 2021.
+
+00:03:46.940 --> 00:03:49.740
+And that's when the SameSite attribute started
+
+00:03:49.740 --> 00:03:51.179
+become relevant.
+
+00:03:51.179 --> 00:03:54.339
+And today, it's quite a fundamental part
+
+00:03:54.339 --> 00:03:56.899
+of the client-side security.
+
+00:03:56.899 --> 00:03:59.500
+For example, in this category,
+
+00:04:00.339 --> 00:04:04.259
+we had maybe reports like this one.
+
+00:04:04.259 --> 00:04:06.500
+It's also in Facebook.
+
+00:04:06.500 --> 00:04:09.380
+And that's a pretty standard post request
+
+00:04:09.380 --> 00:04:11.539
+where the cookie has to be attached
+
+00:04:11.539 --> 00:04:13.479
+for this request to work.
+
+00:04:13.479 --> 00:04:18.480
+And with SameSite lags, a cross-site request like this
+
+00:04:18.500 --> 00:04:22.000
+just wouldn't have the cookies automatically appended.
+
+00:04:22.000 --> 00:04:23.720
+There is one catch to it.
+
+00:04:23.720 --> 00:04:26.119
+It's a two-minute attack window,
+
+00:04:26.119 --> 00:04:29.359
+but more on this in the later chapter
+
+00:04:29.359 --> 00:04:34.359
+because I have a separate category for that kind of report.
+
+00:04:35.200 --> 00:04:38.160
+Now we'll jump to the next category
+
+00:04:38.160 --> 00:04:41.799
+or the next two categories that I have here
+
+00:04:41.799 --> 00:04:45.260
+are where SameSite attribute was unmentioned,
+
+00:04:45.260 --> 00:04:48.880
+but it was already in this period where it was relevant.
+
+00:04:48.880 --> 00:04:51.200
+To be precise, 11 reports
+
+00:04:51.200 --> 00:04:55.600
+where when only Firefox would not default to lags,
+
+00:04:55.600 --> 00:04:58.600
+when Chrome would already default to lags,
+
+00:04:58.600 --> 00:05:01.640
+when SameSite was not present, but Firefox didn't.
+
+00:05:01.640 --> 00:05:04.959
+In this period, you could always write in the report
+
+00:05:04.959 --> 00:05:09.320
+that this CSRF would be mitigated
+
+00:05:09.320 --> 00:05:11.000
+by the SameSite attribute,
+
+00:05:11.040 --> 00:05:13.799
+but it still works in Firefox.
+
+00:05:13.799 --> 00:05:16.619
+And there was one report like this.
+
+00:05:16.619 --> 00:05:18.799
+It was in Atlassian.
+
+00:05:19.679 --> 00:05:24.679
+And let's not get into details of this particular bug,
+
+00:05:24.720 --> 00:05:28.839
+but the hunter did write that due to the SameSite behavior,
+
+00:05:28.839 --> 00:05:30.160
+it doesn't work in Chrome.
+
+00:05:30.160 --> 00:05:32.760
+It only works in Firefox.
+
+00:05:32.760 --> 00:05:34.399
+And props to this hunter.
+
+00:05:34.399 --> 00:05:39.040
+He got 3.6 thousand dollars for this report
+
+00:05:39.959 --> 00:05:44.200
+and to authors of these 22 reports
+
+00:05:44.200 --> 00:05:47.579
+which didn't mention the SameSite attribute,
+
+00:05:47.579 --> 00:05:49.239
+shame on you, to be honest.
+
+00:05:49.239 --> 00:05:54.239
+I think every single CSRF report after 2020
+
+00:05:55.459 --> 00:05:58.920
+should mention the SameSite attribute.
+
+00:05:58.920 --> 00:06:03.279
+No matter if SameSite cookie will be appended,
+
+00:06:03.279 --> 00:06:05.839
+it won't be appended, why it won't be appended,
+
+00:06:05.839 --> 00:06:07.920
+doesn't matter which outcome it is,
+
+00:06:07.920 --> 00:06:11.000
+you should always address this in your report
+
+00:06:11.000 --> 00:06:13.000
+because it just first,
+
+00:06:13.000 --> 00:06:15.279
+it solves a lot of problems with the triage.
+
+00:06:16.519 --> 00:06:21.519
+I'm 100% confident that in at least a few of these reports,
+
+00:06:22.399 --> 00:06:25.600
+there was a case that the report only worked in Firefox,
+
+00:06:25.600 --> 00:06:28.220
+the hunter only used Firefox,
+
+00:06:28.220 --> 00:06:31.160
+but the triager used Chrome and it didn't work
+
+00:06:31.160 --> 00:06:33.760
+so they would go back and forth with the report.
+
+00:06:33.760 --> 00:06:37.440
+I'm 100% sure there was a case like this.
+
+00:06:38.079 --> 00:06:40.799
+If you address those things straight away,
+
+00:06:40.799 --> 00:06:42.160
+you will just get better bounties.
+
+00:06:42.160 --> 00:06:45.000
+You know, always when doing these case studies,
+
+00:06:45.000 --> 00:06:47.519
+I start with the highest-paid reports
+
+00:06:47.519 --> 00:06:49.399
+and I go to the lowest-paid reports
+
+00:06:50.399 --> 00:06:52.880
+and I always, in every single case study,
+
+00:06:52.880 --> 00:06:57.880
+I see the same trend that the highest-paid reports
+
+00:06:58.519 --> 00:07:02.959
+always, in general, mention every single aspect of a bug,
+
+00:07:02.959 --> 00:07:07.239
+every single prevention mechanism that could affect the bug
+
+00:07:07.799 --> 00:07:12.799
+but maybe it can be bypassed in one way or another
+
+00:07:14.000 --> 00:07:17.040
+and then the further I go,
+
+00:07:17.040 --> 00:07:20.660
+the more rare it is for hunters to mention it.
+
+00:07:20.660 --> 00:07:22.559
+Maybe they don't know about it.
+
+00:07:22.559 --> 00:07:26.519
+Maybe they just try to avoid the difficult conversation
+
+00:07:26.519 --> 00:07:28.440
+about the same side attribute
+
+00:07:28.440 --> 00:07:31.959
+but definitely it shows that if you understand
+
+00:07:31.959 --> 00:07:33.679
+more aspects of web security,
+
+00:07:33.679 --> 00:07:37.019
+you will get bigger bounties.
+
+00:07:38.239 --> 00:07:42.480
+Then the next category, I have six reports
+
+00:07:42.480 --> 00:07:45.679
+where it was explicitly said
+
+00:07:45.679 --> 00:07:48.799
+that the same-side cookie was none.
+
+00:07:48.799 --> 00:07:51.160
+Four of these reports are in Google
+
+00:07:51.160 --> 00:07:55.739
+and one of these I did cover on my channel.
+
+00:07:55.739 --> 00:07:59.880
+It's a CSRF by David Schutz, which I really liked.
+
+00:07:59.880 --> 00:08:04.880
+He kind of made, exploited the TV version of YouTube
+
+00:08:05.239 --> 00:08:08.119
+to leak private videos of the victim
+
+00:08:08.119 --> 00:08:11.119
+and he got a CSRF like this.
+
+00:08:11.119 --> 00:08:11.959
+It's a great report.
+
+00:08:11.959 --> 00:08:16.720
+I will link the video and the report in the description.
+
+00:08:16.720 --> 00:08:18.799
+To be perfectly fair,
+
+00:08:18.799 --> 00:08:21.579
+this report could also go to the previous category
+
+00:08:21.579 --> 00:08:24.779
+because this article does not mention
+
+00:08:24.779 --> 00:08:27.200
+the same-side attribute at all
+
+00:08:27.200 --> 00:08:31.000
+but I know that same-side cookie was set to none
+
+00:08:31.000 --> 00:08:35.159
+because I just asked David before making the video
+
+00:08:35.159 --> 00:08:38.679
+and I think because he mostly hacked on Google
+
+00:08:38.679 --> 00:08:40.479
+and Google, at least back then,
+
+00:08:40.479 --> 00:08:43.200
+used same-side none everywhere,
+
+00:08:43.200 --> 00:08:46.440
+he just didn't consider same-side cookie
+
+00:08:46.440 --> 00:08:50.239
+as the relevant for this report
+
+00:08:50.239 --> 00:08:54.440
+and while for me it was like, why does this work?
+
+00:08:54.440 --> 00:08:58.000
+But he sent me a screenshot where it was same-side nones
+
+00:08:58.000 --> 00:09:01.000
+and that's why I know about this.
+
+00:09:02.520 --> 00:09:07.280
+Then we have two more categories with one report each
+
+00:09:07.280 --> 00:09:09.520
+because the bug only works in Firefox.
+
+00:09:09.520 --> 00:09:11.239
+I already have shown you.
+
+00:09:12.880 --> 00:09:15.840
+The first case is something
+
+00:09:15.840 --> 00:09:18.239
+that maybe shouldn't be here, if I'm honest,
+
+00:09:18.239 --> 00:09:20.080
+but it's a report that I really like
+
+00:09:20.080 --> 00:09:25.080
+and I wanted to have it in at least one of the case studies
+
+00:09:25.440 --> 00:09:29.919
+and it wouldn't fit anywhere better than it fits to CSRFs.
+
+00:09:29.919 --> 00:09:31.719
+It's a bug by Johan Carlsson
+
+00:09:31.719 --> 00:09:33.799
+which I also covered on my channel.
+
+00:09:33.799 --> 00:09:36.359
+It's a client-side path traversal
+
+00:09:36.359 --> 00:09:41.359
+and the way it works is that in one of the places,
+
+00:09:42.400 --> 00:09:44.479
+instead of a regular ID,
+
+00:09:44.479 --> 00:09:46.719
+you are injecting a dot dot slash character
+
+00:09:46.719 --> 00:09:49.200
+which is typical for path traversals
+
+00:09:49.200 --> 00:09:52.719
+but what happens here, it's on the client-side
+
+00:09:52.719 --> 00:09:55.159
+and then when the victim would press,
+
+00:09:55.159 --> 00:09:58.559
+in this case, this button to resolve
+
+00:09:58.559 --> 00:10:03.559
+or ignore an issue, I think, or an error,
+
+00:10:04.039 --> 00:10:07.640
+then the put request would be sent
+
+00:10:07.640 --> 00:10:10.200
+with a proper CSRF token.
+
+00:10:10.200 --> 00:10:13.359
+It would actually be a same-side request
+
+00:10:13.359 --> 00:10:17.000
+and because you would control the path of this request
+
+00:10:17.000 --> 00:10:21.039
+and you also could inject URL query parameters
+
+00:10:21.039 --> 00:10:25.479
+and Rails is known to treat these URL query parameters
+
+00:10:25.479 --> 00:10:30.479
+pretty much the same way as the put body or the post body,
+
+00:10:30.479 --> 00:10:31.840
+you would just control the path
+
+00:10:31.840 --> 00:10:33.640
+and attributes of the request
+
+00:10:33.640 --> 00:10:37.119
+so you would have sort of a site-wide CSRF.
+
+00:10:38.000 --> 00:10:41.039
+The reason why I think it doesn't quite fit
+
+00:10:41.039 --> 00:10:45.880
+to the CSRF category is it ends up being a same-side request
+
+00:10:45.880 --> 00:10:49.840
+and CSRF stands for cross-site request forgery
+
+00:10:49.840 --> 00:10:51.919
+and this isn't really a cross-site request
+
+00:10:51.919 --> 00:10:56.000
+but I think it somehow fits to the CSRF category.
+
+00:10:56.000 --> 00:10:57.919
+That's why I wanted it here
+
+00:10:57.919 --> 00:11:01.679
+and one more reason for having it here
+
+00:11:01.679 --> 00:11:04.440
+is I think it is a bug class
+
+00:11:04.440 --> 00:11:06.919
+with a lot of potential for the future
+
+00:11:06.919 --> 00:11:09.719
+because a lot of applications these days
+
+00:11:09.719 --> 00:11:13.880
+do a lot of work with the client-side JavaScript
+
+00:11:13.880 --> 00:11:18.159
+and I think bugs like this will only become more common
+
+00:11:18.159 --> 00:11:23.000
+and in cases where you can't find regular CSRFs,
+
+00:11:23.000 --> 00:11:25.640
+you should be looking for client-side path traversals
+
+00:11:26.559 --> 00:11:30.239
+so that's also a reason why I wanted to include this bug.
+
+00:11:30.239 --> 00:11:34.159
+If you didn't quite get it from my quick explanation now,
+
+00:11:34.159 --> 00:11:35.440
+the link to the full video
+
+00:11:35.440 --> 00:11:40.440
+and the link to the report are in the description
+
+00:11:40.760 --> 00:11:43.320
+and the last thing I have
+
+00:11:43.320 --> 00:11:46.239
+but the very important thing I have
+
+00:11:46.239 --> 00:11:51.239
+is this $3,000 report in Yahoo
+
+00:11:51.520 --> 00:11:54.520
+and the reason why I think it is very important
+
+00:11:54.520 --> 00:11:58.719
+is because the whole video
+
+00:11:58.719 --> 00:12:01.280
+about same-side cookie defaulting to lags,
+
+00:12:02.640 --> 00:12:06.200
+I'm saying you that if there's no same-side attribute,
+
+00:12:06.200 --> 00:12:10.320
+the browser defaults as it would be same-side lags
+
+00:12:10.320 --> 00:12:12.880
+but Chrome only does it
+
+00:12:12.880 --> 00:12:15.559
+after two minutes from setting the cookie
+
+00:12:15.599 --> 00:12:17.840
+and this is very, very important
+
+00:12:17.840 --> 00:12:21.119
+because it means after setting the cookie,
+
+00:12:21.119 --> 00:12:24.440
+you have the two-minute attack window
+
+00:12:24.440 --> 00:12:28.320
+where the cookie works as it worked before.
+
+00:12:28.320 --> 00:12:31.559
+In this case, the hunter, I'm surprised,
+
+00:12:31.559 --> 00:12:33.320
+this is the only report
+
+00:12:33.320 --> 00:12:35.679
+where the hunter explicitly mentioned
+
+00:12:35.679 --> 00:12:38.559
+exploiting this two-minute attack window
+
+00:12:39.679 --> 00:12:43.280
+and the reason I mentioned it
+
+00:12:43.280 --> 00:12:47.359
+is the 33 reports I showed you before
+
+00:12:47.359 --> 00:12:51.679
+that I told you that maybe these reports
+
+00:12:51.679 --> 00:12:54.599
+would be mitigated by this mechanism
+
+00:12:54.599 --> 00:12:56.840
+and they wouldn't work today.
+
+00:12:56.840 --> 00:13:00.479
+This is the only sort of scenario
+
+00:13:00.479 --> 00:13:03.719
+where you could still exploit those CSRFs
+
+00:13:03.719 --> 00:13:05.960
+and now the question you might have,
+
+00:13:05.960 --> 00:13:08.960
+two minutes after the login is not a lot of time
+
+00:13:08.960 --> 00:13:09.880
+and you would be right
+
+00:13:09.880 --> 00:13:13.799
+but when I'm saying two minutes after setting the cookie,
+
+00:13:13.799 --> 00:13:16.640
+it is not the same as two minutes after the login
+
+00:13:16.640 --> 00:13:19.760
+because cookies are not only set after the login.
+
+00:13:19.760 --> 00:13:22.840
+You know, cookies are rotated all the time
+
+00:13:22.840 --> 00:13:25.320
+and even if I'm logged into a website
+
+00:13:25.320 --> 00:13:28.359
+for days, for weeks maybe,
+
+00:13:28.359 --> 00:13:31.679
+probably my cookies are being changed a lot
+
+00:13:31.679 --> 00:13:34.679
+and when you have a CSRF
+
+00:13:34.679 --> 00:13:38.000
+which does rely on this two-minute attack window,
+
+00:13:38.000 --> 00:13:40.479
+you should also try to find scenarios
+
+00:13:40.479 --> 00:13:43.559
+where you can force the cookie to be refreshed.
+
+00:13:43.559 --> 00:13:48.559
+For example, if after opening the main page of the website,
+
+00:13:49.520 --> 00:13:51.479
+maybe cookies get refreshed.
+
+00:13:51.479 --> 00:13:56.000
+Maybe if a logged in victim opens a login panel,
+
+00:13:56.000 --> 00:13:59.239
+maybe then their cookies get rotated
+
+00:13:59.239 --> 00:14:01.239
+but they remain logged in.
+
+00:14:01.239 --> 00:14:03.400
+You should seek scenarios like this
+
+00:14:03.400 --> 00:14:06.239
+because then you can just open
+
+00:14:06.320 --> 00:14:08.479
+this two-minute attack window yourself
+
+00:14:09.679 --> 00:14:13.559
+and in this context, two minutes is a lot of time
+
+00:14:13.559 --> 00:14:15.719
+to carry out the CSRF.
+
+00:14:15.719 --> 00:14:20.719
+So I think the three most important takeaways for you
+
+00:14:20.919 --> 00:14:23.200
+from this whole video is first,
+
+00:14:23.200 --> 00:14:25.280
+pay attention to GET requests.
+
+00:14:25.280 --> 00:14:28.320
+If they, in one way or another,
+
+00:14:28.320 --> 00:14:32.080
+can cause some changes on the server,
+
+00:14:32.080 --> 00:14:34.640
+the second thing you should pay attention to
+
+00:14:34.640 --> 00:14:38.760
+is the two-minute attack window in Chrome.
+
+00:14:38.760 --> 00:14:40.599
+I think it doesn't work like this in Firefox
+
+00:14:40.599 --> 00:14:43.719
+and I don't know for how much longer
+
+00:14:43.719 --> 00:14:45.599
+it will work like this in Chrome
+
+00:14:46.679 --> 00:14:48.719
+and the third thing is obviously,
+
+00:14:48.719 --> 00:14:51.359
+pay attention to same-site non-cookies
+
+00:14:51.359 --> 00:14:54.320
+because same-site can break some things,
+
+00:14:54.320 --> 00:14:56.320
+especially if you want functionality
+
+00:14:56.320 --> 00:14:59.960
+like embedding your YouTube videos on other websites.
+
+00:14:59.960 --> 00:15:01.760
+Same-site breaks this functionality
+
+00:15:01.760 --> 00:15:05.760
+so look for this.
+
+00:15:05.760 --> 00:15:09.599
+If you're interested in more specific types of these things,
+
+00:15:09.599 --> 00:15:12.919
+check out the full case study in BBRE Premium Archive
+
+00:15:12.919 --> 00:15:16.239
+and if you are not a member of BBRE Premium yet,
+
+00:15:16.239 --> 00:15:21.239
+I recommend you this free video about IDOR case study.
+
+00:15:22.799 --> 00:15:25.960
+For now, thank you for watching and goodbye.
+

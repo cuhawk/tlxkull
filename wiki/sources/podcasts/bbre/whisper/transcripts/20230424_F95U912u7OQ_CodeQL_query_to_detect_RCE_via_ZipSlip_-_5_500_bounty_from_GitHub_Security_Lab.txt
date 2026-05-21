@@ -1,0 +1,116 @@
+CodeQL is a bug bounty program like no other. It's because you don't actually get paid for
+finding the bug. You get paid for writing the scanner query to detect a vulnerability.
+And it is very intimidating at first. But for some reason, I've always felt like it's something
+good for me and for my skillset. Recently, I finally invested more time into it. And I wrote
+my first proper CodeQL query to detect RCE vulnerability via ZipSleep. In this video,
+I will explain the query to you. Enjoy!
+CodeQL has queries to detect many different kinds of vulnerabilities. But of course, no scanner is able
+to detect every single vulnerability. That's why GitHub, which is the owner of CodeQL, has GitHub
+Security Lab Bug Bounty program, where they pay you for finding the query. So if you find a publicly
+known bug, a bug that has a CVE, that's not detected by the scanner, you can add the query to the scanner
+to detect this bug. And GitHub will pay you for this. It can be a new bug, but it can also be old
+bug. It can be your bug, but it can be someone else's bug. It doesn't matter. What matters is that
+your query must make sense in general for other projects. You can't just write a query that's
+directed into detecting a single bug in a single application. Nobody's gonna pay for this. The query
+must be precise and must also detect this bug in other software. In my opinion, the hardest part of
+writing a CodeQL query is finding a bug that's not yet detected by CodeQL, but you can reliably detect it by
+looking at the source code. Because some bugs you just can't model. How do you model a business logic error? I don't
+think you can do it reliably. So it makes sense for all the software out there. And in this video, I will describe to you what the
+query does. But also in the last issue of BBR premium, I described the behind the scenes of writing the
+query, how I found the bug to model, what bugs I wanted to model, but I couldn't for some reason, why I made certain
+decisions, things I did to maximize payout, all those things are described in the article. If you are a BBR
+premium member, I will link this in the description down below. And if you're not, consider joining. The bug I
+decided to model was zip slip vulnerability in this course, which can lead to an RCE. How does it work?
+Normally, when we download a zip file from the internet, we just double click it and opening and
+extracting the files are the same operation. But in the code, it looks a bit different. First, you open
+the file, that's that's an archive. Then in the for loop, you access every single file from this archive.
+But before creating the file on the disk, you should verify if the path is secure. In this case,
+in the case of this course, this validation wasn't done. Using this zip slip vulnerability, you can
+create a file that has a dot dot slash sequence in the file name. And then even though your file is
+inside the archive, it will be unpacked to a completely different location. So this is an
+arbitrary file write vulnerability, which you can often turn into RCE in various ways.
+So this is a function that we can use to detect any bug like this. We need three things. The first
+thing is the sync, which is a dangerous function to which malicious input should never go. And if it
+goes to this function, it means there's a vulnerability. Then we also need the source, which is a place
+where the server consumes our potentially malicious input. So we can send some payloads. Finally, we also
+need the flow from the source to the sync because the source itself or the sync itself are not dangerous
+at all. And this is exactly how we write the code query. Let's start with the sync. You may think that the
+sync is the unpacking of the file, but it's not not the case. The other way to think about the sync is the
+last place in the source code where I can look at it and say, okay, if my input gets to here, then I have
+the vulnerability and it doesn't matter what happens later. It is much more connected with the impact
+of the bug. In this case, the impact is arbitrary file, right? So our sync will be file creation code. As you
+see, code review is a fundamental skill if you want to think about writing code queries, because first, you
+have to understand where the bug happens in the code. To be more precise, the sync is not actually a function
+or a line. The sync is the path argument of the file creation code. So in this case, it's the first
+argument. You may ask, how about file contents? Do we somehow verify this as well? The answer is we
+don't. We care about the file path. And we assume that if we control the file path, we probably also
+control the file contents. And even if we don't control file contents, if we can write a file
+to an arbitrary location, even if the content is empty or whatever, we can probably at least
+override some files leading to another vulnerability leading to denial of service. So in this case,
+we only care about the file path. And this is the very simple definition of the sync in my query,
+because I didn't have to model it from scratch. I used existing code QL models for this.
+We have the sync. So let's continue to model the source. The source should be the place where the
+server consumes the data from the attacker. In this case, however, it is just unpacking the file using one
+of the three libraries that I modeled for working with archives. The logic is actually exactly the same
+in all three of them. And you may ask, if we consider this as a source, how do we know that this file
+actually comes from the attacker and it's not a static file from the server? And you're actually right.
+This query is prone to false positives, because I only excluded the case when it's called with a
+constant path. But it is still prone to situations where the server writes a file that's created by
+the admin or is just on the server. So it isn't perfect, but it's as good as I could write it. I
+actually also described the exact reason in the article. Without getting into much details,
+this is how it looks in the code.
+So let's see if we have the sync.
+So let's see if we have the sync.
+So let's see if we have the sync.
+
+
+
+
+
+
+
+
+
+
+
+So we have the sync.
+Now we need the third and final thing, which is the flow of data from the source to the sync.
+And here we mostly rely on CodeQL doing its job because CodeQL is not based on some simple
+regexes or something like this. CodeQL knows, understands the code and knows how the data flows
+from one place to another. And mostly in the case of finding the flow from the source to the sync, we rely
+on code and the code and the code and the code. But in this case, it wasn't finding the bug. It was very
+frustrating because I had the bug just in front of me and I had the query and it wasn't working on the
+real code base. I spent days here feeling like banging my head against the wall, confirming if my sources
+are correct, if my things are correct. And it didn't make sense to me of why doesn't it work. But of course,
+turned out it made a lot of sense. Because the thing is that CodeQL understands the code, but it's not magic.
+It just some operations are modeled in internal libraries that they allow the flow of the data from
+this place to this place. But in this case, I'm working on custom classes like tar reader entry.
+And the tar reader entry class is not modeled inside CodeQL. So CodeQL doesn't know, so it doesn't
+understand it. And in case of this vulnerability, in every single case, the path was accessed using
+either the name or full name function call. And CodeQL just didn't know what these functions are. So the
+flow was breaking in this step. But when we know where the flow breaks, it's usually quite easy to
+counteract this because we have another predicate called isAdditionalTimeStep where I can define exactly
+this. I can define the place where CodeQL thinks the flow breaks, but it actually doesn't break. So I just
+defined that the call to a function called full name or name does not break the flow. Although this isn't
+yet the end of the job, my query finally was finding the vulnerability in this course in the real code base, which
+made me really happy and relieved after days of frustration and disappointment because I thought that
+maybe I just won't be able to model this.
+It's not yet the end of the job because it's important for my query to find the bug when it's
+there. But it's also important that my query doesn't find the bug when it's not there. Because if there is a
+sanitization before creating the file, we should also detect this and tell CodeQL that the flow should
+break there. We basically do the reverse of what we did previously. Previously, the flow was breaking
+and we had to tell CodeQL that this operation does not break the flow. In this case, the CodeQL has the
+full flow. And we have to tell it that this operation is probably sanitizing the file path. So the flow
+should break there. I used the existing definition of sanitizer from the path traversal square, but it
+wasn't enough to find the way the bug was fixed in this course. So I also created another definition of
+sanitizer that matched how the bug was fixed in this course. The only problem is it doesn't work at all.
+It detects, it would detect this fix if it was inline check, but it doesn't detect it when it's a separate
+function code. And to be honest, to this day, I don't know why this happens. And if you know, just hit me
+a message because I'm really, really curious. But despite this, GitHub Security Lab awarded me five
+and a half thousand dollars for this query, which made me really, really happy because it is my highest
+bounty. If you want to improve in CodeQL, maybe for getting bug bounty from GitHub Security Lab. But
+personally, I also start using it as a semi-automatic code review tool. If you're interested in CodeQL,
+I honestly recommend you to check out BBR Premium. I write things that I would have liked to hear before
+because I just know how overwhelming CodeQL is and how underwhelming is the amount of articles out there.
+And if you want to improve your code review skills first, check out this video about my XSS
+in Golang. For now, thank you so much for watching and goodbye.

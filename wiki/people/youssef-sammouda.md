@@ -63,6 +63,17 @@ Selected from ysamm.com; emphasis on the deep ATO chains he's best known for.
 
 - [2024-02-15 Ep. 58 — Youssef Sammouda – Client-Side ATO War Stories](../sources/podcasts/ct/20240215_U8lZKlz9bN0_Youssef_Sammouda_-_Client-Side_ATO_War_Stories_Ep._58.en.vtt)
 
+## BBRE appearances
+
+- Interview episode covering his background and journey to becoming the top Facebook bug bounty hunter.
+  [BBRE](https://www.youtube.com/watch?v=MXH1HqTFNm0)
+- Facebook postMessage ATO via Canvas App page_proxy ($25,000).
+  [BBRE](https://www.youtube.com/watch?v=jPMaZt9ZJes)
+- Facebook ATO chain via OAuth + CSRF + captcha lockout + sandbox iframe leak ($44,625).
+  [BBRE](https://www.youtube.com/watch?v=pk7oYuz4x0Q)
+- Facebook three-bug chain: endpoint ATO + ASPX shared keys + path bypass ($54,800 combined).
+  [BBRE](https://www.youtube.com/watch?v=JiMzpjgAXv8)
+
 ## Notes
 
 - One of the most prolific Facebook/Meta bounty earners ever — pipelined output on ysamm.com is unusually high for a solo hunter, with multi-post drops every January and frequent in-year follow-ups when Meta ships regressions.

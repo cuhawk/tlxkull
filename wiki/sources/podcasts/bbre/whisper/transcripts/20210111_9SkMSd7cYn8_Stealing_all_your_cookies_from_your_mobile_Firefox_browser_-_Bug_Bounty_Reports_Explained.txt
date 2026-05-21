@@ -1,0 +1,56 @@
+Hello, in today's video you will learn how it was possible to steal all your cookies
+and even more from mobile Firefox browser. The vulnerability was very creative and involved
+multiple steps. It was found and reported by Pedro Oliveira and he got $5,000 for it. Links
+to the blog post and his profile as always are in the description. Enjoy the video.
+When looking for mobile vulnerabilities with big impact, one of the things you need to check
+is how the application uses custom URIs. On Android there are URIs with content protocol.
+They allow reading one application's file or data from the other one. An example of such URI looks
+like this. The first part is called content provider and it indicates what application will be used to
+handle this URI. In this case it will be mobile Firefox browser. And the second part is the path of a file
+that will be opened. And as you saw on the example, mobile Firefox browser allowed reading local files
+using those content URIs. But after opening such address, Firefox copied contents of this file
+into a temporary location and redirected user into this location, but not with the content protocol,
+but with a file protocol. It's simply used to read local files. And what's important,
+the name of the file in the temporary location remained unchanged. When defining those content URIs,
+the application can specify directories that a user can open, but Firefox used the following configuration.
+It means that the user can read any file that Firefox has access to. And among other configuration files,
+inside Firefox directory, there is one that will be especially interesting for the attacker. It's
+cookies.sql, which contains all cookies for a specific profile. Stealing those files would allow the attacker
+to take over all the accounts to which he or she is currently logged in. But first, the attacker would
+have to read profile's .ini file which would reveal the locations of cookie databases. So our goal will be stealing those files.
+And the most likely attack scenario will be that the victim visits our malicious website that contains the exploit.
+It's easily possible to create a website that opens a local file and alerts its content,
+that the user can be using the same-to-date information. But still, the parent website has no access to those information.
+It's because same-origin policy would block such attempts. It's a browser security mechanism that protects the
+websites from different domains to steal each other's data. In general, websites need to share the same domain
+in order to be able to access each other's data. But the question is, how do sites with file protocol obey same-origin policy?
+Because they do not have any domains. Turns out browsers are very strict about this and it's really hard to read
+others' file contents. But I'd like to point out the obvious fact that a file can access its own contents.
+Or being more precise, contents of a file stored under the same path. And the browser wouldn't notice if under the same path would be a completely different file.
+And coming back to Firefox, all files are being copied into the same directory and their names are not being changed.
+So it's possible to have two files in different directories but with the same name. And once they are copied into the content you write directory, the file will be overwritten.
+And that simple idea was worth $5,000 here. Let's see how the attack works and explain the exploit.
+So we create a website and we assume that a victim visits it. This is its source code.
+Our goal at the moment is stealing the profiles.ini file from Firefox directory.
+The iframe will be executed first. It will download our file with a name profiles.ini onto the SD card.
+We'll take a look at contents of this file in a second.
+Then Android intent is being used. And without getting into details, it's the same as we would use this content URI but with additionally stated HTML content type.
+It will tell the browser to execute contents of this file even though it has any extension.
+This will lead into Firefox trying to open our downloaded file with a content URI.
+And as you already know, first Firefox will copy this file into content URI directory.
+And it will be opened in the browser using file protocol. Let's now see its contents.
+First, we open an iframe with content URI which points to the actual profiles.ini file that we want to steal.
+Then Firefox copies this file into content URI directory overwriting our profiles.ini file.
+But the old version is still being opened in the browser.
+Then, using JavaScript, we send a request to window location.
+It's a property that contains information about the current address.
+So it looks like the file would just get its own contents which is of course allowed by same origin policy.
+But at the moment of this request, the file is no longer the same because it was overwritten.
+So we can access contents of this file and easily send it to our server, achieving our goal of stealing the profiles.ini file.
+It would reveal the locations of cookie databases and we could steal those files exactly the same way.
+The whole process could be automated so that the exploit does not require any more user interaction than visiting the website.
+As mentioned before, the researcher was awarded $5,000 for this vulnerability.
+It was fixed shortly after being reported to the program and this exploit no longer works.
+I think the way the vulnerability was exploited was really creative and oddly satisfying to me.
+If you feel like you've learned something from this video, leave a like and leave a subscription.
+Thanks for watching and goodbye.

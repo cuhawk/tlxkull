@@ -1,0 +1,593 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.199 --> 00:00:01.199
+Hello!
+
+00:00:01.199 --> 00:00:06.579
+In this episode of Bug Bounty Reports Explained,
+I will show you a brand new attack technique
+
+00:00:06.579 --> 00:00:12.549
+discovered by one and only James Kettle - cient-side
+desync attacks.
+
+00:00:12.549 --> 00:00:17.780
+Specifically, I will focus on the way that
+thousands of servers could be hacked that
+
+00:00:17.780 --> 00:00:19.600
+used Akamai.
+
+00:00:19.600 --> 00:00:24.660
+This technique gives us a variety of ways
+to leak user data, and I think...
+
+00:00:24.660 --> 00:00:30.250
+Even James himself wrote in the article that
+he left a lot of bounties on the table for
+
+00:00:30.250 --> 00:00:31.250
+us.
+
+00:00:31.250 --> 00:00:32.250
+So watch closely!
+
+00:00:32.250 --> 00:00:35.533
+As always, links to the sources are in the
+description.
+
+00:00:35.533 --> 00:00:36.476
+Enjoy!
+
+00:00:38.620 --> 00:00:41.960
+This episode is sponsored by Intigriti.
+
+00:00:41.960 --> 00:00:47.670
+Intigriti is Europe's biggest bug bounty platform
+with over 400 programs to hack on.
+
+00:00:47.670 --> 00:00:53.010
+I hugely appreciate Intigriti for investing
+a lot in community enablement.
+
+00:00:53.010 --> 00:00:58.760
+They create an awesome bug bytes newsletter,
+they create monthly XSS challenges, they even
+
+00:00:58.760 --> 00:01:01.350
+have a great YouTube channel.
+
+00:01:01.350 --> 00:01:07.399
+If you are not one of over 50,000 hunters,
+check out Intigriti now using the link from
+
+00:01:07.399 --> 00:01:08.399
+the description.
+
+00:01:08.399 --> 00:01:13.530
+I will start with explaining what is pipelining
+in HTTP/1.
+
+00:01:13.530 --> 00:01:19.759
+So normally, when the browser sends a request,
+or when you send a request from Burp, it looks
+
+00:01:19.759 --> 00:01:22.700
+like this: one requests, one response.
+
+00:01:22.700 --> 00:01:24.100
+Nothing unusual.
+
+00:01:24.100 --> 00:01:29.990
+However, you can also send two requests at
+the same time and the server will give you
+
+00:01:29.990 --> 00:01:31.110
+two responses.
+
+00:01:31.110 --> 00:01:38.310
+Although, this is not used by browsers anymore,
+it's a feature, not a bug, at least not by itself.
+
+00:01:39.420 --> 00:01:45.880
+But how does the server differentiate between
+this being two separate requests or one with
+
+00:01:45.880 --> 00:01:48.139
+a body?
+
+00:01:48.139 --> 00:01:52.880
+To help the server solve this problem, we
+use the Content-Length header.
+
+00:01:52.880 --> 00:01:57.889
+It tells the server, in bytes, how long our request
+is.
+
+00:01:57.889 --> 00:02:04.780
+And the server knows that, whenever the first
+request is finished, the next one begins.
+
+00:02:04.780 --> 00:02:09.640
+If you are using Burp's repeater, this header
+is updated automatically.
+
+00:02:09.640 --> 00:02:15.439
+If you try to send these two requests with
+default settings, Burp will update the Content-Length
+
+00:02:15.439 --> 00:02:20.110
+header and you will actually send one big
+request.
+
+00:02:20.110 --> 00:02:26.099
+However, if you turn that option off and set
+the header to zero, the server will see two
+
+00:02:26.099 --> 00:02:28.480
+requests and issue two responses.
+
+00:02:28.480 --> 00:02:34.000
+Of course, if HTTP pipelining is supported.
+
+00:02:34.000 --> 00:02:38.550
+But not every single request contains the
+Content-Length header.
+
+00:02:38.550 --> 00:02:43.959
+In fact, most of them don't because most of
+requests use the get method which doesn't
+
+00:02:43.959 --> 00:02:45.450
+contain a body.
+
+00:02:45.450 --> 00:02:49.239
+So this header is useless because it would
+always be set to zero.
+
+00:02:49.239 --> 00:02:55.329
+And the server just doesn't expect a body
+when you are requesting, let's say, a static
+
+00:02:55.329 --> 00:02:56.769
+image.
+
+00:02:56.769 --> 00:03:02.829
+If you manually change the method from get
+to, for example, post, the servers still respond
+
+00:03:02.829 --> 00:03:08.069
+with this static image which doesn't really
+make sense to me, but it's probably to be
+
+00:03:08.069 --> 00:03:10.909
+even more error-prone.
+
+00:03:10.909 --> 00:03:16.980
+The fact that normally these requests don't
+have a body doesn't mean you can't send one.
+
+00:03:16.980 --> 00:03:19.530
+Let's see what happens when you do.
+
+00:03:19.530 --> 00:03:24.340
+This is a simple image request which we can
+send to a vulnerable server.
+
+00:03:24.340 --> 00:03:31.879
+We can do the same using post method. And also,
+we can use the request body, but the server
+
+00:03:31.879 --> 00:03:35.360
+doesn't use it in any way.
+
+00:03:35.360 --> 00:03:41.910
+And let's prepare the body of the request
+so that it looks like another HTTP request.
+
+00:03:41.910 --> 00:03:47.810
+If we send this, do you think we will get
+one or two responses?
+
+00:03:47.810 --> 00:03:54.019
+Based on what I said earlier, this is one
+big request with a body of 30 bytes.
+
+00:03:54.019 --> 00:03:57.709
+So we expect to get one response.
+
+00:03:57.709 --> 00:04:02.180
+But this is when we get to the client-side
+desync problem.
+
+00:04:02.180 --> 00:04:08.989
+Because even though we sent the valid Content-Length
+header with a value of 30, the vulnerable
+
+00:04:08.989 --> 00:04:12.110
+server did not use this header.
+
+00:04:12.110 --> 00:04:18.860
+It's because this endpoint never consumes
+a request body, so it assumes the Content-Length
+
+00:04:18.860 --> 00:04:20.340
+header is zero.
+
+00:04:20.340 --> 00:04:27.230
+And it probably worked fine for years without
+any problem, before James Kettle came with his new
+
+00:04:27.230 --> 00:04:29.330
+research.
+
+00:04:29.330 --> 00:04:35.420
+So what a vulnerable server sees is that the
+first request ends here and this is a second
+
+00:04:35.420 --> 00:04:40.880
+one, meaning it will also send two responses.
+
+00:04:40.880 --> 00:04:45.980
+The question you should be asking yourself
+now is why is that actually a problem?
+
+00:04:45.980 --> 00:04:49.750
+Because this is not really different from
+this.
+
+00:04:49.750 --> 00:04:54.940
+And we could basically send the second version
+anyway.
+
+00:04:54.940 --> 00:04:56.860
+And that's a very good question.
+
+00:04:56.860 --> 00:05:03.040
+But the breakthrough with client-side desync
+is that with previous requests smuggling techniques,
+
+00:05:03.040 --> 00:05:09.070
+you had to use Burp or even tools that worked
+on the lower network level.
+
+00:05:09.070 --> 00:05:16.430
+But this attack can work with the browser
+because when we send this request, there is
+
+00:05:16.430 --> 00:05:20.070
+absolutely nothing out of line.
+
+00:05:20.070 --> 00:05:26.600
+It just happens to have the body that looks
+like an HTTP request, but it's nothing invalid.
+
+00:05:26.600 --> 00:05:31.810
+It's the server that ignores the Content-Length
+header and assumes it to be zero.
+
+00:05:31.810 --> 00:05:38.800
+You can use this to confuse the browser because
+the browser wants the amount of requests to
+
+00:05:38.800 --> 00:05:42.110
+be equal to the amount of responses.
+
+00:05:42.110 --> 00:05:49.430
+And in this case, the browser thinks it sent
+one request, but it got back two responses.
+
+00:05:49.430 --> 00:05:55.230
+So what does it do? When it sees the next request
+using the same connection,
+
+00:05:55.230 --> 00:06:05.270
+it will respond to it with the unexpected
+second response.
+
+00:06:05.270 --> 00:06:10.000
+There's a whole variety of ways you can use
+to exploit this bug.
+
+00:06:10.000 --> 00:06:17.517
+But in this case, let's see the technique
+that allowed to hack many websites built on Akamai with an XSS.
+
+00:06:18.434 --> 00:06:24.782
+The first thing you need for this technique
+to work is an endpoint that ignores the Content-Length header.
+
+00:06:25.210 --> 00:06:31.260
+Your best candidates are static files, redirects
+or different errors.
+
+00:06:31.260 --> 00:06:36.760
+The bug was in Akamai itself, so it affected
+many websites, but we'll stick to an example
+
+00:06:36.760 --> 00:06:40.000
+of the exploit on Capital One.
+
+00:06:40.000 --> 00:06:45.450
+If you requested a file without the trailing
+slash, it redirected you to the same location
+
+00:06:45.450 --> 00:06:47.930
+but with the trailing slash.
+
+00:06:47.930 --> 00:06:52.030
+You could also use a post method for this.
+
+00:06:52.030 --> 00:06:57.040
+And this is what you sent to the server to
+confirm that it ignores the Content-Length
+
+00:06:57.040 --> 00:06:58.110
+header.
+
+00:06:58.110 --> 00:07:01.250
+There are actually three requests.
+
+00:07:01.250 --> 00:07:05.940
+The first is the one that you want to check
+if it's vulnerable to client side desync.
+
+00:07:05.940 --> 00:07:11.440
+With the second and the third one, you must
+be able to differentiate them by looking at
+
+00:07:11.440 --> 00:07:12.470
+the response.
+
+00:07:12.470 --> 00:07:18.620
+Because you will get some response from the
+server and you must determine which request
+
+00:07:18.620 --> 00:07:21.840
+did the server respond to.
+
+00:07:21.840 --> 00:07:28.430
+In this case, let's say for the robots.txt
+request, we expect 200 OK response code and
+
+00:07:28.430 --> 00:07:32.120
+for the /assets/ we expect 403 Forbidden.
+
+00:07:32.120 --> 00:07:38.710
+The value of the Content-Length header of
+the first request must be between the second
+
+00:07:38.710 --> 00:07:40.550
+and the third request.
+
+00:07:40.550 --> 00:07:46.090
+If you count the characters, there are 24
+in the first line, 4 in the second line, and
+
+00:07:46.090 --> 00:07:50.890
+the new line is actually two bytes, one for
+the carriage return and one for the actual
+
+00:07:50.890 --> 00:07:54.220
+new line, which gives us 30.
+
+00:07:54.220 --> 00:07:57.170
+When you send this, you should get two responses.
+
+00:07:57.170 --> 00:08:03.950
+If everything works fine, the server will
+see the first request with this one as a body,
+
+00:08:03.950 --> 00:08:06.860
+which ends exactly between requests.
+
+00:08:06.860 --> 00:08:10.550
+So this would be our second request.
+
+00:08:10.550 --> 00:08:16.120
+So for the first one you expect a redirect,
+and for the second one you expect the response
+
+00:08:16.120 --> 00:08:20.310
+to the /assets/ request, which means you expect
+the 403.
+
+00:08:20.310 --> 00:08:25.460
+If that's is the case, it means you did not
+find client side desync vulnerability.
+
+00:08:25.460 --> 00:08:32.590
+However, if the server assumes the Content-Length
+of the first request to be zero, you will
+
+00:08:32.590 --> 00:08:34.820
+also get two responses.
+
+00:08:34.820 --> 00:08:41.270
+But the second one will be the response to
+the robots.txt request.
+
+00:08:41.270 --> 00:08:46.430
+The server will also see a strange looking
+header, but it's nothing out of line.
+
+00:08:46.430 --> 00:08:53.130
+If that's the case, you are very likely that
+you just found a browser powered desync.
+
+00:08:53.130 --> 00:08:57.110
+To confirm this, you can use this perfectly
+valid fetch call.
+
+00:08:57.110 --> 00:09:03.710
+In fact, if you prefer, you can simply start
+testing without using Burp but with this fetch
+
+00:09:03.710 --> 00:09:05.810
+call.
+
+00:09:05.810 --> 00:09:13.370
+What will happen under the hood is the browser
+will send this, thinking it's a one big HTTP request.
+
+00:09:13.370 --> 00:09:16.120
+The server, however, will ignore the Content-Length
+header.
+
+00:09:16.120 --> 00:09:23.410
+It will send two responses over the same connection.
+The second one will be left hanging.
+
+00:09:23.410 --> 00:09:28.710
+So the browser will match the first response
+to the first request, as it should, and will
+
+00:09:28.710 --> 00:09:30.300
+want to follow the redirect.
+
+00:09:30.300 --> 00:09:34.660
+So it will send another request over the same
+connection.
+
+00:09:34.660 --> 00:09:38.270
+And in this connection, there are already
+two responses.
+
+00:09:38.270 --> 00:09:44.370
+So the browser will simply return the second
+response to the request.
+
+00:09:44.370 --> 00:09:51.670
+Let's see how we could turn this client-side
+desync into an XSS on Akamai websites.
+
+00:09:51.670 --> 00:09:57.640
+Like every client side bug, client-side desync
+thing is executed from the victim's browser,
+
+00:09:57.640 --> 00:10:03.290
+which means that we need to prepare our malicious
+website with malicious JavaScript code and
+
+00:10:03.290 --> 00:10:07.480
+trick the victim into visiting our website.
+
+00:10:07.480 --> 00:10:11.930
+This is the setup that we want to achieve
+in our connection.
+
+00:10:11.930 --> 00:10:15.980
+The first request is our initial, vulnerable
+one.
+
+00:10:15.980 --> 00:10:22.570
+The second one is a request to which the server
+will respond with text/html, Content-Type
+
+00:10:22.570 --> 00:10:28.430
+and this response must have a Content-Length,
+header, even though it's a response to a head
+
+00:10:28.430 --> 00:10:32.170
+request so it won't have a body.
+
+00:10:32.170 --> 00:10:38.070
+The third request will also contain an XSS
+payload in a path, which will be reflected
+
+00:10:38.070 --> 00:10:39.630
+in the response header.
+
+00:10:39.630 --> 00:10:44.210
+Normally, this is not the problem and it's
+not exploitable, so it shouldn't be that hard
+
+00:10:44.210 --> 00:10:46.360
+to find.
+
+00:10:46.360 --> 00:10:52.380
+And at this point, the browser will think
+that it only sent one request while there
+
+00:10:52.380 --> 00:10:55.340
+are three responses in the same connection.
+
+00:10:55.340 --> 00:11:03.020
+So the fourth request sent by the browser will
+be poisoned by headers from the second response
+
+00:11:03.020 --> 00:11:13.430
+and headers from the third one will be the
+body of the response.
+
+00:11:13.430 --> 00:11:18.840
+So we want to make sure that this fourth request
+will not be just a fetch call, but it will
+
+00:11:18.840 --> 00:11:25.400
+be a top-level navigation so that the XSS
+payload executes in the victim's browser.
+
+00:11:25.400 --> 00:11:32.190
+But normally, the first request will return
+a 301 so the fourth request would be the browser
+
+00:11:32.190 --> 00:11:35.310
+following this redirect as a fetch call.
+
+00:11:35.310 --> 00:11:40.421
+To prevent this, we use mode:'cors' which
+will cause the browser to throw an error and
+
+00:11:40.421 --> 00:11:42.670
+not follow this redirect.
+
+00:11:42.670 --> 00:11:48.370
+And instead, in the catch block, will use
+the top-level navigation to redirect the
+
+00:11:48.370 --> 00:11:54.260
+victim to a new website which will be poisoned
+with our headers and our body.
+
+00:11:54.260 --> 00:11:59.710
+And the last problem is that if these two
+responses are left hanging for too long, the
+
+00:11:59.710 --> 00:12:02.250
+browser will just discard them.
+
+00:12:02.250 --> 00:12:07.210
+So we add the cache buster parameter to the
+head request so that it's processed a little
+
+00:12:07.210 --> 00:12:10.750
+bit longer to prevent this.
+
+00:12:10.750 --> 00:12:19.980
+So this is the final exploit that, if sent
+from victim's browser, would result in an XSS
+
+00:12:23.089 --> 00:12:29.210
+If my video helped you to understand client-side
+desync, I'm very happy and I'm proud of you
+
+00:12:29.210 --> 00:12:31.680
+because I know this is not easy.
+
+00:12:31.680 --> 00:12:37.240
+However, this video did not cover the whole
+research and I will write about some other
+
+00:12:37.240 --> 00:12:40.710
+parts of it in next week's BBRE Premium.
+
+00:12:40.710 --> 00:12:46.550
+If you are not a member of BBRE Premium, go
+to https://bbre.dev/premium and subscribe.
+
+00:12:46.550 --> 00:12:48.939
+For now, thank you for watching and goodbye!
+

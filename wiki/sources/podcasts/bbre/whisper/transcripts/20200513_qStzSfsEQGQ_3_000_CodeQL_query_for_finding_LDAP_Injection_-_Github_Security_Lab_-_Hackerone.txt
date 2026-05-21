@@ -1,0 +1,57 @@
+Hello, today I'm gonna be explaining to you CodeQL query for finding a dApp injection
+that was reported to GitHub Security Lab on HackerOne and was rewarded $3000.
+First, let's explain what is GitHub Security Lab because it's not standard GitHub's bug bounty program.
+It's actually an initiative by GitHub that allows security researchers to write CodeQL queries
+that find actual vulnerabilities in open source software.
+Now you're probably wondering what is CodeQL, so let me briefly explain it.
+It's the code analysis platform used by security researchers to automate variant analysis.
+It is not a simple static code analysis performed by a simple text parsing,
+nor it's a dynamic analysis. CodeQL does not actually run the application to submit payloads.
+It performs a semantic analysis, which means it actually understands what the code does,
+how does the flow look, and, most importantly from the security point of view,
+which variables may contain user input.
+So the idea behind the GitHub Security Lab is that there is public repository with all the CodeQL queries
+submitted by researchers that find a lot of types of vulnerabilities,
+and everyone can for free run those queries on their applications and find any bugs very early.
+And the researchers here do not get paid for the vulnerabilities they find, but for the queries they
+submit. And the bounty award is determined based on the following factors – the complexity, severity,
+and prevalence of the vulnerability, as well as the performance and documentation of the query you submit.
+So if you write such a query, it's good idea to first run it on some open source applications,
+just to see whether it's reliable or not, and if those applications have back bounty programs,
+you will get a few payouts for a job done once. Because GitHub's team will be very keen to see
+that your query actually finds vulnerabilities.
+So now we have GitHub Security Lab and CodeQL explained, and we can start getting into this very
+vulnerability. So now it's time to explain what is LDAP. The acronym stands for Lightwide Directory
+Access Protocol, and it's used for accessing and maintaining distributed directory information services.
+In simple words, it's used to access the same file system from a few computers connected by the internet.
+The very typical query that would validate the credentials provided by the user would look like this.
+It uses the notation where operands follow the operator. So here first we have the end sign,
+and then we have two expressions that both must be evaluated to true for the whole expression to be
+evaluated to true. And the concept behind LDAP injection is very similar to SQL injection. We have our user input
+unfiltered and put into the query, so we can escape the context and make the expression always return true in this case.
+So such payload would be equivalent to the typical SQL injection performed in the login panel.
+Let's now get to the actual CodeQL queries. The goal is to find any methods that execute
+LDAP queries on unfiltered user inputs. This single query can detect LDAP injection in plain Java GNDi,
+UnboundID, Spring LDAP, and Apache LDAP API. These four of the seven files that we have in this part of the repository
+are just examples of well written parts of the code executing LDAP queries using these four technologies.
+One more file contains some help, so remaining two files are actually written in the CodeQL language.
+So the first file is very short. It looks a bit like a SQL query and it's meant to be this way,
+because CodeQL is advertised that it can work with the code as easy as with the data. So for example, such basic query
+would fetch all variables of type int from the analyzed code. So here, source and sync are two points of the flow of the
+application and we want to check whether we can get from one point to another, meeting at the same times our requirements
+stored in a conf variable that has the type defined by us. And the select part is just what will be returned
+if the application will be vulnerable. So let's get into the second file. It has 400 lines and I will try to
+just briefly explain what's going on here, otherwise it would be a very long video. In simple words, our sync
+has to be a method that executes LDAP query and source has to be something with user input. This part of the code
+validates that the method that we are currently in is one of three methods in unbound id that are vulnerable,
+that is, they execute LDAP query. And here in the spring part of the code, we have a bit of logic because
+there are more functions, more parameters, not all of them can be our syncs, so we have to put some ifs here
+and there, but it's not a very complicated code. And big part of the code here just makes sure that we catch
+equivalent calls. That is, if we call our method on string, it is equivalent if we create a object of LDAP
+name class using the same string, as well as if we would create a new LDAP name and then use the method
+to string. The researcher had to write code to catch all of these variants. So that's the brief logic
+behind this code QL queries. Big kudos from me to the researcher Grzegol that actually wrote those queries
+and got $3000 from GitHub Security Lab. I think that's a cool way of doing something great for
+community and having a profit from it as well. So that's it for today's video. As always, I will put
+relevant links like the report, the comments and the researcher's profile in the description.
+Leave a like and a subscription if you enjoyed the video. For now, goodbye.

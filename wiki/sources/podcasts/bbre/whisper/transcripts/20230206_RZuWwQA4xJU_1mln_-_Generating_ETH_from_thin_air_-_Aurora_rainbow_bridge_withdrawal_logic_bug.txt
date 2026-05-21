@@ -1,0 +1,200 @@
+Bridges in Web3 are very exposed and often root causes of vulnerabilities. If you don't know yet
+what a bridge is, then don't worry, because in this video, Michal from Halborn will show us
+what a bridge is and tell us about the vulnerability in Aurora, which was rewarded $1 million of bounty.
+Enjoy.
+Hello, Michal. Thank you so much for joining me again. Today we have a bug that uses Aurora.
+And my first question is what Aurora even is and why do we use it?
+Hi, Greg. Thanks for having me here again. And to answer your question, I actually would like to show
+you a diagram because I think it will help us a lot. But basically, an Aurora is an EVM,
+that's how we call it. So it's an Ethereum virtual machine built on top of a Nier smart contract.
+So imagine a regular virtual machine like, let's say, Linux in your virtualization software that runs
+on your, let's say, Windows PC. So it's a computer running inside other computer. And you can say
+that in case of Aurora, it works the same. In the similar manner, you have an Ethereum-like
+execution layer, Ethereum-like blockchain running on top of the Nier. And how it works is like this.
+Yeah, how it works is like this. That from the Nier perspective, it's actually,
+Aurora is just another smart contract. But from Aurora's perspective, it's like completely separate
+chain. It doesn't really know about the underlying infrastructure that is the Nier protocol. And the way
+it works is that when a user wants to use Aurora, then they create a regular Ethereum transaction,
+the one that you use on normal Ethereum. And they send it to the RPC proxy, which wraps this Ethereum
+into the Nier transaction and sends this transaction to Aurora smart contract in on the Nier protocol layer.
+Because ultimately, it all needs every execution in the Aurora engine needs to be initiated from the Nier
+from the Nier side, from the Nier perspective. And then the protocol unwraps this, then the smart contract,
+the Aurora smart contract unwraps this Ethereum transaction and executes it in the context of
+of Aurora engine. So if I have some money in if I have some ETH, and I want to pay it to someone who uses
+Aurora, can I do it? Yes, you can, but it's but not natively. Natively, those are two separate chains.
+However, it is possible. And that's where bridges come from. And here I have the diagram. I hope that
+that represents this concept. The bridge is exactly like it sounds. It's a connection between two
+different environments for them to interact. In case of Aurora, this bridge is called Rainbow Bridge,
+actually. And it's, well, there's always two sides to it. It needs to be on the Nier side,
+let's call it left, and on the Ethereum side, and let's call it right. They have this very similar
+contracts that are sort of related to each other. So you have the bridges themselves, you have the
+connectors, which would be quite important later. And you have the connectors for everything, for
+anything you want. So ERC-20 connector, you have a token, and you want the token to be transferred,
+then you have to have a connector for this ERC-20 token on the left side and on the right side,
+for them to communicate. If you want to send ether, like you asked, then you also need to have this
+ether connector on the on the left side and on the right side, for them to be able to communicate.
+And how does the process look of transferring something from one side to the other?
+Yeah, that's a great question. And those where I where the layers come from. Well, one side needs to,
+let's say that I want to send something from the left side to the right side, I need to execute some
+transaction on the left side, and we'll go into that in a bit. We need to execute this transaction to
+let the left side know that we want to initialize this transfer. Then we need to wait a little bit,
+because those three layers are sort of a synchronization services between left and right
+left side. They will, after a little bit of time, they will let the other side know about new
+transactions, new blocks that were produced on this side so that the other transaction, so that the
+other side is aware of them. Then on the one that's done, I will need to get a so-called proof that it's
+for my transaction. And I don't need to worry how to construct it near blockchain, like,
+the near, there's an API on the near side for this to get this transaction, sorry, to get this proof for
+this transaction. And once I have that, I go to the right side to the Ethereum, and I use the connector
+that I want, that I'd like to, like, complete my transfer, because let's say I wanted to transfer
+tokens. So I used ERC20 connector on the left side, I need to use the ERC20 connector on the right side.
+I just provide my proof. And because reliers shared the information about my transaction before that,
+the connector can verify that it was actually, my transaction is legitimate, it was me, and they can
+just send the tokens to me. So do I understand this right? There's no actual way to send money from
+one blockchain to another. But we sort of destroy those tokens on one side, and then relayers or those
+synchronizers tell the other blockchain that we've burned tokens on one side, and we can now use them
+on the other side.
+Yes, exactly. Sometimes it's not burning, it's just locking them. That depends if the token was breached,
+or it's or it's native. Essentially, if it's native to the to the blog, to the given blockchain,
+and you want to send it, then you just lock it. And if you already send, have it from somewhere else,
+and you want to send it back, then you burn it. But yeah, it's it's exactly how you how you said that,
+that's how it works. Great. So can we jump into the code now? Sure, sure, sure, we can. Okay, so
+here is actually the if custodian contract, which is this connector, but for the Ethereum native asset,
+this one is actually deployed on the on the Ethereum side. So the right in our diagram that we that we've
+seen before. And what's important here is this with the function because this is what was sort of
+problematic here. What's important is that we need to when we want to call it this is we sort of we are
+now talking about it from the other other way around. This is the last step that we would be taking
+in the whole process, we need to provide it with the proof data. And we parse and consume this proof.
+This function, which is defined right here. Well, it makes sure that the proof is not too old, that it's
+valid, and that it wasn't used before. All sensible things here. But the most important thing here is
+this require statement that makes sure that the proof of whatever we provided that this proof is related to
+the transaction that were egg that was executed by something that's here called new proof producer
+account. And this is actually the Aurora, the Aurora smart contract. So you need to make sure that
+whatever you provide here, it was executed by the Aurora smart contract. Once that that's done, you decode
+the result into something called burn result, which among other things contain a field called
+eat custodian. And you need to make sure that this this field matches the address of this contract that's
+executing this in Ethereum site to make sure that this is the connector that is supposed to be completing
+the transaction. And then if that's done, then you basically just send either to to yourself.
+And where does the burn results come from?
+Yes. Well, first, let me show you how it looks like in here, because burn result is actually quite
+simple structure. It contains the three fields, there's amounts, which is just a number of tokens that you
+would like to send, recipient, which is the address that the tokens are going to be sent to, and the
+eat custodian address that I already mentioned. And there is actually a very similar structure on the
+Aurora site. Let me show you. Yeah. Okay. So this is this structure that's reflected by this burn result.
+It's called with the result in the Aurora site. But as you can see, it contains the same information.
+You have the amount, you have the recipient ID, and you have the eat custodian address.
+Okay. So now let's see where this with the result comes from. And there is a function called
+withdraw if from near. And this function is actually returning this with the result. Let's see what it
+does. Well, of course, it checks authorization if you are the owner or not, if the contract is paused.
+And then it's called internal withdraw if from near, which is the internal transaction, we don't really
+need to dive too much deep into it. But this, I can tell you that this function is basically just
+reducing your ether balance on in the Aurora, it's burning those tokens, and it's saving the state of the
+contract. And then it basically returns this withdraw result, saying that this recipient address, which is
+provided as one of the arguments, because you will be calling this function. So you want to specify who,
+like to which address those tokens should go to. Then there's amount. So whatever amount that you just burned on the
+on the Aurora side, and then the Aurora contract is actually filling this eat custodian address by itself,
+because, well, it knows, it knows the connector on the other side. So it can, so you don't need to
+provide it to you, you, you can just, it will be specified on your own. Now, this withdraw if from near is not actually
+callable, because this is also an internal function, but what is callable is
+function called withdraw here. This is the function that the user will actually be calling to initialize this bridging
+process in the, in the, on the left side in the Aurora.
+So, as you can see right here, it actually is calling this withdraw it from near, it gets the result, the
+result is this withdraw result that we, that we just seen. And then it's converting them into the stream of
+bytes, and it converts it into the output. So the output of this whole transaction is this, this structure,
+this withdraw result structure, just serialized into, into bytes.
+So to me, it looks secure so far. Where, where's the bug?
+Let's look at, at the bug now. Yeah. Okay. So just as a summary for now, we know that if we want to
+withdraw the, the tokens on the Ethereum side, the most important thing that we, that we basically cannot
+go past is that the executor ID needs to be this new proof producer account. So the transaction had to
+be executed by the Aurora contract on, on the right side, sorry, on the left side, in the, in the, in the
+near, in the near blockchain. If that's the case, then we'll have our token transfer. And here is sort
+of a high level overview of this process. On the top, you have, you can see the legitimate way of, of doing
+this. So you burn the, the ETH on the near side, you wait a little bit so that, um, uh, this transaction, uh, is
+related to the, to the, to the Ethereum. Uh, and then you, um, then this, when that's done, then the so-called
+light client, those have different names, but those basically are those reliers that share this, um, and this
+information, uh, will know about it. Then you will be able to receive proof. And with this proof, you can call, you can
+complete the whole process in the ETH connector, which is this ETH custodian, um, and contract that
+we looked, uh, looked at before. And now, uh, um, now in the bottom, there's, um, a vulnerable version of
+this process. And as you can see, the Ethereum side remains exactly the same. And all that changed.
+I struggled to find the difference between these two at first.
+Yes. And the, uh, and that's because the only thing that's, that's changed is, uh, how you initialize the
+process. As you can see, normally you need to burn ETH and you do it by calling this with the function.
+And it turns out that it's possible to make the Aurora produce the same output as though you would
+burn the, um, ether, but without actually burning it, you can do it by calling a view function of, uh,
+eco contract, uh, that will be sort of an exploit for all of this process.
+Uh, so how does this look? Is this, is this contract even related to, to this whole flow?
+It wasn't used normally, was it? Uh, let me show you actually, uh, I have this contract prepared right
+here. Um, you should, you should see the, the eco contract and I know that it's overwhelming, uh,
+overwhelmingly, um, short. So, uh, this, this is the, the exploit contract.
+Yes. This is the exploit contract. And how much money you could steal with, with those 12, 13 lines.
+Yeah. Um, there was, uh, about, uh, 50,000 ether, uh, stored in this, um, in this if custodian contract
+and every single one of this, uh, ether was vulnerable, was, uh, susceptible to this vulnerability
+that could be, it could be stolen. And at that time, um, with the ETH price, uh, uh, in that day,
+it was about $63 million. Wow. But it's, it's looks complex with this assembly function. What,
+what do they mean? Uh, yeah. So all this contract does is takes whatever input the user provided
+and then outputs it almost in, uh, exactly the same manner. Uh, there are some changes,
+but they are related to the EVM, um, internals of how this is processed. And it's not actually
+very important for this, uh, for this, uh, to understand this exploit. Yeah. Yeah. I guess it's,
+it's probably a typical thing where for the exploiter, it's quite natural. And then when you
+read the write-up, it looks like crazy operations, but, but they're actually not. Yeah. Yeah. Yeah,
+exactly. But how would we call this with, with what argument? Uh, sure. So, um, let me show you the
+Aurora code. So we know that there is this withdraw function, but there is also a view function defined, um,
+uh, which is intended to call view function in the, um, in the Aurora contracts because
+Aurora is an EVM. You can deploy any contract there. That's totally legit. And that's the way it's
+supposed to be actually working. Um, uh, and you, you may need to want to, um, you want to call those
+functions. So what you do here to initialize the exploit, you deploy your own contract, which is this
+eco contract that we just seen. And then you call the view function, uh, with a specific argument.
+What are the arguments? The arguments, um, well, as you can, uh, as, as you remember, um, the eco contract
+will basically just return whatever we, uh, we will send to it. So we need to make it look like it's
+going to, uh, uh, return, uh, return something that will look like a burn result. And now, uh, if we
+read through this, now we have, we have this, uh, arguments here that are provided by the user and we
+are calling a function called view with args, which is defined right here. It's just a wrapper for
+another function that's called view. And view is actually right here. Uh, we get the parameters.
+We are calling the, um, we are calling the, um, the, the specific function that, that we want to call.
+And then we have, we get some result, which as you can see here, I hope you can see it well,
+uh, is, um, a vector of, uh, um, of, uh, unsigned, uh, well, numbers of eight, uh, bits, uh, length,
+which is basically a byte. So this is just a byte string. And then you convert it into the result
+and return it like so. Now, I, uh, I hope that you, uh, still, uh, remember this, we throw it from
+near function because it also only returns this structure, which is done in the withdraw function
+right here, converted into bytes and you return the bytes. So if you have your, uh, eco contract
+deployed in the Aurora, you can just provide, um, a specific, uh, string of bytes, uh, that will look
+like, um, that when, uh, they will be deserialized into this, uh, this burn result structure, they will
+look like something that makes sense. So what you need to provide is, uh, some bytes that will
+represent the number of tokens you want to send, then bytes that will represent the, um, uh, that will
+represent the address of the recipient. So probably your own address, um, in Ethereum. And then you will
+need to also provide, um, address, uh, for the ETH custodian so that when, sorry, uh, so that when this,
+um, when this structure is deserialized, um, it's, uh, the, the ETH custodian contract would be able to
+verify that, um, uh, that it is supposed to be actually executing this, uh, this transaction,
+this is the connector we want. But if custodian address is a public knowledge, you know it. So
+there is, um, absolutely no problem in you, uh, just sending this transaction and receiving it, uh,
+and receiving the output. And what you need to do then is just wait, because this is the only
+difference in the whole process. Then you're waiting for the, uh, for the whole, um, for this
+relayers to, um, to let know the other side, uh, in this case, the, the right side, the Ethereum side,
+about the transaction. Then you need to get the proof, but there's no reason you wouldn't get any.
+Uh, you don't need to worry about it because this is a legitimate transaction that, and that happened,
+um, in the Aurora. Uh, so you get this proof as, uh, as any other via the API, and then you send it to the,
+uh, if custodian, uh, if custodian, uh, contract, which will deserialize everything. And with it,
+this will result in the successful transaction and you would be able to withdraw, um, either not,
+anything, any amount that you want, because there's some limitations to it, um, for the maximum number,
+but then you can just keep executing this transaction and slowly drain the if custodian, uh, contract.
+So to, to, to sum up and, and confirm my understanding correctly, we need two things for,
+for this transaction to happen. We need the withdraw function, uh, uh, output from the
+withdraw function to have a proper structure. And we need this to be a trusted contract address,
+but the view function allows us to output pretty much whatever we want. So we can use the structure
+and it's the same address. So this is also taken care of and the rest of the transaction is legit.
+Is that right? Exactly. Yes. That's exactly how, how it is.
+So amazing, amazing bug with, uh, so much money to be, to be stolen. Great. Um, it, it wasn't
+exploited in the wild, was it? Oh, no, no, no, it wasn't. Uh, thankfully it was, um, it was reported
+to the Aurora team and they could, uh, could fix it. I can actually show you the fix for it because it's,
+it's actually quite interesting. Okay. Uh, the fix was in the 2.6.1.
+Uh, well, basically the Aurora team added the return output function, which parses, which parses the
+output of the whatever transaction that's, that happened. It's for example, the view transaction,
+and then it checks, uh, for the length of this value and what this value is. And if the length is, um,
+at least 56 bytes long, and those range of bytes is the custodian address that is known, uh, then, uh,
+the chances are that this is an exploit, uh, for this vulnerability. So, so basically the contract
+just panics and says that it's illegal return. And as far as I can tell, uh, it's still, uh,
+it looks like a, just a hot fix for this vulnerability, uh, but it's still there. And
+this is how it's, how it's fixed. I, I don't think it was, um, uh, there, there was something
+else implemented as of right now, at least. Okay. That's, that's funny. Thank you so much for,
+for joining us and explaining, uh, the box to ask me how. Thank you so much for having me.
+If you enjoyed this video, check out this one that's on your screen at the moment about an
+input validation bug also in Aurora and also rewarded $1 million. For now, thank you for watching and goodbye.

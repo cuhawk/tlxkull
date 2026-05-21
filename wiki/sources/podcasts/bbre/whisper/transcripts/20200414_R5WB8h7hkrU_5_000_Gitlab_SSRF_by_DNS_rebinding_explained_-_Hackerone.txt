@@ -1,0 +1,28 @@
+Hello, in this video I will be explaining to you an interesting GitLab server-side request for the
+vulnerability that was reported in HackerOne and was rewarded 5k dollars. First let's remind what
+the SSRF vulnerability is and what's its impact. It occurs when an attacker can force the server
+to perform a request to a specified by him location. But the solve functionality does not
+mean it's vulnerable. It becomes vulnerable when the attacker can also request the addresses from
+internal network or the local ones. But GitLab has a bug bounty program on HackerOne since 2014
+and they have already resolved over 500 reports. So you may be thinking how has it happened that
+it's still vulnerable to this attack in 2019? So GitLab had a protection that was supposed to prevent
+this type of attacks. There is a class URLBlocker that has protections against localhost and local
+network addresses. So right now we are inside the function called validate and the interesting part
+is here where it makes the DNS query and returns the IP address resolved from the domain provided by user.
+And later all these validations happen on the address returned by the DNS server. And when these
+validations pass then GitLab decides that this URL is safe and an HTTP request can be made. And for this
+purpose an HTTP party game is used but before making an actual HTTP request it makes a second DNS query.
+So here we have to notice that the domain can be completely controlled by the attacker. And he can set
+up the DNS server that it responds with a different IP address in response to each query. This type of attack
+is called time of check time of use and its use is not limited to SSRFs. It occurs when the attacker is able
+to cause the validating function and the executing function to process different inputs. And in this example
+it is achieved by the DNS server returning a valid IP address on the first query and then the local IP
+on the second. Impact of this vulnerability is high because it allowed the attacker to request a Google
+Cloud metadata endpoint for example and take over the whole server. An interesting part here is that this
+report was first marked as duplicate but later the GitLab team have decided to award the reporter with a
+5000 bounty because it helped them to realize that the attacker could obtain a GCP token without the header.
+So let's see how they have fixed this vulnerability. So the validate function no longer returns true or false
+but now it returns a URI and a hostname. An hostname is only used to validate the SSL certificate but the
+actual HTTP request is made to the IP address returned by the first DNS query. It allows to avoid doing the
+second DNS query. I hope you now understand the vulnerability better. If you have leave a like
+and subscription and for now thank you.

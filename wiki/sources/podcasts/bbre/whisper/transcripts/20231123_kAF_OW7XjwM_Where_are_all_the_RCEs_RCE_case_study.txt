@@ -1,0 +1,196 @@
+RCEs are quite strange because on one hand they are possible in many different functionalities,
+but in practice they are quite rare and very valuable. So if you want to improve in finding
+RCEs, you're in a good place because in this video I will show you in what functionalities
+I observed them during my case study of 126 disclosed back bounty reports. Enjoy!
+So this was definitely the most difficult case study because I always try to somehow
+aggregate those labels together, but RCEs were completely all over the place. So in total I have
+13 functionalities and we'll go through them one by one. And the first, the most common one,
+is some kind of import or sharing functionality and it's definitely something that you should pay
+attention to as one of the most critical functionalities. For example, we had a lot of
+those bugs in GitLab where, for example, you can migrate a repository from one GitLab instance to
+another and it's a very dangerous functionality because you have to copy some files from one place
+to another and every single interaction with a file is a place where RCEs are possible. Here, for example,
+to check a size of the archive, the system level command would be executed. And, you know, it is quite
+a complex report. We will not go into the details of it, but the bottom line is it was just quite a complex
+functionality. There was a lot of source code review involved here, but in the end the payload is not
+so complex. It's just, you know, the simplest escaping of the argument and you could inject your own
+comments. So similar thing here in GitHub this time. That one was in GitLab. This one is in GitHub.
+Here as well, you have the processing of the file. This time it's GitHub pages, creating GitHub pages.
+And it would process YAML files with apparently some insecure configuration,
+which would allow you to create an arbitrary file. And if you can create arbitrary files, you can often
+get the RCE quite, quite easily. And it's the case here. This report was 25K. The previous one was
+$33,000. We'll now go to the second most common category, which unfortunately is called other because
+these I just couldn't fit to anything else. For example, you have this bug, which I would never think
+that this is something possible. We have exposed the Git repository so that the hunter could see the
+source code. Nice that he also included the recon steps that he took. And turned out that the source
+code looked like this. You had some hard coded secrets in the source code. And if those secrets were correct,
+the application would just execute system level comments without any escaping. And yeah, normally
+without those secrets, you couldn't do it. But yeah, just leaking the secret was enough to
+to execute arbitrary comments here. And it's interesting because I saw this report and I thought it's like
+2015 or 2016. It's 2023 and it's $10,000 of bounty. And yeah, most of these cases in the other functionality
+in the other category is something quite specific. Then we have file uploads. And when we take a look
+here at those average bounties, we can see that the average bounty for file uploads is a bit lower than
+than those above it and below it. But the difference is not huge. But when we take a look at them here,
+we can see bounties are not so great in this category. And the reason is many of them are just
+the simplest web shell uploads where the application would do no verification. And it often happens in
+smaller applications in applications, maybe where the company doesn't have a proper security team.
+But the average bounty is bumped up by this 50,000 bounty from Apple. But if we take this one away,
+let's do it like this. If we take this one away, the average bounty goes down to $2,700, which is way less
+than anything, anything else here. And before you ask me because every single video like this has a
+comment can access this database with those reports. So this this video is a part of the case study,
+which is in BBR premium, which is behind the paywall. If you are a BBR premium member, you just
+scroll down to the bottom of the article, which is quite long to be honest. And then you have the
+database embedded here. And you can also filter it. You can also export it, you can do whatever you
+want. You can download it to the tool of your choice. And you can also access the direct Notion
+link here. Because I use Notion, I love Notion. So I decided to also add the Notion option for those
+of you who also do this. And if you want to join now is the good time because this video comes out
+when the Black Friday promotion starts. And it's the only promotion of BBR premium for the whole year.
+And it's actually the last chance ever to get BBR premium at this price because before the next
+Black Friday, there will be a price rise. So the next year's discounted price will be higher. So it
+is the last chance ever to join at the $80 price mark. And also if you do this now, you lock in the lower
+price forever. So every year you will be your subscription will renew using the lower price.
+So now it's a very good time to join. But coming back to our reports, you're probably curious,
+what is this $50,000 report to Apple and I also covered it on my channel. I will link all the videos
+that I mentioned in the description down below. And it was functionality or actually the framework
+Lucy. I've never heard about it, but they were able to convince the Lucy with some parameters and some
+templates to create an arbitrary file. And from there, the shell was possible. So it's also a shell
+upload, but it's definitely not an easy one or a simple one. Next, we have authentication and
+authentication. I know there are a lot of bugs there, but I just wouldn't expect RCEs to be precise.
+And there were some, I would say, random ones like this one, where the application would just take the
+value from the cookie and evaluate it. So we have the payload here. I'm not sure if this screenshot is
+is visible, but there's base64 encoded command here, which is just executed by the server. And
+unfortunately, I cannot give you a recipe on how to find bugs like this, because it's, it just looks
+completely random to me. And I definitely would not find this bug without the source code. But one
+pattern in authentication that I saw, and I want you to know about because it can be useful, is that
+sometimes the session cookie is a serialized object. And it's dangerous because if you could get your
+arbitrary objects to be deserialized, you could get an RCE. So to prevent this, all modern frameworks
+sign those cookies cryptographically, so that you cannot create your own cookie and get it to deserialize.
+You need the signature to be valid. So in practice, you need the server to generate the cookie. But the
+thing is, if you can disclose the secret used to sign the cookie, you can get an RCE. For example, here,
+we have verbose errors in in Rails in the RAC framework. And the verbose error disclosed the
+cookie signing secret. So in this case, if you find something like this, not reported straight away,
+do not report that the application disclosed some secrets, even if they look good. If you disclose the
+cookie signing secret, you should create your own malicious cookie with a malicious object
+and sign it using that secret. And this will get you an RCE, like in this case, and this was a $5,000
+reward. Then we have something that I called high privilege functionality. And the difference here is
+that the functionality is supposed to execute code, just the attacker shouldn't be able to. For example,
+the first report that I have here, the functionality is like cloud based stuff. So by default, you can
+execute code on your instance. But there was a CSRF and CSRF doesn't sound like a $30,000 vulnerability. But
+if the admin can has access or the user has access to execute code, and this functionality has a CSRF,
+then all of a sudden, your CSRF is worth $30,000, like here. And the very interesting thing that we had
+here was the origin validation, because there was some fuzzing involved. And the key here to bypass
+the origin check is this address. Turns out that this piece, which is the underscore subdomain, which
+looks a bit like the emoji. It was enough to, you know, that the website thought this is the origin,
+and it looks valid, because it it ends with Azure websites.net. But the browser thought that, you know,
+this whole thing is the origin. And this is attacker site. So a very nice CSRF, also nice write up,
+because he also disclosed what characters he tried and what work what didn't. So really, really,
+really interesting case here, and that really good bounty for this. Then we have a kind of similar
+case, because we have cloud, cloud based functionalities. And here as well, you can
+execute code on your own instance by default. But the thing here is the vulnerability allowed either
+the escalation to instance of another user, or it allowed to like execute code on the host of the
+where you shouldn't be, basically, you had a way to escape some kind of sandbox. And we'll not go into
+the details here because we have a lot of of bugs to cover, which are closer to web related bugs. For
+example, that this first 30k attack was done via exposed kubelet, which is a Kubernetes thing. The
+second was one was via exposed Docker socket. So these are not really web web bugs. So we'll continue to the
+next category, which is templates. And most of these are server side template injection bugs, which,
+to be honest, when I learned about this vulnerability, I thought it's much more common.
+And turns out it's actually not. This report is probably the most common example that everyone uses
+when they want to show this vulnerability. It's in Uber found by Orange Tsai. Your name would be
+evaluated as a part of the template in the email you received. So you would inject something like
+like this, which contains the ginger to templates. And when you would receive an email, it would be
+evaluated. And this usually can lead to a remote code execution. Interestingly, in this case, Orange was
+not able to exploit it as an RCE because of the length limit. But Uber still probably evaluated it on
+their side and they paid $10,000 for this vulnerability. The next category I have is also a way to exploit
+another vulnerability, which is SQL injection. I also talked about it in the SQL injection case study,
+which I recommend you to watch. I also am going to link this in the description down below. But the thing is,
+in some cases, in some configuration with some configuration options and in some database engines,
+you are able to directly turn SQL injection into a remote code execution with a query like this one.
+And with this, the next functionality is installing packages. So it's a bit different because it often
+occurs earlier in the development lifecycle. So these are not really bugs in the application itself, but
+but somewhere, somewhere before the application is even released. And here we have eight reports,
+but seven of those are dependency confusion vulnerability. This one I also created a video
+about. It's a very interesting and novel attack scenario, which Alex Beersen discovered in 2020 or
+and published in 2021. And it was basically a way to confuse a package manager to install your malicious package
+instead of a company's internal package. So when they would use something like this of PayPal, you could
+convince the package manager to install your of PayPal package, which you can publish without any problems,
+because this one was private. It was in like private PayPal repository. So you published all PayPal to a public
+repository. And if your one would have a higher version, so you would just use version 99999,
+it would install your package and it would execute your code on the developer's machine, maybe on the server as well.
+And bounties here were huge. He only mentioned three companies with bounties and we have 40, 30 and 30K.
+So it's already $100,000. And he also mentioned a few more payouts, but didn't say exactly
+how much he got for them. So I couldn't put them here. But the definitely the attack worth it. And also
+here we have another other dependency confusion reports also paid really, really well. And if you're
+wondering what's the one attack, which is not dependency confusion in this in this category,
+it's this one. Basically, Mapbox used some script that pulled code from an S3 bucket. And then they stopped
+using the S3 bucket. But this script would still, you know, would still pull the code from this bucket.
+So Franz Rosen would claim this bucket, put his code there. And this script would pull this code and
+execute it. So they paid $12,500 for this report. The next category called zero day. And these are
+vulnerabilities in the vulnerabilities in the Pulse Secure VPN, which Twitter used. And we can see
+six different CV is here really complex and really long explanation. But the bottom line is it ended in a
+remote code execution. And I got $20,000 for it. So bugs like this can be worth a lot, especially that
+if they had the vulnerability in the VPN, they could also report it to many other companies that have
+bug bounty programs and that are using this VPN. So bugs like this can be really, really worth a lot.
+And another vulnerability that you should pay a lot of attention is any kind of image processing or
+to be fair processing of any file. Because we can see five of these are image magic vulnerabilities,
+which you can see the days 2018, 18, 19, 16, 18, quite an old vulnerability that that was very common
+in those days. Also in the SSRF case study, there were quite a lot of those. But in any case,
+any functionality like this should be your focus point. Here we have another vulnerability in GitLab.
+I also covered it on my channel. And this is a zero day actually in the EXIF tool, which used to strip,
+which is used to strip metadata from from a file. And it's a very interesting one because the code that was
+supposed to not make this possible didn't predict that the new line just after a backslash and would
+process it incorrectly, which could lead to you basically being able to inject your own code and
+execute your own code inside of a file. So also a really interesting one. Also a lot of code review
+going on for this. I believe it's not possible to find a bug like this with a black box approach,
+but definitely worth it because it's $20,000 from GitLab. Then there is another functionality, which
+I think it's quite obvious. And you probably won't be surprised that when the application executes
+comment as the functionality, it should be your focus point because it's quite natural that
+when we see a comment being executed, we immediately think about command injection. So
+so I think it won't be the most interesting takeaway from this case study. But take a look at this bug.
+It's it shows that not always you actually have to escape the comment to make a vulnerability work.
+Here we have another report by William Bowling. And we have a functionality where it would run the git
+command under the hood to make some div. And at the first sight, it doesn't look this this part does not
+look sensitive at all. The file name was not vulnerable. In this case, it was probably sanitized or
+something. But the commit one or commit two positional arguments, they do not look like something where you
+can inject your own comments. But the thing was that William created a branch with a name like this,
+a branch with a name dash dash output equals and a file name. And when it was put into the comment,
+then the it was put here as comment one or comment two. And all of a sudden, instead of being a
+positional argument, you you was you were in the named argument called output because still, even though
+he had a branch name like this, he couldn't just escape the argument and just inject arbitrary comments.
+It wasn't an easy case like this. He could just inject another argument into this comment. And this
+argument allowed him to create arbitrary file. And as you probably already know from this from this video,
+creating arbitrary file often allows you to to reach an remote code execution. And it was also case
+a bug bounty program where all those three reports in the category I called SMTP DB configuration are 5k
+vulnerabilities in the same program called IVAN, which I've never heard about. But what it does is it
+allows some configuration, some database connectors or some SMTP connectors, generally quite an advanced
+configuration. And those connectors were vulnerable in a very similar way. For example, here we have the
+SMTP server configuration. And the password argument was vulnerable to a pretty standard command injection,
+I would say. And it was actually do via the new line injection. So we couldn't like inject the apostrophe
+or quote, you could the new line injection. And the other two 5k reports for this program were kind of similar.
+Next, we have a category called making requests. And if I really wanted, this could be the most common
+category because in the SSRF case study, I observed, I think it was 28 SSRF reports that resulted in leaking
+cloud metadata credentials. And cloud metadata credentials often allow you to execute code. So if I really
+wanted, I could copy reports from that case study to this case study. And then making requests would be
+the most common functionality vulnerable to RCEs. But I decided that, you know, copying, it won't add to the
+discussion a lot. So I only have three reports here, where making requests or SSRFs because all these were
+SSRFs were directly turned to RCEs. And I really like this this report because in all the SSRF word lists or
+ways to escalate SSRFs, you see the gopher protocol being being used. And to be honest, I've never seen it
+work before this report. And I don't even know what it's supposed to do. But here, it was used to achieve
+an RCE because the gopher protocol was used to first detect the red the redis instance on on this port.
+And then this URL was used to run some redis comments, which allowed turning this SSRF into an RCE. So I
+really, really like this report. I really like to see the things which I always see in word list and
+I don't really understand. I love to finally, you know, see them working in the real life. And finally,
+only one report in the functionality, which I also think you should pay attention to, because it's a
+headless browser. When the server, you know, runs the browser to potentially render a PDF to generate a
+report or do whatever. And here the elastic or Kibana to be more specific, they used a vulnerable
+version of Chromium. So it was vulnerable to if you could run your arbitrary JavaScript code in this
+browser, you could achieve an RCE. And the interesting thing is that this report is somewhat theoretical.
+And every we always the every content about backbounty says to only report real threats. And but here,
+the hunter didn't have the way to execute arbitrary JavaScript in this browser. But he decided to report
+it anyway. And he just wrote very honestly that there is no RCE in them at the moment. But you're just
+an XSS or HTML injection or an open redirect away from the RCE and Elastic decided to reward him with
+$10,000. So it just shows that in very specific situations, you can report vulnerabilities without a
+direct impact. But you have to be very, very cautious with this. And that's it. That's all the
+functionalities that I observed during this case study. If you enjoyed this this video with part of
+the case study, I encourage you to join BBR premium and see the full article in the archive, as well as
+other case studies that I've done. I remind you that now is the best time to join because it's the Black
+Friday deal. If you're interested, go to bbre.dev slash premium.

@@ -1,0 +1,114 @@
+When you have a read-based pass traversal, it's easy game. You just read a file usually at cpasswd
+and you get a quick payout. But what about file write? You have to somehow prove the vulnerability
+exists. Usually you don't know where are you at and you have to watch out to not overwrite a
+sensitive file because you may disrupt the service. To answer this question, I studied all the pass
+traversal reports that I found in the internet and I saw which one of them were write-based pass
+traversals and if yes, what file did the hunters write. In this video, I will show you those results
+along with some methods to escalate pass traversal to an RCE. Enjoy! If it's your first time here,
+I do these case studies regularly. I take a bug class, I extract all the reports that I can find
+in the internet and then I study those reports. I already did SSRFs, XSSs, IDORs, NSQL injections
+and pass traversals are the fifth vulnerability class. They are mostly available in BBR Premium,
+but they always share some part to the public for free, such as in this case, I share the part
+where I will show you which file did the hunters write to prove the impact. So in most cases, actually
+hunters didn't really write any specific files. In these cases, the hunters would just write a file
+that's outside the directory. So they would prove that they can write a file where they shouldn't,
+outside the save directory, but they wouldn't really care about what the file content or file name.
+Like in this case, we have a write based pass traversal in croquis vulnerability in GitLab.
+And we can see here that the hunter would just write a temporary file, a test file, write txt,
+because if you write a file outside the save directory, obviously, it's not the directory where
+the file should be should have been saved. This is enough to prove to the program, especially to a mature
+program like GitLab, that you can really write a file anywhere and often you can turn it into an RCE.
+In some programs, you also have to prove this. In this case, in case of GitLab, I think they just believe
+that if you can have a file, right, you can easily just turn it into an RCE. And this is the trend here
+that these reports with writing any file, but writing it outside save directory is present in applications
+where the hunters have access to the source code is open source and hunters just install this on their own
+machine where they can monitor what files are being created. And it just makes it easier to detect a pass
+traversal like this, because if it's a black box test, you may just struggle to do anything. Also,
+in this case study, I noticed much more than usual zero days, like bugs in Ruby on Rails, bugs in Apache,
+bugs in Node.js. There were many, many more of them compared to other case studies that I've done.
+While the overall amount of reports, the number of reports was smaller, it was only 74 reports of past
+traversals that I found online, which is way less than, for example, XSSes. And some bugs were like this.
+We can see it's a bug in the library in Ruby, and the hunter just creates their own vulnerable source
+code. It's not even a direct attack on the web application right in Ruby, created in Ruby. But it's
+just a library bug. And in this case, also, it just creating a temporary file in arbitrary directory.
+And the hunter didn't have to prove anything more.
+Here we also have a very interesting bug, a bug that I was not aware of, because I'm not a mobile
+hacker. But the report is partially disclosed, but it's really describing what happened there.
+So we have a typical zip slip attack, where the attacker can create a malicious zip with a file
+that's outside the save directory after unpacking the archive. Two weeks ago, I created a video about
+my code QR query to detect these kinds of bugs. So watch the video if you haven't already. But what happens
+here is this is not an attack on the server. This is an attack on the mobile app. And the way it works is,
+for some reason, I'm not sure for what reason, the file is extracted on the mobile phone of the victim.
+And there within the file system of the mobile, the file is extracted outside the save directory.
+So in this case, the hunter has shown that just overwriting apps private folders, I'm not sure what's
+the real impact of this. But there was another very similar report in Slack where the hunter was able to
+somehow it was not disclosed exactly how was able to leak access tokens of the victim using this very attack.
+So in this case, the hunter was able to leak access tokens of the victim. So in this case,
+the hunter was able to upload just a shell to the server, which is, I think, the most straightforward way
+to exploit a write-based path traversal. It will not work in modern programming languages like Python,
+like Node.js. It will work in PHP based technologies. Here we have a bug in Apache. So this is more general. So I believe the hunter simply used PHP as an example.
+Because why not? Because because they could. And in this case, you can just upload your shell anywhere.
+This report is very interesting because take a look at this bypass. I'm not sure if you recognize this, but
+the encoded %32 means digit 2 and %65 means letter f, small f. So if you decode these
+and join it with this %2, which is regular encoded forward slash. But what we see here is we have an
+unencoded % in the beginning and then we have the 2f encoded. So this is not a typical double URL encoding payload.
+Because what should happen here is I believe according to the specs, this should be
+invalid input. This should be denied because the % sign is not followed by a hex number.
+And this is probably what happened is the first component would see this,
+would ignore this, this case that I just told you about,
+the first component would decode these two characters to f. And then the next component,
+the next component may be just a function or whatever happens there. I didn't study it in detail.
+Takes the %2f, which is a regular encoded forward slash, and decodes it leading to this,
+to this past traversal. And this is a very good example
+example of why sometimes we should look for inconsistencies. And when you have an inconsistency,
+it is enough to have a bug. Because there is nothing inherently bad about accepting this invalid input,
+if your component is on its own. But in this case, with many transformations happening to the URL,
+it led to a bug. It led to a critical path traversal in Apache, which is something. But we also have more
+payloads that probably they don't look like valid URL encoded strings. So it was an interesting one.
+We also had one bug in WordPress, where the hunter also, I think, only mentioned that
+it can lead to an RCE. He didn't actually exploit it, I believe. And yeah, and this is
+something you can exploit in WordPress or in PHP based app. But if you're working with Python, with Ruby,
+this will not work. Because Python or Ruby do not process files the same way PHP does. In PHP,
+you can just upload the file with to a particular directory. And then you can just send a URL, send a
+request. And if the file is in the directory, it will be returned. Most modern languages don't work this
+way. And you can do this. So as simply as you can in PHP. But you can still get something similar. Here we have an
+example of another zero day in Ruby on Rails. And in this case, the hunter was able to, it was obviously also file based, file
+write based vulnerability. And to exploit this vulnerability, the hunter would override a template.
+So the way Ruby on Rails application works, is you have some templates that are usually ERB templates,
+which means it's saved in a file called text. And it looks like a normal HTML. But inside you can have
+variables like this. So you can have a dynamic HTML. And contrary to normal shell uploads,
+which won't work in Ruby, this can work in Ruby. So when the hunter would overwrite this file, it may look
+like a very random name. But if you are familiar with Ruby, you probably can predict that this path would
+exist. And the hunter would just overwrite with this bug, the this file, with an arbitrary command,
+because the template allows the user to execute arbitrary Ruby code, which also in this case means
+executing system level commands. So it is a proper RCE. And then when you upload something like this,
+it means that the controller of books, which is supposed to show you a book, will try to open this file
+and fill it with some information about the book. So to trigger the RCE, you have to send another request,
+which will speak to the books controller, in this case, and it will just fetch any book. And in this case,
+it will try to execute this template, which also executes this code. And the hunter proved it by just
+using the ls command, and the file is here, we had touch me, which means it creates an empty file called me. And it was
+created. Another case where the hunter just had access to the source code and had everything under control. With black box
+test, it is perfectly possible to predict this path, but it's definitely harder than than doing it white box.
+So watch out for this. And also if you have a file write based path traversal or another bug when you can
+write files, and you're not working with PHP, try to see if the application works with template files, because
+overwriting a template file may be the easiest way to turn your bug into an RCE. And finally,
+there was also one bug where the RCE exploit was done by overwriting the SSH authorized keys.
+So the way it works is you have a file in Linux, that's SSH dot dot SSH slash authorized keys,
+which contains public encryption keys. And when you log into the server, you can use your username and
+password if that's enabled. But if you are authenticating yourself with your with your private key, and your
+public key is in the authorized keys file, it means you can log in automatically to the server. And this is
+what the hunter did here, he overwrote the SSH slash authorized keys file, with the content of his public
+SSH key, which means that when now authenticating to the target machine, he could authenticate with his private key, which is
+which is easy. The problem with with this, this works magnificently, if you have access to the attack machine, the
+network access over port 2020, which is which should be rare. And also the machine has to be configured to not prevent this
+attack. Then then it works like a charm. In this case, we have we have GitLab. So the hunter could set it up as he wanted.
+In case of of a black box test, it shouldn't work, it may work. So you should always try this. But it should not work
+because the machine should not expose port 2020 to the internet without a VPN or or whatever. But in case you need
+this in case you are in the internal assessment, definitely you can exploit file write by overwriting
+authorized keys with your public key. And then you just SSH into the machine and you have a shell. And
+these are all the different files that were wrote, which I saw during this case study. I hope that you did
+learn some new tricks in this video. If you did, leave a like. And if you enjoyed this small part of the case
+study, if you join VBR premium, you will get access to the whole case study as well as the previous case
+studies about SSRFs, XSSs, IDORs and SQL injections. And if you want to watch another video with the free
+part of the case study, I suggest you this one where I broke down what payloads for XSSs were Hunter using
+to get the biggest payouts. For now, thank you for watching and goodbye.

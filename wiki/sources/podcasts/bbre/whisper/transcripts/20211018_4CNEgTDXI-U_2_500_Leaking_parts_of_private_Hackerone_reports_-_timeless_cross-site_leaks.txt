@@ -1,0 +1,87 @@
+Hello, welcome to another episode of Bug Bounty Reports Explained. Today I will show you how Tom
+Van Hytem was able to leak parts of undisclosed HackerOne reports by using a novel method of
+cross-site leaks. Make sure to watch the video until the end because I will show you the outstanding
+trick which he used to have a little bit control over TCP protocol from the browser. Links to the
+report and to his media are in the description. Enjoy! On HackerOne there is a slash bugs dot json
+endpoint. It's used under the hood when you use the search feature on inbox. It has text query parameter
+which you can use to query all the bugs to which you have access to as a reporter, triager or whoever
+else. The endpoint used get method and no CSRF protection. As the attacker you were able to send
+requests to this endpoint if a victim visited your website. Same origin policy would allow you to query
+reports to which the victim had access to and cookies would be attached to the request. However, same origin
+policy would not allow you to read the response so you can't actually disclose report contents this way.
+But there are methods to exfiltrate data in such scenario. Those attacks are called cross-site leaks.
+The most common approach is looking at the timing. It works this way. The victim visits your website.
+The JavaScript sends two requests. One with searching a string that will never be present in any report.
+The other one with a string that you want to confirm if it's inside an undisclosed report to which the
+victim has access. When one response will return results while the other will not, the processing time
+of the one with reports will be longer. You can measure the response time of each request even if you can't
+read the response itself. So, if one was longer than the other, you know the string is present somewhere
+in the undisclosed report. If both responses had roughly the same time, that means your string is not
+present in any of the reports. This way you could brute force parts of report's contents one character at a time.
+But it's not as easy as I made it look. Differences in the time that the server will take to process such
+a simple operation are measured in microseconds or even in nanoseconds. Considering that the network delay is
+order of magnitude higher in milliseconds, the difference from a single request doesn't mean anything.
+However, when you send many pairs of such requests, you can measure averages and come up with significant differences.
+Behind this report, there is a bigger research regarding these attacks. Researchers determined that depending
+on the network location and processing time, you must send hundreds or thousands of requests to get
+meaningful averages, which will tell you if you did leak something or not. And that's only to tell if one
+character is in one position. You'd have to send thousands of requests to tell if A is the next character, then
+thousands of requests to tell if B is the next character, and so on. Exfiltrating even a short token would
+require millions of requests. And this is a client-side attack, so the victim would have to stay on your
+website for this whole time. Not to even mention rate limits on HackerOne. So the timing attack wouldn't work here.
+Take a look at that from this perspective. You send two requests and the time difference you are interested in is here on the server.
+But the place you try to measure it is here, many routers and switches away. But it has to be that way. You can't measure the time directly on the server.
+But actually, you are not interested in the time it took. You are interested in which of these two took longer.
+Researchers' idea was to see which of these two responses would come back earlier. So the hunter would send two requests.
+When both queries would yield no results, there was about 50% chance response 1 would come back after response 2.
+However, when query 1 would return a bug, there was about 80% chance it would come back second.
+This still doesn't allow you to determine the character after one pair of requests, but this time, instead of hundreds or thousands,
+20 requests was enough. And your location or your connection didn't matter.
+For that to work, he would have to lock the order of responses at this point to make sure it's not affected on the road home.
+Let me show you how he achieved it.
+HTTP requests are transmitted in TCP packets. You can think of it as the letters.
+The HTTP request is the letter itself and TCP packet is the envelope. If your letter is long, it will be sent in multiple envelopes.
+But if you have two short letters to the same address, you can send both of them in a single envelope.
+So what you need to do is bundle both HTTP requests in a single TCP packet.
+In case of an attack against the server without the client interaction, this is easy-peasy because you can write a low-level script that will do whatever you want.
+But in this attack, we are in the browser and we have little control over low-level network protocols.
+How do you then force the browser to send both letters in a single envelope?
+The browser has built-in mechanism to prevent sending too many envelopes before the server acknowledges that they were received.
+So the server will send as many envelopes as it can and the rest will be stored in the queue, waiting for the server to acknowledge receiving those sent envelopes.
+Normally, the browser would envelope the first HTTP request straight away without waiting for the second one.
+But when your two letters will be queued, they will be packed in a single envelope, which is exactly what we need.
+But how do you force the browser to queue your requests?
+By sending a big HTTP request first, which will be too big to be sent in one go.
+Part of the request will be sent, but the remaining packets will be queued.
+Part of the request will be sent immediately after you send your pair of requests, one with the baseline query and one with the query you are interested in.
+Both of them will be added to the end of the queue.
+After the server acknowledges that it received the first batch of packets, ones from the queue will be sent and your pair of HTTP requests will be bundled into a one TCP packet.
+Part of the request will be sent in one of the requests.
+Then you repeat the operation 20 times and you look how often the response with the query was second.
+If it was second in about half of requests, your query did not return any reports.
+If it was second in about 16 requests, that means that the string you are looking for is present in at least one of victim's reports.
+You can move on to the next character or the next word.
+This way it was possible to exfiltrate parts of private reports from HackerOne.
+Still, even this optimized technique requires a lot of requests.
+The reported estimated about one and a half to three and a half minutes per character, assuming you know the first two.
+This way you could target, for example, authorization headers, some endpoints, specific vulnerability classes, or whatever comes to your mind.
+But whatever you chose, the attack would still probably take a few hours.
+So by no means this is a high-risk bug, but HackerOne staff wrote in the comments that there were about eight reports about this behavior.
+And this was the first one that presented a feasible attack.
+Hence, this one was awarded $2.5k.
+As for the fix, the bugs.json endpoint now uses the POST method and thus it requires a CSRF token, making this attack impossible.
+And that's it.
+I'm always a bit sad when the complex bug doesn't have the critical impact.
+But anyway, I learned a lot while studying this report and I hope you too.
+If you did, make sure to feed the YouTube algorithm with a like so that it recommends the video to other hackers.
+I also encourage you to watch the whole presentation about this timeless technique where you can also find Wi-Fi attacks.
+The video is on the card right now.
+For now, thank you for watching and goodbye.
+
+
+
+
+
+
+
+!

@@ -1,0 +1,109 @@
+Hello! In today's episode of Bug Bounty Reports Explained, you will learn how two guys from
+high school hacked GitHub private pages for $35,000 by chaining four different vulnerabilities.
+Their names are Robert Chen and Philip, who uses nickname Ginkoid.
+Link to the original blog post and their profiles are in the description. Enjoy!
+But before we jump into the technical stuff, I'd like to encourage you to sign up for BBRE newsletter.
+You will get it on your email every second week and you will not only find the most
+interesting stories from Bug Bounty and Security World in general, but also some tips about
+productivity or chill out with some more personal stuff from me. Here is the agenda of the first
+issue that was sent a week ago. Generally, those newsletters are not available anywhere,
+but for the first one I made an exception. You can get it by visiting the link that's in the description
+and on the video right now. Sign up before 9th May to get the second issue.
+Let's now start the explanation. GitHub Pages is a service that allows you to create a website
+straight from the GitHub repository. And it's also possible to create a private page that's only
+available with authentication. But GitHub Pages does not have its own login panel. It's also on
+different domain, so cookies from GitHub.com are not sent there. So developers created this flow of
+authentication, which uses cookies from GitHub.com. First, GitHub.io sets a random nonce inside GitHub
+Pages session cookie. Then it redirects the user to GitHub.com with this nonce as the parameter,
+but also with a page ID and the path. Then GitHub.com checks if the user is logged in, generates a token,
+and redirects the user back to GitHub.io. Those three parameters are passed throughout the whole flow.
+Then GitHub.io checks if the nonce from the parameter is equal to the nonce from the cookie.
+If it is, the token gets inside the cookie and the page ID is also being put inside the cookie.
+And with those cookies, the user can visit GitHub page that he wanted to view.
+In step 5, the value from the parameter page ID is being put into the GitHub Pages ID cookie.
+Page ID is an integer number. It identifies the page to which user will be redirected after the
+authentication flow. And the page lookup converts the cookie to integer number. So if your page ID is
+1 to 3 with space at the end, the space will be dropped by integer conversion. But importantly,
+the cookie that will be sent back to you is the one before the int conversion, so with the space at the end.
+You could inject %0d, %0a there as it was ignored by integer conversion.
+Those are the CRLF characters that mean a new line. Then you got a strange looking response back to your browser.
+Usually, CRLF vulnerability is exploited by adding new headers or changing the response body to an XSS payload.
+But here you could only inject whitespace characters. And a non-whitespace character caused an integer conversion to throw an exception.
+So there was no real impact to this. The researchers had access to the source code and they noticed that this page is served by Nginx.
+Nginx is written in C where null byte terminates the C string. So it's always worth to give it a try.
+Turned out it worked. You could inject any characters after the null byte and they were ignored.
+But null byte is not allowed in the header section of the response. So you could only inject something in the body.
+In fact, this was a 302 redirect where generally the response body is not processed by the browser.
+But here, luckily, the location header was after our injection point. So it was not treated as a header.
+And in 302 responses without the location header, the body is processed normally.
+So we can inject the HTML code in the response and execute arbitrary JavaScript code reaching our XSS.
+But the problem is that this injection is in fifth request of the whole flow. And you can't just take this one,
+put whatever in other parameters and it will work. No, it wouldn't. You need to send the victim into a valid
+authentication flow just with this one malicious parameter. And as you remember, we had three parameters there.
+Nones, path and page ID. Page ID will be our payload. Path doesn't matter much. The problem is the nonce.
+Because GitHub IO checks if the nonce from the parameter that comes from GitHub.com is the same as nonce in the cookie.
+So you either need to predict the nonce or to set the cookie to your known value and then send the same value as the parameter.
+The potential attack scenario is that we have write access to attacker at private org at GitHub IO and we want
+to read another page from the same organization. Let's say it's called flag.
+The problem was that the cookie with the nonce used the host prefix. It means
+that from attacker subdomain you can only set the cookie to attacker subdomain and not to the parent domain.
+If there wasn't this prefix, from attacker.com you could just set the cookie to the parent subdomain
+and then it would also be sent to flag subdomain, meaning that you know the nonce from the subdomain
+and you can execute the cross-site scripting.
+So you need to trick the server into thinking that the cookie has the host prefix while the browser thinks it doesn't.
+Turns out that the host prefix is case sensitive. This means if you try to set the host cookie to parent domain,
+it won't work. But if you try the same with host using capital letters, it will work because the browser doesn't consider this to be a valid host prefix.
+But turns out that the server used by GitHub doesn't care about it at all.
+While parsing cookies, it will strip the host part whatever the capitalization.
+So you can set the host cookie using capital letters. The browser will set it to the parent domain because it's not a valid prefix.
+While the server will also be happy because it thinks that the cookie has the host prefix.
+So this is the proof of concept that will be hosted on attacker.private.org at GitHub.io.
+It will set the cookie to parent domain with nonce known by us and will send the victim into a valid authentication flow with nonce known by us and with page ID of the page that we want to attack.
+Once the victim goes through the flow, it gets back to GitHub page where the XSS is executed.
+This way you could access any page that the attacked victim would have access to.
+This made hunters eligible for 5000 bonus.
+But they were hungry for more. They wanted to escalate it to a no interaction bug.
+And this escalation was made rather easy by cache poisoning vulnerability.
+It was present on the same vulnerable endpoint and the page was cached based on the integer value of page ID.
+So if you would request the page with ID 123 or 123 space, you would get the same cached response.
+So if you would request it with our payload used previously, then everyone that would visit the same page would get accessed by you.
+So this attack scenario no longer needed user interaction and only required a read access to a page.
+Such scenario would be granted $10,000 of bonus.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+!
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+So if you would request the same page, then you would request the same page.
+And that's it!
+It's amazing how four little bugs were chained together for a vulnerability with such a huge impact.
+If you learned something new during this video, leave a like or leave a subscription.
+Also sign up for my mailing list to get the new issue of BBRE newsletter that will be out next Monday.
+For now, thank you for watching and goodbye.

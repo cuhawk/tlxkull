@@ -1,0 +1,50 @@
+Hello, in this video I will be explaining to you the lately disclosed Slack vulnerability
+regarding the Terran server that allowed accessing the internal network and was awarded 3.5k dollars.
+First, let's see how the vulnerability actually worked. In the JSON response to a request of
+creating a voice call on Slack, the hunter noticed a JSON object called ternauth with parameters
+username and password. And obviously if you're a hunter and you see a clear text credentials in
+your response you know it might be a good lead. But of course first you need to know where to use
+these credentials. And actually the Terran server happens to be on a Slack dash core subdomain
+which was not listed as InScope asset on HackerOne's page. That's the domain that Slack has its call
+infrastructure on. And likely the researcher carried on because he knew the impact of this
+potential vulnerability. And to understand it better let's see what the Terran server actually is.
+So when Alice wants to send a text message to Bob via Slack she sends the text message to the Slack
+HTTP server and then when Bob requests his messages from the HTTP server he gets it back. No problem at
+all. However when we want to make a voice call we do not want to be going through the HTTP server
+because it will cause a big latency and that's something we have to avoid. So in such scenarios
+we want to establish a direct UDP connection to stream a media to another client. And when we are in the
+same local area network it's no problem we can just send the data one to another. It's easy and simple.
+However when we are a little bit further from each other things start to get complicated because there
+are NATs and firewalls which make it not as easy to establish a direct connection between the clients.
+And actually a Terran server happens to be one of the ways around this because
+Terran stands for traversal using relays around NAT where NAT stands for network address translation.
+So it's used to preserve a public address space and it allows internal network with many local IP
+addresses to have much less public IP addresses. So it's a good thing but when we want to establish a
+direct connection it becomes a little bit difficult. Especially when we have a specific type of symmetric NAT
+which means that for every connection it assigns a unique IP and port address. So that's where the Terran server comes into play.
+It's a kind of a last resort where others ways of connection fail. It's something that both Alice and Bob can connect to
+and it proxies the traffic from one to another. And there are more servers involved in a initiation of this connection via Terran server.
+And actually the request we saw earlier with the Terran server credentials, hostname and a few other parameters
+was one of the requests in this initiation process. And because the Terran server needs some kind of authentication
+and the client needs a direct connection it's actually nothing wrong in the fact that the username and password
+were sent in plain text to the client. It's actually how it works. But rather what the vulnerability was here
+is that the Terran server is obviously connected to the Slack internal network. And by design it allows
+the client to make a connection and proxy its request to an address specified by the client. Which means
+the client can request to proxy his traffic to the internal network. And it's actually what the vulnerability
+was here. The attacker asked the Terran server to proxy his traffic to the internal network and then he could
+for example request the metadata and get the credentials to the server. So according to the RFC the Terran server
+should have a blacklist of IP addresses that the clients are not allowed to proxy to. And that's exactly
+what the vulnerability was there. There was no blacklist and the client could proxy everywhere. Moreover,
+the functionality of voice calls only needed the UDP protocol but the Terran server also allowed the TCP
+protocol to be proxy which of course increased the impact a lot. So that's the high level overview of
+the vulnerability here. If you want to get into detail of how does the Terran server work and why it's
+necessary. I will give you specific links in the description. An important takeaway from this report
+is also good cooperation of the reporter with the Slack company. He provided them with good details of
+how to fix this vulnerability and multiple times verified the fixes deployed by the company. I'm convinced
+it has increased the bounty he was awarded it was 3.5k and also we can see that he uses some custom tools
+specifically built to exploit the Terran server and actually I've done some research and happened out
+that this researcher Sandro Gauchi is a CEO of Enable Security Company and they specify in identifying
+vulnerabilities in WebRTC and VoIP functionalities. So another takeaway here is that it's a good idea to find
+a niche, build a good tool set around it and be an expert in some area. This vulnerability is on a little
+bit lower network level than most of the web bugs but I hope you now understand it a little bit better.
+If you have leave a like and thank you.

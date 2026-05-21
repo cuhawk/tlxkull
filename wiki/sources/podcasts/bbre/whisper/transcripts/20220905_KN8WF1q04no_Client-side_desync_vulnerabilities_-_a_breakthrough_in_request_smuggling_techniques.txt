@@ -1,0 +1,107 @@
+Hello! In this episode of Bug Bounty Reports Explained, I will show you a brand new attack
+technique discovered by one and only James Kettle – Client-side Decent Attacks. Specifically,
+I will focus on the way that thousands of servers could be hacked that used Akamai.
+This technique gives us a variety of ways to leak user data. And I think even James himself
+wrote in the article that he left a lot of bounties on the table for us, so watch closely.
+As always, links to the sources are in the description. Enjoy!
+This episode is sponsored by Integrity. Integrity is Europe's biggest bug bounty platform with over
+400 programs to hack on. I hugely appreciate Integrity for investing a lot in community
+enablement. They create an awesome Bug Bites newsletter. They create monthly access challenges.
+They even have a great YouTube channel. If you are not one of over 50,000 hunters,
+check out Integrity now using the link from the description.
+I will start with explaining what is pipelining in HTTP 1. So normally, when the browser sends a
+request or when you send a request from burp, it looks like this. One request, one response. Nothing unusual.
+However, you can also send two requests at the same time and the server will give you two responses.
+Although this is not used by browsers anymore, it's a feature, not a bug. At least not by itself.
+But how does the server differentiate between this being two separate requests or one with a body?
+So, we can also send a request to the server. To help the server solve this problem, we use the
+content length header. It tells the server in bytes how long our request is. And the server knows
+that whenever the first request is finished, the next one begins. If you are using burp's repeater,
+this header is updated automatically. If you try to send these two requests with default settings,
+the server will update the content length header and you will actually send one big request.
+However, if you turn that option off and set the header to zero, the server will see two requests
+and issue two responses. Of course, if HTTP pipelining is supported.
+But not every single request contains the content length header. In fact, most of them don't because
+most of requests use the get method, which doesn't contain a body. So this header is useless because
+it would always be set to zero. And the server just doesn't expect a body when you are requesting,
+let's say a static image. If you manually change the method from get to, for example, post, the servers
+still respond with this static image, which doesn't really make sense to me, but it's probably to be
+even more error prone. The fact that normally these requests don't have a body doesn't mean you can't
+send one. Let's see what happens when you do. This is a simple image request which we can send to a
+vulnerable server. We can do the same using post method. And also we can use the request body,
+but the server doesn't use it in any way. And let's prepare the body of the request so that it looks
+like another HTTP request. If we send this, do you think we will get one or two responses?
+Based on what I said earlier, this is one Brick request with a body of 30 bytes. So we expect to
+get one response. But this is when we get to the client side desync problem. Because even though
+we send the valid content length header with a value of 30, the vulnerable server did not use this
+header. It's because this endpoint never consumes a request body. So it assumes the content length
+header is zero. And it probably worked fine for years without any problem before James Cattle came
+with his new research. So what a vulnerable server sees is that the first request ends here,
+and this is a second one, meaning it will also send two responses.
+The question you should be asking yourself now is why is that actually a problem? Because this is not
+really different from this. And we could basically send the second version anyway. And that's a very good
+question. But the breakthrough with client side desync is that with previous request smugging techniques,
+you had to use burp or even tools that worked on a lower network level. But this attack
+can work with the browser. Because when we send this request, there is absolutely nothing out of line.
+It just happens to have the body that looks like an HTTP request. But it's nothing invalid. It's the
+server that ignores the content length header and assumes it to be zero. You can use this to confuse the
+browser because the browser. Because the browser wants the amount of requests to be equal to the amount of
+responses. And in this case, the browser thinks it sent one request, but it got back two responses.
+So what does it do? When it sees the next request using the same connection,
+it will respond to it with the unexpected second response.
+There is a whole variety of ways you can use to exploit this bug. But in this case, let's see the
+technique that allowed to hack many websites built on Akamai with an XSS.
+The first thing you need for this technique to work is an endpoint that ignores the content length header.
+Your best candidates are static files, redirects or different errors.
+The bug was in Akamai itself, so it affected many websites, but we will stick to an example
+of the whole exploit on Capital One. If you requested a file without a trading slash,
+it redirected you to the same location, but with the trading slash. You could also use a post method for this.
+And this is what you sent to the server to confirm that it ignores the content length header.
+There are actually three requests. The first is the one that you want to check if it's vulnerable
+to client-side desync. With the second and the third one, you must be able to differentiate them
+by looking at the response because you will get some response from the server and you must determine
+which request did the server respond to. In this case, let's say for the robots.txt request,
+we expect 200 OK response code and for the assets, we expect a 403 forbidden.
+The value of the content length header of the first request must be between the second and the third request.
+If you count the characters, there are 24 in the first line, 4 in the second line,
+and newline is actually two bytes, one for the carriage return and one for the actual newline,
+which gives us 30. When you send this, you should get two responses. If everything works fine,
+the server will see the first request with this one as a body, which ends exactly between requests.
+So this would be our second request. So for the first one, you expect a redirect and for the second one,
+you expect the response to the assets request, which means you expect the 403. If that's the case,
+it means you did not find client side teasing vulnerability. However, if the server assumes the
+content length of the first request to be zero, you will also get two responses, but the second one
+one will be the response to the robot CXT request. The server will also see a strange looking header,
+but it's nothing out of line. If that's the case, you are very likely that you just found a browser
+powered desync. To confirm this, you can use this perfectly valid fetch call. In fact, if you prefer,
+you can simply start testing without using burp, but with this fetch call. What will happen under the
+hood is the browser will send this thinking it's a one big HTTP request. The server, however, will ignore
+the content length header and will send two responses over the same connection. The second one will be left
+hanging. So the browser will match the first response to the first request as it should, and will want to
+follow the redirect. So it will send another request over the same connection. And in this connection,
+there are already two responses. So the browser will simply return the second response to the request.
+Let's see how we could turn this client-side desync into an XSS on Akamai websites. Like every client-side
+bug, client-side desync is executed from the victim's browser, which means that we need to prepare our
+malicious website with malicious JavaScript code and trick the victim into visiting our website. This is the
+setup that we want to achieve in our connection. The first request is our initial vulnerable one. The
+second one is a head request to which the server will respond with text HTML content type. And this response
+must have content length header, even though it's a response to a head request, so it won't have a body.
+The third request will also contain an XSS payload in a header, which will be reflected in the response
+header. Normally, this is not the problem and it's not exploitable, so it shouldn't be that hard to find.
+And at this point, the browser will think that it only sent one request, while there are three responses
+in the same connection. So the first request sent by the browser will be poisoned by headers from the second response
+and headers from the third one will be the body of the response.
+So we want to make sure that this force request will not be just a fetch call, but it will be a top-level
+navigation so that the XSS payload executes in victim's browser. But normally, the first request will return
+a 301, so the fourth request would be the browser following this redirect as a fetch call. To prevent
+this, we use mode course, which will cause the browser to throw an error and not follow this redirect.
+And instead, in the catch block, we'll use the top-level navigation to redirect the victim
+to a new website which will be poisoned with our headers and our body.
+And the last problem is that if these two responses are left hanging for too long,
+the browser will just discard them. So we add the catchbuster parameter to the head request
+so that it's processed a little bit longer to prevent this. So this is the final exploit,
+the case that if sent from victim's browser would result in an XSS.
+If my video helped you to understand client-side dissing, I'm very happy and I'm proud of you,
+because I know this is not easy. However, this video did not cover the whole research and I will
+write about some other parts of it in next week's BBRE Premium. If you are not a member of BBRE Premium,
+go to BBRE.dev slash premium and subscribe. For now, thank you for watching and goodbye.

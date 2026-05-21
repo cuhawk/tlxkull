@@ -1,0 +1,247 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.560 --> 00:00:06.320
+Hello! In today's video you will learn how&nbsp;
+it was possible to steal all your cookies&nbsp;&nbsp;
+
+00:00:06.320 --> 00:00:13.040
+and even more from mobile Firefox browser. The&nbsp;
+vulnerability was very creative and involved&nbsp;&nbsp;
+
+00:00:13.040 --> 00:00:20.400
+multiple steps. It was found and reported by&nbsp;
+Pedro Oliveira and he got $5,000 for it. Links&nbsp;&nbsp;
+
+00:00:20.400 --> 00:00:25.600
+to the blogpost and his profile as always&nbsp;
+are in the description. Enjoy the video!&nbsp;
+
+00:00:26.640 --> 00:00:32.720
+When looking for mobile vulnerabilities with big&nbsp;
+impact, one of things you need to check is how the&nbsp;&nbsp;
+
+00:00:32.720 --> 00:00:40.880
+application uses custom URIs. On android, there&nbsp;
+are URIs with content:// protocol. They allow&nbsp;&nbsp;
+
+00:00:40.880 --> 00:00:49.040
+reading one application's file or data from the&nbsp;
+other one. An example of such URI looks like this:&nbsp;&nbsp;
+
+00:00:50.000 --> 00:00:56.960
+The first part is called content provider and&nbsp;
+it indicates what application will be used&nbsp;&nbsp;
+
+00:00:56.960 --> 00:01:04.960
+to handle this URI. In this case, it will be&nbsp;
+mobile Firefox browser. And the second part&nbsp;&nbsp;
+
+00:01:04.960 --> 00:01:12.560
+is the path of a file that will be opened. And&nbsp;
+as you saw on the example, mobile Firefox browser&nbsp;&nbsp;
+
+00:01:12.560 --> 00:01:19.520
+allowed reading local files using those&nbsp;
+content URIs. But after opening such address,&nbsp;&nbsp;
+
+00:01:20.160 --> 00:01:27.440
+Firefox copied contents of this file into a&nbsp;
+temporary location and redirected user into this&nbsp;&nbsp;
+
+00:01:27.440 --> 00:01:35.040
+location, but not with the content:// protocol but&nbsp;
+with a file:// protocol. It's simply used to read&nbsp;&nbsp;
+
+00:01:35.040 --> 00:01:42.720
+local files. And what's important, the name of the&nbsp;
+file in the temporary location remained unchanged.&nbsp;&nbsp;
+
+00:01:44.640 --> 00:01:51.680
+When defining those content URIs, the application&nbsp;
+can specify directories that a user can open.&nbsp;&nbsp;
+
+00:01:52.240 --> 00:01:55.360
+But Firefox used the following configuration.&nbsp;&nbsp;
+
+00:01:56.480 --> 00:02:02.080
+It means that the user can read any&nbsp;
+file that Firefox has access to.&nbsp;&nbsp;
+
+00:02:03.200 --> 00:02:10.800
+And among other configuration files inside Firefox&nbsp;
+directory, there is one that will be especially&nbsp;&nbsp;
+
+00:02:10.800 --> 00:02:17.840
+interesting for the attacker. It's cookies.sqlite&nbsp;
+which contains all cookies for a specific profile.&nbsp;&nbsp;
+
+00:02:18.640 --> 00:02:25.520
+Stealing those files would allow the attacker&nbsp;
+to take over all the accounts to which he or she&nbsp;&nbsp;
+
+00:02:25.520 --> 00:02:32.960
+is currently logged in. But first, the attacker&nbsp;
+would have to read profiles.ini file which would&nbsp;&nbsp;
+
+00:02:32.960 --> 00:02:39.680
+reveal the locations of cookie databases.&nbsp;
+So our goal will be stealing those files&nbsp;&nbsp;
+
+00:02:40.480 --> 00:02:46.160
+and the most likely attack scenario will be&nbsp;
+that the victim visits our malicious website&nbsp;&nbsp;
+
+00:02:46.160 --> 00:02:55.040
+that contains the exploit. It's easily possible&nbsp;
+to create a website that opens a local file&nbsp;&nbsp;
+
+00:02:55.040 --> 00:03:01.840
+and iframes its content but still the parent&nbsp;
+website has no access to those information.&nbsp;&nbsp;
+
+00:03:02.960 --> 00:03:11.200
+It's because Same-Origin-Policy would block&nbsp;
+such attempts. It's a browser security mechanism&nbsp;&nbsp;
+
+00:03:11.200 --> 00:03:16.560
+that protects the websites from different&nbsp;
+domains to steal each other's data.&nbsp;&nbsp;
+
+00:03:17.760 --> 00:03:24.880
+In general, websites need to share the same domain&nbsp;
+in order to be able to access each other's data.&nbsp;&nbsp;
+
+00:03:25.920 --> 00:03:32.800
+But the question is how do sites with file://&nbsp;
+protocol obey Same-Origin-Policy because they&nbsp;&nbsp;
+
+00:03:32.800 --> 00:03:40.240
+do not have any domains. Turns out browsers are&nbsp;
+very strict about this and it's really hard to&nbsp;&nbsp;
+
+00:03:40.240 --> 00:03:48.080
+read others file contents. But i'd like to&nbsp;
+point out the obvious fact that a file can&nbsp;&nbsp;
+
+00:03:48.080 --> 00:03:55.680
+access its own contents. Or being more precise,&nbsp;
+contents of a file stored under the same path.&nbsp;&nbsp;
+
+00:03:56.960 --> 00:04:02.880
+And the browser wouldn't notice if under the&nbsp;
+same path would be a completely different file.&nbsp;&nbsp;
+
+00:04:03.920 --> 00:04:11.440
+And coming back to Firefox, all files are being&nbsp;
+copied into the same directory and their names are&nbsp;&nbsp;
+
+00:04:11.440 --> 00:04:18.480
+not being changed, so it's possible to have two&nbsp;
+files in different directories but with the same&nbsp;&nbsp;
+
+00:04:18.480 --> 00:04:26.080
+name and once they are copied into the contentIri&nbsp;
+directory, the file will be overwritten.&nbsp;&nbsp;
+
+00:04:27.040 --> 00:04:36.000
+And that simple idea was worth $5,000 here. Let's&nbsp;
+see how the attack worked&nbsp;and explain the exploit.
+
+00:04:37.040 --> 00:04:42.160
+So we create a&nbsp;website and we&nbsp;
+assume that a victim visits it.&nbsp;&nbsp;
+
+00:04:42.160 --> 00:04:48.800
+This is its source code. Our goal at the&nbsp;
+moment is stealing the profiles.ini file&nbsp;&nbsp;
+
+00:04:48.800 --> 00:04:56.880
+from Firefox directory. The iframe will be&nbsp;
+executed first. It will download our file&nbsp;&nbsp;
+
+00:04:56.880 --> 00:05:04.000
+with the name profiles.ini onto the SD card. We'll&nbsp;
+take a look at contents of this file in a second.&nbsp;&nbsp;
+
+00:05:05.120 --> 00:05:11.680
+Then, android intent is being used and&nbsp;
+without getting into details, it's the same&nbsp;&nbsp;
+
+00:05:11.680 --> 00:05:18.320
+as we would use this content:// URI but&nbsp;
+with additionally stated html content type.&nbsp;&nbsp;
+
+00:05:18.960 --> 00:05:25.520
+It would tell the browser to execute contents&nbsp;
+of this file even though it has .ini extension.&nbsp;&nbsp;
+
+00:05:26.560 --> 00:05:32.800
+This will lead into Firefox trying to open&nbsp;
+our downloaded file with a content:// URI.&nbsp;&nbsp;
+
+00:05:33.680 --> 00:05:41.840
+And as you already know, first, Firefox will copy&nbsp;
+this file into contentUri directory and it will be&nbsp;&nbsp;
+
+00:05:41.840 --> 00:05:49.520
+opened in the browser using file:// protocol.&nbsp;
+Let's now see its contents. First we open an&nbsp;&nbsp;
+
+00:05:49.520 --> 00:05:56.640
+iframe with content:// URI which points to the&nbsp;
+actual profiles.ini file that we want to steal.&nbsp;&nbsp;
+
+00:05:57.680 --> 00:06:06.240
+Then, Firefox copies this file into contentUri&nbsp;
+directory, overwriting our profiles.ini file
+
+00:06:06.240 --> 00:06:14.080
+but the old version is still being opened in the&nbsp;
+browser. Then, using javascript, we send a request&nbsp;&nbsp;
+
+00:06:14.080 --> 00:06:22.640
+to window.location. It's a property that contains&nbsp;
+information about the current address. So it looks&nbsp;&nbsp;
+
+00:06:22.640 --> 00:06:29.520
+like the file would just get its own contents&nbsp;
+which is of course allowed by Same-Origin-Policy&nbsp;&nbsp;
+
+00:06:30.240 --> 00:06:36.480
+but at the moment of this request, the file is&nbsp;
+no longer the same because it was overwritten.&nbsp;&nbsp;
+
+00:06:37.440 --> 00:06:44.400
+So we can access contents of this file and&nbsp;
+easily send it to our server, achieving&nbsp;&nbsp;
+
+00:06:44.400 --> 00:06:52.160
+our goal of stealing the profiles.ini file. It&nbsp;
+would reveal the locations of cookie databases and&nbsp;&nbsp;
+
+00:06:52.160 --> 00:06:59.840
+we could steal those files exactly the same way.&nbsp;
+The whole process could be automated so that the&nbsp;&nbsp;
+
+00:06:59.840 --> 00:07:08.320
+exploit does not require any more user interaction&nbsp;
+than visiting the website. As mentioned before,&nbsp;&nbsp;
+
+00:07:08.320 --> 00:07:14.960
+the researcher was awarded $5,000 for this&nbsp;
+vulnerability. It was fixed shortly after&nbsp;&nbsp;
+
+00:07:14.960 --> 00:07:21.840
+being reported to the program and this exploit no&nbsp;
+longer works. I think the way the vulnerability&nbsp;&nbsp;
+
+00:07:21.840 --> 00:07:29.200
+was exploited was really creative and oddly&nbsp;
+satisfying to me. If you feel like you've learned&nbsp;&nbsp;
+
+00:07:29.200 --> 00:07:35.120
+something from this video, leave a like and leave&nbsp;
+a subscription. Thanks for watching and goodbye!
+

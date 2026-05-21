@@ -1,0 +1,152 @@
+Personally, I've never reported an SQL injection bug to a bug bounty program,
+so I was that much more surprised to see that the sum of bounties awarded for them
+isn't really decreasing. I decided to do the case study and extract all the disclosed SQL
+injection reports from the internet to analyze them. In this video, I will show you the impact
+of SQL injection or how to escalate it to, for example, an RCE or a file write or simply what to
+read. I will also show you the charts of those reports and bounties per year. Enjoy!
+So, for the impact, I have seven different metrics here and we'll go through them one by one and we'll
+start from the least common, which was file read or write. In this case, it was load file in
+MySQL and I'm quite surprised that this is the only report with this impact because I also in the full
+case study, which is part of VBR premium, I also did the breakdown of SQL engines and MySQL, which is
+used in this report is the most common one, but this was the only report and it looked like this. You had the
+load file function, which just returned you the file. So, really simple payload. Also, the hunter was
+quite lucky that the result of the query was included in the response, but nevertheless, really, really risky
+back. And if you have an SQL injection in a MySQL application, definitely use the load file. And also,
+the hunter was able to read, sorry, to write the data into any file, which possibly could be easily turned
+into an RCE. I can't judge by these headers what technology is being used here. But if this is like
+PHP or Java server pages or something like this, you can easily turn this into an RCE. So, this is
+really, really serious bug. So, definitely make sure to test this if you have a MySQL target. The reason
+why this is the only one report with this, one of two probably, one is just people don't know about
+this, about this function. The other probably more likely is that this is not enabled by default,
+this function, and developers just rarely use it. So, that's what I would assume. But we'll go to the
+next class, which is authentication bypass. And I had two reports like this.
+One of them is here and we have the case where the most basic SQL injection payload is being used to bypass
+the authentication. This payload, this very payload, I think is my first ever attack on a web application
+when I was just learning web security. I think this is like one of the first labs I've done. So, quite
+sentimental to me. And I wouldn't really expect this to be present in a real world application. But,
+but apparently it is. You can also see that this write-up is quite originally styled, I would say. Quite,
+quite strange. There's also an interesting image and the system was drunk or something is the
+the takeaway. And when I do these case studies, I sometimes go through reports like this, where
+I kind of... The truth is that I can never verify a report like this. Because if someone says that the
+target is redacted, I just have to trust them. And sometimes I have write-ups like this, where I look at
+them and I think, is this real? But in this case, the target is not redacted. It's an actual thing. It's
+Django REST framework. And I checked, it exists. It actually has 26,000 stars. And I even did go one step
+further. And I wanted to find the bug. Because if it's open source, I can find the bug. And I did, I didn't spend
+hours on it. I spent like 10-20 minutes on it. And I didn't see the bug. This framework, since the very
+beginning, uses Django's authenticate method. And as much as I could maybe believe a simple bug like this
+would be present in the not very common framework for Django, I really, really doubt. I'm pretty sure
+this bug didn't exist in Django's authenticate method, which is probably one of the most commonly used in
+2018. There are regularly SQL injections in Django, but they are not simple payloads. For example, I remember
+this one, because it's the first ever patch I've reversed. We did a CTF task. It was in 2019. So the
+bug was already public, but the payloads weren't public at all. So I had to reverse the patch. And I
+remember it very clearly. And it was quite a complex bug with JSONs with some nested properties, things like
+this. And it was 2019. And I'm pretty sure that in Django, it wasn't present in 2018. This writeup is from
+2018. And also, the writeup here says that he found 10,000 orders and 800 users accounts and 800 employees
+accounts on the URL that are redacted here. But the URL in the beginning is not redacted. And it is the
+localhost, which makes perfect sense. If you are testing a local application, it makes perfect sense that
+you tested locally, but then you don't access customer information, you don't access 10,000 orders,
+unless these orders are yours. And also the hunter said here $2,000 of rewards, which I don't know. Django
+now gets bounties from internet bug bounty program, which was founded in 2021. And I also googled this,
+this person, their hacker one profile, I think I have it here. And they, they actually are a real
+person with almost 5000 reputation hacker one. So I think they started reporting real bugs after some
+time. But they are not on the leaderboard of Django or of internet bug bounty. And I say Django because the
+website of this framework says that they are hand, they report, they handle security by Django security team.
+So that's, that's why I'm looking at it. So the takeaway is that this write up is 99% sure it's fake.
+I'm happy to be proven otherwise. DM me on Twitter or on Instagram, if you know that this is not true,
+that it is not true that it's fake. But this is this is this the harsh truth, because here I could verify
+this. But most of the time, when write ups say they are from reducted program, we have just zero tools to
+to verify this. And I actually didn't like study this, I don't have time to study every single report
+like this. I just while doing the test run for this video, I started to think about it and and I wanted to
+to dive a bit deeper. And that's that's how I found this out. I hope you don't mind the little off topic.
+We'll now come back to our case study. And we'll go to the next category, which is data right or modifying
+data. And we had two reports like this, one of them is, or this has been covered on my channel. And not
+only hasn't been has it been covered on my channel, it's my most watched video with over 200,000 views,
+even though I recorded it in 2020 with much worse quality and of pretty much everything apart from
+the video topic. And this this vulnerability was in zoom local application, it was a local SQL injection,
+which meant you didn't inject to the zoom database somewhere in the in zoom server, but you injected to
+the local zoom client. So the the vector of attack was CSRF like attack with the zoom MTG link to the
+meeting, which contains some parameters and those parameters were vulnerable. The attack itself was
+also very interesting with invalid Unicode sequences and things like that. I love I just love bugs like
+this. And the impact was you could write to, to the database in the local client. So you could,
+the worst thing you could do was modifying settings for the auto joining meeting and joining meetings with
+the camera turned on. So you could like change someone's meetings and invite them to a meeting. So they
+would join straight away. So we could pretty much turn on anyone's camera on the zoom call, wherever you
+wanted. So it was a really, really interesting bug. One of only only two in the case study, which resulted
+in modifying the data. And after writing the data, we have data read. And surprisingly, I only have seven
+reports of SQL injection bugs, where hunters actually read data from the database. You will see later what
+the other reports read. But it was quite rare to see an actual like customer data or a password hash
+being leaked from the database. One of these that did read the data is this one really nice report
+of SQL injection in a WordPress plugin, which was only available in the admin panel, which is normally
+quite bad, because if you can access admin panel, it's not really dangerous if you can inject SQL
+comments because you have all the access anyway, probably. But this SQL injection was changed with
+cross-site scripting. So you could attack the admin and your cross-site scripting payload would send
+SQL injection payloads to the backend. So really nice chain. And especially in this case, it was a blind
+SQL injection, like most of the SQL injections we have are blind, which means you have to send a lot of
+payloads. And normally it is not that big of a problem because if you're leaking the data, we don't really
+care, especially for bug bounty purpose. When you just want to show the injection, we don't care if we use
+1000 or 10,000 or even 20 or 30,000 requests, if there is no strict rate limiting. But with chaining it with
+JavaScript, it's different because your victim has to stay on the page with the payload for the whole time, which really makes you
+want to be efficient. In this case, the hunter was able to make more efficient payload and reduced payloads from requests
+from over 2000 to 300 to make the attack more likely. Also, if you're interested in
+the technique to optimize your SQL injection payloads, check out this video I made about a CTF task from live
+overflow from another YouTuber, which which I solved and I really paid attention to the effectiveness of my
+of my expert. I think that's a nice video. And this report is also really nice. Here is the whole payload. You see
+quite a lot of code for a normal payload and we can see actual data being leaked, which as I said, is quite rare in
+in case of of of these bugs. And it was rewarded $30,000. So so quite a nice reward as well. Next, we have RCE
+with seven seven reports and an example of an RCE we have here of those seven reports as much as five
+were in Microsoft SQL Server, which makes me think that there is something that developers need because
+it's the XPCMD shell function that's interesting here and it's turned off by default. But for some reason,
+apparently developers need this and then they either forgot to turn the configuration off or they actually
+use this in the production code or they just don't think that they will have SQL injection because who would
+think this way. So if you have an SQL injection in the Microsoft SQL Server, definitely try this out.
+Here is the whole payload. So we have something like this. We have here master.dbo.xpcmd shell
+and then there's the command and no, I think no, sorry, the command was was declared earlier. So we just
+have the ping here, which is good confirmation of of the bug. And that's that's that's good because
+having an RCE just removes any reasonable doubt that you deserve a maximum payout. And now we'll go to two
+most common categories. The second most common was 20 with 27 reports was something that I called
+no real impact because here hunters usually only showed that the injection is present and they didn't
+actually exfiltrate nothing, not even the version, not even the, I don't know, the database name. You see,
+a lot of these are time based and a lot of them only showed that the response was delayed. So they had the
+the sleep function like here sleep 10 means sleep for 10 seconds. So the response is delayed.
+And it does prove that this SQL injection is there. I'm actually, I'm definitely not saying that
+there's anything wrong with this. But it just not exfiltrating any data. And it basically works
+well enough. In most cases, it doesn't have to be time based. For example, here we have the
+if expression which changes based on some statement here, we just have one equals two, which is always
+false. And based on the response length, the hunter could determine if the condition was true or false.
+So again, not exfiltrating any data, just showing that the database query was processed.
+And the average bounty here was $920. But in the most common category, which was reading database
+metadata, it's $1,500. And so it's 50% increase of the average bounty for pretty much nothing. Because
+this category reading database metadata means that the hunters read something which wasn't
+confidential. Previously, we had the category read data, where you would read customer data, password
+hash, something like this. The best case scenario, basically, apart from RCS and everything. And this
+is the second best. If you for some reason, are unable to do that, or you don't want to read the data,
+because you're afraid the customer won't like it. You should read some metadata about the database,
+for example, database name, database version. Here, we have one of the very few examples where hunters
+could see in the response, the result of the query. Normally, this is not possible. And here, just payload
+from the path was returned here, which is really interesting, I'd like to see the code behind this
+functionality. So here we have database version. So nothing really sensitive, but enough to prove the
+SQL injection is there. But sometimes it was really not much. For example, here, the hunter extracted the
+length of the database name, which was 11 and determined this on some logical condition as well, because there's
+no time delay here. Here you just have the first digit of the version. And it's basically enough to
+prove that the injection is there. And yeah, doesn't feel like much more than, I don't know, showing the
+delay. But we can see on the average bounty that there is just, it's just better. And if we see like
+reading real data, looking at the average here doesn't make sense, because there is a mass write up from
+Apple, which skews the data, but the rest is 30k, 10k, 4 and half K, 3k, half K and $200. So it's, it's
+definitely more than than those ones. So if you have an SQL injection, invest at least this additional time
+into reading some data, or at least leading some metadata from the database, don't just report the time
+delay. As promised charts of reports and bounties by year, we can see that the numbers of the number of
+reports is actually quite consistent. If we take the 2020 year away, I don't know what's the reason behind
+there being more reports in 2020. And in 2022, we don't see many more reports than in previous years.
+But we see a lot more bounties being awarded. So this is very interesting. It also shows me that
+SQL injection is not dead. And I should maybe look for it sometime. But also, as always, relying on
+disclosed reports is not perfect, because not, it's only a small portion of all the reports being
+disclosed. So it's not the perfect statistic, but it's the best we have. If you've learned something new
+from this small part of the case study, I'm sure that you will enjoy the full version in BBR Premium
+Archive. The link is in the description. And if you want to see another free video, I suggest you this one
+about account takeover case study, where I took a look at over $1.3 million worth of bug bounty reports.
+For now, thank you for watching and goodbye!
+Thank you!
+
+Thank you!
+Thank you!
+Thank you!

@@ -1,0 +1,360 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.160 --> 00:00:06.000
+You are trying to log in to a website. The domain&nbsp;
+looks good - you opened it like you always do.&nbsp;&nbsp;
+
+00:00:06.720 --> 00:00:11.920
+You think you typed your password correctly, but&nbsp;
+the app tells you didn't it so you retype it again&nbsp;&nbsp;
+
+00:00:11.920 --> 00:00:19.040
+- it happens. But little do you know that by doing&nbsp;
+that you just gave your passwords to the attacker.&nbsp;&nbsp;
+
+00:00:20.560 --> 00:00:26.880
+Hello, the vulnerability I will show today is the&nbsp;
+most fun and creative exploit I have ever done&nbsp;&nbsp;
+
+00:00:26.880 --> 00:00:32.480
+for bug bounty. I chained SSRF with phishing,&nbsp;
+which doesn't really sound familiar, does it?&nbsp;&nbsp;
+
+00:00:33.040 --> 00:00:38.160
+Unfortunately, even though I'm very happy with&nbsp;
+this bug, I still didn't make the most out of&nbsp;&nbsp;
+
+00:00:38.160 --> 00:00:44.720
+it and learned the lesson the hard way. But for&nbsp;
+now, enjoy the explanation! I found this bug in&nbsp;&nbsp;
+
+00:00:44.720 --> 00:00:51.520
+the private program. Let's say it's redacted.com.&nbsp;
+There is a way to set up two factor authentication&nbsp;&nbsp;
+
+00:00:51.520 --> 00:00:58.320
+via Duo. The way it works is you create an&nbsp;
+account on Duo. It generates credentials for&nbsp;&nbsp;
+
+00:00:58.320 --> 00:01:06.480
+you and assigns a subdomain that looks&nbsp;
+like this: api-random.duosecurity.com.&nbsp;&nbsp;
+
+00:01:07.680 --> 00:01:13.472
+To set it up on redacted.com, you copy these&nbsp;
+credentials and the hostname. Then, redacted&nbsp;&nbsp;
+
+00:01:13.472 --> 00:01:22.000
+does the validation. It checks if the host starts&nbsp;
+with api- and ends with .duosecurity.com. And&nbsp;&nbsp;
+
+00:01:22.000 --> 00:01:32.400
+these validations are robust. If you do them on&nbsp;
+the host. But redacted.com did not. It didn't&nbsp;&nbsp;
+
+00:01:32.400 --> 00:01:39.920
+normalize the address and these validations were&nbsp;
+run on your whole input, not just on the host.&nbsp;&nbsp;
+
+00:01:39.920 --> 00:01:45.120
+So it's quite easy. You can use this address to&nbsp;
+bypass it while still controlling the hostname.&nbsp;&nbsp;
+
+00:01:45.840 --> 00:01:53.280
+And after the validation, redacted.com makes&nbsp;
+a request to auth/v2/check endpoint. It just&nbsp;&nbsp;
+
+00:01:53.280 --> 00:01:59.840
+concatenates your host to this path and this is&nbsp;
+the final location where your request is sent.&nbsp;&nbsp;
+
+00:02:01.520 --> 00:02:07.680
+This way you can trick the server into sending&nbsp;
+requests to an arbitrary location. It's a typical&nbsp;&nbsp;
+
+00:02:07.680 --> 00:02:12.800
+server-side request forgery. As you could&nbsp;
+not read the response, it's a blind one.&nbsp;&nbsp;
+
+00:02:14.080 --> 00:02:20.320
+And of course, after this request, redacted threw&nbsp;
+an error because my service was not responding to&nbsp;&nbsp;
+
+00:02:20.320 --> 00:02:27.520
+this request with the expected format. But since&nbsp;
+it's a blind SSRF anyway, it doesn't really&nbsp;&nbsp;
+
+00:02:27.520 --> 00:02:34.160
+matter - the request was already sent. Usually,&nbsp;
+to elevate the impact of a blind SSRF, you need&nbsp;&nbsp;
+
+00:02:34.160 --> 00:02:39.760
+to find another service in the internal network&nbsp;
+which you can exploit with a single request.&nbsp;&nbsp;
+
+00:02:40.480 --> 00:02:46.720
+So the impact of this bug varies a lot. But&nbsp;
+redacted is an open-source application which you&nbsp;&nbsp;
+
+00:02:46.720 --> 00:02:54.560
+can install yourself. So impact here is greater&nbsp;
+because, you know, the company can say "we don't&nbsp;&nbsp;
+
+00:02:54.560 --> 00:03:00.800
+have any internal services that can be chained&nbsp;
+with a blind SSRF", but they can't say "none of&nbsp;&nbsp;
+
+00:03:00.800 --> 00:03:07.760
+our clients has services in the internal network&nbsp;
+that could be chained with it". So I reported the&nbsp;&nbsp;
+
+00:03:07.760 --> 00:03:14.800
+blind SSRF and went to sleep as it was quite late&nbsp;
+and I'm not a night owl. But remember I told you&nbsp;&nbsp;
+
+00:03:14.800 --> 00:03:21.040
+earlier there was an error due to my server not&nbsp;
+responding with the expected format? When I was&nbsp;&nbsp;
+
+00:03:21.040 --> 00:03:27.760
+falling asleep, I was wondering what would happen&nbsp;
+if my server would return a proper response,&nbsp;&nbsp;
+
+00:03:27.760 --> 00:03:35.040
+just like a real Duo API server would. Maybe I&nbsp;
+even dreamt about it, but I don't remember that.&nbsp;&nbsp;
+
+00:03:37.040 --> 00:03:43.520
+So the next morning, I came back to it. I thought&nbsp;
+that maybe if I managed to set up the integration&nbsp;&nbsp;
+
+00:03:43.520 --> 00:03:49.840
+with my server, something interesting will be sent&nbsp;
+to me during the logging process. So I created a&nbsp;&nbsp;
+
+00:03:49.840 --> 00:03:55.680
+Duo account and used real credentials. And this&nbsp;
+is the response that my proof of concept server&nbsp;&nbsp;
+
+00:03:55.680 --> 00:04:02.880
+had to return. And it worked! I successfully&nbsp;
+added two-factor authentication with my server&nbsp;&nbsp;
+
+00:04:04.000 --> 00:04:10.400
+and the way the Duo integration works is that&nbsp;
+after the login, the iframe from my subdomain&nbsp;&nbsp;
+
+00:04:10.400 --> 00:04:16.240
+is opened with the input field where you&nbsp;
+fill in the OTP code that you received&nbsp;&nbsp;
+
+00:04:16.240 --> 00:04:23.280
+via a text message from Duo. So when I was&nbsp;
+trying to log in, the server tried to open&nbsp;&nbsp;
+
+00:04:23.280 --> 00:04:29.440
+an iframe from my own server. It was a perfect&nbsp;
+attack scenario. I created a proof of concept&nbsp;&nbsp;
+
+00:04:29.440 --> 00:04:36.400
+that looked like redacted.com's login page.&nbsp;
+And after the login, my form was shown in the&nbsp;&nbsp;
+
+00:04:36.400 --> 00:04:44.400
+victim's browser. It looked exactly like the one&nbsp;
+from redacted.com... minus my HTML/CSS skills.&nbsp;&nbsp;
+
+00:04:45.920 --> 00:04:52.000
+The domain of the iframe is not visible to the&nbsp;
+victim, so this is pretty much perfect phishing.&nbsp;&nbsp;
+
+00:04:53.520 --> 00:04:58.000
+In a real word attack, I could also add&nbsp;
+the message about an invalid password.&nbsp;&nbsp;
+
+00:04:58.000 --> 00:05:03.520
+It's because the victim is taken to my&nbsp;
+iframe after a successful login. I would&nbsp;&nbsp;
+
+00:05:03.520 --> 00:05:09.840
+show them an alert about an invalid&nbsp;
+password so that they retype it again.&nbsp;&nbsp;
+
+00:05:11.200 --> 00:05:17.520
+But the question you might be asking yourself&nbsp;
+is what is the impact of phishing myself? The&nbsp;&nbsp;
+
+00:05:17.520 --> 00:05:24.480
+thing is that redacted.com also has teams and as&nbsp;
+the admin of the team, I can set up two-factor&nbsp;&nbsp;
+
+00:05:24.480 --> 00:05:30.560
+authentication for all members. And with this&nbsp;
+attack, I can get their plaintext passwords.&nbsp;&nbsp;
+
+00:05:31.600 --> 00:05:37.840
+This, however, makes the attack less likely.&nbsp;
+So even though the attack is super cool,&nbsp;&nbsp;
+
+00:05:37.840 --> 00:05:44.880
+is not as impactful. And this is a place I find&nbsp;
+myself quite often when doing bug bounty. I have&nbsp;&nbsp;
+
+00:05:44.880 --> 00:05:51.360
+like a childish curiosity - I just want to break&nbsp;
+things and not care about the impact. I'm not sure&nbsp;&nbsp;
+
+00:05:51.360 --> 00:05:58.720
+if that's a good thing because not always cool&nbsp;
+attacks result in equally great impact. And I feel&nbsp;&nbsp;
+
+00:05:58.720 --> 00:06:05.120
+that if I want to get maximum return on investment&nbsp;
+from doing bug bounty, I should focus on things&nbsp;&nbsp;
+
+00:06:05.120 --> 00:06:10.880
+that are the most impactful and not necessarily&nbsp;
+the coolest. But on the other hand, in some&nbsp;&nbsp;
+
+00:06:10.880 --> 00:06:20.800
+situations that curiosity is definitely helping me&nbsp;
+out. This attack gave me so much satisfaction. So&nbsp;&nbsp;
+
+00:06:20.800 --> 00:06:27.440
+I added the comment to the original report. One&nbsp;
+problem was that the CSP didn't allow opening&nbsp;&nbsp;
+
+00:06:27.440 --> 00:06:33.520
+iframes from my domain. It reminded me of my&nbsp;
+recent endeavours with the content security&nbsp;&nbsp;
+
+00:06:33.520 --> 00:06:42.240
+policy on Stripe. I didn't initially report my 2&nbsp;
+XSSes because of the CSP. Later, turned out they&nbsp;&nbsp;
+
+00:06:42.240 --> 00:06:50.240
+rewarded me for them very well, treating CSP&nbsp;
+only as a defence in-depth mechanism. So here,&nbsp;&nbsp;
+
+00:06:50.240 --> 00:06:57.040
+I didn't consider turning off CSP a big problem.&nbsp;
+But this program had a different attitude.&nbsp;&nbsp;
+
+00:06:58.960 --> 00:07:05.440
+They only rewarded me $500 which looked like a&nbsp;
+reward that didn't consider the phishing attack&nbsp;&nbsp;
+
+00:07:05.440 --> 00:07:14.160
+scenario - only the blind SSRF. So I replied&nbsp;
+to them, saying why I think I should get more.&nbsp;&nbsp;
+
+00:07:14.160 --> 00:07:19.760
+I mentioned a possible bypass of the first&nbsp;
+fix and explained this second attack scenario.&nbsp;&nbsp;
+
+00:07:20.720 --> 00:07:26.320
+But unfortunately, by doing it, I spoiled&nbsp;
+it and I'm still angry with myself for that.&nbsp;&nbsp;
+
+00:07:27.120 --> 00:07:30.320
+I thought about bypassing&nbsp;
+the content security policy,&nbsp;&nbsp;
+
+00:07:30.320 --> 00:07:36.880
+but it's an iframe and I only controlled the host,&nbsp;
+so I couldn't think of anything worth trying here.&nbsp;&nbsp;
+
+00:07:37.760 --> 00:07:44.400
+And for my augmentation, they gave me $500 more.&nbsp;
+And initially, I was very happy with that reward.&nbsp;&nbsp;
+
+00:07:45.360 --> 00:07:49.520
+But after a few days, when the bug&nbsp;
+was fixed and the report was closed,&nbsp;&nbsp;
+
+00:07:49.520 --> 00:07:55.600
+I logged in to redacted.com. But this&nbsp;
+time not via the website, but with an app&nbsp;&nbsp;
+
+00:07:56.320 --> 00:08:02.480
+and to my eyes, my phishing page popped up&nbsp;
+without turning off the content security policy.&nbsp;&nbsp;
+
+00:08:04.240 --> 00:08:11.600
+Turned out that my phishing exploit was complete,&nbsp;
+just via another login channel. And in case of&nbsp;&nbsp;
+
+00:08:11.600 --> 00:08:18.360
+this app, I think it may be a more popular&nbsp;
+way to log in than the website itself. So&nbsp;&nbsp;
+
+00:08:19.040 --> 00:08:23.040
+I didn't know how much more they would&nbsp;
+be willing to pay me, but definitely&nbsp;&nbsp;
+
+00:08:23.040 --> 00:08:29.200
+something more. But after already arguing one&nbsp;
+time, I didn't want to do it the second time&nbsp;&nbsp;
+
+00:08:29.200 --> 00:08:34.480
+since the report was already closed. And&nbsp;
+I'm still angry with myself for that.&nbsp;&nbsp;
+
+00:08:34.480 --> 00:08:39.840
+It's a hard way to learn to always,&nbsp;
+always check different channels.&nbsp;&nbsp;
+
+00:08:41.920 --> 00:08:48.160
+But even though I didn't mention it in the report,&nbsp;
+I know that my proof of concept was complete&nbsp;&nbsp;
+
+00:08:48.160 --> 00:08:56.000
+and this was the coolest exploit I have&nbsp;
+ever done, at least so far. And after all,&nbsp;&nbsp;
+
+00:08:56.000 --> 00:09:02.160
+$1,000 is not bad, especially since found it&nbsp;
+after just starting hunting on the program.&nbsp;&nbsp;
+
+00:09:04.400 --> 00:09:09.600
+With this money, I'm fulfilling one of&nbsp;
+my dreams to go to an F1 race. In fact,&nbsp;&nbsp;
+
+00:09:09.600 --> 00:09:15.120
+right now, as this video is published, I'm in&nbsp;
+Barcelona on Spanish Formula One Grand Prix.&nbsp;&nbsp;
+
+00:09:17.120 --> 00:09:21.920
+Less than a year ago I was a pentester&nbsp;
+and even though I had web security skills,&nbsp;&nbsp;
+
+00:09:21.920 --> 00:09:27.840
+I just couldn't find bugs in bug bounty. I was&nbsp;
+learning a lot and I hoped that it will finally&nbsp;&nbsp;
+
+00:09:27.840 --> 00:09:34.400
+yield results. Albeit bug bounty is not easy and&nbsp;
+definitely not a get rich quick scheme, I can see&nbsp;&nbsp;
+
+00:09:34.400 --> 00:09:40.480
+that all this learning pays off and I'm finding&nbsp;
+cool bugs that enable me to fulfil my dreams.&nbsp;&nbsp;
+
+00:09:41.280 --> 00:09:44.800
+If you want to learn with me,&nbsp;
+subscribe to BBRE Premium.&nbsp;&nbsp;
+
+00:09:45.520 --> 00:09:51.600
+I'm documenting things that I learn there. What&nbsp;
+tools do I use, what methodology, what hacking&nbsp;&nbsp;
+
+00:09:51.600 --> 00:09:57.120
+techniques. It's all about continuous learning&nbsp;
+of intermediate and advanced level topics.&nbsp;&nbsp;
+
+00:09:58.320 --> 00:10:04.480
+Check out bbre.dev/premium. For now,&nbsp;
+thank you for watching and goodbye!
+

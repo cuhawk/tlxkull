@@ -1,0 +1,103 @@
+Hello, today for the third time on my channel I have SSR vulnerability in GitLab.
+This time however it was found in the external component called Grafana.
+It was reported by Justin Gartner and he got 12,000 dollars for it.
+Links to the report as well as to his blog post and his talk about the topic are in the
+description.
+Enjoy the video.
+Let's start with Grafana.
+It's a software used for monitoring and creating graphs with analytics data.
+And it's open source which means it's a little bit easier to look for vulnerabilities because
+we can see the source code.
+And the researcher noticed the root avatar slash hash where hash is the parameter.
+And after receiving such request Grafana took the hash and made the request to Gravatar website.
+It's used for storing avatars.
+The URL for this request is created like this.
+The first part is hardcoded and the second part is our hash.
+What's important here is that the hash is everything after the slash of the first request which
+means it includes any parameters after the question mark.
+Then there is question mark appended and value of reg params which are hardcoded parameters
+d, size and r.
+So we can only control the last part of the path and the parameters which means that we are
+far from SSRF vulnerability.
+Unless we can find an open redirect vulnerability on Gravatar website and then we could use it
+to redirect the server to the internal location achieving our server side request forgery.
+For this purpose a Gravatar documentation about the default URL might be very useful.
+The d or default parameter that you saw earlier is used when Gravatar doesn't find the image
+on his own server.
+It can be some predefined value like retro but it can also be a URL which is very promising
+when you're looking for open redirects.
+But when you provide the URL you get redirected to yet another domain.
+This is the way that you would tell this domain where to look for your image.
+It would try to go to this location and give you back the image.
+But if it would be on the domain bp.blogspot.com instead of fetching this image for you it would
+redirect you to that domain.
+But you could exploit this functionality by using bp.blogspot.com as the path achieving an
+open redirect.
+So we can use this chain of redirects to make the server send the request to specified by
+us host.
+However, there is still one problem.
+There will always be the bp.blogspot.com part in the path.
+But this is easy to resolve.
+We can just introduce yet another redirect this time to our server.
+Then on our server we can host the code that will strip this part and send the one last
+open redirect to the arbitrary host and arbitrary path.
+Chaining this all together the final exploit URL would look like this.
+However, if we would send it like this then Grafana would think that only this part is the hash.
+So we need to remember to URL encode some values, sometimes even more than once.
+On GitLab it was exploitable by requesting a standard AWS metadata endpoint which usually
+allows to take over the whole server.
+And that's it.
+If you're interested in more ways of exploiting this Grafana vulnerability check out Justin's
+blog post or his talk about the topic.
+We are linked in the description.
+But for now, thanks for watching, happy hunting and goodbye.
+Bye.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

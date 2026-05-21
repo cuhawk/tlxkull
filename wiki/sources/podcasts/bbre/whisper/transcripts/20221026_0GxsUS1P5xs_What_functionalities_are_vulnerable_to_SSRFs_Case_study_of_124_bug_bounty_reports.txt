@@ -1,0 +1,139 @@
+In theory, SSRF is a really simple vulnerability class. You can make requests to arbitrary locations.
+But in practice, there are so many questions. What functionalities are actually vulnerable?
+Do we really need all the crazy SSRF payloads we've all seen? And finally, how are people
+proving the impact of SSRFs in real life? I wanted to know answers to this question,
+so I went on the internet and I extracted 361 bug bounty reports, then filtered them out and
+categorized them to learn how are people actually making money with SSRFs. I shared the whole case
+study along with the database of those reports in BB-Area Premium, but in this video I will show you
+what functionalities are most likely to be vulnerable to SSRFs. Enjoy!
+It turns out that the functionality most likely to be vulnerable to SSRFs is different kinds of
+upload by URL functionality. In many cases, this meant uploading avatars or something with avatars
+or otherwise images. But what I want you to note is that many of these SSRFs are actually blind.
+Not many of these functionalities gave the attacker the ability to read the response,
+which is crucial if we want to get the highest impact. Even though the highest bounty was 15,000
+and it was a report from 2021 and it was a blind SSRF, but it was escalated to an RCE using the Gopher
+protocol and Redis, if I remember correctly. The next highest bounty was 12,000 and it's a report that I
+also covered on my channel. It's an SSRF in Grafana where RhinoHater combined, I think, three open redirects
+to get this vulnerability. Otherwise, we have quite a lot of $500 payouts or lower payouts,
+a lot of $500 payouts, often due to the fact that this only allowed a blind exploitation.
+The next group of vulnerabilities is upload by upload functionality. It's a bit different because in that
+case, the app really allowed us to input a URL to import something from the remote resource. And it's
+quite obvious to test for SSRFs. I think this is the first functionality that I think about when I think
+about SSRFs. In file upload, however, we are uploading a file from our local computer and the
+processing of the file actually causes the server to make a request where it shouldn't make the request.
+There were 17 reports like this, but out of them six where FFmpegCV is, it's a video format where it was
+possible to make requests to arbitrary locations or even read local files. And in each case, remember that
+this is a sample size of 124 reports because very small percentage of all bug bounty reports are
+actually disclosed. So if we have six reports here, it probably means there are tens or hundreds of
+reports that are not disclosed about the same bug. So there were six occurrences of this. I think there
+are, they are mostly from 17, 2016. I don't know what is the freshest when 2020 one payout. So I'm afraid
+that it won't really work. Also, we have seven excess XS in this group. Majority of them were in SVG files
+where you could trick the server into making requests into arbitrary locations. And with this group of SSRFs,
+the file upload SSRFs or file processing SSRFs. Note how many of these allow using file protocol. It makes
+exploitation that much easier because you can just read a local file on the server. And I would assume
+that some of similar reports to what I have here are reported and maybe even disclosed, but aren't
+reported as SSRFs, but as arbitrary file reads, which I would say in this context doesn't really make
+a difference. The next one is different functionalities in regards to headless browsers.
+So the server takes an HTML from the user or some input from the user and renders the HTML on the backend,
+usually to create a PDF or generate an image. There were nine reports like this. And I think this is
+one of the promising functionalities because I feel that more and more servers are utilizing headless
+browsers for different tasks. So that's definitely something to look out for. In seven out of these nine
+cases, there was iframe SRC payload used. And almost all of these SSRFs allowed full read of the response,
+which also made the impact greater. Then the next functionality, only one report less was webhooks or
+some kind of checking server status. For example, let's take this report from Google, where there was just
+a functionality to check if your Google cloud server is up and running or not. It was called uptime checks.
+And in this case, there was actually no filtering because the response wasn't directly shown to the attacker.
+So I think the developers didn't predict this can be used for SSRFs, but the hunter was able to exfiltrate
+the data of the response by using regexes and a blind exfiltration method, very similar to a blind SQL injection.
+I also covered this bug bounty report in a video on my channel. And I also created a hands-on lab where
+you can try reproducing this. It was $31,000 SSRF, which makes it the highest paying one from this group.
+And I think this functionality is also quite obvious to test for SSRFs, which on one side is good,
+but on the other side, it's probably more and more likely that developers are also aware of this and
+SSRFs in these obvious places will be less and less common. Also, out of these eight reports that I have
+here, the redirect was used in five of them, which is quite a lot. So you didn't need any complex payloads,
+octal encoding, nothing like this. All you needed to do was to use a redirect and the server didn't
+did check the location of the original URL, but not when following the redirect.
+Let's go next with actually the same amount of reports. There is a different proxing functionality
+where the server was making a request on the backend, probably to some microservice or to some external API.
+And it was possible to trick the server into making a request into a location controlled by the attacker.
+Note how many of these reports are relatively recent. We have, you know, 2020, 2021, 2022.
+So if you compare this with, with these previous bugs, it's seems like it's, it's quite a new vector.
+And I think this is one of the more promising results of this case study, because probably
+it's very trendy to, to have more complex backend functionality on the servers. Instead of the monolith,
+we have like microservices, different APIs, external APIs as well. So in many cases, the server will make
+requests using our input. And in some cases, we can utilize this to create SSRs. In this case, often,
+it was enough to just send a valid parameter to the user. In the full version of this case study,
+there's also a list of the parameters with amount of occurrences. And it's no surprise that the URL
+parameter was the most common one. I'm stepping next to the group that I've called security mechanism or a
+library bug. This means that the bug was found not in a particular application with a particular impact,
+but it was in software which anyone can install in their own infrastructure or use as a library.
+Out of these seven reports, there are actually three that were sent to Stripe about a smokescreen.
+Smokescreen is one of the targets that I challenged when doing 100 hour challenge on Stripe.
+And I found a bypass of the denialist there. And it's one of these seven reports. And then two other
+people found yet another bypasses on the same functionality. And I saw on Twitter someone
+mentioning yet another triaged bypass. I don't know yet what it is. But if you want to see that video
+about my initial bypass, then check out the card in your top right hand corner. And I like bugs like this
+because for one, the case study also showed how many reports were blind, where the SSRF didn't allow the
+attacker to read the response. And in this case, it's very hard to show the impact. Sometimes you can do a
+port scan, but often you can't really do much and you don't know if this is impactful or not.
+If it's an immature program, they won't check this for you. And probably considering that most reports
+were blind from these disclosed ones, I'm sure that there are many, many more blind SSRFs out there
+that are just not reported because it's hard to show the impact of them or they have no impact because it
+is also possible. So on the other hand, when we're looking for bugs in libraries or security mechanisms,
+we don't have to care about this because the library is like abstract, so they don't know what's in their
+clients infrastructure. So if there is a bypass, it's a clear impact and you don't have to actually scan the
+target infrastructure, which can also get you in trouble in some cases. Then with the same amount of
+reports, we have file storage integration and it can be, can seem as similar vulnerability to the file
+uploads category, but it's actually completely different. In file uploads category, we uploaded the
+file from our local computer and the server was processing these files. In file storage integration,
+we upload a normal file to the server and it tries to store it on Amazon S3 or on Google Drive or
+something like this. For example, very recently I covered this great blog post about the SSRF in
+Dropbox. It used a very clever trick and it's basically this kind of bug. The server tried to
+fetch something from Google Drive, but the attacker was able to trick the server into making a request
+into another host, basically giving him the full read SSRF as we can see here. There were also a few
+Amazon integrations and things like that. And I also think this category might be growing in future years
+because also seems like many applications these days tend to use external solutions instead of developing
+something themselves. That's why cloud is becoming more popular. So I would also guess this is the direction.
+So I would assume that they no longer work, but
+the fact that there were four reports here shows that it was a big case. These reports are from 2018 and
+2019. So I would assume they no longer work, but it seems to have been a big case.
+Sentry is for some kind of analytics, I think reporting CSP errors also worked with Sentry and there was some
+kind of misconfiguration there. And probably you won't find this one in 2022, but maybe it's a good idea for
+a research to try to find a similar bug in currently used solutions for that. And maybe you can try to turn
+it into a bug that you can report to many, many programs. All of these four were blind, which reduced the impact, but
+one guy got three and a half thousand for this. So it was a good, a good bug. Next, we step to the reports that
+only have two occurrences in these disclosed ones. There were two reports where simply the server made a request
+request to the target from the host header, which in this case, it actually, it was in GitLab in 2019 for a $4,000 payout.
+So also a good bug. But we'll step next. Next, we have a class that I called email configuration.
+And it was about the ability to control the email domains.
+And I think one of these was signing up with your own email domain and the server made the request to your server.
+One of these is in great blog post by Donut, where I think three or four SSRFs in one blog post.
+The other one was this one, blacklist bypass for mail account addition, so quite a specific functionality.
+And it's one of the very few reports when I saw these kind of payloads. So basically what we all know
+from different SSRF cheat sheets, this is actually, I think the only one when I see, when I saw something
+like this, like 32 bit hex conversion, and things like that, usually much simpler things worked like IPv6.
+And even in this case, we can see that he just outlined all the things that worked. So if you wanted,
+probably one of these would be enough. Let's go next to actually the last functionality that I
+that I have prepared. Only one report about the first request line. And I, when doing this case study,
+I initially created, you know, very detailed labels and categories. But the longer I got into studying
+these reports, the better I knew which one are too specific, which ones are too broad. And I tried to,
+even after the second round of categorizing, find out the ones with like one category and merge categories
+with each other. But I made an exception for this one. First, because literally, I think in the last issue of
+of BBR premium, I wrote about this behavior, about proxing requests using the first line and why it works.
+Because I was not doing it for SSRF study. I was for some reason reading an RFC. And I saw that this is like the
+RFC compliant behavior. And also this report was six and a half thousand dollars. And it is relatively fresh because
+it's 2020. That's why I made an exception and made a category for a single report.
+These are all the functionalities that I labeled using my case study. I hope this will help you find
+more SSRFs. If you are interested in the full version of this case study, you can find out there the list of
+vulnerable parameters. You can see which payloads actually worked in real life, which bypasses
+were necessary, how many SSRFs were blind, and also how people were showing impacts of of SSRFs. And also
+my conclusions after doing this whole case study, even though I mentioned some of my conclusions in this
+video. And also I shared the whole database with 315 reports. So you can just filter them yourself,
+find out what's interesting for you. I only did this case study on those reports with a bounty.
+There were 124 of them. But in the database, there are all 315 reports. It's available on BBR premium
+platform. I encourage you to join and I guarantee that you won't regret this. You will get instant
+access to the whole archive of over 200 articles from the past year from BBR premium. And also every
+two weeks you will receive access to the new ones. It only costs $10. On my blog, I also wrote about how
+I created this case study. And there is no rocket science, only some time invested. So if you can't
+or don't want to spend 10 bucks on BBR premium access, feel free to repeat the study using the steps
+from my blog post. And if you want to join, go to bbre.dev.com. For now, thank you for watching and goodbye.

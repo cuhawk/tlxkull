@@ -1,0 +1,652 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.840
+In the era of chatbots, with every single company
+
+00:00:02.840 --> 00:00:06.320
+having a chatbot that can access user data,
+
+00:00:06.320 --> 00:00:08.400
+there's a lot of new attack surface.
+
+00:00:08.400 --> 00:00:10.960
+And I don't only mean AI-related attacks
+
+00:00:10.960 --> 00:00:12.600
+like prompt injection.
+
+00:00:12.600 --> 00:00:16.080
+It's even a lot of new regular web vulnerabilities
+
+00:00:16.080 --> 00:00:17.200
+that arise.
+
+00:00:17.200 --> 00:00:20.040
+It's especially dangerous when these chatbots
+
+00:00:20.040 --> 00:00:23.200
+can access critical user information,
+
+00:00:23.200 --> 00:00:25.559
+like the Azure HealthBot service
+
+00:00:25.559 --> 00:00:28.719
+that is created to answer questions of patients
+
+00:00:28.719 --> 00:00:31.600
+based on their medical history.
+
+00:00:31.600 --> 00:00:36.599
+A hunter called Yanir Tsarimi found a total of four bugs,
+
+00:00:36.799 --> 00:00:39.240
+allowing him to steal data of other users,
+
+00:00:39.240 --> 00:00:44.240
+for which he was awarded a total of $203,000.
+
+00:00:44.240 --> 00:00:47.040
+I will explain this in this video.
+
+00:00:47.040 --> 00:00:48.680
+Enjoy.
+
+00:00:48.680 --> 00:00:51.599
+Azure HealthBot is a service that can respond
+
+00:00:51.599 --> 00:00:55.720
+to customers' basic questions based on their medical database
+
+00:00:55.720 --> 00:00:58.560
+and based on their medical history.
+
+00:00:58.599 --> 00:01:02.599
+It was actually built pre-ChatGPT or pre-LLM era,
+
+00:01:02.599 --> 00:01:07.040
+so it does not everything based on the LLM.
+
+00:01:07.040 --> 00:01:10.480
+For example, you can control the flow of the conversation
+
+00:01:10.480 --> 00:01:13.720
+using just different expressions in JavaScript.
+
+00:01:13.720 --> 00:01:16.360
+And of course, this is meant to be used
+
+00:01:16.360 --> 00:01:18.760
+by hospital and medical facilities.
+
+00:01:18.760 --> 00:01:21.480
+So then the attack scenario,
+
+00:01:21.480 --> 00:01:23.400
+you could think the attack scenario
+
+00:01:23.400 --> 00:01:26.279
+is only one hospital attacking another,
+
+00:01:26.279 --> 00:01:28.760
+but the truth is everyone can go to Azure website
+
+00:01:28.760 --> 00:01:31.639
+and create their own Azure HealthBot.
+
+00:01:31.639 --> 00:01:34.080
+So the attacker can do it as well.
+
+00:01:34.080 --> 00:01:36.360
+So the attack scenario of one tenant
+
+00:01:36.360 --> 00:01:39.919
+attacking data of another is very, very critical
+
+00:01:39.919 --> 00:01:42.160
+and can be very dangerous.
+
+00:01:42.160 --> 00:01:45.519
+But of course, developers were aware of this risk
+
+00:01:45.519 --> 00:01:47.239
+because as I've told you,
+
+00:01:47.239 --> 00:01:50.879
+you can create your own JavaScript expressions
+
+00:01:50.879 --> 00:01:53.000
+to control the flow of the conversation,
+
+00:01:53.040 --> 00:01:56.760
+but to mitigate the risk of the JavaScript code
+
+00:01:56.760 --> 00:01:59.040
+just reading data of other users,
+
+00:01:59.040 --> 00:02:02.440
+this code runs in the isolated environment
+
+00:02:02.440 --> 00:02:04.959
+using the VM tool library.
+
+00:02:04.959 --> 00:02:06.959
+The way it works is it overrides
+
+00:02:06.959 --> 00:02:09.039
+a lot of built-in JavaScript functions
+
+00:02:09.039 --> 00:02:10.800
+and access to the prototype
+
+00:02:10.800 --> 00:02:14.520
+so that you cannot execute whatever code you want.
+
+00:02:14.520 --> 00:02:17.000
+For example, the require function,
+
+00:02:17.000 --> 00:02:19.320
+which is used to import modules,
+
+00:02:19.360 --> 00:02:23.520
+is overridden so that you cannot import any module.
+
+00:02:23.520 --> 00:02:25.800
+And this is robust, this is secure,
+
+00:02:25.800 --> 00:02:28.479
+but Microsoft wanted to change it slightly.
+
+00:02:28.479 --> 00:02:32.759
+They wanted to disallow importing most of the modules
+
+00:02:32.759 --> 00:02:35.960
+while still being able to import some of them.
+
+00:02:35.960 --> 00:02:39.600
+So they overridden the require function again,
+
+00:02:39.600 --> 00:02:42.080
+and this is the code that they used.
+
+00:02:42.080 --> 00:02:44.839
+At the first sight, it looks pretty secure.
+
+00:02:44.839 --> 00:02:47.839
+It checks if there's a whitelist of modules,
+
+00:02:47.839 --> 00:02:49.360
+and if there is, it checks
+
+00:02:49.360 --> 00:02:53.240
+if the currently imported module is on that whitelist.
+
+00:02:53.240 --> 00:02:57.320
+We don't have access to modify the whitelist,
+
+00:02:57.320 --> 00:02:58.960
+so there's not much we can do.
+
+00:02:58.960 --> 00:03:03.520
+There's only one function called to the index of function.
+
+00:03:03.520 --> 00:03:06.039
+Can you override the index of function?
+
+00:03:06.039 --> 00:03:07.320
+Well, actually you can.
+
+00:03:07.320 --> 00:03:10.160
+If you start developer tools right now,
+
+00:03:10.160 --> 00:03:12.160
+you can, using this code,
+
+00:03:12.160 --> 00:03:14.639
+you can override the index of function
+
+00:03:14.639 --> 00:03:16.440
+to do whatever you want.
+
+00:03:16.479 --> 00:03:19.000
+But the thing is, one of the main features
+
+00:03:19.000 --> 00:03:21.960
+of the VM2 library is to restrict the access
+
+00:03:21.960 --> 00:03:25.160
+to the prototype, so this would not work
+
+00:03:25.160 --> 00:03:27.720
+in the VM2 environment.
+
+00:03:27.720 --> 00:03:30.399
+But if you take a look at this code again,
+
+00:03:30.399 --> 00:03:33.520
+it's not the built-in index of function that was used,
+
+00:03:33.520 --> 00:03:36.199
+but instead is the index of function
+
+00:03:36.199 --> 00:03:38.839
+from the underscore library.
+
+00:03:38.839 --> 00:03:42.080
+And access to this is not restricted at all,
+
+00:03:42.080 --> 00:03:45.360
+so using this code, you could override
+
+00:03:45.360 --> 00:03:49.000
+the index of function to always return a number.
+
+00:03:49.000 --> 00:03:52.119
+So this check would always be true for any module,
+
+00:03:52.119 --> 00:03:54.919
+even those from outside this allow list,
+
+00:03:54.919 --> 00:03:58.880
+which allowed you to import any module,
+
+00:03:58.880 --> 00:04:01.880
+which then allowed you to execute arbitrary code,
+
+00:04:01.880 --> 00:04:05.960
+which you could use to steal data of other patients.
+
+00:04:05.960 --> 00:04:09.080
+And after Microsoft fixed this particular flaws,
+
+00:04:09.080 --> 00:04:12.000
+the hunter did not find a way to bypass this.
+
+00:04:12.000 --> 00:04:14.479
+He did not find a way to import modules
+
+00:04:14.520 --> 00:04:18.480
+from outside the allow list, so then he decided,
+
+00:04:18.480 --> 00:04:20.920
+okay, I cannot import any other modules,
+
+00:04:20.920 --> 00:04:23.760
+so let's see if I can do anything interesting
+
+00:04:23.760 --> 00:04:25.720
+with those that are allow listed.
+
+00:04:25.720 --> 00:04:29.839
+Because the way VM2 works is the code
+
+00:04:29.839 --> 00:04:32.359
+of those allow listed modules is run
+
+00:04:32.359 --> 00:04:34.200
+in the unisolated context,
+
+00:04:34.200 --> 00:04:36.239
+which means it's not restricted at all,
+
+00:04:36.239 --> 00:04:39.200
+which means you do not want to be running
+
+00:04:39.200 --> 00:04:40.799
+any user code there.
+
+00:04:40.799 --> 00:04:43.200
+Why does it work in this particular way?
+
+00:04:43.200 --> 00:04:44.359
+To be honest, I'm not sure,
+
+00:04:44.359 --> 00:04:48.640
+but maybe it was due to a lot of dependencies.
+
+00:04:48.640 --> 00:04:51.959
+If you wanted to run the module in the isolated context,
+
+00:04:51.959 --> 00:04:53.600
+you would also have to allow list
+
+00:04:53.600 --> 00:04:55.880
+all the dependencies of this module.
+
+00:04:55.880 --> 00:04:58.880
+Maybe it was something like this, I'm not sure,
+
+00:04:58.880 --> 00:05:00.559
+but it's also worth pointing out
+
+00:05:00.559 --> 00:05:02.839
+that the whole VM2 library,
+
+00:05:02.839 --> 00:05:05.320
+if you go to your NPM page,
+
+00:05:05.320 --> 00:05:08.000
+it says it's deprecated and it contains
+
+00:05:08.000 --> 00:05:11.279
+known sandbox escapes or isolation escapes
+
+00:05:11.279 --> 00:05:13.119
+or whatever you want to call it.
+
+00:05:13.880 --> 00:05:14.720
+And if you go to GitHub,
+
+00:05:14.720 --> 00:05:17.279
+you can literally see two escapes
+
+00:05:17.279 --> 00:05:20.279
+that were found in 2023 that are not fixed
+
+00:05:20.279 --> 00:05:22.799
+and that will not be fixed.
+
+00:05:22.799 --> 00:05:24.600
+So I'm quite interested,
+
+00:05:24.600 --> 00:05:27.799
+how did Microsoft deal with these?
+
+00:05:27.799 --> 00:05:29.839
+But coming back to our case,
+
+00:05:29.839 --> 00:05:33.160
+to the blog post by the hunter,
+
+00:05:33.160 --> 00:05:37.399
+he found that one of the import allow listed libraries
+
+00:05:37.399 --> 00:05:39.880
+was underscore, which is the same library
+
+00:05:39.880 --> 00:05:41.799
+he exploited in the first step.
+
+00:05:41.839 --> 00:05:44.440
+He found that the underscore library
+
+00:05:44.440 --> 00:05:46.640
+contains the template function,
+
+00:05:46.640 --> 00:05:48.559
+which just consumes a template,
+
+00:05:48.559 --> 00:05:51.119
+which can contain JavaScript code.
+
+00:05:51.119 --> 00:05:54.079
+So it's a pretty straightforward code execution.
+
+00:05:54.079 --> 00:05:55.640
+And as I've told you before,
+
+00:05:55.640 --> 00:05:59.399
+this code is run in the unisolated context,
+
+00:05:59.399 --> 00:06:02.760
+which means you can just read data of other tenants,
+
+00:06:02.760 --> 00:06:07.079
+read data of other patients and send it to you.
+
+00:06:07.079 --> 00:06:10.799
+So it's another way to execute code.
+
+00:06:10.799 --> 00:06:13.799
+So Microsoft fixed this one as well.
+
+00:06:13.799 --> 00:06:17.320
+And the hunter no longer could import arbitrary modules.
+
+00:06:17.320 --> 00:06:20.880
+He also didn't find another way to execute code.
+
+00:06:20.880 --> 00:06:24.079
+So he decided to look at other ways to leak data
+
+00:06:24.079 --> 00:06:25.239
+because after all,
+
+00:06:25.239 --> 00:06:29.920
+executing arbitrary code is not the only way to leak data.
+
+00:06:29.920 --> 00:06:34.359
+And he found that he can unsafely allocate a buffer
+
+00:06:34.359 --> 00:06:37.959
+because normally when you do this with a call like this,
+
+00:06:37.959 --> 00:06:40.559
+what happens is the buffer is zero out.
+
+00:06:41.200 --> 00:06:43.279
+The memory in the buffer is zeroed out,
+
+00:06:43.279 --> 00:06:46.720
+which means if you read it just after initialization,
+
+00:06:46.720 --> 00:06:49.480
+it's empty, it contains only zeros.
+
+00:06:49.480 --> 00:06:51.679
+But if you do exactly the same thing
+
+00:06:51.679 --> 00:06:55.279
+with the unsafe methods to allocate a buffer,
+
+00:06:55.279 --> 00:06:56.600
+it's basically the same
+
+00:06:56.600 --> 00:06:58.880
+just without the memory zeroing step,
+
+00:06:58.880 --> 00:07:02.839
+which means you are reading a random part of the memory
+
+00:07:02.839 --> 00:07:05.000
+with some data that was processed
+
+00:07:05.000 --> 00:07:07.679
+fairly recently by the server.
+
+00:07:07.679 --> 00:07:10.200
+And when he repeated this process a few times,
+
+00:07:10.880 --> 00:07:14.760
+he would find JWT tokens from internal Azure identity codes.
+
+00:07:14.760 --> 00:07:16.839
+He would find Kubernetes codes.
+
+00:07:16.839 --> 00:07:21.279
+He found data of the customers of another hospitals
+
+00:07:21.279 --> 00:07:22.600
+and stuff like this.
+
+00:07:22.600 --> 00:07:25.480
+So even though it didn't allow him to execute code,
+
+00:07:25.480 --> 00:07:29.839
+he could read a lot of sensitive information in this way.
+
+00:07:30.839 --> 00:07:32.000
+And for the fourth one,
+
+00:07:32.000 --> 00:07:34.920
+which is to be honest, my favorite of these four,
+
+00:07:34.920 --> 00:07:36.359
+we'll step a little bit back.
+
+00:07:36.359 --> 00:07:40.640
+We'll let go of the code execution functionality
+
+00:07:40.640 --> 00:07:42.040
+and we'll take a look
+
+00:07:42.040 --> 00:07:44.920
+at how did this bot fetch data of users.
+
+00:07:44.920 --> 00:07:49.799
+And this is the URL which would be sent to fetch this data.
+
+00:07:49.799 --> 00:07:54.320
+Importantly, three of these parts of the URL are static
+
+00:07:54.320 --> 00:07:56.720
+and two of them are parameters.
+
+00:07:56.720 --> 00:07:58.839
+One of these parameters is the tenant name,
+
+00:07:58.839 --> 00:08:00.600
+which would be the name of your tenant
+
+00:08:00.600 --> 00:08:03.920
+and the other would be ID of the particular row
+
+00:08:03.920 --> 00:08:05.399
+that you want to fetch.
+
+00:08:05.399 --> 00:08:08.239
+And at this point, there was the authorization check.
+
+00:08:08.239 --> 00:08:12.160
+If the tenant ID that's in the URL is your tenant ID
+
+00:08:12.160 --> 00:08:14.160
+or the tenant you're authorized to.
+
+00:08:14.160 --> 00:08:18.040
+If you try to put the name of another hospital here
+
+00:08:18.040 --> 00:08:21.160
+or another medical facility here, it would not work.
+
+00:08:21.160 --> 00:08:23.839
+If the authorization check was good,
+
+00:08:23.839 --> 00:08:26.839
+it would proceed to make this underlying call.
+
+00:08:26.839 --> 00:08:28.279
+You wouldn't see this as a user.
+
+00:08:28.279 --> 00:08:30.640
+It would be somewhere on the backend,
+
+00:08:30.640 --> 00:08:33.159
+but this is the URL that would be constructed.
+
+00:08:33.159 --> 00:08:35.559
+And kudos to researcher for finding this out
+
+00:08:35.559 --> 00:08:37.640
+because likely he could not see this.
+
+00:08:37.640 --> 00:08:42.080
+He could just guess it's what happens under the hood.
+
+00:08:42.080 --> 00:08:46.919
+And this is the URL that's Azure table API call.
+
+00:08:46.919 --> 00:08:48.880
+And again, we have the tenant ID
+
+00:08:48.880 --> 00:08:50.919
+and then we have the row ID
+
+00:08:50.919 --> 00:08:53.159
+which was sent in the previous step.
+
+00:08:53.159 --> 00:08:56.840
+Then when this call is made, the user data is returned
+
+00:08:56.840 --> 00:08:59.919
+and the user data is then forwarded back to you
+
+00:08:59.919 --> 00:09:02.400
+or back to your bot to be more precise.
+
+00:09:02.440 --> 00:09:04.080
+So now think what would happen
+
+00:09:04.080 --> 00:09:07.799
+if you send the request to a URL like this.
+
+00:09:07.799 --> 00:09:10.119
+The authorization check would still be okay
+
+00:09:10.119 --> 00:09:12.840
+because it's still the tenant parameter.
+
+00:09:12.840 --> 00:09:14.760
+It still points to your tenant.
+
+00:09:14.760 --> 00:09:17.919
+So you wouldn't be denied access to this.
+
+00:09:17.919 --> 00:09:20.760
+However, after this, in the second step,
+
+00:09:20.760 --> 00:09:23.440
+when the internal request would be sent,
+
+00:09:23.440 --> 00:09:26.520
+this is the URL that would be constructed.
+
+00:09:26.520 --> 00:09:30.640
+And this part would be canceled due to the path traversal.
+
+00:09:30.640 --> 00:09:34.200
+So this URL would be equivalent to this one,
+
+00:09:34.200 --> 00:09:38.799
+which is a URL that fetches data of another customer.
+
+00:09:38.799 --> 00:09:42.000
+And then this response is sent back to you,
+
+00:09:42.000 --> 00:09:45.599
+thus giving you data of arbitrary tenant
+
+00:09:45.599 --> 00:09:47.440
+of Azure Health Bot.
+
+00:09:47.440 --> 00:09:49.960
+We do not know what were the exact bounties
+
+00:09:49.960 --> 00:09:52.080
+awarded for these four vulnerabilities,
+
+00:09:52.080 --> 00:09:57.080
+but we know that the total was $203,000.
+
+00:09:57.400 --> 00:09:59.280
+And that's it for today's video.
+
+00:09:59.280 --> 00:10:02.080
+If you've learned something new, leave a like.
+
+00:10:02.080 --> 00:10:03.919
+And if you want to watch another video
+
+00:10:03.919 --> 00:10:05.559
+about a path traversal,
+
+00:10:05.559 --> 00:10:09.119
+check out this one about my $20,000 path traversal
+
+00:10:09.119 --> 00:10:11.359
+in the Amazon S3 integration.
+
+00:10:11.359 --> 00:10:14.520
+For now, thank you for watching and goodbye.
+

@@ -1,0 +1,85 @@
+Hello, the Web3 bug I will show you today is absolutely insane. Almost like I could tell you
+to give me some money and it would be directly transferred from your wallet to mine. That's why
+the bounty for it was the equivalent of 1 million dollars. And we'll have the bug explained to us
+by someone with way better Web3 skills than I. Lead offensive security engineer from Halborn,
+Michał Bayer. Enjoy. Hello, Michał. Thank you so much for joining me to explain the bug. The bug was
+in the process of exchanging the tokens, different kinds of tokens. Could you talk us through what
+tokens were there? Sure. Hi, Greg. Thanks for having me. Well, basically, you have near specific
+tokens, which are called NEP 141 compatibles. And then you have ERC20 tokens, which exist in the
+Aurora blockchain that implements basically an Ethereum-like network. And you have a token on
+your site and you want to transfer it to the Aurora. And there is a process for this and the vulnerability
+we'll be talking about was found exactly in this process. So could you show us the code? How did
+it look like normally without messing up things yet? Absolutely. Yeah. So NEP 141 tokens on the near
+site are specific because they contain an FT transfer call function, which performs a similar thing as an
+ERC20 approval, but with one transaction. It essentially means that you are transferring some tokens.
+So NEP 141 tokens. And with this transfer, you want to call some function in some other contract. In this case,
+you would use this function, the FT transfer call on a token that you want to send to the Aurora and
+specify that this token should call Aurora contract in the process. And this is standardized. And in this
+case, the FT on transfer function will actually be called, which is the case here. And well, basically,
+there are arguments provided to this call. One of it is a message that will be very important soon. But
+if everything goes smoothly, then you go into the receive ERC20 tokens in the Aurora contract. And this
+function looks like this. You basically parse this message that you have here. But let me show you the
+vulnerable code actually, not the one that contains the fixes. Yeah, the receive ERC20 tokens. It parses this
+message that's contained within the arguments. Because this message contains information about the
+recipient address. And this is the address of the recipient on the Aurora network. And information
+about any fee that this person needs to pay for this transaction. And this fee might, of course, be zero.
+You parse it. And then you check. Basically, the first 40 characters are related to the recipient. And
+if there is something after those characters, then this will be considered as a fee that needs to be paid.
+If this fee is not zero, in this case, you basically just... Is this fee the same? When I do a transaction
+via Metamask, there is a pop up about a fee of the transaction. Is this fee the same? Or is this
+something different? This is not the same fee, although they are related. The fee you're talking
+about is just the fee associated with sending a transaction. And you still need to pay this fee
+here, but you will be paying for it in the near side, not in the Aurora. And this fee was designed
+by Aurora team for the cases where users would like to send tokens from the Rainbow Bridge
+to the Aurora and they wouldn't have the near tokens, sorry, near account ID. Like they wouldn't
+basically be using near blockchain. They just would like to use the Aurora chain. However, it was actually
+never used like this. Aurora is sending those transactions to Aurora, so users don't actually
+need to pay for them. However, in general, that's the fee for those cases.
+Because they wouldn't be able to pay the near transaction fee because they don't use near.
+So maybe they should pay some fee on the Aurora side in the ether that's already on the Aurora.
+So if I would be sending some tokens to you, then I decide what fee you should pay, right?
+Yes. And this is the core of the vulnerability here. Because as you can see here, both the recipient
+and the fee are encoded in the message. And message is one of the arguments provided within the
+transaction. This is fully in the control of whoever is sending the transaction, which means that it's
+fully in control of the attacker. So attacker chooses who will receive the tokens and how much fee
+they will, that person will need to pay. So you can basically just make it,
+just make it highest value possible and steal ether from that person. Although there are some limitations
+to it. What are the limitations? Could I steal all your money?
+Yes, you can, but not in the single transaction. In the single transaction, you actually are limited to
+the 18.4 ether transfer. And that's because although the fee is parsed from the message that's 64 characters
+long, and it's parsed into the U256 type, then within the transfer, it's actually casted as an unsigned
+integer of 64 bits length, which is way smaller. And if you would provide something that doesn't fit into
+the 64 bits, then it would basically the rust will panic, and the whole transaction would fail. So we
+would just need to provide a smaller number. But then you can just execute the attack multiple times and
+still drain the funds of your target. And considering that, apart from from getting the fee, I have to send
+you something, how much value have to be the tokens that I sent to you?
+Absolutely nothing you can. That's the very interesting part. Because this Aurora is permissionless.
+And it is very easy to create your own tokens in the Aurora and create the mapping between them,
+between the token on the new site and the token on the in the in the Aurora.
+And this is anyone can do it without any additional authorization. So imagine a scenario that I create
+a meaningless token that I just will deploy to the to the to the near blockchain, then I create one in
+the Aurora, I map between them, which I can do in a single transaction in the Aurora. And then I send you some
+tokens in the Aurora and say that you need to pay for them 18.4 ETH for the tokens that mean nothing to
+you and probably to anyone else.
+And I have no way of preventing this, right?
+No, you don't. No, you don't. This is this is the core of this vulnerability.
+And so how was this fixed? Did they introduce some kind of verification for me to confirm the transaction?
+Yeah, well, as I mentioned, in the regular operation, this fee was actually never not zero,
+which made it actually quite easy to fix this vulnerability. Because let me show you the fixed
+code. The Aurora team basically just manually set the fee to be zero at all times. And this is just a
+quick fix. But then later in the newest version, you will not see fee at all in this in this function.
+In this function, it was completely removed from the execution process.
+So is there any meaningful recommendation you could give to any developers to not make such a mistake?
+It seems quite stupid to me, if I'm honest.
+Yes, it does. Because this was a flaw in on the design level.
+Basically, as a rule of thumb in blockchain, and probably not only in blockchain,
+if user didn't agree explicitly to something, don't make him pay for anything. So if, for instance,
+if this transaction would require the receiver to also sign this transaction somehow and explicitly say
+that they agree to receive the tokens, then in that case, there may be some scenario where this sort
+of mechanism would be meaningful. But basically, as a rule of thumb, you only take... Like the person
+who's paying for anything should be only the one who sends the transaction.
+Okay, thank you so much for for explaining the bug. I'm happy that that it's it's been fixed. And I
+hope that as a white hat, we will not see many of such mistakes done again.
+Oh, yeah, me too, for sure.
+If you want to see the video, that was the world's largest bounty to date, check out this one on your
+screen right now about the vulnerability in Polygon blockchain. For now, thank you for watching and goodbye.

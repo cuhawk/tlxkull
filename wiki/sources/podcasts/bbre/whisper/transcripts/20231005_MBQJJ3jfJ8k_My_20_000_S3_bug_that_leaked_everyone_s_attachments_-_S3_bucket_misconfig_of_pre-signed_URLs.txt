@@ -1,0 +1,74 @@
+Five digit bounties seemed to me like something reserved for top hunters with their crazy payloads.
+But recently I made it. I got a $20,000 bounty for a path traversal that allowed me to leak
+files of other users. In this video I'll show you what the bug was and also why I think others have
+missed it, so make sure you stay until the end. But for now enjoy the explanation. I was short
+after listening to a critical thinking episode with Alex Chapman and my understanding of his
+methodology is that he goes mostly for high and critical vulnerabilities. But the thing is he goes
+for bugs that rely on specific functionality. Because for example when you have an IDOR, an IDOR can be in
+almost every single request or authorization bug. But for a bug like SSRF you need a specific functionality
+and my understanding of Alex's methodology was that he goes for this functionality. And I started
+looking at my unnamed target because it's a private bug bounty program with this approach in mind. So I
+wanted to find some functionality where I can find high and critical risk bugs. But really there wasn't
+much. There wasn't much interesting functionality. But one that caught my attention was uploading files.
+Because I could upload avatar to my profile. I saw that this target uses Amazon S3 buckets
+and that they use the same bucket for avatars and for other sensitive files that I as user can upload.
+So I knew that any bug here will be very impactful. And when it comes to the integration with Amazon S3,
+there are a few options. One, the conventional option would be that you send a request to the server with your new profile picture.
+And then the server talks with S3 sort of in the backend and then your new avatar is saved. And maybe the user does not even see that the S3 is used.
+The problem with this approach is that it is very consuming on the server because the server sort of acts as a proxy
+between the S3 and the user and its images, its other files, which are quite heavy. So there is another way to do this functionality.
+So the ideal method would be to just let the user talk directly with the S3 bucket bypassing the server, bypassing the
+the needs of server to proxy the images. But then the problem you come up to is how do you maintain an
+authorization when the user talks directly to the bucket? Because then I could just upload my avatars as
+avatar of another user, I could maybe delete them, I could at least read other people's files. So this
+wouldn't be that good. That's why there is the mechanism that's called pre-signed URLs. And the way it works
+is I send the request to the server to my target saying, Hello, I'm Greg, and I want to upload an avatar.
+I'm already authenticated. So there is no problem with this. And now the server responds with a URL,
+which allows me to upload the file there. This URL allows me to talk to the S3 API. And I can only
+upload my file to a specified location. This URL is signed cryptographically. So I cannot mess up with
+these parameters. And then after I send the request to the S3 API, I save my file there, I confirm to my
+target server that yes, I have saved my file at this location which you gave me. So this is a three
+step process. And it was robust, I couldn't do anything. I tried uploading access files, I tried
+path traversals. It's just nothing you can do here. And when it comes to this pre-signed URL,
+if you could break the SHA-1 signature, you could probably break half of the internet. So this is also
+not happening. But the three step process is only uploading of the file. And of course,
+the file has to be read somewhere. That's why we upload it. So then when I go to my account page,
+I see that the image tag with my avatar, it has the pre-signed URL as well. The difference is that this
+time, I didn't send this request specifically for the pre-send URL. This time, the URL was just embedded
+in the HTML of the response. And it's contained the link to my avatar, which I could request. And the
+file name that was used here is the name I used in step three previously. So my idea was what if I sent
+here a file that does not belong to me. And the first thing that I tried was an avatar that I've uploaded
+from my other account, and it worked. And I could see on my account page, the avatar uploaded from
+another account, which didn't have any impact yet. But it showed me that there's probably no
+authorization check in place. Then I moved one step ahead. And I instead of using the avatar,
+I used another document uploaded from my another account, something I just uploaded in another
+functionality of this application. And when I went to the account page, my image did not load. My image
+did not load, but the image tag still had the pre-signed URL. And when I opened it in the new tab,
+it did show me the document, the sensitive document from my another account. At this point,
+I was confident that this is a valid bug and there is impact to it. But the problem was that
+the name of the file from my another account, I couldn't brute force it, it was too complex to be
+brute forceable. So I wanted to find a way to leak this to get the maximum payout. I think if I reported
+the bug as it was, I would get a payout, but probably as a P2 or P3. And I wanted the maximum bounty.
+The thing with pre-signed URLs is that they can point to a file, but they can also point to a directory.
+So what I did was, instead of using the file name in step three, I just used the directory and I left it
+it this way. As always, I went to the account page, my avatar didn't load. So I copied the pre-signed URL
+from the image tag, paste it into the browser. And I saw a lot of different files, which I saw
+did not belong to me. Now, the funny problem I had is even though there were 1000 files, because this is
+by default the limit of AWS, I didn't access any of them because I saw that this is probably customer
+information, but by file names, they didn't look as sensitive as some of the files in the system.
+So I found I later found the AWS S3 parameters that allow me to show more than 1000 objects on the
+directory listing or the object listing to be precise. And at this point, I just knew that this
+is a critical bug. And as expected, I got the maximum payout. I was really happy with it, especially
+that it came after quite a bad period when it comes to bug bounty. More on this in the in the bounty
+vlog, subscribe to not miss it. But it just showed me that those big five digit payouts, there's no magic
+to them. It just persistency continuous learning and putting in the time and the bugs just come. I
+think the reason that others have missed this bug, maybe because the pre-signed URL was hidden in the
+HTML of the response. If there will be another API call that would only return the pre-signed URL, I'm
+pretty certain that then somebody would report it before me because this attack is is not nothing new.
+In fact, I did cover it on my channel in 2021. And by the way, it's it's just nice confirmation to see on
+my example and on your examples that the content that I create is actually useful in real life and
+gets me and gets you my subscribers bounties. If you want to learn even more with me, I encourage you to
+join BBRE Premium only until the end of October 2023. You can join for a monthly subscription. After
+the end of October, there will be only a yearly one. The reason is that it just becomes too good of a deal
+that someone can access all the articles in the archive by paying $10 for a monthly subscription. So if
+you want to join before this, go to BBRE.dev.com. For now, thank you for watching and goodbye.

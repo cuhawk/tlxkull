@@ -50,6 +50,11 @@ inbound: []
 
 - [2023-10-26 Ep 42 — Intigriti LHE Recap With renniepak](../sources/podcasts/ct/20231026_HDyOD67c7NA_Intigriti_LHE_Recap_With_renniepak_Ep._42.en.vtt)
 
+## BBRE appearances
+
+- Interview at Ambassador World Cup (Prague) covering background, XSS methodology, postMessage focus, CSP bypass frustration → CSPBypass project, bookmarklet tooling, and bug bounty philosophy.
+  [BBRE](https://www.youtube.com/watch?v=0PnWrdqV3TA)
+
 ## Notes
 
 - Intigriti LHE regular — Ep 42 was recorded live at an Intigriti hacking event in Portugal. A useful primary contact for understanding the Intigriti LHE format, scoring quirks, and the European LHE scene more generally.

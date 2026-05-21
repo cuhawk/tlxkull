@@ -1,0 +1,55 @@
+Hello, welcome in the next episode of Bug Bounty Reports Explained.
+Today you will learn how Augusto Zanelato accidentally found a bug that allowed him to add
+backdoor to Shopify. Make sure to stick until the end because I will show you step by step how you
+can check contents of Electron application no matter what platform you use. Links to the original
+report and Augusto Media are in the description. Enjoy! Electron is a Node.js framework that allows
+building desktop applications using the same technologies as when developing websites.
+Visual Studio Code, Slack, Discord or WhatsApp are all built using Electron. The minimalistic Hello
+World app doesn't need much files. However, when you want to distribute your application, files must
+have a specific structure. In case of this report, the app was packaged for Mac OS system. You can use
+Electron Packager module. This is the command that I used to package my application. These options are
+not relevant for this report, at least not yet. Then you need to create a single DMG file using yet
+another module. After you mount it, you can finally use the application. It's inside slash volumes directory.
+Let's browse it. The binary is inside contents slash macOS directory. For us, however, the most important is the
+resources there. Inside, you have the app folder that contains all the files from your application.
+However, the application that's the cause of this vulnerability did not have such directory. Instead,
+it had app.assr file. It's an Electron archive. It concatenates all the files from your application
+into a single file. Somewhat like tar, but without compression. To modify my application so that it also
+uses aster file, I had to add aster equals true flag to Electron Packager command. But what's the purpose
+of that? To answer that question, I took a look into the Electron documentation. Until the 2nd December
+2020, the documentation said. You can also package your app into an aster archive to avoid exposing your
+app's source code to users. Which was not true. You can easily extract contents of the archive using npx
+asr extract command. Using this file format does not protect the code in any way. The documentation was
+changed only 2 months prior to this bug. Now it says you can package your app into an aster archive to improve
+the performance of reading files on platforms like Windows. It's very interesting how misguiding it was.
+If you enjoy that I dig deep to find out such information, make sure to like this video right now.
+Let's come back to our hunter. He downloaded the application and was analyzing it. The name of the application is not disclosed,
+but it was a random application from the internet and the hunter did not know it was related to Shopify in any way.
+He just wanted to see how it works. So he started to review the contents of the application including the aster archive.
+So he found a .env file. What is that? One of the most popular npm packages is .env. It automatically loads environment variables from .env file into process.env.
+So when you had test variable in the .env file it's automatically loaded into the process.env.test.
+We can't be 100% sure this application did use this package, but one way or another it used environment variables from the .env file.
+Inside, among other credentials, the hunter found a GitHub token variable.
+As you may guess, it was a GitHub REST API token.
+Augusto confirmed it's valid by hitting .env file. At this point, it was only affected the developer who created the application and nothing foreshadowed that it affected Shopify in any way.
+Then he tried to query .env file.
+Then he tried to query .env file.
+And saw that this developer was a member of Shopify organization on GitHub.
+So it was looking very promising at that point.
+As the next step, he queried .env file.
+And what he saw was the list of many public and private Shopify repositories with pull and push access.
+The impact of this is huge.
+You can read all the code of Shopify closed source repositories, but also you can commit a backdoor to it,
+stealing millions of dollars and personal information of millions of Shopify customers.
+The Shopify team was quick to respond on HackerOne.
+The report was triaged as critical the same day and the $50,000 bounty was awarded a week later.
+How you can test for this bug?
+After downloading the .dmg file, you can unpack it using 7z command both on macOS and on Linux or using 7z program on Windows.
+Then you browse to the contents slash resources and you run npx-assar-extract-app.assar.
+Then you will have the sources of the application and you can review them as you normally would.
+What an amazing bug!
+I also interviewed Augusto in my Bug Bounty Reports Discussed podcast.
+Among others, you can hear about why did he choose to review this application or what was his and his friend's reaction to finding the $50,000 bug by accident.
+The podcast will be published shortly after this video, so make sure to subscribe to Bug Bounty Reports Discussed in your favorite podcasting app or here on YouTube if you prefer.
+Links are in the description.
+For now, thank you for watching and goodbye.

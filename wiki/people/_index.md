@@ -1,6 +1,6 @@
 # People
 
-_60 profiles._
+_61 profiles._
 
 - [0Xlupin](0xlupin.md)
 - [Aaron Costello](aaron-costello.md)
@@ -31,6 +31,7 @@ _60 profiles._
 - [Justin Gardner](justin-gardner.md)
 - [Keith Hoodlet](keith-hoodlet.md)
 - [Kevin Mizu](kevin-mizu.md)
+- [Matan Berson](matan-berson.md)
 - [Matanber](matanber.md)
 - [Mathias Karlsson](mathias-karlsson.md)
 - [Matt Brown](matt-brown.md)

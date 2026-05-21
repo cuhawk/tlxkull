@@ -1,0 +1,70 @@
+Hello, in this episode of Bug Bounty Reports Explained, I will show you an amazing out-of-the-box
+hacking technique that could lead to compromising anyone who uses Homebrew casks to install stuff
+on macOS or Linux. The vulnerability was found by Ryotak. Link to his blog post is in the description.
+Enjoy! Homebrew is a package manager for macOS, something like APT for Linux. To install a cask,
+you run this command. Cask was originally an independent brew extension, but now it's quite
+integrated with the tool. At the moment, there are almost 4000 casks. Each is defined by a file
+which looks like this and is stored in the official Homebrew repository on GitHub. Among other properties,
+there was a version of the cask and its checksum. You can imagine that managing manually updates of
+4000 casks is a very time-consuming job, so Homebrew team automated it using GitHub Actions.
+It's a platform integrated with GitHub for handling things like running tests or deploying your code.
+In Homebrew, there was a script that automatically merged the pull request if it only changed the
+version and the checksum of the cask. Let's consider an attack scenario where we would like to inject our
+code into a cask configuration file. Although it's mostly used for storing static information, it's still a
+ruby file, so injecting code here would lead to an RCE on the machine of anyone who installs the cask.
+But before that, your pull request had to go through multiple checks. Some of the requirements,
+like modifying only one file or not moving, creating or deleting files, are easy to meet and we will not
+focus on them here. Two rules that are most relevant for us are that count of added and deleted lines must
+be the same and all changed lines must match these regexes, so only versions and checksums could be changed.
+At this point, you might be thinking that it's yet another bug that originates from an incomplete regex,
+but it's not. It's much more interesting. Instead, it's another case where security of millions of users
+rely on a relatively small repository that it will do what it's supposed to do. Because to know what were the
+changes in the files, GitHub ActionScript used this git div repository. Because you can run git div command, but it
+only returns text. And to know if the pull request should be auto-merged or not, you must know exactly
+what was inside the commits. Git div is a Ruby library that parses the text from git div command and returns
+concrete information about how many files were changed, what were those files and what were those changes,
+and so on. The hunter decided to try to hide malicious changes from this git div script. It takes the input
+from git div command and it's using text parsing and regexes to extract information. This is an example git div
+after changing one line in a file. Importantly, even though the file was still in the same location,
+git div prints those file names with a slash or b slash prepended to differentiate between versions
+of the file. So git div library first parsed this first line. It also checked if any files were added
+or deleted and so on and so on. There were quite a lot of regexes like this. But for us, the interesting
+part starts here. If it starts with three plus signs followed by b slash file path, it means that the following changes
+added lines to this file. If it starts with three minuses followed by a slash file path, it means those lines were
+deleted from this file. Then there is information about those lines and then there are contents of the file. If the line is not
+prepended by anything, it means it's unchanged. If there is a minus, it means it was deleted and if there was a plus,
+it means it was added. Now let's see what happens when I make this change where I add a line that starts
+with two plus signs. It was an added line so in git div one plus sign is prepended before this line.
+It looks like this and we can see by the color that it was added to the file. However, git div ruby library
+did not work on colors. It only saw the raw text input. So when seeing this output, it didn't consider it
+an added line but instead it matched this regex. So git div thought it's an information that some lines were
+added to this file. But since there are no lines that were actually changed, so no lines prepended by a
+single minus or a single plus, it detects zero file changes. This gives you the ability to add almost
+arbitrary lines to ruby files in the official Homebrew repository. Almost arbitrary because there were still a few
+problems. First, line in the file must start with a double plus sign. What does it mean in Ruby? Not much
+actually. Plus and minus before a variable act as just sign of a number. So if you have a positive number,
+putting a minus in front of it will make it negative. But putting a plus to minuses or to pluses
+will not affect it. Importantly, it will not throw an error even if the expression is a string.
+Another problem that you must solve is that the changed file must be inside casks folder. When git div
+library sees multiple lines, the next one overrides the previous one. So you can have anything you want
+in the first line as long as the second will match this regex which will be a file inside casks folder.
+Unfortunately, it's still not the end. It's only half of the problems because due to another bug in git div,
+the line with the filename must not use quotes. When Ruby sees this code, it tries to evaluate variable
+b, variable casks and then call the rb function on variable item2. To avoid exceptions of undefined objects
+here, the hunter defined all these in the previous line. This is the syntax in Ruby which you can use
+to embed Ruby code inside a string. And finally, the last problem that you have to solve is RuboCop,
+a static code analyzer and formatter. It didn't quite like the style of the injected code. It knows that
+exploits must be elegant. Although you could disable it in one line by adding a comment, you couldn't use
+that in the second line because then it was parsed as the part of the filename. What the hunter did was
+adding a third line in between with an if instruction and the comment. Then the next line was treated as
+the part of the if expression and RuboCop also ignored it. This is the final payload. With approval
+of the homebrew security team, the pull request was approved and the change was merged to item2 cask,
+which is the second most popular. It actually worked too well because not only was this printed
+during the installation of this one cask, but also during the cleanup, so some users noticed that
+immediately. The change was quickly reverted and the bug was triaged. Homebrew only has a vulnerability
+disclosure program, so no bounty was awarded for this report. As for the fix, review and auto merge actions
+are no longer in the repository. That's it for this video. If you are a member of BBRE Premium,
+check out the member platform because soon I will publish hands-on labs and you will be able to
+practice this vulnerability yourself. If you'd like to subscribe, check out premium at bugbubblewethingexplained.com.
+Anyway, if you've learned something new today, leave a like and recommend this video to someone
+who will also like this. For now, thank you for watching and goodbye.

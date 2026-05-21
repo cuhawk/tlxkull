@@ -1,0 +1,48 @@
+Hello, in today's video I have a secondary context path traversal vulnerability that
+was found in Starbucks and allowed to access 100 million customer records. It was found
+and reported by Sam Carey, who uses nickname ZLZ and he mentioned some help from Justin
+Gartner. Links to their profiles, the report and the blog posts about this vulnerability
+are in the description. Also, you will find there a link to the presentation that Sam
+made about this very topic. I highly recommend watching it. But for now, let's get to the
+explanation. What's important in case of this path traversal vulnerability is that it does
+not affect any file read or file upload functionality. And to understand it, let's see how modern web
+applications work. And very trendy solution nowadays is using microservices. It's an architecture
+where there is API Gateway which talks with the user and in the internal network there are multiple
+services which talk with the API Gateway and they are not reachable from the internet. An API Gateway
+basically takes the URL that user requests, analyzes it and sends the request to the appropriate service.
+And what's important from the security point of view is that authentication and authorization may happen
+on API Gateway level which means that API Gateway decides whether the user has permissions to perform
+a specific action and whether to forward a specific request to the service or not. And service does not
+really validate any permissions. And another important thing that will be key to this vulnerability is that
+sometimes user sends parameters in the URL to the API Gateway and it has to rewrite those parameters when
+sending a request to the appropriate service. And Starbucks website sends requests to the endpoints
+which starts with BFF proxy and BFF stands for backend for frontend and it's basically a synonym to the API Gateway.
+And the first endpoint that Sam has tried is orchestra get user but all the payloads that he sent return a
+standard 404 page. By standard 404 page I mean the one returned by the API Gateway. When we see it, we know that
+we are not talking to any service because if API Gateway would forward our request to a service and the service would return 404 page,
+the response would look differently.
+So the hackers next step was finding an endpoint that took a parameters in the URL and rewritten those parameters
+while making a request to the service. And this time another 404 page was observed which means that it was coming from the backend service.
+And the next step is sending enough dot dot slash sequences to get 400 bad request error.
+And why is that? Because dot dot slash sequence means coming one directory back.
+And when we get bad request error it means that we have more dot dot slash sequences than the directories before in our path.
+And it basically allows us to determine when we are at the start of the path.
+There was also one more obstacle, namely web application firewall blocked all requests that had more than one dot dot slash sequence.
+But the researcher bypassed this restriction by putting a dot directory between dot dot slash sequences.
+Dot directory basically means this directory and in such context it actually means nothing.
+It can easily be discarded or used to bypass web application firewall.
+So now the vulnerability is detected but to actually exploit it you need to know what to request.
+An in-black-box approach without access to the documentation or source code it's definitely not an easy thing to do.
+You basically have to brute force the valid URLs.
+It's even more complicated if you have to guess multiple parts of the URL and the server doesn't give you any hint if you guessed the first part right.
+In such case if you would take standard word list from dirsearch which has 6.5 thousand words and you would like to brute force two directories at a time it suddenly becomes 43 million combinations.
+However in this case if you would send a valid path but without a trailing slash the application would redirect you to the URL with the slash at the end.
+It allowed to brute force directories one at a time and significantly reduced the amount of requests that you had to send to brute force those URLs.
+And the endpoint which immediately caught researchers eyes was search v1 accounts.
+Microsoft Graph is a REST API for multiple Microsoft services and search v1 accounts happened out to be one of its endpoints.
+It was possible to query 100 million customer records and get their personal information.
+The researchers have decided to stop at this point and report the vulnerability even though they knew that there are multiple other endpoints that could be even more impactful than this one.
+Of course the vulnerability was classified as critical and the researchers got paid 4 thousand dollars which was at the time max for Starbucks bug bounty program.
+And that's it for today's video. I hope you have learned something new.
+If you've enjoyed my explanation leave a like and a subscription down below.
+And for now I wish you happy hunting and goodbye.

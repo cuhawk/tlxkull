@@ -1,0 +1,166 @@
+I've always loved CTFs.
+Not only are they a fantastic learning resource, but also they give me the feeling of competitiveness
+that I miss from the days when I played football.
+However, I didn't play CTFs much in the last few years, so I decided to change that.
+I've reached out to my friends from Just Cut the Fish team, top 12 in the world on
+CTF time last year.
+I played with members of this team a few years ago.
+Now they invited me to play OCTF with them.
+I knew that tasks on real CTFs are really hard, but I still didn't appreciate them enough.
+Especially that this CTF had maximum weight on CTF time world ranking, which means it should
+also be adequately difficult compared to other CTFs.
+During the CTF I struggled a lot, but honestly one of the reasons I'm here is to make mistakes
+and learn from other people.
+Because people in this team are extremely skilled hackers and I can learn so much from them.
+In this video I will show you how we solved the where are you from task, which involves two
+CVEs.
+So, for the task, we had an Apache HTTPd as a frontend server and Apache Tomcat as a backend, and we had no access to the source code.
+There was no real functionality.
+The server only responded with some internal IP address, which we didn't know what it meant.
+And the name of the task plus having our own instance suggested a bug like request smuggling,
+some kind of desync, maybe an SSRF.
+So, for the task, we could judge versions of HTTPd and Tomcat.
+The frontend server was 2453, which was only one from latest version, which I initially ignored.
+Tomcat, however, was version 9030, which was from 2020.
+And I saw that it is vulnerable to potential remote code execution via AJP protocol.
+And I immediately connected the dot that I saw the vulnerability in HTTPd about request smuggling
+also in the AJP, which at that point I didn't know what it was.
+AJP stands for Apache JSRF protocol.
+And it is a binary protocol which is used between these two servers to communicate instead using
+an HTTP protocol.
+For example, instead of wasting 12 bytes in every single request for the content type header,
+there's a two byte sequence that indicates this header and so on and so on.
+So when I send GET to the frontend server, it translates this HTTP request into an AJP packet.
+One request, one packet.
+Nothing interesting.
+The format of the packet looks like this.
+First, there are two magic bytes, one, two, three, four.
+Next there is the length of the whole AJP packet.
+Then there's a byte that says the type of the packet.
+In our case, it will always be 02, which means forward request packet.
+Then the next one will indicate the HTTP method.
+The GET is indicated by code 2 and POST is 4.
+Then there's some data about the request like the host, the request URI.
+Then there are headers.
+And finally, there are some additional parameters.
+And that's what happens when we send a GET request without a body.
+But what happens when we send a POST?
+It gets a bit more interesting because the body of our request is sent separately from
+the headers.
+So we have one HTTP request but two AJP packets.
+And that's a good start if you are looking for request smuggling.
+Our goal is to split these two packets so that Tomcat treats the body of our request as a new
+request.
+It's because the AJP protocol in itself gives us a lot of power.
+And in this particular case, we need it to exploit arbitrary file read on Tomcat.
+In the packet with headers, there are magic bytes.
+Then there's the length of the packet.
+And then there is type of the packet and type of the HTTP method.
+And I would think that the request body would look similarly.
+I would expect magic bytes as well.
+I would expect a packet length.
+And then I would expect some kind of byte indicating that this packet is a request body.
+But it's not the case.
+Turns out that in request body, there is no packet type at all.
+And the packet length is followed by the data length, which in all packets I've noticed,
+was just packet length minus two.
+And then there's your whole body, which is forwarded without any modifications.
+I didn't read the docs as meticulously when I was solving the challenge.
+But when preparing for this video, I saw that even the docs say that this seems like a mistake.
+It says how does the Tomcat know if this AJP packet is a request body with length 514 or is it a get forward request?
+Tomcat looks at the previous packet.
+If it contained the content length header, Tomcat treats the next one as its body.
+So every time any AJP packet arrives to Tomcat, it asks a question.
+Did the previous packet contain a content length header?
+If it didn't, the current packet is a brand new request.
+If it did, the current packet is a body.
+So if you could trick HTTP to send your body of the request in a situation where the previous
+packet will not have the content length header, you will have the AJP request smuggling.
+But how do you do this?
+If you don't send the content length header at all, you get 400 bad requests and you're
+not even talking with Tomcat.
+The next idea you might have is to send transfer encoding chunked header.
+However, when that happens, Apache HTTP doesn't send the body at all.
+I didn't find any piece of the documentation that would explain this behavior, but the comment
+in the source code says that the AJP protocol does not want body data yet.
+How about an invalid transfer encoding header?
+When you do this, you also get 400 bad request.
+But when you send transfer encoding chunked, chunked, it's valid enough that you don't get
+400 bad request, but it's also not equal to string chunked, which would make HTTP to get
+inside the if, which would not send the body.
+So when you do this, it forwards the request with this header and then sends your body in
+the next AJP packet.
+And what does the Tomcat do with the transfer encoding header?
+I've looked at the source code of Tomcat and it doesn't even mentioned transfer encoding
+header.
+So I think it doesn't do anything with it.
+All Tomcat does when it sees our body is asking itself a question.
+Did the previous request contain a content length header?
+And in this case, it didn't.
+So our body is processed as a new request.
+And this is the first half of the task, which is CVE 2022 26377 AJP request smuggling in
+Apache HTTP.
+And I was reading the analysis of this vulnerability in a Chinese blog post.
+And of course, back then nothing was as clear to me as it is now.
+And there was a payload in this blog post, but I didn't know what it was doing.
+To understand it, I created a simple Python script to parse the AJP message, which I then extended
+by the ability to create my own AJP messages.
+The trick is to make the body of our request exactly 514 bytes long.
+Why?
+Because after being hex encoded, it is 0202.
+And these bytes are prepended by HTTP to our request.
+These two packets are forwarded to Tomcat.
+The first one is processed without any problems.
+It's a normal AJP packet without the content length header.
+Then the second packet is processed by Tomcat, the request body.
+Tomcat asks the question, did the previous packet contain a content length header?
+And in this case it didn't because it contained transfer encoding chunked chunked.
+So Tomcat does not treat this as a request body.
+On bytes 5 and 6 there is the length of the packet, but now Tomcat processes it as a new request,
+it decodes it as forward request method and in this case get HTTP method.
+And the rest of our packet must look like a valid AJP packet, which gives us possibility
+to send requests anywhere and further exploit the second vulnerability.
+And now it's time to exploit Tomcat.
+It's a vulnerability where you can use request attributes within an AJP packet that overwrite
+what you are requesting.
+So in the original request URI, you said that you want to request index.jsp, which of course
+is perfectly fine.
+But then in the attributes, you overwrite this and you say you changed your mind and you wanted
+to request the web.xml instead.
+This file often contains Tomcat credentials.
+And of course you can read any other file that can give you something.
+However when solving the challenge we couldn't get any file read for a long time.
+The problem was that this was very random.
+You send a post with your smuggled AJP packet, but the response to it is returned in one of
+the future responses.
+And it wasn't the next response or the second next.
+It could be a few responses or it could even be a few tens of responses further.
+And I wasted hours here because I didn't account for that.
+And I didn't understand why the same things sometimes work and other times they don't.
+And initially I saw the good error.
+The error that showed me that the server tried to read the web.xml file, but it didn't work.
+And then for hours I couldn't replicate getting the same error.
+At this point I left the task to my teammates and I went on to check another one.
+In hindsight it was my mistake because I was very close to solving this challenge, but had
+I been doing it alone I probably would not solve it.
+Later, our solution to this problem was sending only one post request with a payload and then
+sending multiple gets in an infinite loop until we would get a response to the smuggled AJP
+packet.
+And the trick that was key to finally solving this challenge had to do with JSP files.
+They look like this, kinda like templates and when you request this file you usually will
+get the rendered version.
+However, when your original request URI in the AJP packet is not JSP but whatever else and
+then in your attributes you override this to get the index.jsp, then the JSP file is not
+rendered but instead you see the whole contents.
+Inside the index.jsp file there was just an if that checked the remote address which had
+to be equal to a hardcoded one.
+It was not a problem because it's one of the fields from the AJP packet which we had full
+control over.
+This is the final packet that my teammates sent which gave him the flag.
+We were one of the 10 teams to solve the challenge and we ended the CTF at strong 5th
+time.
+Thank you for watching this video.
+If you want to check another write-up from CTF check out this one where I solved the challenge
+created by LiveOverflow.
+For now, thank you for watching and goodbye.
+

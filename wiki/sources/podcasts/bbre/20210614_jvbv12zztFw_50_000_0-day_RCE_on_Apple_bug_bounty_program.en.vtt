@@ -1,0 +1,328 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.720 --> 00:00:06.880
+Hello! In this episode of Bug Bounty Reports&nbsp;
+Explained you will learn how two hackers: Harsh&nbsp;&nbsp;
+
+00:00:06.880 --> 00:00:13.600
+Jaiswal and Rahul Maini got a shell on not one but&nbsp;
+three different Apple servers for which they were&nbsp;&nbsp;
+
+00:00:13.600 --> 00:00:19.840
+rewarded $50,000. As always, the report and their&nbsp;
+twitter profiles are linked in the description.&nbsp;&nbsp;
+
+00:00:20.400 --> 00:00:24.880
+If you ever wondered where do I find&nbsp;
+all those write-ups for my videos,&nbsp;&nbsp;
+
+00:00:24.880 --> 00:00:30.560
+usually it's in Intigriti's Bug Bytes weekly&nbsp;
+newsletter which contains the best write-ups,&nbsp;&nbsp;
+
+00:00:30.560 --> 00:00:37.120
+tutorials, tools and videos from IT security&nbsp;
+word. And Intigriti is a bug bounty platform&nbsp;&nbsp;
+
+00:00:37.120 --> 00:00:43.680
+that cares about the community and they also&nbsp;
+decided to sponsor this video. They have over&nbsp;&nbsp;
+
+00:00:44.320 --> 00:00:52.080
+30,000 researchers and 200 active programs.&nbsp;
+Sign up on https://go.intigriti.com/bbre&nbsp;&nbsp;
+
+00:00:52.080 --> 00:00:58.160
+and start hacking now... well, not&nbsp;
+literally now - first watch the video!&nbsp;&nbsp;
+
+00:00:59.120 --> 00:01:07.040
+The hackers wanted to find a critical, well-paid&nbsp;
+bug on Apple bug bounty program. They decided to&nbsp;&nbsp;
+
+00:01:07.040 --> 00:01:11.840
+focus on a server called Lucee that was&nbsp;
+found on three different apple domains.&nbsp;&nbsp;
+
+00:01:12.960 --> 00:01:17.520
+It's a java based scripting language&nbsp;
+that uses templates that look like this.&nbsp;&nbsp;
+
+00:01:19.120 --> 00:01:25.600
+It's named Coldfusion and it reminds&nbsp;
+me a bit of a PHP code. The logic is&nbsp;&nbsp;
+
+00:01:25.600 --> 00:01:30.960
+contained inside the template file that's&nbsp;
+rendered when the user requests this file.&nbsp;&nbsp;
+
+00:01:32.720 --> 00:01:38.480
+Importantly, Lucee also exposes an admin&nbsp;
+panel which is a very appealing target.&nbsp;&nbsp;
+
+00:01:39.760 --> 00:01:45.920
+Hunters decided to run the server locally&nbsp;
+and try to find a zero day there to then&nbsp;&nbsp;
+
+00:01:45.920 --> 00:01:52.400
+attack the Apple server with it. It's a huge&nbsp;
+advantage of testing an open source application.&nbsp;&nbsp;
+
+00:01:53.760 --> 00:01:59.440
+To get the maximum impact, the vulnerability&nbsp;
+has to be exploited without authentication.&nbsp;&nbsp;
+
+00:02:00.560 --> 00:02:06.880
+But in .cfm files used for admin panel,&nbsp;
+request.adminType property was checked&nbsp;&nbsp;
+
+00:02:06.880 --> 00:02:13.280
+to see if the user is logged in as an admin.&nbsp;
+Of course, those attempts failed at first.
+
+00:02:15.360 --> 00:02:22.160
+But importantly, this check was not always at&nbsp;
+the beginning of the file. That meant that all&nbsp;&nbsp;
+
+00:02:22.160 --> 00:02:29.920
+the code above this was still executed. This is&nbsp;
+a crucial feature. It means that if we find a&nbsp;&nbsp;
+
+00:02:29.920 --> 00:02:35.840
+file that has a vulnerability before this check,&nbsp;
+this can be exploited without authentication.&nbsp;&nbsp;
+
+00:02:37.360 --> 00:02:47.120
+And finding an RCE was surprisingly easy. There&nbsp;
+was a file imgProcess.cfm that contained this&nbsp;&nbsp;
+
+00:02:47.120 --> 00:02:55.920
+code. It took the content from imgSrc parameter,&nbsp;
+the filename from file parameter and saved it&nbsp;&nbsp;
+
+00:02:55.920 --> 00:03:03.760
+inside admin-ext-thumbnails directory. .cfm&nbsp;
+files are very powerful and, among other things,&nbsp;&nbsp;
+
+00:03:03.760 --> 00:03:10.720
+you can create a web shell which will allow you&nbsp;
+to execute commands on the server. But to do this,&nbsp;&nbsp;
+
+00:03:10.720 --> 00:03:18.320
+you need to upload the .cfm file inside the&nbsp;
+webroot. Webroot is a directory under which&nbsp;&nbsp;
+
+00:03:18.320 --> 00:03:25.920
+files can be accessed from the web. When you want&nbsp;
+to get an RCE by uploading a webshell, it must be&nbsp;&nbsp;
+
+00:03:25.920 --> 00:03:33.520
+inside the webroot. Of course, by default this&nbsp;
+imgProcess script saved files in different&nbsp;&nbsp;
+
+00:03:33.520 --> 00:03:39.680
+directory, outside the webroot, but thankfully,&nbsp;
+it was vulnerable to path traversal and you could&nbsp;&nbsp;
+
+00:03:39.680 --> 00:03:47.520
+traverse back to the webroot. One problem was that&nbsp;
+__ was added at the beginning of the filename.&nbsp;&nbsp;
+
+00:03:48.080 --> 00:03:54.640
+It's a problem because in Linux, the path must&nbsp;
+exist even if you traverse back from it later.&nbsp;&nbsp;
+
+00:03:55.600 --> 00:04:01.680
+So this path will not be found because&nbsp;
+the __ directory does not exist.&nbsp;&nbsp;
+
+00:04:03.040 --> 00:04:12.160
+Luckily, the imgProcess.cfm has attribute&nbsp;
+createPath=true. So first you can send such&nbsp;&nbsp;
+
+00:04:12.160 --> 00:04:19.840
+requests so that the __ directory is created, so&nbsp;
+then you can execute directory traversal later.
+
+00:04:21.920 --> 00:04:28.320
+This is the request that gave you an RCE&nbsp;
+on the local instance. But it didn't work&nbsp;&nbsp;
+
+00:04:28.320 --> 00:04:34.960
+on Apple server. It's because of Apple web&nbsp;
+application firewall which is very strict and&nbsp;&nbsp;
+
+00:04:34.960 --> 00:04:42.480
+does not allow ../ characters to be present in&nbsp;
+the URL. It successfully prevented this attack.&nbsp;&nbsp;
+
+00:04:44.000 --> 00:04:50.800
+Hunters needed to find a bypass for that. They&nbsp;
+found admin.index.search.cfm file which seemed&nbsp;&nbsp;
+
+00:04:50.800 --> 00:04:57.360
+to copy files from one location to another.&nbsp;
+This could be chained with the imgProcess.&nbsp;&nbsp;
+
+00:04:58.400 --> 00:05:04.000
+In the first step, you would upload a&nbsp;
+shell using imgProcess to a safe directory&nbsp;&nbsp;
+
+00:05:04.000 --> 00:05:10.960
+without path traversal. Then, in the second step&nbsp;
+you would copy this file inside the webroot.&nbsp;&nbsp;
+
+00:05:10.960 --> 00:05:18.400
+Using absolute paths would allow avoiding ../&nbsp;
+characters. But turned out it wasn't a normal&nbsp;&nbsp;
+
+00:05:18.400 --> 00:05:27.120
+copy. It didn't even copy the file contents.&nbsp;
+But if you had a file which name matched this&nbsp;&nbsp;
+
+00:05:27.120 --> 00:05:33.920
+expression and contents that matched this&nbsp;
+regex and you would upload it to a directory&nbsp;&nbsp;
+
+00:05:33.920 --> 00:05:41.680
+pointed by this parameter, the name of this file&nbsp;
+would be saved inside searchindex.cfm file inside&nbsp;&nbsp;
+
+00:05:41.680 --> 00:05:48.960
+the datadir directory. The file name would be&nbsp;
+saved inside JSON that's nested in the cfm file.&nbsp;&nbsp;
+
+00:05:50.240 --> 00:05:57.760
+This allows you to put the CFML tags inside&nbsp;
+the name of the file. The code inside those&nbsp;&nbsp;
+
+00:05:57.760 --> 00:06:05.360
+tags will be executed when the searchindex.cfm&nbsp;
+file is requested. For this, it must be placed&nbsp;&nbsp;
+
+00:06:05.360 --> 00:06:10.640
+inside the webroot. But again, you control&nbsp;
+the directory in which it will be saved.&nbsp;&nbsp;
+
+00:06:11.360 --> 00:06:17.360
+Connecting all these together, you can achieve&nbsp;
+an RCE. Let's now go through it step by step.&nbsp;&nbsp;
+
+00:06:18.640 --> 00:06:25.760
+First, you create a file with the payload inside&nbsp;
+its name. The content of this file doesn't matter&nbsp;&nbsp;
+
+00:06:25.760 --> 00:06:33.200
+a lot, but it must match this regex. Then,&nbsp;
+using imgProcess endpoint, this file will&nbsp;&nbsp;
+
+00:06:33.200 --> 00:06:40.640
+be saved inside admin-ext-thumbnails directory,&nbsp;
+outside the webroot. To keep the filename short,&nbsp;&nbsp;
+
+00:06:40.640 --> 00:06:48.080
+do not put the whole webshell there. This code allows&nbsp;
+you to upload any file which can be used to upload&nbsp;&nbsp;
+
+00:06:48.080 --> 00:06:55.280
+the webshell later. Then, in the second step you&nbsp;
+trigger the copy function that searches through&nbsp;&nbsp;
+
+00:06:55.280 --> 00:07:02.400
+admin-ext-thumbnails directory and saves the name&nbsp;
+of your file inside searchindex.cfm file which is&nbsp;&nbsp;
+
+00:07:02.400 --> 00:07:09.680
+saved inside the webroot. Then, you request the&nbsp;
+searchindex endpoint which lets you to upload&nbsp;&nbsp;
+
+00:07:09.680 --> 00:07:17.120
+any file. You can upload this webshell there. In step&nbsp;
+4, you have success - you achieved an RCE...&nbsp;&nbsp;
+
+00:07:18.960 --> 00:07:26.400
+at least on the one host with the newer version&nbsp;
+of Lucee. But turned out that 2/3 servers&nbsp;&nbsp;
+
+00:07:26.400 --> 00:07:34.000
+run the older version of Lucee which doesn't&nbsp;
+have the imgProcess file. But similar method was&nbsp;&nbsp;
+
+00:07:34.000 --> 00:07:40.480
+used to achieve an RCE on those two hosts.&nbsp;
+The difference was, that instead of using&nbsp;&nbsp;
+
+00:07:41.200 --> 00:07:47.600
+imgProcess to upload the file, our hunters&nbsp;
+used ext.applications.upload.cfm file.&nbsp;&nbsp;
+
+00:07:48.560 --> 00:07:53.200
+Even though reaching this endpoint caused&nbsp;
+the application to throw an exception&nbsp;&nbsp;
+
+00:07:53.200 --> 00:07:57.840
+about no permissions, the file was&nbsp;
+still uploaded. It was because the&nbsp;&nbsp;
+
+00:07:57.840 --> 00:08:04.240
+code responsible for the upload was before&nbsp;
+the permission check. It was very important&nbsp;&nbsp;
+
+00:08:04.240 --> 00:08:10.240
+that hunters did not believe this error but&nbsp;
+manually checked if the file was uploaded or not.&nbsp;&nbsp;
+
+00:08:11.440 --> 00:08:16.720
+To upload a script using this endpoint, you&nbsp;
+can use the same payload as previously but it&nbsp;&nbsp;
+
+00:08:16.720 --> 00:08:23.920
+must be zipped and the name of the file must be&nbsp;
+changed to .lex. Your file with payload in its&nbsp;&nbsp;
+
+00:08:23.920 --> 00:08:30.240
+name must be inside the zip archive. Then,&nbsp;
+to the copy function you provide this name&nbsp;&nbsp;
+
+00:08:30.240 --> 00:08:36.640
+with the zip:// protocol and then the server&nbsp;
+will unpack this for you. This method gave the&nbsp;&nbsp;
+
+00:08:36.640 --> 00:08:44.400
+webshell on the remaining two hosts. The hunters&nbsp;
+were rewarded solid $50,000 for those free RCEs.&nbsp;&nbsp;
+
+00:08:46.320 --> 00:08:50.960
+Apple reported the issue to Lucee&nbsp;
+maintainers and the fix they deployed&nbsp;&nbsp;
+
+00:08:50.960 --> 00:08:58.480
+is that unauthenticated users can now only request&nbsp;
+free endpoints. It makes this attack impossible,&nbsp;&nbsp;
+
+00:08:58.480 --> 00:09:04.080
+unless you are an admin, but then you&nbsp;
+can execute code anyway. And that's it.&nbsp;&nbsp;
+
+00:09:04.080 --> 00:09:09.760
+I think this vulnerability really shows how deep&nbsp;
+you can get when you're testing an open source&nbsp;&nbsp;
+
+00:09:09.760 --> 00:09:16.880
+application and also, how rewarding this can be.&nbsp;
+Thanks for everyone reading the newsletter. I saw&nbsp;&nbsp;
+
+00:09:16.880 --> 00:09:24.640
+an open rate of about 50% where 30% is generally&nbsp;
+considered as a very good result. I'm also getting&nbsp;&nbsp;
+
+00:09:24.640 --> 00:09:29.840
+a lot of messages and i'm very happy that you&nbsp;
+like it. If you are not subscribed already, make&nbsp;&nbsp;
+
+00:09:29.840 --> 00:09:35.840
+sure to do it using the link in the description.&nbsp;
+But for now, thank you for watching and goodbye!
+

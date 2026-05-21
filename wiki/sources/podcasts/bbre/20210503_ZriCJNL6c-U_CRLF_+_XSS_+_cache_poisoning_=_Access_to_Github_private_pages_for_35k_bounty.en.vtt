@@ -1,0 +1,499 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:03.900
+Hello, in today's episode of Bug Bounty Reports Explained,
+
+00:00:03.900 --> 00:00:08.866
+you will learn how two guys from high school hacked GitHub private pages
+
+00:00:08.866 --> 00:00:13.766
+for $35,000 by chaining four different vulnerabilities.
+
+00:00:14.066 --> 00:00:18.432
+Their names are Robert Chen and Phillip who uses nickname, @ginkoid.
+
+00:00:18.433 --> 00:00:22.833
+Link to the original blog posts and their profiles are in the description.
+
+00:00:22.833 --> 00:00:24.033
+Enjoy.
+
+00:00:24.566 --> 00:00:27.632
+But before we jump into the technical stuff,
+
+00:00:27.633 --> 00:00:31.766
+I'd like to encourage you to sign up for BBRE newsletter.
+
+00:00:32.333 --> 00:00:35.033
+You will get it on your email every second week,
+
+00:00:35.033 --> 00:00:38.633
+and you will not only find there the most interesting stories
+
+00:00:38.633 --> 00:00:41.366
+from Bug Bounty and security world in general,
+
+00:00:41.366 --> 00:00:43.799
+but also some tips about productivity
+
+00:00:43.800 --> 00:00:47.066
+or chill out with some more personal stuff from me.
+
+00:00:47.666 --> 00:00:51.666
+Here's the agenda of the first issue that was sent a week ago.
+
+00:00:53.200 --> 00:00:56.933
+Generally, those newsletters are not available anywhere,
+
+00:00:56.933 --> 00:00:59.599
+but for the first one, I made an exception.
+
+00:00:59.600 --> 00:01:02.933
+You can get it by visiting the link that's in the description
+
+00:01:02.933 --> 00:01:04.633
+and on the video right now.
+
+00:01:05.533 --> 00:01:09.733
+Sign up before 9th May to get the second issue.
+
+00:01:10.433 --> 00:01:12.733
+Let's now start the explanation.
+
+00:01:12.733 --> 00:01:15.766
+GitHub pages is a service that allows you
+
+00:01:15.766 --> 00:01:19.532
+to create a website straight from the GitHub repository.
+
+00:01:20.333 --> 00:01:23.466
+And it's also possible to create a private page
+
+00:01:23.466 --> 00:01:26.466
+that's only available with authentication,
+
+00:01:27.033 --> 00:01:30.933
+but the GitHub pages does not have its own login panel.
+
+00:01:30.933 --> 00:01:32.899
+It's also on different domain.
+
+00:01:32.900 --> 00:01:36.366
+So cookies from GitHub.com are not sent there.
+
+00:01:36.366 --> 00:01:41.132
+So developers created this flow of authentication,
+
+00:01:41.133 --> 00:01:43.866
+which uses cookies from GitHub.com.
+
+00:01:43.866 --> 00:01:50.866
+First, GitHub.io sets a random nonce inside GitHub pages session cookie.
+
+00:01:51.366 --> 00:01:56.799
+Then it redirects the user to GitHub.com with this nonce as the parameter,
+
+00:01:56.800 --> 00:02:00.300
+but also with a page ID and the path,
+
+00:02:00.900 --> 00:02:04.100
+then GitHub.com checks if the user is logged in,
+
+00:02:04.100 --> 00:02:08.433
+generates a token and redirects the user back to GitHub.io.
+
+00:02:08.433 --> 00:02:12.699
+Those three parameters are passed throughout the whole flow.
+
+00:02:13.833 --> 00:02:17.499
+Then, GitHub.io checks if the nonce from the parameter
+
+00:02:17.500 --> 00:02:20.100
+is equal to the nonce from the cookie.
+
+00:02:20.100 --> 00:02:23.800
+If it is, the token gets inside the cookie
+
+00:02:23.800 --> 00:02:28.333
+and the page ID is also being put inside the cookie.
+
+00:02:28.900 --> 00:02:30.300
+And with those cookies,
+
+00:02:30.300 --> 00:02:33.966
+the user can visit GitHub page that he wanted to view.
+
+00:02:35.033 --> 00:02:39.366
+In step five, the value from the parameter page ID
+
+00:02:39.366 --> 00:02:43.199
+is being put into the GitHub page’s ID cookie.
+
+00:02:43.966 --> 00:02:46.566
+Page ID is an integer number.
+
+00:02:46.566 --> 00:02:49.332
+It identifies the page to which user
+
+00:02:49.333 --> 00:02:52.433
+will be redirected after the authentication flow
+
+00:02:52.800 --> 00:02:57.400
+and the page lookup converts the cookie to integer number.
+
+00:02:57.733 --> 00:03:02.099
+So if your page ID is 123 with space at the end,
+
+00:03:02.100 --> 00:03:05.766
+the space will be dropped by integer conversion.
+
+00:03:06.333 --> 00:03:10.066
+But importantly, the cookie that will be sent back to you
+
+00:03:10.066 --> 00:03:13.032
+is the one before the int conversion.
+
+00:03:13.033 --> 00:03:14.966
+So with the space at the end.
+
+00:03:16.000 --> 00:03:22.866
+You could inject %0D %0A there as it was ignored by integer conversion.
+
+00:03:23.500 --> 00:03:27.833
+Those are the CRLF characters that mean a new line.
+
+00:03:28.333 --> 00:03:32.366
+Then you got a strange looking response back to your browser.
+
+00:03:33.600 --> 00:03:38.900
+Usually, CLRF vulnerability is exploited by adding new headers
+
+00:03:39.200 --> 00:03:43.033
+or changing the response body to an XSS payload.
+
+00:03:43.400 --> 00:03:47.333
+But here you could only inject white space characters
+
+00:03:47.333 --> 00:03:51.433
+and in non white space character causes an integer conversion
+
+00:03:51.433 --> 00:03:55.233
+to throw an exception so there was no real impact to this.
+
+00:03:55.833 --> 00:03:58.866
+The researchers had access to the source code
+
+00:03:58.866 --> 00:04:03.332
+and they noticed that this page is served by nginx
+
+00:04:03.333 --> 00:04:08.433
+and nginx is written in C where null byte terminates the C-string.
+
+00:04:08.433 --> 00:04:11.233
+So it's always worth to give it a try.
+
+00:04:12.000 --> 00:04:13.966
+Turned out it worked,
+
+00:04:13.966 --> 00:04:18.499
+you could inject any characters after the null byte and they were ignored,
+
+00:04:19.433 --> 00:04:24.266
+but null byte is not allowed in the header section of the response.
+
+00:04:24.566 --> 00:04:27.599
+So you could only inject something in the body.
+
+00:04:28.733 --> 00:04:31.533
+In fact, this was a 302 redirect,
+
+00:04:31.533 --> 00:04:35.699
+where generally the response body is not processed by the browser.
+
+00:04:35.700 --> 00:04:40.966
+But here, luckily the location header was after our injection point,
+
+00:04:40.966 --> 00:04:43.399
+so it was not treated as header.
+
+00:04:43.400 --> 00:04:47.000
+And in 302 responses, without the location header,
+
+00:04:47.000 --> 00:04:49.133
+the body is processed normally.
+
+00:04:50.066 --> 00:04:53.699
+With that, we can inject the HTML code in the response
+
+00:04:53.700 --> 00:04:58.433
+and execute arbitrary JavaScript code, reaching our XSS.
+
+00:04:59.200 --> 00:05:04.366
+But the problem is that this injection is in fifth request of the whole flow.
+
+00:05:04.833 --> 00:05:08.999
+And you can't just take this one, put whatever in other parameters
+
+00:05:09.000 --> 00:05:11.133
+and it will work. No, it wouldn't.
+
+00:05:11.133 --> 00:05:15.166
+You need to send the victim into a valid authentication flow
+
+00:05:15.166 --> 00:05:17.799
+ just with this one malicious parameter.
+
+00:05:18.300 --> 00:05:24.333
+And as you remember, we had three parameters there - nonce, path, and page ID.
+
+00:05:24.333 --> 00:05:29.099
+Page ID will be our payload, path doesn't matter much.
+
+00:05:29.100 --> 00:05:31.333
+The problem is the nonce.
+
+00:05:32.300 --> 00:05:36.700
+Because GitHub.io checks if the nonce from the parameter
+
+00:05:36.700 --> 00:05:41.366
+that comes from GitHub.com is the same as nonce in the cookie.
+
+00:05:42.066 --> 00:05:46.866
+So you either need to predict the nonce or to set the cookie
+
+00:05:46.866 --> 00:05:51.766
+to your known value and then send the same value as the parameter.
+
+00:05:52.500 --> 00:05:56.733
+The potential attack scenario is that we have right access
+
+00:05:56.733 --> 00:06:00.233
+to attacker.private-org.github.io
+
+00:06:00.233 --> 00:06:04.533
+and we want to read another page from the same organization.
+
+00:06:04.533 --> 00:06:06.633
+Let's say it's called flag.
+
+00:06:07.500 --> 00:06:10.266
+Such scenario with user interaction
+
+00:06:10.266 --> 00:06:15.499
+and being in the same organization would be granted $5,000 of bonus.
+
+00:06:16.466 --> 00:06:21.266
+Our bug hunters decided to try the scenario where you set the cookie first,
+
+00:06:21.266 --> 00:06:27.232
+considering we can’t control other sub domain of private-org.github.io.
+
+00:06:27.233 --> 00:06:29.233
+This should be a bit easier.
+
+00:06:29.800 --> 00:06:34.900
+The problem was that the cookie within nonce used the __Host- prefix.
+
+00:06:35.400 --> 00:06:39.600
+It means that from attacker subdomain, you can only set the cookie
+
+00:06:39.600 --> 00:06:43.300
+to attacker subdomain and not to the parent domain.
+
+00:06:43.933 --> 00:06:47.299
+If there wasn't this prefix from attacker.private-org.github.io,
+
+00:06:47.300 --> 00:06:50.733
+you could just set the cookie to the parent subdomain
+
+00:06:50.733 --> 00:06:54.533
+and then it would also be sent to flag.private-org.github.io,
+
+00:06:54.533 --> 00:06:57.666
+meaning that, you know the nonce from the subdomain,
+
+00:06:57.666 --> 00:07:00.266
+and you can execute the cross-site scripting.
+
+00:07:00.800 --> 00:07:06.533
+So you need to trick the server into thinking that the cookie has the __Host- prefix
+
+00:07:06.533 --> 00:07:09.133
+while the browser thinks it doesn't.
+
+00:07:09.833 --> 00:07:14.066
+Turns out that the __Host- prefix is case sensitive.
+
+00:07:14.066 --> 00:07:20.099
+This means if you try to set the __Host- cookie to parent domain, it won't work.
+
+00:07:20.100 --> 00:07:24.800
+But if you try the same with __HOST- using capital letters, it will work
+
+00:07:24.800 --> 00:07:29.100
+because the browser doesn't consider this to be a valid host prefix,
+
+00:07:29.666 --> 00:07:34.866
+but turns out that the server used by GitHub doesn't care about it at all.
+
+00:07:35.466 --> 00:07:40.732
+While parsing cookies, it will strip the host part whatever the capitalization.
+
+00:07:41.533 --> 00:07:44.933
+So you can set the host cookie using capital letters.
+
+00:07:44.933 --> 00:07:47.966
+The browser will set it to the parent domain
+
+00:07:47.966 --> 00:07:52.366
+because it's not a valid prefix while the server will also be happy
+
+00:07:52.366 --> 00:07:56.132
+because it thinks that the cookie has the host prefix.
+
+00:07:56.666 --> 00:07:59.799
+So this is the proof of concept that will be hosted
+
+00:07:59.800 --> 00:08:03.433
+on attacker.private-org.github.io.
+
+00:08:03.966 --> 00:08:08.932
+It will send the cookie to parent domain with nonce known by us.
+
+00:08:08.933 --> 00:08:15.299
+And will send the victim into a valid authentication flow with nonce known by us.
+
+00:08:15.300 --> 00:08:19.133
+And with page ID of the page that we want to attack.
+
+00:08:19.133 --> 00:08:21.466
+Once the victim goes through the flow,
+
+00:08:21.466 --> 00:08:26.032
+it gets back to GitHub page where the XSS is executed.
+
+00:08:26.733 --> 00:08:29.766
+This way, you could access any page
+
+00:08:29.766 --> 00:08:32.699
+that the attack victim would have access to.
+
+00:08:32.700 --> 00:08:36.666
+This made hunters eligible for $5,000 bonus,
+
+00:08:37.533 --> 00:08:39.333
+but they were hungry for more.
+
+00:08:39.333 --> 00:08:43.166
+They wanted to escalate it to a no interaction bug.
+
+00:08:44.700 --> 00:08:49.800
+And this escalation was made rather easy by cache poisoning vulnerability.
+
+00:08:50.300 --> 00:08:53.333
+It was present on the same vulnerable endpoint
+
+00:08:53.333 --> 00:08:58.799
+and the page was cached based on the integer value of page ID.
+
+00:08:59.333 --> 00:09:04.699
+So if you would request the page with ID "123", or "123 ",
+
+00:09:04.700 --> 00:09:07.366
+you would get the same cached response.
+
+00:09:08.100 --> 00:09:11.800
+So if you would request it with our payload used previously,
+
+00:09:11.800 --> 00:09:17.333
+then everyone that will visit the same page would get XSSed by you.
+
+00:09:17.900 --> 00:09:21.200
+This means you'd no longer need user's interaction.
+
+00:09:21.200 --> 00:09:26.533
+And you attack all pages of victims that visit this malicious page.
+
+00:09:26.800 --> 00:09:30.800
+So this attack scenario no longer needed user interaction
+
+00:09:30.800 --> 00:09:34.500
+and only required a read access to a page.
+
+00:09:34.500 --> 00:09:38.933
+Such scenario would be granted $10,000 of bonus.
+
+00:09:39.400 --> 00:09:42.933
+Now to get the maximum $15,000 bonus,
+
+00:09:42.933 --> 00:09:48.666
+they needed to escalate it to an attacker that is outside the organization.
+
+00:09:50.800 --> 00:09:53.966
+So if a GitHub page is completely public,
+
+00:09:53.966 --> 00:09:57.132
+then this whole authentication flow doesn't happen.
+
+00:09:57.833 --> 00:10:03.466
+But in case that there is a private repository that is then changed to public,
+
+00:10:03.466 --> 00:10:08.399
+then each user that visits the page, still goes through the authentication flow,
+
+00:10:08.400 --> 00:10:12.966
+but every GitHub user has read access to this private page.
+
+00:10:14.466 --> 00:10:17.999
+And as you already saw read access to a page
+
+00:10:18.000 --> 00:10:22.700
+is everything that you need to poison the cache with the XSS payload.
+
+00:10:23.566 --> 00:10:27.099
+This means that the attack can be executed
+
+00:10:27.100 --> 00:10:30.200
+by the attacker outside the organization.
+
+00:10:30.766 --> 00:10:34.099
+All you need is a repository that was private
+
+00:10:34.100 --> 00:10:38.100
+and had a GitHub private page, but was then changed to public.
+
+00:10:39.266 --> 00:10:44.932
+And with that attack, our hunters were rewarded $15,000 of maximum bonus
+
+00:10:44.933 --> 00:10:50.966
+plus $20,000 of base payment for a total of $35,000.
+
+00:10:52.233 --> 00:10:57.399
+That's very good money, especially when you are 14 or 17 years old.
+
+00:10:57.933 --> 00:10:58.933
+And that's it.
+
+00:10:59.233 --> 00:11:03.133
+It's amazing how far little bugs were changed together
+
+00:11:03.133 --> 00:11:06.266
+for a vulnerability with such a huge impact.
+
+00:11:06.566 --> 00:11:08.932
+If you learn something new during this video, leave a like, or leave a subscription.
+
+00:11:08.933 --> 00:11:10.933
+leave a like, or leave a subscription.
+
+00:11:10.933 --> 00:11:13.499
+Also, sign up for my mailing list
+
+00:11:13.500 --> 00:11:18.200
+to get the new issue of BBRE newsletter that will be out next Monday.
+
+00:11:18.200 --> 00:11:21.233
+For now, thank you for watching and goodbye.
+

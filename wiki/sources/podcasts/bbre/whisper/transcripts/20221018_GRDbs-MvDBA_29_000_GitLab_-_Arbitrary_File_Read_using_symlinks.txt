@@ -1,0 +1,50 @@
+Hello. In this episode of Bug Bounty Reports Explained, I have a $29,000 arbitrary file
+read vulnerability in GitLab. The bug had to do with symlinks and I'm quite surprised we don't see
+this trick used more often. Anyway, the report was submitted by William Bowling,
+whose reports I regularly cover on my channel because they are really, really good. So is this
+one, so without further ado, enjoy my explanation. On GitLab we can create groups and milestones
+within them, which isn't that important, but important is the fact that we can also upload
+files as attachments to these descriptions. And GitLab can work as GitLab.com, the global instance,
+but it can also work as self-hosted one, which you install in, for example, your own company. And
+if you create a group in one instance, and then you want to move everything into another one,
+GitLab allows you to do this by simply importing the URL of the GitLab instance and also the access
+token. GitLab can then go and fetch all the information about your original group and import it to another instance.
+For this particular report, the setup that William created looks like this, that from GitLab.com
+you import a group which actually imports itself also from GitLab.com. The reason is that we don't care
+about importing most of the things, there is only one file that we will have to change and our proxy server
+changes one single response and the rest of requests goes simply back to GitLab.com, but GitLab.com does not know about it.
+Let's talk about symlinks. Symlinks or symbolic links are files that refer to other files on the file system.
+There are two types of them and we are talking about soft links, which don't actually store the file's data,
+but they refer to the actual file's location. You can think of it as a shortcut. And this is the comment
+that I would use to create a symbolic link to my itscpasswd file and the symbolic link itself is called
+symlink. If I do anything on this file, the system will work as if I was working on the hcpasswd file.
+The attack scenario we could try is to upload a file, a symlink to the server, referring the
+hcpasswd on the server, hoping that the server will resolve the symlink and give us the hcpasswd file or
+any other file from the server. But the problem of this approach is that the browser, when we do this,
+we'll just upload our own at cpasswd file to the server. In fact, when I first learned about this
+vulnerability, that's exactly what I've done. I uploaded my own file from the server and I thought
+for a second that I found arbitrary file read. The problem of this approach is that the information
+about the fact that it's a symlink and not the file is not in its contents, but in information about the file.
+And whenever you have a file upload functionality, you usually only upload file contents and not,
+for example, permissions or information that it's a symlink. Normally, this attack won't work unless you
+have a functionality that doesn't work on a single file, but works on archives like zip or tar. In this
+case, when importing all the data about the group from one GitLab instance to another, our attachments
+were packed into a tar archive and then unpacked on the new server. What GitLab should do to be secure
+is it should remove the symlinks on every single unpacked file, but in this case it didn't.
+This is how you could exploit this on GitLab.com. First, you create a new group and a new milestone.
+In its description, you upload an arbitrary file, doesn't really matter what are the contents. It's
+uploaded to a folder with a random name, which you have to copy. And then locally, you create the directory
+with the same name and inside you use this command to create a symlink. The first argument is the file
+that you want to steal from the server and it can be an arbitrary name. Then you create an archive with
+this file. Now you create a proxy server that will forward all requests back to GitLab.com so it can
+fetch all the data about the group that you are trying to import. You only modify a single response,
+the one with the uploads.tar.gz file and instead of requesting this one from an actual GitLab instance,
+you return the tar file that you've just created. The vulnerable GitLab instance will then unpack this
+file without removing symlinks and all of a sudden if you try to open the uploaded file, you will see
+the .htcpasswd file or whatever else you tried to steal. After some arguments about the risk and in
+particular about the integrity impact of this bug, it was classified as critical and the payout was $29,000.
+The bug was fixed in GitLab 14.6.2.
+If you want to see other reports by William, check out this GitLab playlist. There is his 20k RCE in
+image metadata but also his XSS that he escalated into an arbitrary file read. XSS into arbitrary file
+read. A fantastic report. The playlist is on your screen right now. For now, thank you for watching and goodbye.
+.

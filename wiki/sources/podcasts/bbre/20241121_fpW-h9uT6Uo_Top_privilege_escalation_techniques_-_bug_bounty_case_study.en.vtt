@@ -1,0 +1,733 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:05.500
+Privilege escalation is a bug class that comes in a lot of variations and to know
+
+00:00:05.500 --> 00:00:11.600
+best what we should focus on I did the case study of 162 public bug bounty
+
+00:00:11.600 --> 00:00:16.400
+reports and in this video I will show you which ones get the highest bounties.
+
+00:00:16.400 --> 00:00:24.080
+Enjoy! So I have nine different groups of what the attacker was able to do with
+
+00:00:24.080 --> 00:00:28.400
+the attack and we'll go through them one by one starting with the most common one
+
+00:00:28.400 --> 00:00:36.160
+which was reading victims data. It was the backlash that it's kind of overlaps
+
+00:00:36.160 --> 00:00:40.799
+with IDORs but because I already have done the IDOR case study I tried to
+
+00:00:40.799 --> 00:00:46.480
+focus on a bit different things in this case study. As the example I have this
+
+00:00:46.480 --> 00:00:53.639
+report by Yousef Samouda from Facebook where there was a free request process
+
+00:00:53.639 --> 00:00:58.880
+to upload the file and these are always always interesting because when you
+
+00:00:58.880 --> 00:01:03.880
+have your data in the system it's stored in some kind of database where it's
+
+00:01:03.880 --> 00:01:08.720
+tied to to your user ID and it's it's still possible to make a mistake and
+
+00:01:08.720 --> 00:01:14.639
+and have the IDOR there but it's way harder to do something secure with files
+
+00:01:14.639 --> 00:01:19.839
+because files they don't have metadata. Files only have the file name and the
+
+00:01:19.839 --> 00:01:25.400
+file content and that's usually it. So any request that handles files is
+
+00:01:25.400 --> 00:01:31.639
+interesting especially like here we had one request where the user would upload
+
+00:01:31.639 --> 00:01:37.919
+the file to a CDN then in the response they would get the video ID then in the
+
+00:01:37.919 --> 00:01:43.199
+second request they would exchange the video ID for some other identifier that
+
+00:01:43.199 --> 00:01:49.279
+looks like this and then there is the third request which connects the
+
+00:01:49.279 --> 00:01:56.639
+uploaded file uploaded video with the with the user's profile and in these
+
+00:01:56.639 --> 00:02:00.440
+types of requests of course in the first one you should always try different
+
+00:02:00.440 --> 00:02:04.599
+things with the file path, path traversals and stuff like this but this
+
+00:02:04.599 --> 00:02:11.800
+second and third one here always try to see if you can access other users file
+
+00:02:11.800 --> 00:02:18.759
+ID especially if it's a predictable one and in this case the second
+
+00:02:18.759 --> 00:02:21.679
+request was probably secure because it's not mentioned in the blog post but
+
+00:02:21.679 --> 00:02:28.199
+in the third one Yousef could just exchange the video ID for another user's
+
+00:02:28.199 --> 00:02:33.839
+ID and then other file would be appended to normal user's profile would be
+
+00:02:33.839 --> 00:02:39.080
+normally shown on the user's profile in this case I think Yousef appended some
+
+00:02:39.080 --> 00:02:44.559
+kind of internal crash log screenshot and he was rewarded twelve and a half
+
+00:02:44.559 --> 00:02:52.919
+thousand dollars bounty by Facebook. Now some of these reports will be similar to
+
+00:02:52.919 --> 00:02:58.960
+IDERS but because I think every single IDER is a kind of privilege escalation
+
+00:02:58.960 --> 00:03:05.199
+bug I did not want to include them again because I already did IDER case study so
+
+00:03:05.199 --> 00:03:11.399
+keep this in mind when looking at these statistics. The next group that that we
+
+00:03:11.399 --> 00:03:16.639
+have is creating or modifying resources with only one less report but a lot
+
+00:03:16.639 --> 00:03:21.360
+higher bounty which is kind of interesting because it is not due to the
+
+00:03:21.360 --> 00:03:27.279
+fact that creating or modifying resources is by CVSS more impactful
+
+00:03:27.279 --> 00:03:31.639
+because if we take a look at CVSS this is the typical setting that you would
+
+00:03:31.639 --> 00:03:38.080
+use for any kind of IDER so this would be for creating or modifying
+
+00:03:38.080 --> 00:03:42.399
+resources and this would be for reading and both have the rating of seven and a
+
+00:03:42.399 --> 00:03:49.919
+half so CVSS wise there is no difference in the impact between these two groups
+
+00:03:49.919 --> 00:03:56.160
+but in practice we can see that there is a clear difference in in the average
+
+00:03:56.160 --> 00:04:02.119
+bounty maybe it's because of the fact that if you can modify or create
+
+00:04:02.119 --> 00:04:07.520
+resources likely you can at least partially read something so then the
+
+00:04:07.520 --> 00:04:14.520
+impact increases but one way or another it's always worth to look for the
+
+00:04:14.520 --> 00:04:20.519
+bugs in all the possible actions of creating and reading as well and I have
+
+00:04:20.519 --> 00:04:27.079
+this report by Teddy Katz as the as a great example this one was in GitHub and
+
+00:04:27.079 --> 00:04:33.519
+yeah systems that maintain version control are especially interesting
+
+00:04:33.519 --> 00:04:38.279
+because of how commits work I won't go into the detail of how this particular
+
+00:04:38.279 --> 00:04:44.440
+report worked the TLDR is that a Teddy could add himself as the maintainer to
+
+00:04:44.440 --> 00:04:49.880
+somebody else's repository but the thing I want to mention about about these
+
+00:04:49.880 --> 00:04:55.799
+systems is when you have a target that works with files from one particular
+
+00:04:55.799 --> 00:05:00.239
+repository from one particular organization it may seem that it is
+
+00:05:00.239 --> 00:05:05.119
+secure because they will not pull files from your repository but if you control
+
+00:05:05.119 --> 00:05:10.040
+the commit hash know that if you fork the repository and create a commit on
+
+00:05:10.040 --> 00:05:15.480
+your fork and never merge this fork never make a pull request the commit
+
+00:05:15.480 --> 00:05:20.640
+will be available on the main repository using the same hash that's how how git
+
+00:05:20.640 --> 00:05:25.440
+works and this is this is the feature not the bug and developers that create
+
+00:05:25.760 --> 00:05:31.239
+that create some apps forget about this and they do not know that that if you
+
+00:05:31.239 --> 00:05:35.959
+control the commit hash you kind of control the whole the whole repository
+
+00:05:35.959 --> 00:05:40.480
+because you can then just pull your own fork with whatever you want inside so
+
+00:05:40.480 --> 00:05:46.399
+keep this in mind we're testing for for anything that works with with git when
+
+00:05:46.399 --> 00:05:54.880
+you control the the commit hash then the the next group is permanently escalate
+
+00:05:54.880 --> 00:05:59.760
+permissions within the organizations so these are the attacks where the attacker
+
+00:05:59.760 --> 00:06:03.279
+is somebody that's inside the organization but they have low
+
+00:06:03.279 --> 00:06:07.679
+privileges and by executing the attack they can escalate their privileges to
+
+00:06:07.679 --> 00:06:12.600
+admin to manager whatever the role is and these attacks are that much
+
+00:06:12.600 --> 00:06:18.519
+impactful that the two previous groups they were only working for one
+
+00:06:18.519 --> 00:06:23.239
+particular request you could read one thing or modify one thing and if you
+
+00:06:23.239 --> 00:06:27.720
+elevate your permissions from now on you have elevated permissions and you
+
+00:06:27.720 --> 00:06:33.480
+can do anything that the admin can do so most of the time if we take a look at
+
+00:06:33.480 --> 00:06:39.559
+CVSS most of the time you will be confidentiality and integrity high but
+
+00:06:39.559 --> 00:06:43.320
+because you have to be part of the organizations you will have privileges
+
+00:06:43.320 --> 00:06:48.440
+required low or in some cases even high it is very dependent if you can escalate
+
+00:06:48.600 --> 00:06:54.040
+from let's say admin to owner that's privileges required high but one way or
+
+00:06:54.040 --> 00:07:00.880
+another these attacks are are definitely great and we have 30 reports so this is
+
+00:07:00.880 --> 00:07:06.359
+a common problem and most of these were happening inside the functionality of
+
+00:07:06.359 --> 00:07:12.320
+organization or user management so these are quite it's good to test for them
+
+00:07:12.320 --> 00:07:14.920
+because you just have these functionalities that you have to audit
+
+00:07:14.920 --> 00:07:20.920
+it's not like you have to see every single request and before somebody ask
+
+00:07:20.920 --> 00:07:24.920
+in the comments you can access this database in the BBRE premium archive
+
+00:07:24.920 --> 00:07:32.200
+that's linked in the description the example I have is very very simple
+
+00:07:32.200 --> 00:07:39.119
+attack in Facebook you just have this request and analyst can elevate their
+
+00:07:39.119 --> 00:07:44.720
+permissions to admin you just use your own user ID, ad account ID, permission ID
+
+00:07:44.720 --> 00:07:51.440
+and that's it and a lot of privilege escalations look simple but the real
+
+00:07:51.440 --> 00:07:57.079
+value that the hunter did was just browsing the app auditing a lot of
+
+00:07:57.079 --> 00:08:01.880
+endpoints seeing which ones are secure and then all of a sudden finding the
+
+00:08:01.880 --> 00:08:08.119
+vulnerable one and then report is often as simple as this one but yeah the real
+
+00:08:08.119 --> 00:08:13.920
+value is outside of this write-up so don't be fooled that it's so easy to
+
+00:08:13.920 --> 00:08:19.000
+look for for privilege escalations the next group that we have is deleting
+
+00:08:19.000 --> 00:08:23.640
+resources which sort of completes our four actions that you can do with the
+
+00:08:23.640 --> 00:08:29.279
+object create, read, update, delete and there are fewer reports than the two
+
+00:08:29.279 --> 00:08:34.200
+previous groups but I still think you should spend a lot of time testing for
+
+00:08:34.200 --> 00:08:41.239
+deleting resources the first reason is it is less obvious as the less
+
+00:08:41.280 --> 00:08:45.799
+experienced version of me I used to kind of ignore the delete actions because I
+
+00:08:45.799 --> 00:08:53.080
+thought there is very little impact if we take a look at CVSS again keep in
+
+00:08:53.080 --> 00:08:57.359
+mind that if you can delete a resource there's not an availability impact
+
+00:08:57.359 --> 00:09:01.679
+availability refers to availability of the system and not availability of the
+
+00:09:01.679 --> 00:09:06.679
+data which means even if you can delete all the data in the system
+
+00:09:06.719 --> 00:09:13.359
+availability impact is none. Deleting data is integrity impact so CVSS wise
+
+00:09:13.359 --> 00:09:19.880
+you're in the same sort of bracket as updating or creating resources of course
+
+00:09:19.880 --> 00:09:26.159
+if what you can delete is is not very sensitive it's maybe integrity low or it
+
+00:09:26.159 --> 00:09:32.000
+might even be a non qualifying vulnerability but in other systems it
+
+00:09:32.000 --> 00:09:39.159
+will be maybe even more dangerous than than other actions and one other aspect
+
+00:09:39.159 --> 00:09:44.440
+why I think this deleting is you're more likely to find it especially in hardened
+
+00:09:44.440 --> 00:09:50.239
+targets is because it's harder to test for because if you have the read action
+
+00:09:50.239 --> 00:09:54.239
+it's fairly easy to automate this you can do it with authorize you can write
+
+00:09:54.239 --> 00:09:59.919
+your own script that just has the IDs of different objects you just send the
+
+00:09:59.919 --> 00:10:04.280
+request from a different session and that's pretty much the check done. When
+
+00:10:04.280 --> 00:10:09.559
+you have updating or creating is a bit harder because you need the proper body
+
+00:10:09.559 --> 00:10:15.559
+of the request and even if you can automate some fetching from JavaScript
+
+00:10:15.559 --> 00:10:20.359
+or by whatever other means you can enumerate names of the parameters
+
+00:10:20.359 --> 00:10:25.640
+likely will still not know what are the values of those parameters so it's
+
+00:10:25.719 --> 00:10:31.000
+harder to automate this and deleting I would say is even a little bit harder
+
+00:10:31.000 --> 00:10:36.479
+because if you send a request from the original session you cannot replay
+
+00:10:36.479 --> 00:10:40.840
+replay this this request from the attacker session because the object is
+
+00:10:40.840 --> 00:10:46.400
+already deleted so we need to find another one and these things even though
+
+00:10:46.400 --> 00:10:51.320
+if you're just testing you know one resource is not a problem to do this but
+
+00:10:51.320 --> 00:10:56.719
+if you think about you know multiplying this process times 300 endpoints 400
+
+00:10:56.719 --> 00:11:02.520
+endpoints 1000 endpoints that's a lot so that's why there's definitely more
+
+00:11:02.520 --> 00:11:08.320
+privilege escalation bugs and iders in those actions that modify something than
+
+00:11:08.320 --> 00:11:14.719
+in the read and especially if you have GraphQL it is possible that you can not
+
+00:11:14.719 --> 00:11:19.520
+only delete the data but also read it at the same time in this example you could
+
+00:11:19.520 --> 00:11:23.320
+just delete it but when you have a GraphQL mutation that looks like this
+
+00:11:23.320 --> 00:11:30.599
+here you ask the system about what it should return in the response after
+
+00:11:30.599 --> 00:11:35.520
+deleting the object and here is just error so this is only deleting the
+
+00:11:35.520 --> 00:11:42.080
+resource but in some cases you will also be able to see the contents of the
+
+00:11:42.080 --> 00:11:46.400
+object that you just deleted so then you have both the confidentiality and
+
+00:11:46.400 --> 00:11:53.080
+integrity impacts so yeah when you have when you have GraphQL always pay even
+
+00:11:53.080 --> 00:11:58.159
+more attention than normally to deleting objects even if they are they may not be
+
+00:11:58.159 --> 00:12:03.239
+sensitive to delete if you're able to read them that's definitely sensitive so
+
+00:12:03.239 --> 00:12:08.520
+pay attention to to this the next group is something interesting because I've
+
+00:12:08.520 --> 00:12:13.039
+never actually tested for this at least I haven't spent a lot of time testing
+
+00:12:13.039 --> 00:12:18.440
+for this it's when the attacker keeps their or their old privileges so the
+
+00:12:18.440 --> 00:12:23.159
+attack scenario is that the attacker already has some privileges in the
+
+00:12:23.159 --> 00:12:29.919
+application but it's impossible for the legitimate user to to remove the attacker
+
+00:12:29.919 --> 00:12:34.479
+from the organization or remove attackers permissions so sometimes it's
+
+00:12:34.479 --> 00:12:40.679
+it's as simple as just the session token not being invalidated for for a long
+
+00:12:40.799 --> 00:12:45.440
+time where the attacker can refresh it over and over again but we also have a
+
+00:12:45.440 --> 00:12:52.440
+very interesting report here in reddit where the hunter 41bin found something
+
+00:12:52.440 --> 00:12:58.039
+that seems like not something severe they found a way to create the user that
+
+00:12:58.039 --> 00:13:04.119
+would be hidden from the user list and probably it's something that I wouldn't
+
+00:13:04.119 --> 00:13:08.599
+even report I would probably brush it off as maybe a low-risk vulnerability
+
+00:13:08.599 --> 00:13:14.760
+that the company will not reward or at least not reward well but the attack
+
+00:13:14.760 --> 00:13:20.159
+scenario that the hunter came up with is to as the attacker that already is the
+
+00:13:20.159 --> 00:13:25.679
+admin organization create another admin in the same organization but the one
+
+00:13:25.679 --> 00:13:31.359
+that's hidden so then when let's say in the real world the attacker leaves the
+
+00:13:31.359 --> 00:13:37.119
+company and the company the user with the owner permission wants to remove
+
+00:13:37.119 --> 00:13:43.039
+them from the organization on reddit or on reddit ads in this case they remove
+
+00:13:43.039 --> 00:13:48.760
+the attacker but because the hidden user created by the attacker is not is not
+
+00:13:48.760 --> 00:13:53.280
+visible to the to the owner the hidden user is not deleted and of course the
+
+00:13:53.280 --> 00:13:58.039
+attacker has credentials to this account so they can keep those permissions
+
+00:13:58.039 --> 00:14:05.960
+forever and it's also kudos to to reddit here because they rewarded it $5,000 as a
+
+00:14:06.080 --> 00:14:13.479
+high and I want to appreciate it because I feel that sometimes even though we say
+
+00:14:13.479 --> 00:14:20.039
+in bug bounty impact is the king I still feel that often it's hard to get paid
+
+00:14:20.039 --> 00:14:24.039
+well for something that's not a standard vulnerability when you do something
+
+00:14:24.039 --> 00:14:29.479
+that's out of the box or something that doesn't have a back class name or
+
+00:14:29.479 --> 00:14:33.919
+something like this it's harder to get this through triage and it's harder to
+
+00:14:34.039 --> 00:14:40.440
+get this paid well even if the impact is there just because it's non-standard but
+
+00:14:40.440 --> 00:14:46.840
+it's not the case here here reddit took a look at it at the impact standpoint
+
+00:14:46.840 --> 00:14:52.640
+not at the backlash standpoint and they rewarded it fairly so so well well done
+
+00:14:52.640 --> 00:15:00.760
+reddit then joining another organization and you can see that there is way way
+
+00:15:00.919 --> 00:15:07.599
+fewer reports of this type 9 versus 30 of escalating privileges within the
+
+00:15:07.599 --> 00:15:13.000
+organization so even though joining another organization is more risky and
+
+00:15:13.000 --> 00:15:18.479
+you can even see the average bounty is way higher than than other back classes
+
+00:15:18.479 --> 00:15:23.760
+here even though it's a small small sample size is the best we can get but
+
+00:15:23.760 --> 00:15:29.799
+take it with a grain of salt but you can see that it is not as easy to perform an
+
+00:15:29.799 --> 00:15:35.359
+attack that allows you to join another organization now why is the average
+
+00:15:35.359 --> 00:15:40.520
+bounty so high that's probably because there are four Shopify reports rewarded
+
+00:15:40.520 --> 00:15:51.000
+in total over 65k and also $35,000 of Facebook reports and the ones in
+
+00:15:51.000 --> 00:15:56.239
+Shopify there are a few reports by Ron Chand that are kind of related I covered
+
+00:15:56.239 --> 00:16:01.119
+them on my channel you can see them the link is in the description just if you
+
+00:16:01.119 --> 00:16:05.280
+watch it remembered it's it's one of the first videos on my channel so you will
+
+00:16:05.280 --> 00:16:11.359
+see how much the quality of the videos have improved but I still recommend you
+
+00:16:11.359 --> 00:16:16.719
+to watch it because this chain is incredible it's a race condition where
+
+00:16:16.719 --> 00:16:22.719
+with the email confirmation process where Ron was able to confirm another
+
+00:16:22.719 --> 00:16:30.679
+email by changing it at the correct time and specifically in Shopify
+
+00:16:30.679 --> 00:16:37.159
+bypassing email confirmation allow you to take over the the whole shop so it is
+
+00:16:37.159 --> 00:16:42.200
+a big thing and if I think three of these reports in total that I covered
+
+00:16:42.200 --> 00:16:49.520
+were rewarded $37,000 so yeah it's it's definitely something to to pay
+
+00:16:49.520 --> 00:16:55.599
+attention to next we have paywall bypasses and it's a backlash that I was
+
+00:16:55.599 --> 00:16:59.840
+very curious about because it's not something that I test a lot and I wanted
+
+00:16:59.840 --> 00:17:04.680
+to see if I should and to be honest if anything this case study convinced me
+
+00:17:04.680 --> 00:17:08.800
+that I shouldn't spend a lot of time here we have only seven reports in this
+
+00:17:08.800 --> 00:17:16.959
+group and they are not really rewarded that well we can see two reports
+
+00:17:16.959 --> 00:17:22.160
+rewarded $2,000 from Shopify which doesn't sound bad but it's still
+
+00:17:22.160 --> 00:17:27.599
+rewarded as a low and I imagine a lot of companies just didn't accept them at all
+
+00:17:27.599 --> 00:17:34.199
+so yeah to sum it up it's not something that that I'm gonna be spending my time
+
+00:17:34.199 --> 00:17:40.719
+on then the next group that that's kind of named a bit strangely bypassing
+
+00:17:40.719 --> 00:17:46.839
+victims confirmation it's it's attacks where I wasn't really able to determine
+
+00:17:46.839 --> 00:17:56.239
+the immediate impact an example we have here in slack where if you invite
+
+00:17:56.239 --> 00:18:02.359
+somebody to the slack workspace they have to accept the invitation and you
+
+00:18:02.359 --> 00:18:05.839
+could bypass this accepting the invitation so you could invite the
+
+00:18:05.839 --> 00:18:10.359
+victim to the workspace and have them automatically accept the invitation by I
+
+00:18:10.719 --> 00:18:16.599
+think changing their role immediately so there's no immediate impact to this
+
+00:18:16.599 --> 00:18:23.199
+because it's the victim joining your slack workspace but because there is the
+
+00:18:23.199 --> 00:18:28.839
+confirmation it is there for some reason so some companies will will pay for this
+
+00:18:28.839 --> 00:18:33.239
+if you can bypass that it's probably not something I'm gonna spend a lot of time
+
+00:18:33.239 --> 00:18:40.199
+on as well but it's something to be aware of that if there is a confirmation it
+
+00:18:40.280 --> 00:18:45.040
+might be there for a reason and in some cases we might not even understand the
+
+00:18:45.040 --> 00:18:49.359
+business impact and the real implications so yeah keep this keep this
+
+00:18:49.359 --> 00:18:54.959
+in mind and finally the last group which for me is a very important one because
+
+00:18:54.959 --> 00:19:00.439
+it's not something that I used to test for and I probably will start from now
+
+00:19:00.439 --> 00:19:06.800
+on oath app that has too many privileges and I'm if you know me you know that I
+
+00:19:06.800 --> 00:19:10.439
+love oath it's probably the first functionality that I test on every
+
+00:19:10.439 --> 00:19:16.439
+target but these scenarios it's not something that I really considered so
+
+00:19:16.439 --> 00:19:23.319
+what happens here is when you log into example.com with your Twitter account in
+
+00:19:23.319 --> 00:19:29.040
+this example you are being shown this consent screen and when you authorize
+
+00:19:29.040 --> 00:19:34.839
+the app what happens on the backend the app the example.com gets the access
+
+00:19:34.839 --> 00:19:39.680
+token with which it can communicate with the Twitter API and fetch some
+
+00:19:39.680 --> 00:19:44.400
+information about you modify some information on your behalf and do other
+
+00:19:44.400 --> 00:19:49.800
+actions and exact actions are being shown on this consent screen so here it
+
+00:19:49.800 --> 00:19:56.640
+clearly says what the application can and cannot do and the attack scenario
+
+00:19:56.640 --> 00:20:01.719
+here is that this access token that the application has actually can do the
+
+00:20:01.719 --> 00:20:08.520
+actions that this screen says it mustn't so the access token allowed the
+
+00:20:08.520 --> 00:20:15.160
+app to access person's direct messages while the the permission for this was
+
+00:20:15.160 --> 00:20:20.160
+not given on the consent screen and Twitter rewarded this three thousand
+
+00:20:20.160 --> 00:20:24.560
+dollars almost three thousand dollars and it's interesting for me because it's
+
+00:20:24.560 --> 00:20:28.560
+kind of hard to test because you have to create your own application which also
+
+00:20:28.640 --> 00:20:32.920
+means you're limited to targets that allow to do this so it's like Facebook
+
+00:20:32.920 --> 00:20:36.599
+Twitter Google and other big applications that allow to use
+
+00:20:36.599 --> 00:20:42.319
+themselves as authorization server to log into other websites and the attack
+
+00:20:42.319 --> 00:20:46.800
+scenario is that you have to create the app and go through the flow and fetch
+
+00:20:46.800 --> 00:20:50.760
+the token and a lot of people just won't do it so they won't test for this
+
+00:20:50.760 --> 00:20:55.680
+scenario and this is this is one case that can happen that the token has too
+
+00:20:55.680 --> 00:21:01.680
+many privileges compared to what was shown on the consent screen but it gets
+
+00:21:01.680 --> 00:21:08.160
+even better here we have a github report from Tanner which was even better because
+
+00:21:08.160 --> 00:21:14.319
+the application to which you granted permissions had more permissions than
+
+00:21:14.319 --> 00:21:18.239
+the user giving the permission so the attack scenario changes here
+
+00:21:18.239 --> 00:21:24.479
+significantly because now the user can just create their own application in the
+
+00:21:24.479 --> 00:21:29.880
+organization and all of a sudden this user's application has more permissions
+
+00:21:29.880 --> 00:21:34.359
+than the user themselves so it's a normal privilege escalation inside the
+
+00:21:34.359 --> 00:21:40.719
+organization and that's why this scenario is is more dangerous because
+
+00:21:40.719 --> 00:21:47.239
+at the end of the day the user can just escalate their privileges
+
+00:21:47.239 --> 00:21:53.000
+but the the sort of way to do it is very creative and it's probably not
+
+00:21:53.000 --> 00:21:57.640
+something that a lot of people test for and in this case it was rewarded
+
+00:21:57.640 --> 00:22:03.359
+ten thousand dollars so a really really nice attack and definitely something for
+
+00:22:03.359 --> 00:22:09.199
+me to add to my to my testing methodology and that's it these are all
+
+00:22:09.199 --> 00:22:13.760
+the groups that I have prepared for you today if you want to see the full case
+
+00:22:13.760 --> 00:22:19.400
+study it's available in the BBRE Premium Archive and if you enjoyed listening
+
+00:22:19.400 --> 00:22:23.239
+about privilege escalations check out this episode of the podcast that I
+
+00:22:23.239 --> 00:22:28.040
+recorded with Douglas Day who's the absolute best hunter when it comes to
+
+00:22:28.040 --> 00:22:32.160
+looking for privilege escalations the link is on the screen right now and in
+
+00:22:32.160 --> 00:22:38.400
+the description and for now thank you so much for watching and goodbye
+

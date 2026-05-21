@@ -1,0 +1,300 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.240 --> 00:00:06.480
+Hello! In this episode of Bug Bounty Reports&nbsp;
+Explained, I will cover my own bug - a $1,500&nbsp;&nbsp;
+
+00:00:07.040 --> 00:00:11.520
+SSRF in Stripe. And the good thing&nbsp;
+about explaining my own reports&nbsp;&nbsp;
+
+00:00:11.520 --> 00:00:16.320
+is that not only I will tell you what the&nbsp;
+bug was but also, how I chose the target,&nbsp;&nbsp;
+
+00:00:16.320 --> 00:00:21.280
+how I tested it, what tools did I use&nbsp;
+and so on. So, enjoy the explanation.&nbsp;&nbsp;
+
+00:00:22.240 --> 00:00:30.320
+Before I start, a quick announcement about BBRE&nbsp;
+Premium. From June, the price goes up. It doesn't&nbsp;&nbsp;
+
+00:00:30.320 --> 00:00:37.280
+affect current members so if you subscribe in May,&nbsp;
+you will lock in the current, low price, forever.&nbsp;&nbsp;
+
+00:00:38.400 --> 00:00:44.880
+I also migrated BBRE Premium to a new platform&nbsp;
+recently and now you can subscribe using PayPal.&nbsp;&nbsp;
+
+00:00:45.760 --> 00:00:51.520
+If you've been thinking about it for a while,&nbsp;
+this is the best time to join BBRE Premium.&nbsp;&nbsp;
+
+00:00:53.200 --> 00:00:58.960
+Smokescreen is Stripe's open-source tool&nbsp;
+that proxies traffic to the external world.&nbsp;&nbsp;
+
+00:00:59.520 --> 00:01:08.000
+In simple words, I have integrations that wait for&nbsp;
+new BBRE Premium subscribers. When you subscribe,&nbsp;&nbsp;
+
+00:01:08.000 --> 00:01:15.920
+Stripe's server finds what webhooks I've configured&nbsp;
+for this event and sends the request with that&nbsp;&nbsp;
+
+00:01:15.920 --> 00:01:24.080
+information to my server. Where is smokescreen in&nbsp;
+this process? It's between Stripe server and the&nbsp;&nbsp;
+
+00:01:24.080 --> 00:01:32.000
+external world. It makes sure that if I will add,&nbsp;
+let's say a cloud metadata endpoint or localhost&nbsp;&nbsp;
+
+00:01:32.000 --> 00:01:39.840
+as the webhook address, no request will be sent&nbsp;
+there. Only the public Internet is allowed.&nbsp;&nbsp;
+
+00:01:40.480 --> 00:01:48.640
+The particular behavior is based on smokescreen&nbsp;
+rules that Stripe's developers created. When doing&nbsp;&nbsp;
+
+00:01:48.640 --> 00:01:55.680
+my 100 hours bug bounty challenge on Stripe I, saw&nbsp;
+very early that the whole organization's GitHub is&nbsp;&nbsp;
+
+00:01:55.680 --> 00:02:04.160
+in scope. But at the beginning, I did not want to&nbsp;
+test smokescreen. The idea of bypassing domain or&nbsp;&nbsp;
+
+00:02:04.160 --> 00:02:12.080
+IP validation in a tool that's created strictly&nbsp;
+for this purpose, seemed like a tall order. I&nbsp;&nbsp;
+
+00:02:12.080 --> 00:02:18.880
+prefer to attack applications where developers&nbsp;
+don't expect it. In this case, it was an eye&nbsp;&nbsp;
+
+00:02:18.880 --> 00:02:26.720
+to eye duel. But after about 70 hours and weeks&nbsp;
+without finding a bug, I decided to take a look.
+
+00:02:28.960 --> 00:02:35.920
+It's an open-source tool so instead of blindly&nbsp;
+adding another webbook endpoints, I prefer to set&nbsp;&nbsp;
+
+00:02:35.920 --> 00:02:43.440
+up my environment and, apart from just reading the&nbsp;
+code, debug the application as it runs. I set it&nbsp;&nbsp;
+
+00:02:43.440 --> 00:02:51.440
+up on MacOS without any VMs or containers. This is&nbsp;
+the access control list that I used for testing.&nbsp;&nbsp;
+
+00:02:52.160 --> 00:03:00.240
+And I have no idea what these services, projects&nbsp;
+and roles mean. I only used default rules because&nbsp;&nbsp;
+
+00:03:00.240 --> 00:03:06.320
+the same code is used for comparisons anyway. I&nbsp;
+was switching between allowlists and denylists.&nbsp;&nbsp;
+
+00:03:07.200 --> 00:03:13.760
+And this is my config file which just makes sure&nbsp;
+that I don't have to use any role, whatever it is.&nbsp;&nbsp;
+
+00:03:14.720 --> 00:03:18.320
+And finally, this is the curl&nbsp;
+command to send the request&nbsp;&nbsp;
+
+00:03:18.320 --> 00:03:25.120
+through the proxy. If it's denied you get an&nbsp;
+error, otherwise you just see example.com.
+
+00:03:28.400 --> 00:03:35.360
+The first thing I wanted to check was DNS&nbsp;
+rebinding. I spent several hours understanding the&nbsp;&nbsp;
+
+00:03:35.360 --> 00:03:41.840
+protections as is programmed the way I've never&nbsp;
+seen before but I wasn't able to find anything&nbsp;&nbsp;
+
+00:03:41.840 --> 00:03:49.600
+wrong there. So I went on and I wanted to find&nbsp;
+the code responsible for comparing domain names.&nbsp;&nbsp;
+
+00:03:50.480 --> 00:03:57.600
+So first, I noticed checkIfRequestShouldBeProxied&nbsp;
+function. So I put a breakpoint there. But&nbsp;&nbsp;
+
+00:03:57.600 --> 00:04:05.280
+all it does is call checkACLsForRequest and&nbsp;
+handles its response. So I jumped into that&nbsp;&nbsp;
+
+00:04:05.280 --> 00:04:11.760
+function. It also handles some metrics,&nbsp;
+logging but it does not contain the logic&nbsp;&nbsp;
+
+00:04:11.760 --> 00:04:18.480
+of comparing a domain or an IP address.&nbsp;
+So I stepped into the Decide function&nbsp;&nbsp;
+
+00:04:18.480 --> 00:04:26.320
+which sounds more interesting. This one checks&nbsp;
+different rules one by one and finally, there is&nbsp;&nbsp;
+
+00:04:26.320 --> 00:04:33.120
+the hostMatchesGlob function which contains the&nbsp;
+actual comparison of one domain to the other.&nbsp;&nbsp;
+
+00:04:34.000 --> 00:04:40.160
+Of course, the first time I was doing that, it&nbsp;
+took me much more time to figure all this out&nbsp;&nbsp;
+
+00:04:40.160 --> 00:04:47.680
+and I was also checking out what other functions&nbsp;
+are doing. The hostMatchesGlob function takes 2&nbsp;&nbsp;
+
+00:04:47.680 --> 00:04:54.400
+arguments: host and domainGlob. Host&nbsp;
+is our, potentially malicious, host.&nbsp;&nbsp;
+
+00:04:55.280 --> 00:05:03.120
+domainGlob is the rule - it can be a literal&nbsp;
+domain or a domain with wildcard subdomains. This&nbsp;&nbsp;
+
+00:05:03.120 --> 00:05:10.000
+function only checks if those match and it does&nbsp;
+not care whether it's an allowlist or denylist.&nbsp;&nbsp;
+
+00:05:11.040 --> 00:05:17.920
+When the domainGlob is not a wildcard there
+is a simple == comparison - as simple as that.&nbsp;&nbsp;
+
+00:05:18.800 --> 00:05:26.400
+If there is a wildcard, it checks if our host&nbsp;
+ends with the domainGlob. So these rules are&nbsp;&nbsp;
+
+00:05:26.400 --> 00:05:34.320
+quite strict. I did not come up with a way to&nbsp;
+bypass an allowlist. But what about a denylist?&nbsp;&nbsp;
+
+00:05:35.760 --> 00:05:41.600
+Have you ever noticed that when making a DNS&nbsp;
+query, there is always the dot at the end?&nbsp;&nbsp;
+
+00:05:42.240 --> 00:05:48.480
+For a long time, I didn't really care what&nbsp;
+it means but it's actually quite significant.&nbsp;&nbsp;
+
+00:05:49.760 --> 00:05:56.880
+DNS is divided into zones. If you create your&nbsp;
+own zone, you have control over DNS inside.&nbsp;&nbsp;
+
+00:05:57.680 --> 00:06:05.680
+The Internet is under the root zone indicated by:&nbsp;
+the trailing dot at the end. So when you visit&nbsp;&nbsp;
+
+00:06:05.680 --> 00:06:13.440
+example.com. with the trailing dot at the end,&nbsp;
+it's a proper, absolute domain name. But usually,&nbsp;&nbsp;
+
+00:06:13.440 --> 00:06:22.400
+you visit example.com without the dot. From HTTP&nbsp;
+or rather HTTPS protocol standpoint, some websites&nbsp;&nbsp;
+
+00:06:22.400 --> 00:06:30.000
+work with both but others, including mine, don't&nbsp;
+work with HTTPS with trailing dots. Without the&nbsp;&nbsp;
+
+00:06:30.000 --> 00:06:36.480
+dot, it's a relative domain name but the dot&nbsp;
+is implicitly appended in your DNS searchlist.&nbsp;&nbsp;
+
+00:06:37.520 --> 00:06:44.160
+So coming back to the validation - by using the&nbsp;
+trailing dot, you could bypass domain deny list.&nbsp;&nbsp;
+
+00:06:45.120 --> 00:06:52.320
+We can confirm this by stepping into the function&nbsp;
+and evaluating that host and domainGlob are not&nbsp;&nbsp;
+
+00:06:52.320 --> 00:06:58.960
+equal in this case. The same attack works if&nbsp;
+the rule forbids traffic to a wildcard subdomain.&nbsp;&nbsp;
+
+00:06:59.920 --> 00:07:06.160
+Before I submitted the report, I've checked&nbsp;
+if any tools like curl, python's requests or&nbsp;&nbsp;
+
+00:07:06.160 --> 00:07:14.880
+browsers will strip this dot when making a request&nbsp;
+but no. So what can you do by bypassing a domain&nbsp;&nbsp;
+
+00:07:14.880 --> 00:07:23.760
+denylist? The truth is this is much less impactful&nbsp;
+than bypassing IP denylist. But that's what I like&nbsp;&nbsp;
+
+00:07:23.760 --> 00:07:30.560
+about testing open-source tools. Not only do&nbsp;
+I have the local debugging setup but also,&nbsp;&nbsp;
+
+00:07:30.560 --> 00:07:36.800
+I have more possibilities. You see, if I was&nbsp;
+only testing stripe.com, there would either&nbsp;&nbsp;
+
+00:07:36.800 --> 00:07:45.440
+be an SSRF there or not - in this case not. But when&nbsp;
+testing an open-source tool that's also used by&nbsp;&nbsp;
+
+00:07:45.440 --> 00:07:51.520
+other organizations, you only need to find&nbsp;
+one configuration where the bug exists.&nbsp;&nbsp;
+
+00:07:52.480 --> 00:07:58.560
+Of course, it can't be a super unlikely&nbsp;
+scenario but you still have much more freedom.&nbsp;&nbsp;
+
+00:07:59.840 --> 00:08:06.320
+So even though this was only exploitable in a&nbsp;
+specific configuration, Stripe rewarded me with&nbsp;&nbsp;
+
+00:08:06.320 --> 00:08:15.040
+$500 of base payout + $1,000 bonus for finding the&nbsp;
+bug in the critical piece of the infrastructure.&nbsp;&nbsp;
+
+00:08:16.800 --> 00:08:23.680
+As for the fix, dots are now trimmed from the&nbsp;
+right before the comparison. We can see that&nbsp;&nbsp;
+
+00:08:23.680 --> 00:08:30.880
+when using the same command as previously, host&nbsp;
+and domainGlob are still not the same but the new,&nbsp;&nbsp;
+
+00:08:30.880 --> 00:08:37.760
+trimmed variables are so the attack is not&nbsp;
+possible. Also, the domains are lowercased&nbsp;&nbsp;
+
+00:08:37.760 --> 00:08:44.400
+before the comparison. I spent a while trying to&nbsp;
+come up with some kind of unicode collision attack&nbsp;&nbsp;
+
+00:08:44.400 --> 00:08:50.160
+on this lowercasing process but I couldn't&nbsp;
+make the attack work. If you want to learn&nbsp;&nbsp;
+
+00:08:50.160 --> 00:08:55.840
+more about debugging, check out my presentation&nbsp;
+from NahamCon about the topic. Also I'm covering&nbsp;&nbsp;
+
+00:08:55.840 --> 00:09:02.080
+debugging in BBRE Premium, if you want to check&nbsp;
+it out go to https://bbre.dev/premium. Just make&nbsp;&nbsp;
+
+00:09:02.080 --> 00:09:07.840
+sure to join before the price rises! For&nbsp;
+now thank you for watching and goodbye!
+

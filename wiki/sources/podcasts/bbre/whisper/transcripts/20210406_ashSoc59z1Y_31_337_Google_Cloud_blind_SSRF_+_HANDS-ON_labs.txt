@@ -1,0 +1,97 @@
+Hello! In today's Bug Bounty Report Explained, you will learn how it was possible to exploit
+blind SSRF vulnerability in Google Cloud. Blind SSRFs often have little to no impact,
+but this time the researcher was able to exploit it successfully and he got $31,000 for it.
+Link to his original blog post is in the description. Also, I've recreated the vulnerability
+and created hands-on labs. You can try them for free using the link in the description,
+you only have to leave your email. But for now, enjoy the video.
+Google Cloud Monitoring is a service that allows you to see metrics for your Google Cloud
+infrastructure. And Uptime Checks is a functionality that can send a request to your server to check
+if it's okay and potentially notify if your server is down. Basic settings allow you to choose
+the protocol, hostname and path of your server's endpoint. So, this sounds like a perfect situation
+to look for SSRF vulnerability. And instances that perform those Uptime Checks as well work on Google
+Cloud Infrastructure. And as all other virtual machines, they have metadata endpoints on internal IPs.
+If we could read a response from this endpoint using SSRF vulnerability, we could, for example, steal
+service account tokens. So, impact of such vulnerability would be critical. But to protect
+against SSRFs, those endpoints require a specific header. This can successfully prevent attacks when the
+attacker can only control the URL of the request. But it won't prevent SSRFs here.
+It's because the Uptime Checks feature allows user to set custom headers.
+So, the researcher tried to request this endpoint and he saw 200 OK responses within 2 milliseconds.
+It was a concrete evidence that the server indeed made the request to the internal IP.
+But so far, it's only a blind SSRF and we are not able to show any impact here. The question is,
+is that if we can somehow read the response. And here another advanced feature of Uptime Checks comes
+into play – response validation. You can write a string that you expect to be present in the response.
+This could be useful, for example, in a situation where your server returns always 200 response code,
+even for 404 responses. So, the easiest way of exfiltrating data using such functionality looks like this.
+We have a part of the response that we know. In this case, let's assume it's a beginning of JSON that looks like this.
+And when you tell the Uptime Checks feature that you expect this to be present in your response,
+it's always true because it's always in the response. But what if we try to search for such string,
+with A as the first letter of the actual access token? If the Uptime Check fails, it means that the
+access token doesn't start with A letter. So then you try with letter B, C, D and so on. And finally,
+you hit a match, let's say with letter E. So now your known part of the response is one character bigger.
+So now you try the same with the access token that starts with EA, EB, EC and so on and so forth.
+You go over and over again until you exfiltrate the whole token. That's basically how Blind SQL Injection
+is being exploited. This way the researcher was able to exfiltrate some data, but unfortunately not all of it.
+Because there was a small problem. Uptime checks are performed from different instances all over the world.
+There were about 54 of them and each of them has unique access token. So if your Uptime Check fails,
+you don't know if you just tried incorrect character or if you just hit another instance. In fact, with 54
+instances, the chance of hitting another instance is much, much higher than hitting the one you want to hit.
+The researcher stopped here, submitted the report and got the reward of $31,000.
+The next part of the video is based on the comment from Google itself who tried to escalate the issue
+and created a proof of concept that was actually able to steal the access token. One idea is to send
+54 requests, then statistically you would hit your instance at least once. But in practice you wouldn't
+have the guarantee and with multiple characters this surely wouldn't work well. To solve this problem you
+can use positive and negative regular expressions. So in previously mentioned situation you just sent two filters.
+The square brackets in regexes indicate a range of characters. For example, az in square brackets indicates
+all lowercase letters. A current means negative search so current az matches everything but a lowercase letter.
+In this example we are only using the a character so we don't really need the square brackets but we will need them in a second.
+In such case when you hit a positive regex it's awesome you have the next character of the token.
+In case you don't have the positive match but you have the negative it means that this character is not the next
+in the token and you have to try B, C and so on. If you get neither of those matches you need to send the same
+request again because it means that you hit the wrong instance. At the beginning when you only have a few
+characters of the two characters of the token it's possible that tokens from different machines will have collisions.
+But we don't care about it because we don't target a specific instance but we want to leak any token.
+According to Google after about 10 characters the token gets unique.
+So we can use regular expressions to speed up this process significantly.
+First, we can use the same token as a token.
+So we can use the same token as a token.
+So we can use the same token as a token as a token.
+So we can use the same token as a token as a token.
+So we can use the same token as a token as a token as a token.
+So we can use the same token as a token as a token as a token.
+So we can use the same token as a token as a token as a token.
+So we can use the same token as a token as a token as a token.
+So we can use the same token as a token as a token as a token.
+So we can use the same token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token as a token as a token as a token.
+So we can use the same token as a token as a token as a token as a token as a token.
+So we can use multiple dots to brute force all characters in parallel.
+This reduces the number of requests significantly.
+Another useful trick is using binary search.
+We don't need to check each character one by one like first A, then B, then C and so on.
+Using regexes we can specify ranges of characters so we can implement binary search.
+First we can send such requests to determine if the next character is a lowercase letter, uppercase letter, a digit or any character that can be inside the token.
+Let's assume it's a lowercase letter.
+The next step is verifying if the character is within the first or the second half of the alphabet.
+Then you divide that into further halves until you get to a single letter.
+This way you also reduce the number of requests that you have to send to determine each character.
+Of course the final exploit must have been really complicated because you have to combine all those three techniques at once.
+So positive negative regexes, binary search and using wildcards to probe multiple characters at once.
+This way the exploit was able to leak the access token within 15 minutes including rate limiting.
+I recreated the vulnerability in the lab so you can try your own skills and you can try writing your own exploit.
+You can easily run this task using docker.
+To receive the instruction you need to leave your email.
+If you don't succeed in writing the exploit visit my twitter in a few days.
+I will publish my exploit in a few days.
+Recreating the vulnerability in a new application is not an easy task but if many people will be interested I might do this more often.
+So let me know in the comments what do you think about it.
+And that's it.
+I think this way of exfiltrating data will also allow exploiting other blind vulnerabilities.
+Anyway, if you've learned something new today or you've enjoyed the hands-on labs leave a like under this video or maybe even buy me a coffee.
+For now, thanks for watching and goodbye.
+Thanks for watching and goodbye.

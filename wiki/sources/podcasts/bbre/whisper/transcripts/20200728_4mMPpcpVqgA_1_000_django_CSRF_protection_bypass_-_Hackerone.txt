@@ -1,0 +1,47 @@
+Hello, today I have a very interesting report for you. It affected multiple websites because the bug
+was in Django framework and it allowed bypassing CSRF protection. This bug was reported on HackerOne
+by Sergei Bobrov back in 2014. To fully understand this vulnerability you need to know something
+about Google Analytics. And first thing you need to know is that it's meant to track users activity
+and to do it it uses cookies and in the cookie there is a field for referrer host and referrer path
+and they are put into the cookie unfiltered. And in the attack scenario where the attacker tricks
+the victim into visiting attacker.com website and then he redirects the victim into the vulnerable
+site with Google Analytics the attacker's com website and path will be visible in the victim's cookie.
+So in such attack scenario the attacker completely controls the victim's cookie. And the hunter
+mentioned that he had reported this behavior to Google and was rewarded for it. So he actually got
+two bounties for this report. One from Django and one from Google. So now it's time to understand how do
+web servers handle cookies. And actually it's a very simple text processing mechanism. The cookies are
+being sent in the cookie header in the form of name equals value semicolon, another cookie name equals another
+cookie value and so on and so on. And turns out that a lot of web servers also accept colons instead of
+semicolons as the cookie separators. But what Python plus Django did was also accept square brackets. And this was the behavior that browsers
+that browsers completely did not expect. And this is the vulnerability here. Because if there was a square bracket in the cookie value,
+the browser did not think that it might be interpreted as a cookie separator. So the browser would not encode it, nor filter it, nor anything. It would just send it as the cookie value.
+And the web server would actually interpret the same input as the two separate cookies.
+So now we can change these two things by injecting a square bracket into the path of our website. And then when the victim will open a link of the
+vulnerable site, our square bracket will be put into Google Analytics cookie. And the browser will send this cookie, thinking it's just a standard
+cookie value. But the Django web server would understand this as two separate cookies. But there is one more thing.
+Actually, at the end of the cookie, there are attributes. And the attributes may be like domain and path, which are very important.
+And as the attacker, we want to override them somehow. But we can't just erase them. But happens out that browsers only take into
+consideration the first few attributes and the rest is ignored. So what we can do is just put our attributes as the first ones
+and put many of them. It might be the same attribute over and over again. It doesn't make any difference.
+And what the browser will do is just consider those first attributes and ignore the last ones, which will be the actual ones
+appended by Google Analytics. So now we have a way to set an arbitrary cookie for the victim with arbitrary attributes.
+And now you may be thinking, how can we actually exploit this to bypass CSRF protection?
+So there are multiple approaches to CSRF prevention. And one of them is double submit cookie mechanism.
+It works this way that it sets a cookie called for example CSRF token. And then when the form is sent,
+the same value has to be in the request body. What the server does is it just validates whether the same
+value is in the body and in the cookie. It's very efficient for the server because it does not have to
+store anything in the database. It just compares the value from the cookie with the value from the body.
+And why does this work? Because as the attacker, you can obviously set an arbitrary value in the request body
+of the CSRF you're trying to make, but you don't control the cookie value and you have no way of doing
+this unless you have a way to set an arbitrary cookie. And that's exactly the way that this attack works.
+We have a way to set a cookie for the victim. So you set a CSRF token cookie for the value that
+you want and then you send the same value in the body. The server just compares whether two values are the same
+and they are so the request goes through. There's also a little bit of luck involved because the actual
+CSRF token cookie sent by the server will be sent in your request. But if the web server sees two cookies with the same name,
+it will take the latter value. So it might be a little bit random, but generally it works.
+So that's it for today's report. I think those ones that affect frameworks are especially interesting
+because they might mean that half of the internet is vulnerable. In this very example, it was not the case
+because the site had to use Django along with Google Analytics and double submit cookies. So this limited
+the amount of sites vulnerable, but I still think that it's a very, very interesting report. The fix was
+of course not treating characters like square brackets as cookie delimiters by Django. So thanks for
+watching this video. If you've learned something new, leave a like and a subscription and for now goodbye.

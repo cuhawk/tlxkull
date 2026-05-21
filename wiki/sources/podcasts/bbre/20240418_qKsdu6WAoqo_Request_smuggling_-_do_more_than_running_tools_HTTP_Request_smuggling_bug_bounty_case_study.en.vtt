@@ -1,0 +1,1378 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:03.520
+Over the years, I've seen multiple five-digit bounties
+
+00:00:03.520 --> 00:00:05.840
+awarded for request smuggling bugs.
+
+00:00:05.840 --> 00:00:09.400
+So naturally, I'd like to find one myself,
+
+00:00:09.400 --> 00:00:12.400
+but to be honest, I never did anything more
+
+00:00:12.400 --> 00:00:15.700
+than just trying to get tool like request smuggler.
+
+00:00:15.700 --> 00:00:18.760
+So to learn how people are actually earning money
+
+00:00:18.760 --> 00:00:19.920
+with request smuggling,
+
+00:00:19.920 --> 00:00:22.719
+I extracted all the reports from the internet
+
+00:00:22.719 --> 00:00:24.360
+and I studied them.
+
+00:00:24.360 --> 00:00:26.000
+In this video, I will show you
+
+00:00:26.000 --> 00:00:29.760
+what is the most common root cause of request smuggling
+
+00:00:29.760 --> 00:00:33.759
+and also what are the potential areas for future research.
+
+00:00:33.759 --> 00:00:34.599
+Enjoy.
+
+00:00:35.639 --> 00:00:38.080
+The most common category that I've noticed
+
+00:00:38.080 --> 00:00:41.160
+was white space characters in content length
+
+00:00:41.160 --> 00:00:43.320
+or transfer encoding headers.
+
+00:00:43.320 --> 00:00:48.320
+So we can see big bounties awarded in this category.
+
+00:00:48.520 --> 00:00:50.400
+For example, this one in Apple,
+
+00:00:50.400 --> 00:00:54.040
+a quick recap of what request smuggling even is.
+
+00:00:54.040 --> 00:00:57.360
+You have a few different ways to tell the server
+
+00:00:57.400 --> 00:00:59.840
+what is the length of your request.
+
+00:00:59.840 --> 00:01:02.959
+The most common that we see when we send requests
+
+00:01:02.959 --> 00:01:05.160
+from the browser is the content length header,
+
+00:01:05.160 --> 00:01:08.639
+which just tells the server how long our request is.
+
+00:01:08.639 --> 00:01:11.559
+But there's also transfer encoding chunk header,
+
+00:01:11.559 --> 00:01:16.160
+which sort of tells the length of the next chunk
+
+00:01:16.160 --> 00:01:19.360
+and then until it meets zero,
+
+00:01:19.360 --> 00:01:22.120
+it means there are more chunks to be sent.
+
+00:01:22.120 --> 00:01:23.199
+And the thing is,
+
+00:01:23.199 --> 00:01:26.540
+even though we don't see it sent from the browsers,
+
+00:01:26.580 --> 00:01:30.739
+usually this has the priority over the content length header
+
+00:01:30.739 --> 00:01:35.059
+and most of request smuggling bugs occur
+
+00:01:35.059 --> 00:01:36.900
+because one of the component,
+
+00:01:36.900 --> 00:01:38.779
+either the front end or the back end,
+
+00:01:38.779 --> 00:01:41.320
+incorrectly interprets these requests
+
+00:01:41.320 --> 00:01:44.059
+and either prioritizes them incorrectly
+
+00:01:44.059 --> 00:01:46.620
+or doesn't see one of these headers.
+
+00:01:46.620 --> 00:01:51.620
+So this category white space characters in CL or TE headers,
+
+00:01:51.980 --> 00:01:55.580
+it means to obstruct one of these headers,
+
+00:01:55.580 --> 00:01:58.419
+usually transfer encoding from one of the components.
+
+00:01:58.419 --> 00:02:00.099
+And I've seen everything.
+
+00:02:00.099 --> 00:02:03.459
+I've seen spaces starts before the header,
+
+00:02:03.459 --> 00:02:07.580
+before the colon, after the colon, after the value,
+
+00:02:07.580 --> 00:02:09.059
+just everything.
+
+00:02:09.059 --> 00:02:10.020
+In this case,
+
+00:02:10.020 --> 00:02:14.500
+we have the new line just after the header name,
+
+00:02:14.500 --> 00:02:15.660
+transfer encoding.
+
+00:02:16.619 --> 00:02:19.740
+It actually, and then we have the space here,
+
+00:02:19.740 --> 00:02:20.860
+which is quite important
+
+00:02:20.899 --> 00:02:25.899
+because it looks like a invalid HTTP request.
+
+00:02:26.619 --> 00:02:30.059
+Like there's a header name with no column here
+
+00:02:30.059 --> 00:02:32.059
+and here the line starts with a space.
+
+00:02:32.059 --> 00:02:34.580
+It looks like an invalid line,
+
+00:02:34.580 --> 00:02:37.860
+but it actually is a multi-line header
+
+00:02:37.860 --> 00:02:42.860
+because when the header line starts with a space,
+
+00:02:42.979 --> 00:02:45.899
+it means that what follows
+
+00:02:45.899 --> 00:02:49.259
+is the continuation of the previous header.
+
+00:02:49.259 --> 00:02:51.979
+I don't know if the specification allows the colon
+
+00:02:51.979 --> 00:02:53.539
+to be in the new line,
+
+00:02:53.539 --> 00:02:55.139
+but if you would have, for example,
+
+00:02:55.139 --> 00:02:57.979
+transfer encoding colon chunked,
+
+00:02:57.979 --> 00:03:02.179
+and then in the next line you would have chunked again,
+
+00:03:02.179 --> 00:03:05.500
+it would be a valid continuation of the value.
+
+00:03:05.500 --> 00:03:08.380
+So this bug makes a lot of sense
+
+00:03:08.380 --> 00:03:10.419
+and just one of the components
+
+00:03:10.419 --> 00:03:13.860
+bit treated this differently than the other component,
+
+00:03:13.860 --> 00:03:17.419
+which led to request smuggling here in Apple,
+
+00:03:17.419 --> 00:03:22.419
+for which there was $36,000 of reward.
+
+00:03:23.220 --> 00:03:24.979
+So quite a great bug.
+
+00:03:24.979 --> 00:03:26.020
+And as I told you,
+
+00:03:26.020 --> 00:03:28.619
+I've seen many different variations
+
+00:03:28.619 --> 00:03:31.899
+of different new line characters, tabs, spaces,
+
+00:03:31.899 --> 00:03:36.899
+0x09, 0x07, null bytes inside header.
+
+00:03:37.020 --> 00:03:39.940
+There was just all the different variations.
+
+00:03:39.940 --> 00:03:44.940
+There was a total of 26 requests like this.
+
+00:03:45.300 --> 00:03:46.220
+Then the second group
+
+00:03:46.220 --> 00:03:51.220
+is just incorrect prioritization of CL and TE headers.
+
+00:03:53.380 --> 00:03:54.660
+And you could actually argue
+
+00:03:54.660 --> 00:03:57.300
+that every single of these reports
+
+00:03:57.300 --> 00:03:58.820
+or almost all of these reports
+
+00:03:58.820 --> 00:04:02.740
+are incorrect prioritization of these headers.
+
+00:04:02.740 --> 00:04:04.940
+That's such a hard word.
+
+00:04:04.940 --> 00:04:08.380
+But in most of these reports like here,
+
+00:04:09.500 --> 00:04:12.619
+the priorities were straight in all components.
+
+00:04:12.619 --> 00:04:14.020
+I assume all components
+
+00:04:14.020 --> 00:04:17.579
+would prioritize transfer encoding
+
+00:04:17.579 --> 00:04:19.540
+over the content length header.
+
+00:04:19.540 --> 00:04:23.619
+Just one component did not see this as a valid header.
+
+00:04:23.619 --> 00:04:26.220
+And in these 13 reports that I have here,
+
+00:04:27.660 --> 00:04:30.619
+there was just invalid order
+
+00:04:30.619 --> 00:04:32.739
+just when there was both transfer encoding
+
+00:04:32.739 --> 00:04:34.260
+and content length header,
+
+00:04:34.260 --> 00:04:36.859
+the content length would get the priority,
+
+00:04:36.859 --> 00:04:39.980
+which is not what the specification says.
+
+00:04:39.980 --> 00:04:40.820
+So it is bad.
+
+00:04:40.820 --> 00:04:45.820
+A lot of these reports are from the sort of some time ago
+
+00:04:45.899 --> 00:04:50.899
+for like here, 2019, this is where the original article,
+
+00:04:51.140 --> 00:04:51.980
+well, not the original,
+
+00:04:51.980 --> 00:04:54.299
+the article by James Kettle
+
+00:04:54.299 --> 00:04:58.940
+about HTTP desync being reborn was published.
+
+00:04:58.940 --> 00:05:02.660
+And some of these reports
+
+00:05:02.660 --> 00:05:05.100
+where you just send both headers,
+
+00:05:05.100 --> 00:05:08.980
+the server prioritizes the incorrect one
+
+00:05:08.980 --> 00:05:10.420
+and that's the bug.
+
+00:05:11.260 --> 00:05:14.339
+And most newer request smuggling bugs
+
+00:05:14.339 --> 00:05:17.100
+that I've seen required something more
+
+00:05:17.100 --> 00:05:20.019
+like required either the obfuscation
+
+00:05:20.019 --> 00:05:22.500
+by those white space characters
+
+00:05:22.500 --> 00:05:26.700
+that I've shown you before or something else.
+
+00:05:26.700 --> 00:05:27.980
+We'll go to the next group,
+
+00:05:27.980 --> 00:05:30.059
+which is multiple transfer encoding
+
+00:05:30.059 --> 00:05:34.779
+or CTLs or transfer encoding or content length headers.
+
+00:05:35.779 --> 00:05:38.980
+Here, for example, we have a request like this
+
+00:05:38.980 --> 00:05:41.420
+with one content length
+
+00:05:41.420 --> 00:05:43.739
+and two transfer encoding headers.
+
+00:05:43.739 --> 00:05:47.660
+Just one of the transfer encoding is invalid.
+
+00:05:47.660 --> 00:05:49.579
+So I assume what happens is
+
+00:05:49.579 --> 00:05:52.820
+one component only takes the last value
+
+00:05:52.820 --> 00:05:55.859
+of transfer encoding sees that it is invalid.
+
+00:05:55.859 --> 00:06:00.299
+So it instead decides to use the content length header
+
+00:06:00.299 --> 00:06:02.820
+and the other component sees
+
+00:06:02.820 --> 00:06:05.579
+either just takes the first value of the header
+
+00:06:05.579 --> 00:06:08.619
+when there are multiple headers with the same name
+
+00:06:08.619 --> 00:06:11.420
+or maybe combine these values together.
+
+00:06:11.420 --> 00:06:12.739
+But one way or another,
+
+00:06:12.739 --> 00:06:15.700
+it does see the transfer encoding header
+
+00:06:15.700 --> 00:06:18.500
+and the component that sees
+
+00:06:18.500 --> 00:06:22.859
+that the chunk transfer encoding sees the request end here
+
+00:06:22.859 --> 00:06:25.459
+and sees this being the next request.
+
+00:06:25.459 --> 00:06:27.380
+And then this victims request,
+
+00:06:27.380 --> 00:06:31.179
+which can be a random request from another user
+
+00:06:31.179 --> 00:06:35.859
+is like the continuation of this request
+
+00:06:36.739 --> 00:06:41.660
+while the other component sees this header,
+
+00:06:41.660 --> 00:06:44.739
+I assume 69 ends somewhere here
+
+00:06:44.739 --> 00:06:49.739
+and just sees this as the next header as it expects.
+
+00:06:50.179 --> 00:06:52.100
+So this is what caused this bug.
+
+00:06:52.100 --> 00:06:53.940
+We only had seven of these,
+
+00:06:54.980 --> 00:06:57.540
+but that's what caused them.
+
+00:06:58.420 --> 00:07:01.140
+And before you ask me if I can share all these reports,
+
+00:07:01.980 --> 00:07:05.140
+I am always sharing these reports in BBRE Premium Archive.
+
+00:07:05.140 --> 00:07:09.140
+The article is generally for BBRE Premium subscribers
+
+00:07:09.140 --> 00:07:10.339
+for the members.
+
+00:07:10.339 --> 00:07:12.579
+And the free video is usually based
+
+00:07:12.579 --> 00:07:14.859
+on about one third of the case study
+
+00:07:14.859 --> 00:07:17.820
+and the database is also in the paid version.
+
+00:07:17.820 --> 00:07:18.980
+And that's where you can find it
+
+00:07:18.980 --> 00:07:21.500
+is the first link in the description.
+
+00:07:22.420 --> 00:07:25.260
+The next category that I have is ignoring
+
+00:07:25.260 --> 00:07:28.260
+the TE or CL headers.
+
+00:07:29.260 --> 00:07:31.579
+And we can see from seven reports
+
+00:07:31.579 --> 00:07:33.100
+that I have in this category,
+
+00:07:33.100 --> 00:07:36.859
+four are from James Kell's article.
+
+00:07:36.859 --> 00:07:40.940
+The thing is I try to extract separate reports
+
+00:07:40.940 --> 00:07:43.940
+from his articles to sort of get,
+
+00:07:43.940 --> 00:07:46.059
+especially when the exploitation
+
+00:07:46.059 --> 00:07:47.619
+was actually a bit different,
+
+00:07:47.619 --> 00:07:49.459
+but often he wouldn't mention the bounty.
+
+00:07:49.459 --> 00:07:51.779
+So I don't know the bounties for this.
+
+00:07:52.859 --> 00:07:57.140
+I only have one bug with the bounty in this category.
+
+00:07:57.220 --> 00:08:01.100
+What does it mean to ignore the content length header?
+
+00:08:01.100 --> 00:08:04.140
+The thing is it's the newer research,
+
+00:08:04.140 --> 00:08:07.140
+the browser powered desync attacks.
+
+00:08:07.140 --> 00:08:10.739
+So some endpoints would just ignore
+
+00:08:10.739 --> 00:08:14.980
+the content length header, even if you send it.
+
+00:08:14.980 --> 00:08:17.579
+So it doesn't matter if the content length is zero
+
+00:08:17.579 --> 00:08:20.420
+or if it has an actual value with it.
+
+00:08:21.459 --> 00:08:25.260
+The server would just not look at this value.
+
+00:08:26.140 --> 00:08:30.859
+So here we have the case where we use
+
+00:08:30.859 --> 00:08:34.419
+the content length of 311 in this case.
+
+00:08:34.419 --> 00:08:37.140
+So this whole second request should be
+
+00:08:37.140 --> 00:08:40.059
+the body of the first request,
+
+00:08:40.059 --> 00:08:42.460
+but the server, because it just redirect,
+
+00:08:42.460 --> 00:08:44.539
+it doesn't actually need the body,
+
+00:08:44.539 --> 00:08:46.260
+but it should still consume it.
+
+00:08:47.900 --> 00:08:49.099
+But it ignores it.
+
+00:08:49.099 --> 00:08:51.619
+And that's why it just sees two different requests
+
+00:08:51.619 --> 00:08:54.460
+and issues two different responses.
+
+00:08:54.500 --> 00:08:58.419
+And the great thing about this variation
+
+00:08:58.419 --> 00:09:01.099
+of request smuggling or desync
+
+00:09:01.099 --> 00:09:06.059
+is that you can send these two perfectly valid requests
+
+00:09:06.059 --> 00:09:07.700
+or to be more precise,
+
+00:09:07.700 --> 00:09:11.460
+this one big request with this as a body.
+
+00:09:11.460 --> 00:09:13.739
+You can send this from the browser,
+
+00:09:13.739 --> 00:09:16.580
+which allows client-side attacks,
+
+00:09:16.580 --> 00:09:21.580
+which allows to attack the victim inside the browser.
+
+00:09:21.739 --> 00:09:23.619
+And this is a great bug.
+
+00:09:24.820 --> 00:09:29.780
+And I think usually you're able to achieve the XSS with this
+
+00:09:29.780 --> 00:09:33.460
+because you can, as you can see,
+
+00:09:33.460 --> 00:09:35.219
+you can just, in this case,
+
+00:09:36.299 --> 00:09:40.260
+you can just issue a request to attackers URL,
+
+00:09:40.260 --> 00:09:42.739
+because we can see that we have Azure victim
+
+00:09:42.739 --> 00:09:43.900
+and Azure attacker.
+
+00:09:43.900 --> 00:09:47.059
+So a different host serving the XSS,
+
+00:09:47.059 --> 00:09:49.219
+but the browser doesn't know it's a different host.
+
+00:09:49.219 --> 00:09:53.219
+The browser just thinks it's a one request
+
+00:09:53.219 --> 00:09:55.900
+with the response,
+
+00:09:55.900 --> 00:09:58.179
+one response where these are the headers
+
+00:09:58.179 --> 00:09:59.859
+and this is the body.
+
+00:09:59.859 --> 00:10:04.859
+So a great research and a great, great bugs as well.
+
+00:10:05.580 --> 00:10:10.500
+Then for request, we have not closing the connection,
+
+00:10:10.500 --> 00:10:13.700
+which I have the example here.
+
+00:10:14.580 --> 00:10:16.659
+The thing is when you send something invalid
+
+00:10:16.659 --> 00:10:18.299
+and the server denies it,
+
+00:10:18.299 --> 00:10:20.299
+it should also close the connection
+
+00:10:20.299 --> 00:10:24.260
+to sort of not allow you to send more data.
+
+00:10:24.260 --> 00:10:27.700
+So if you send a request that's too large,
+
+00:10:27.700 --> 00:10:29.419
+if you send an invalid header,
+
+00:10:29.419 --> 00:10:30.979
+if you do things like this
+
+00:10:32.059 --> 00:10:34.619
+and the server decides it's a bad request,
+
+00:10:34.619 --> 00:10:36.659
+it should close the connection
+
+00:10:36.659 --> 00:10:39.219
+because when it doesn't,
+
+00:10:39.219 --> 00:10:42.419
+it leads to strange things happening.
+
+00:10:42.419 --> 00:10:45.859
+Like here, we actually have this article
+
+00:10:45.859 --> 00:10:48.179
+has like five different bugs,
+
+00:10:49.059 --> 00:10:50.820
+but this particular one,
+
+00:10:50.820 --> 00:10:54.419
+you just send a request that's too large.
+
+00:10:54.419 --> 00:10:58.460
+The server replies that it's an invalid HTTP request,
+
+00:10:58.460 --> 00:11:01.059
+but it keeps the connection open.
+
+00:11:01.059 --> 00:11:04.380
+And what follows,
+
+00:11:04.380 --> 00:11:07.780
+so you send the exact value of bytes
+
+00:11:07.780 --> 00:11:10.460
+that makes the request too large.
+
+00:11:10.460 --> 00:11:12.500
+And straight after that,
+
+00:11:12.500 --> 00:11:17.340
+it will consider the next thing, a new request,
+
+00:11:17.859 --> 00:11:20.260
+previous request was not finished.
+
+00:11:20.260 --> 00:11:24.460
+So you can just sort of continue talking to the server,
+
+00:11:24.460 --> 00:11:28.780
+even though you send a request that was too large,
+
+00:11:28.780 --> 00:11:32.299
+which, yeah, it led to four bugs,
+
+00:11:32.299 --> 00:11:35.619
+these behaviors not closing the connection.
+
+00:11:35.619 --> 00:11:39.140
+So it is something to watch out for.
+
+00:11:39.140 --> 00:11:44.140
+Then I have as well four bugs in the HTTP2 version.
+
+00:11:45.140 --> 00:11:49.539
+Again, three of those come from the article
+
+00:11:49.539 --> 00:11:51.340
+by James Kettle.
+
+00:11:51.340 --> 00:11:53.260
+And I was also sort of wondering,
+
+00:11:53.260 --> 00:11:56.619
+I'm still wondering what's the reason
+
+00:11:56.619 --> 00:11:59.739
+that sort of this great research
+
+00:11:59.739 --> 00:12:04.179
+does not lead to a lot of other bugs being found,
+
+00:12:04.179 --> 00:12:05.940
+or at least other bugs being published
+
+00:12:05.940 --> 00:12:08.219
+because maybe people are making a ton of money on this
+
+00:12:08.219 --> 00:12:10.380
+and they are not publishing it.
+
+00:12:10.380 --> 00:12:12.500
+But yeah, it's strange.
+
+00:12:12.500 --> 00:12:13.619
+There's a great research.
+
+00:12:14.099 --> 00:12:14.940
+There are great bugs.
+
+00:12:14.940 --> 00:12:16.739
+And then there is nothing.
+
+00:12:16.739 --> 00:12:18.979
+And I wonder what happens.
+
+00:12:18.979 --> 00:12:22.580
+These bugs, this is another article.
+
+00:12:22.580 --> 00:12:25.700
+This one is from 21, 2021.
+
+00:12:26.619 --> 00:12:29.739
+And what happened here was the downgrading
+
+00:12:29.739 --> 00:12:32.979
+from HTTP2 to HTTP1.
+
+00:12:32.979 --> 00:12:37.979
+So the server would use HTTP2 when talking with the client,
+
+00:12:38.700 --> 00:12:41.700
+but then when the front end would talk with the backend,
+
+00:12:41.739 --> 00:12:45.059
+it would use HTTP1 again.
+
+00:12:45.059 --> 00:12:47.619
+And normally it's not a problem,
+
+00:12:47.619 --> 00:12:52.179
+but it becomes the problem when like here,
+
+00:12:52.179 --> 00:12:55.900
+it also forwards a very important header
+
+00:12:55.900 --> 00:12:58.659
+like content length without checking
+
+00:12:58.659 --> 00:13:00.739
+if it's a valid one or not.
+
+00:13:00.739 --> 00:13:04.299
+So you sent, this is a sort of HTTP2 syntax
+
+00:13:04.299 --> 00:13:08.619
+because in HTTP2, the content length header
+
+00:13:09.020 --> 00:13:12.780
+is not really used because it's a binary protocol
+
+00:13:12.780 --> 00:13:15.539
+and it doesn't use this to decide
+
+00:13:15.539 --> 00:13:16.739
+where does the request finish.
+
+00:13:16.739 --> 00:13:19.500
+So you just send this as a body,
+
+00:13:19.500 --> 00:13:22.460
+but then when front end would be talking with the backend,
+
+00:13:23.419 --> 00:13:26.580
+with HTTP1, it does need the content length header
+
+00:13:26.580 --> 00:13:29.340
+or the transfer encoding chunk, doesn't matter.
+
+00:13:29.340 --> 00:13:31.820
+And then it just uses the content length
+
+00:13:31.820 --> 00:13:35.140
+sent by the client without verifying it.
+
+00:13:35.140 --> 00:13:38.380
+So the backend would think the request ends here
+
+00:13:39.140 --> 00:13:42.299
+and this is a new request, which is of course not true.
+
+00:13:42.299 --> 00:13:44.659
+And this led to request smuggling.
+
+00:13:44.659 --> 00:13:49.659
+We had 20K Netflix, 10K Verizon, 7K Verizon,
+
+00:13:49.940 --> 00:13:53.140
+seven and a half K Basecamp and surely more bounties
+
+00:13:53.140 --> 00:13:54.419
+just by James Hell
+
+00:13:54.419 --> 00:13:56.099
+because he doesn't disclose all the bugs
+
+00:13:56.099 --> 00:13:57.659
+that he's discovered.
+
+00:13:57.659 --> 00:14:01.299
+And I wonder what other ones are out there.
+
+00:14:02.299 --> 00:14:07.299
+Then we have fun ones with Node doing fun stuff.
+
+00:14:08.260 --> 00:14:13.260
+I have three reports in the only using new line
+
+00:14:13.460 --> 00:14:18.460
+or carriage return characters as a line terminator.
+
+00:14:18.900 --> 00:14:23.500
+There were a few fun reports with Node doing strange stuff.
+
+00:14:24.619 --> 00:14:27.140
+In this case, Node decided...
+
+00:14:27.140 --> 00:14:32.140
+So in generally, HTTP1 relies heavily on text parsing
+
+00:14:32.659 --> 00:14:36.419
+and on new lines because it separates different headers
+
+00:14:36.460 --> 00:14:38.580
+in the body and the end of the request
+
+00:14:38.580 --> 00:14:41.059
+using where the new lines are.
+
+00:14:41.059 --> 00:14:42.979
+And the new line is actually two characters,
+
+00:14:42.979 --> 00:14:45.739
+usually carriage return and line feed.
+
+00:14:46.619 --> 00:14:49.500
+So, and this is very important,
+
+00:14:49.500 --> 00:14:51.940
+but Node for some reason decided it's enough
+
+00:14:51.940 --> 00:14:53.780
+if you just have the carriage return,
+
+00:14:53.780 --> 00:14:58.780
+which is usually denoted as backslash R or percent zero D.
+
+00:15:00.380 --> 00:15:05.380
+And here, no other server would consider this
+
+00:15:05.940 --> 00:15:09.979
+being a new line, but Node did.
+
+00:15:09.979 --> 00:15:14.979
+And it did consider this to be a valid
+
+00:15:15.539 --> 00:15:17.659
+transfer encoding chunked header,
+
+00:15:17.659 --> 00:15:20.979
+which of course is exactly what you need
+
+00:15:20.979 --> 00:15:23.659
+to desync the backend with the frontend.
+
+00:15:24.580 --> 00:15:27.380
+And these were reported $1,800
+
+00:15:27.380 --> 00:15:29.099
+from the internet bug bounty.
+
+00:15:30.179 --> 00:15:32.820
+The other one is quite similar as well,
+
+00:15:32.820 --> 00:15:34.380
+but we'll go to the next category
+
+00:15:34.380 --> 00:15:36.979
+where the server would treat
+
+00:15:36.979 --> 00:15:40.179
+not a literal chunked transfer encoding
+
+00:15:40.179 --> 00:15:41.739
+as chunk transfer encoding.
+
+00:15:42.780 --> 00:15:45.619
+For example, this is a fun one.
+
+00:15:45.619 --> 00:15:47.299
+I did publish a video.
+
+00:15:47.299 --> 00:15:48.979
+I will link it in the description
+
+00:15:48.979 --> 00:15:52.219
+about this request smuggling back with the AJP protocol.
+
+00:15:52.219 --> 00:15:54.659
+It was a CTF task with the CVE.
+
+00:15:55.500 --> 00:16:00.500
+And the thing was the code was just only looking
+
+00:16:00.539 --> 00:16:04.619
+specifically for the chunked transfer encoding chunk
+
+00:16:04.619 --> 00:16:06.780
+and nothing else would work.
+
+00:16:06.780 --> 00:16:09.460
+But the other component or the other piece of code
+
+00:16:09.460 --> 00:16:13.539
+of the same component would treat a value
+
+00:16:13.539 --> 00:16:15.859
+like transfer encoding chunked chunked
+
+00:16:17.140 --> 00:16:18.979
+or chunked comma chunked
+
+00:16:18.979 --> 00:16:21.580
+as a valid transfer encoding chunked header,
+
+00:16:21.580 --> 00:16:25.979
+which was also enough to desync the server.
+
+00:16:25.979 --> 00:16:28.859
+And it was a fun exploiting this one.
+
+00:16:28.900 --> 00:16:31.219
+It was quite hard because the AJP protocol
+
+00:16:31.219 --> 00:16:33.700
+is something you probably don't know about,
+
+00:16:34.700 --> 00:16:37.099
+but it was very, very fun.
+
+00:16:38.059 --> 00:16:40.739
+The next group, CRLF injection,
+
+00:16:40.739 --> 00:16:43.419
+also three bugs in this category.
+
+00:16:43.419 --> 00:16:48.419
+And here it's something a bit different
+
+00:16:48.900 --> 00:16:53.900
+because it's not like most of the other reports
+
+00:16:54.700 --> 00:16:56.659
+where you sort of send the transfer encoding
+
+00:16:56.659 --> 00:16:57.780
+and content length header
+
+00:16:57.780 --> 00:17:01.500
+and one component sees different things than another.
+
+00:17:01.500 --> 00:17:04.339
+In this case, you just send one request,
+
+00:17:04.339 --> 00:17:07.500
+but the front end when forwarding the request
+
+00:17:08.500 --> 00:17:12.219
+messes up with the decoding of this request
+
+00:17:12.219 --> 00:17:15.739
+and actually makes it like it's two different requests,
+
+00:17:15.739 --> 00:17:18.780
+which leads to request smuggling as well.
+
+00:17:18.780 --> 00:17:21.060
+I'm actually surprised this is not more common,
+
+00:17:21.060 --> 00:17:25.819
+especially I published an article about a great talk
+
+00:17:25.819 --> 00:17:28.060
+about this bug and I'm quite surprised
+
+00:17:28.060 --> 00:17:33.060
+how easy it is to misconfigure Nginx to make this possible.
+
+00:17:33.420 --> 00:17:36.099
+And I'm quite surprised this is not more common
+
+00:17:36.099 --> 00:17:40.579
+because of this, but I only saw three reports of this.
+
+00:17:40.579 --> 00:17:44.699
+This particular one was rewarded 12 and a half thousand
+
+00:17:44.699 --> 00:17:45.540
+dollars.
+
+00:17:46.500 --> 00:17:50.739
+Now we go into something that I think
+
+00:17:50.739 --> 00:17:52.859
+is a great area for research.
+
+00:17:52.859 --> 00:17:54.380
+And it's something I didn't know about
+
+00:17:54.380 --> 00:17:57.060
+before doing this case study.
+
+00:17:58.140 --> 00:18:00.739
+There is a thing called trailer,
+
+00:18:00.739 --> 00:18:03.420
+which means when you have a chunked encoding,
+
+00:18:03.420 --> 00:18:08.219
+so it's this, so you have the one chunk of length five here,
+
+00:18:08.219 --> 00:18:10.540
+the other chunk of length two here.
+
+00:18:10.540 --> 00:18:13.420
+Don't be mistaken, there's no space here in this,
+
+00:18:13.420 --> 00:18:15.859
+like in here, in the beginning,
+
+00:18:15.859 --> 00:18:18.300
+I thought it's the leading space type of bug,
+
+00:18:18.300 --> 00:18:23.020
+but it looks like this because of the line number here,
+
+00:18:24.020 --> 00:18:26.300
+which I think shouldn't be like this,
+
+00:18:26.300 --> 00:18:30.180
+but it is not the case, there's no space here.
+
+00:18:30.180 --> 00:18:34.219
+And the trailer of HTTP request just means
+
+00:18:34.219 --> 00:18:37.300
+when you have the chunked body encoding,
+
+00:18:37.300 --> 00:18:42.300
+you can still have some headers after or trailer headers.
+
+00:18:42.380 --> 00:18:44.500
+I'm not sure if they are treated exactly like
+
+00:18:44.500 --> 00:18:47.060
+normal headers, I think they shouldn't.
+
+00:18:47.060 --> 00:18:50.859
+So I did, of course, I've never seen this being used
+
+00:18:50.900 --> 00:18:53.300
+by an actual application.
+
+00:18:53.300 --> 00:18:56.660
+And I also didn't see this in any other bug
+
+00:18:56.660 --> 00:18:57.979
+apart from these two ones.
+
+00:18:57.979 --> 00:19:02.979
+Both these reports were $4,600, it's a bug in Apache.
+
+00:19:05.660 --> 00:19:10.660
+And I'm 100% sure this is such a niche feature of HTTP
+
+00:19:12.020 --> 00:19:14.300
+that it is a good area for research
+
+00:19:14.300 --> 00:19:18.579
+because there is no way that all the other servers
+
+00:19:18.579 --> 00:19:23.579
+consume this trailer correctly because of how rare it is.
+
+00:19:27.180 --> 00:19:32.180
+Then the next category is H2C upgrade.
+
+00:19:32.459 --> 00:19:37.459
+I've only saw two reports of this in one blog
+
+00:19:37.500 --> 00:19:41.219
+posted by AssetNode, which is always a great thing.
+
+00:19:41.219 --> 00:19:44.540
+I also saw this in a CTF task and it looked,
+
+00:19:44.540 --> 00:19:47.180
+it's not that hard to misconfigure your server
+
+00:19:47.500 --> 00:19:49.420
+to be able to do this.
+
+00:19:49.420 --> 00:19:53.739
+But we didn't see more of this in the wild.
+
+00:19:53.739 --> 00:19:58.739
+The thing is, you can do the upgrade of the HTTP one
+
+00:20:00.099 --> 00:20:04.859
+to HTTP two, the way that you bypass the reverse proxy.
+
+00:20:04.859 --> 00:20:08.900
+And then, of course, you can bypass the WAF,
+
+00:20:08.900 --> 00:20:10.619
+you can bypass the access control
+
+00:20:10.619 --> 00:20:14.060
+that's on the sort of middle layer, things like this.
+
+00:20:14.939 --> 00:20:17.020
+So it's a fun bug.
+
+00:20:17.020 --> 00:20:18.140
+I've tried it a few times.
+
+00:20:18.140 --> 00:20:23.140
+There is a tool H2C smuggler on GitHub, which does this.
+
+00:20:25.859 --> 00:20:27.939
+Unfortunately, I haven't found this bug,
+
+00:20:27.939 --> 00:20:30.780
+but it looks like something that's not,
+
+00:20:30.780 --> 00:20:33.739
+the attack scenario is quite reasonable.
+
+00:20:33.739 --> 00:20:37.780
+So I'm sure it's always worth checking for this
+
+00:20:37.780 --> 00:20:40.619
+when you're testing a target and when this is useful.
+
+00:20:41.619 --> 00:20:44.020
+And then we have two last categories
+
+00:20:44.020 --> 00:20:46.339
+with only one bug each.
+
+00:20:46.339 --> 00:20:50.380
+Here's another fun one with Node doing strange stuff.
+
+00:20:50.380 --> 00:20:55.380
+Namely, it would replace the carriage return.
+
+00:20:55.859 --> 00:20:59.339
+So as I said, a new line is usually
+
+00:20:59.339 --> 00:21:02.280
+carriage return line feed characters.
+
+00:21:02.280 --> 00:21:05.459
+And for some reason, Node would replace the carriage return
+
+00:21:05.459 --> 00:21:10.060
+with the dash, which seems weird to me.
+
+00:21:10.099 --> 00:21:11.699
+I don't know why they did this,
+
+00:21:12.540 --> 00:21:17.260
+but this is crucial because the content length header
+
+00:21:17.260 --> 00:21:20.300
+normally contains the dash between the word content
+
+00:21:20.300 --> 00:21:21.660
+and the word length.
+
+00:21:21.660 --> 00:21:23.579
+So we should send a request like this.
+
+00:21:24.459 --> 00:21:26.900
+I think it actually should be denied
+
+00:21:26.900 --> 00:21:28.939
+because I don't think this character
+
+00:21:28.939 --> 00:21:32.300
+is allowed in the header name, but it doesn't matter.
+
+00:21:32.300 --> 00:21:34.219
+But one way or another,
+
+00:21:34.219 --> 00:21:36.500
+a component that would see this and accept this
+
+00:21:36.500 --> 00:21:38.579
+would definitely not consider this
+
+00:21:38.579 --> 00:21:41.140
+being a valid content length header,
+
+00:21:41.140 --> 00:21:46.140
+but then Node would sort of decode the CR to a hyphen,
+
+00:21:46.459 --> 00:21:48.900
+which would make this a valid content length header.
+
+00:21:48.900 --> 00:21:53.500
+So the front end would see these as two different requests.
+
+00:21:53.500 --> 00:21:56.660
+The back end would see this as one request
+
+00:21:56.660 --> 00:22:01.660
+with the body length of 42, which I assume is up to here.
+
+00:22:01.900 --> 00:22:04.819
+So this would be a new request.
+
+00:22:04.819 --> 00:22:06.260
+So quite a fun one.
+
+00:22:06.300 --> 00:22:08.859
+I don't know why Node does this stuff,
+
+00:22:08.859 --> 00:22:11.979
+but Node was definitely something that was fun
+
+00:22:11.979 --> 00:22:14.780
+during this case study to see the bug like this.
+
+00:22:14.780 --> 00:22:19.300
+It was only rewarded $500 by the internet bug bounty,
+
+00:22:19.300 --> 00:22:21.540
+but it's still a fun bug.
+
+00:22:21.540 --> 00:22:22.500
+And the last category,
+
+00:22:22.500 --> 00:22:26.579
+which I also think is a good area for some research
+
+00:22:26.579 --> 00:22:29.219
+is chunk extensions,
+
+00:22:29.219 --> 00:22:33.180
+which I also up to recently, I didn't know about.
+
+00:22:33.180 --> 00:22:36.060
+I just learned, I think it was the motivation for me
+
+00:22:36.859 --> 00:22:37.699
+to do this case study.
+
+00:22:37.699 --> 00:22:39.380
+I saw a talk about these bugs,
+
+00:22:39.380 --> 00:22:44.380
+the HTTP garden tool for testing different HTTP servers.
+
+00:22:46.060 --> 00:22:48.339
+And I learned what a chunk extension is.
+
+00:22:48.339 --> 00:22:51.420
+And I think this pushed me to do this case study.
+
+00:22:51.420 --> 00:22:54.819
+So when you have the chunk transfer encoding,
+
+00:22:54.819 --> 00:22:58.020
+which is this, you can also have chunk extensions.
+
+00:22:58.020 --> 00:23:01.420
+So after the column, you can have some parameters here
+
+00:23:02.339 --> 00:23:07.339
+that obviously probably no one in the whole world ever uses,
+
+00:23:07.619 --> 00:23:10.300
+but that's exactly what we as security professionals,
+
+00:23:10.300 --> 00:23:13.260
+we want to have a feature that nobody knows about,
+
+00:23:13.260 --> 00:23:18.260
+but HTTP libraries and servers have to support.
+
+00:23:18.260 --> 00:23:22.780
+So here there was also some case
+
+00:23:22.780 --> 00:23:27.020
+where a new line character in the chunk
+
+00:23:27.020 --> 00:23:29.939
+shouldn't be accepted, but can be accepted.
+
+00:23:30.020 --> 00:23:33.300
+And it led to do some bugs.
+
+00:23:33.300 --> 00:23:36.500
+Also a fun one, also a good, great area for research,
+
+00:23:37.579 --> 00:23:41.699
+because again, this feature is not used a lot.
+
+00:23:41.699 --> 00:23:43.260
+So maybe this is something
+
+00:23:43.260 --> 00:23:45.459
+that not all the servers get right.
+
+00:23:45.459 --> 00:23:48.819
+So if you're looking for areas for further research,
+
+00:23:48.819 --> 00:23:52.099
+I would definitely look at trailer parsing
+
+00:23:52.099 --> 00:23:54.300
+and chunk extensions.
+
+00:23:54.300 --> 00:23:57.420
+They look like very good candidates for bugs to me.
+
+00:23:58.180 --> 00:24:00.339
+That's it for this video.
+
+00:24:00.339 --> 00:24:02.060
+Remember that the full case study
+
+00:24:02.060 --> 00:24:04.380
+is in the BBRE Premium Archive,
+
+00:24:04.380 --> 00:24:07.300
+but if you want to watch another free case study video,
+
+00:24:07.300 --> 00:24:08.579
+check out this playlist
+
+00:24:08.579 --> 00:24:11.619
+because I've already published nine of them.
+
+00:24:11.619 --> 00:24:14.500
+For now, thank you for watching and goodbye.
+

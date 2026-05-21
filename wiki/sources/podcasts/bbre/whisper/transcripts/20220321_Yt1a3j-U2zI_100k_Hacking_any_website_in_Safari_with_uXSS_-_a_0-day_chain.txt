@@ -1,0 +1,78 @@
+Hello, welcome to another Bug Bounty Reports Explained video. Today I will show you how Ryan
+Pickren found a chain of zero days that led to universal cross-site scripting in Safari,
+which allowed hacking any website. Literally any website, Facebook, Gmail, PayPal or your crypto
+wallet, whatever. He got a huge bounty of $100,500 for it, linked to the original well-written
+blog post is in the description. Enjoy! This episode is sponsored by Blaze Information Security.
+It's a team of experienced hackers who specialize in penetration testing and application security
+services. They can offer your company a wide range of services, pen tests, red teams, threat modeling
+and even the whole assessment of your remote work infrastructure. They also have a special package
+for startups. If you want to know more, check out blazinfosac.com. And I know the owner. He was
+hacking before I was even born, so he knows his business. Web Archive files are used to save whole
+websites. HTML, CSS, JS and images. Everything in a single file. It's an XML based format and it looks
+like this. The base64 encoded content is here and here is the origin. Yes, you heard me right. There
+is an origin specified. Back in 2013, if you could control the contents of this file, you could just
+put an arbitrary origin and code the XSS payload and you would be able to execute the code on any domain
+and access any domain's cookies. Such an attack is called universal XSS. It's not a bug in a particular
+website but in the browser, which makes it insanely powerful. The attacker can steal data from every
+website that you use, so the potential impact is huge. According to Google, almost as valuable as an RCE.
+So, back in 2013, if you could force the victim into downloading and opening such a file, you could
+perform this attack. But it's not how it works in 2022 with more security mechanisms in Safari and macOS.
+But let's try to bypass them. The attack has to start with phishing the victim into visiting our website.
+It should not be a big problem, but every single user interaction makes the attack less and less likely.
+The first problem that we encounter from here is the prompt about downloading a file. Because the first time
+you download the file from any domain, Safari will ask you for the permission. It would look quite bad with the attacker domain.
+The same goes for opening applications with custom URL schemes. If you open, let's say, a Discord URL, it will try to use the custom URL scheme.
+Safari will then ask you for permission to open the desktop Discord application.
+But it's not for every single URL scheme. There's an allow list of trusted Apple applications that don't have to ask for the permission.
+So, you can use the password to open the file. It's not for the user. It's not for the user. It's not for the user. It's not for the user.
+It's not for the user. It's not for the user. It's not for the user. It's not for the user. It's not for the user.
+It's not for the user. It's not for the user. It's not for the user. It's not for the user. It's not for the user.
+It's not for the user. It's not for the user. It's not for the user. It's not for the user. It's not for the user. It's not for the user.
+It's not for the user. It's not for the user. It's not for the user. It's not for the user. It's not for the user. It's not for the user.
+The web archive file to the victim. That's great.
+But there is a catch. First time opening a file, the victim has to confirm it.
+This is not an ideal attack scenario, but also not the end of the world.
+The attacker can modify the file completely and the victim won't have to reconfirm opening it.
+After the modifications, Sherber will automatically download the new version of the file to victim's machine.
+Okay, so we have delivering the file to the victim taken care of. And now we can run it.
+Unless we can't. Because Gatekeeper blocks it. Because by default, any downloaded file on macOS is quarantined.
+Gatekeeper prevents executing quarantined files like shell scripts and web archives.
+Yes, they also thought about web archives and they explicitly mentioned them in the documentation.
+So, when Safari tries to open a file, it goes through the Gatekeeper. And in this case, web archives get blocked.
+We could bypass that if we would find a vector where Safari opens a file without asking Gatekeeper.
+And after a bit of research, Ryan found out that Windows URL files do exactly that.
+It's a format that specifies things like the URL of the shortcut, the icon and so on.
+You can just make a desktop shortcut to a website. You can also use a file protocol.
+And turns out that if you open this shortcut file with path to web archive, instead of opening the web archive directly, it bypasses the Gatekeeper.
+And one last piece of the puzzle is the path of the downloaded web archive file.
+Normally, it will be inside the user directory, so we would need to know the macOS username.
+It's okay when you target a specific victim, but hard to predict with an attack on a big scale.
+To solve this problem, you can use a DMG file. It's a disk image format that contains an archive with
+another files inside. The reason why it solves the problem is that it's mounted into Volumes directory,
+which means we don't need to know the username to predict its location.
+So, what is it finally? A web archive? A DMG? A URL file?
+I know that you are confused, so let's go through the whole exploit.
+First, you have to trick the victim into visiting our website. This website contains such JavaScript code.
+It contains a link to a harmless image shared over iCloud. The user has to confirm the prompt about
+opening a file. This is the last piece of user interaction that we need.
+Now, you have to modify contents of the image to a DMG file, which contains the web archive inside.
+In the real attack scenario, you would probably need some scripts to do this automatically.
+Now, Safari launches this file and the disk image is mounted into Volumes directory.
+The web archive is available under this path. Now, you modify contents of the file again.
+Importantly, the disk image is already mounted in Volumes directory and it's not removed from there or
+modified even though you make a modification on your iCloud account. This time, you turn this file into the
+URL format pointing to the web archive, which is inside Volumes directory.
+Inside the web archive file, there is your arbitrary JavaScript code and arbitrary domain, which you'd like to attack.
+After the web archive file is launched in Safari, your code gets executed on whichever domain you chose.
+The user is now installed.
+With universal cross-site scripting, you can do whatever the user can do in their browser.
+Attack PayPal and transfer funds to you. Attack Gmail and steal or send emails as the victim.
+You can attack a website like Zoom or FaceTime, which is likely to have a permission
+to the camera and you can see what the victim is doing.
+And many, many more. The reward for this bug was $100,500 and there were two CVEs issued.
+As for the fix, the ShareBear application now only reveals a file instead of launching it directly
+and WebKit now won't open any quarantined files, even via Windows shortcuts.
+If you've learned anything new from this video, leave a like and subscribe to the channel.
+If you want to see other bug bounty reports from Apple, check out this playlist on your right.
+You can find there a $28,000 IDOR in Apple shortcuts or 50k RCE.
+But for now, thank you for watching and goodbye.

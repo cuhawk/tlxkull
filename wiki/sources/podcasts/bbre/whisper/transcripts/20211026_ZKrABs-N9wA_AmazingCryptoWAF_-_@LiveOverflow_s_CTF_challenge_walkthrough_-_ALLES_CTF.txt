@@ -1,0 +1,151 @@
+Hello, in this video I will show you how I solved a challenge from Alice CTF created by a youtuber
+who you probably know – Live Overflow. The solution involved multiple steps and make sure
+to watch the video until the end because I used a method that allowed me to get the first blood on
+the challenge because I was able to exfiltrate the flag 95% faster than the naive solution.
+And that number is not a bait, it's an actual calculation you will see for yourself.
+If it's your first time here, my name is Greg and here on YouTube I explained advanced hacking techniques
+used in bug bounty reports. I also have a podcast and a newsletter, both free and paid.
+To fully understand my solution to the challenge, you should first watch a video on Live Overflow's
+channel where he explains how the challenge is built and what are the components. I will mainly
+focus on hacking it. Right now, click the card or link in the description to watch that video.
+I think he's a guy that doesn't need introduction, but in case you missed it, he's a youtuber with over
+600,000 subscribers and over 300 public IT security videos. There's a whole range of topics covered,
+from web security through CTFs to low level and even hardware exploitation. If you are not subscribed
+or YouTube does no longer recommend you his videos, check out tons of free, high quality content.
+Did you watch it already? I hope yes. So we can go ahead with the walkthrough.
+Let's quickly see what the application does. There are two separate directories. First,
+I took a look at the app itself. When seeing the source code, I did not spend too much time on those
+helper functions. Instead, I went straight down to controllers. In most of them, queries are executed
+using prepared statements. It means that the application knows those parameters are not trusted
+and SQL injection won't happen in them. Unless, of course, there's a bug in the library. However,
+in one function, there is a query created the unsafe way. The prepared statement is used, but the order
+argument is not a statement's parameter. Python creates the string before even calling queryDB.
+The function considers this string as trusted, including the order param which is controlled
+by the user. Every time that there is just one place where something is done differently is a good
+lead. Of course, there is a chance that CheekyLifeOverflow planted this as a red herring, but one way or
+another, I had to check this. I launched the application locally. I quickly confirmed SQL injection,
+by using asts limit zero and I saw no nodes. It meant that my limit clause was present in the SQL query and
+it returned zero rows. Then, I tried with the union. However, I got blocked by web application firewall.
+At this point, I had to understand the relationship between the two applications. If you did watch live
+overflow's video, you know it. The cryptor works like a reverse proxy and the app itself is not exposed.
+I found that out by examining contents of Dockerfiles. Inside the source code, there is only one
+controller which forwards the requests to the app. But before doing that, the wav param function was called
+on all the parameters. Its logic was very simple. It filtered only a few words or characters. Those
+included select, union and quotes. It's a short list, but it seemed quite convenient to me. There was also
+no unusual things that could open a way to more advanced attacks. So, I wanted to find a way to smuggle
+my parameters without entering this function. I spent some time here by trying to find bypasses using
+those unfiltered values like content type header or cookie header, but I didn't come up with anything smart.
+Then, I thought about spending a bit more time on the way those URLs are created. Anytime I see an address just
+concatenated like this, I feel like something might be off. And I was right this time. The path variable is a URL
+parameter. There are no explicit transformations here, but Flask automatically decodes it. So, if I used a path
+with URL encoded question mark, then the request was sent with the question mark decoded. The reverse proxy
+didn't consider those to be parameters, but rather a part of the path. So, this way, I was able to smuggle
+my payloads bypassing the WAV. Note the ampersand at the end. It's important because if it wasn't there,
+the question mark would be treated as the part of the parameter breaking my SQL query. I confirmed that
+this bypass works and I was ready to create the exploit. I took a look into where the
+flag is. It was added as the first node. I wanted to use SQL map for that because it's much faster when
+it comes to exfiltrating data. But I couldn't configure it to work with my specific case where
+the payload was the part of the path. I didn't think creating tamper script would help either.
+Modifying the source code was an option that I considered, but I opted to write my own exploit instead.
+Modifying the first step is determining what query to use to extract the flag.
+Testing this on a running web app would be very inefficient way, even if it was running locally.
+I would have to make additional effort in order not to break encoding.
+Instead, I took an advantage of the fact that this is an open source task. I just copied the database
+file from the Docker container and started testing different queries. At this point, I noticed that
+there is no plain text flag in the database. Instead, it's encrypted. Considering the name of the challenge,
+I could have expected this. It was time to understand the logic of this Vav. Again, I will just briefly
+mention it and the full explanation is on LiveOverflow's channel. I didn't find anything out of place in
+generating a secret or encryption-decryption functions. What was interesting, however, was that when ciphering,
+the string encrypted was prepended to the content. Most post and get params were ciphered. Then, the decrypt
+function took the whole response body and deciphered everything that had the string encrypted prepended.
+So, my idea was to get the encrypted input anywhere in the response. Of course, it couldn't be in the
+node because then it would simply be encrypted twice. However, there were some inputs that weren't
+encrypted and encrypted and those were very good candidates for this purpose. I quickly scanned the
+controller for the presence of those first three parameters, but only saw UUID used and in the
+redirect. So, I quickly dismissed the idea. I thought why not create an account with the encrypted flag as
+the username. And it did work. I created a user using the extracted encrypted flag and what I saw after the
+login was the flag from my local environment. So, I had the encryption aspect taken care of. Now, how to get
+this encrypted flag out of the database? At first, I tried the simple union, but it didn't work. It was
+because union mustn't be after the order clause in SQL query. So, this is a blind SQL injection. I couldn't use
+union, but what I could do is a subquery. That means that you can do arbitrary queries to the database,
+but you just can't return them as the result. There are many methods which you can use to exfiltrate
+one bit at a time. And if you can exfiltrate one bit, you can exfiltrate the whole flag after enough time.
+My idea was to return ascending or descending order using a subquery. So, I would check if the first
+character of the flag is a. If it was, my subquery would return ascending. If it's not, it would return
+descending. In most SQL databases, there are functions like if and substring that will make it possible.
+I could easily observe if it's ascending or descending by looking at the response. If it was
+descending, then I knew that the first character of my flag was not A, so I tried B, C and so on.
+After I finally saw the ascending order, I knew the first character of the flag, so I could move on to
+the second one. I would repeat this until I got the whole flag. Of course, this process is not manual.
+The problem was, I didn't find a way to return ascending or descending from a subsquery,
+as those are not strings. So then, I started to think what can be after the order clause.
+The answer was the limit clause, which I used at the beginning but then forgot about.
+It tells the database how many records we want to return. I easily modified my subquery to return 0 or 1
+inside the limit clause. It did work locally. However, it's a primitive solution. It generates a lot of traffic.
+For each character of the encrypted and encoded flag, I needed to send 64 requests in the worst case.
+Considering the output had the IV, the ciphertext and the auth tag, it could take very long. I think the
+real flag had about 200 characters. If I were playing the CTF for points, I would likely just leave the
+script running for a few hours. But I didn't. Instead, I wanted to have a bit more fun. So, I decided to
+create an efficient exploit. Especially that I saw that the challenge was yet to be solved by anyone.
+Usual tricks you can use to speed up blind SQL injection exfiltration are binary search,
+which reduces it to 6 requests per character, using multiprocessing to brute force many characters at
+once, or using regaxes combining those two techniques. But I knew I could do it even quicker than this.
+I knew I could do it even better. I could do it even better.
+I could do it even better. I could do it even better.
+I could do it even better.
+I could do it even better. I could do it even better.
+I could do it even better.
+I could do it even better.
+I could do it even better.
+So, when the first character was capital E with ASCII code 69, then my query would return 69 nodes
+because my limit clause would be 69 as a result of the subquery.
+To see what was the value of the limit clause, I could just count the amount of nodes in the response.
+I did overcomplicate this part a bit. Instead of counting nodes, I named them node 0 to node 127,
+which caused some boring and annoying problems, but I somehow dealt with them.
+Finally, I successfully tested my script on the local instance and I was ready to smash the live
+environment. My approach meant that I only needed 128 requests at the beginning to add nodes and then
+one request per each character of the encrypted flag. It meant that with 200 characters flag,
+I only needed 328 requests. That's a lot less than 1200 requests of binary search and 12800 of naive solution.
+That's the worst case, but even if we take half of that number as an average complexity,
+my solution was still 95% faster. The server had some latency issues as probably many players were
+brute forcing simultaneously. But after some time, I finally got the flag. Thanks to the fact that I
+invested a bit more time offline to prepare my exploit, I saved a lot of time online. That's probably the
+reason why I was the first one to solve the challenge. If you enjoyed the video, make sure to subscribe to
+the channel. If you want to learn even more from me, join my newsletter and get the best hacking tips delivered
+right to your inbox. Sign up now for free at mailing.bugbountyexplained.com
+For now, thank you for watching and goodbye.
+Thank you.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,1030 @@
+AI is and will continue to change the way we work and our lives basically irreversibly.
+In this interview, we'll talk about how we can use LLMs for our advantage in the bug bounty industry
+but also about the completely new vulnerability classes that it created. I'm joined by both a
+great bug bounty hunter and the pioneer of the AI in our industry, Joseph Thacker, also known as
+Rezo. Enjoy! This video is sponsored by AppSec Engineer. It's a security training that I can
+honestly recommend because myself I took a Kubernetes security course way before this collaboration.
+It was clear and there were a lot of practical hands-on labs on well-prepared infrastructure.
+It was perfect for me to kickstart learning a completely new security area.
+They don't focus on theory or PowerPoint presentations but you can choose from hundreds
+of hands-on labs, courses and challenges about cloud security, DevSecOps, Secure Coding, AppSec and more.
+That's what AppSec Engineer is. It doesn't matter if you're a developer, a security professional or a
+cloud engineer. This all-in-one platform can get you skills to boost your salary. And with the new
+content coming out every two weeks, you can constantly update your skills to stay ahead of the curve.
+For more, go to AppSecEngineer.com.
+Hello Rezo! Thank you so much for joining me in today's podcast. For our audience who doesn't know
+you yet, can you please introduce yourself and tell me a bit of your background?
+Sure. Yeah. Thank you for having me first of all, Greg. It's been a pleasure. I love your content you
+put out. We've needed people to cover content like explaining bug bounty reports and going deep on
+specific vulnerability classes and even doing the little experiments that you've done where you've
+hacked on one specific program for so many hours. I think it adds a lot of value to the community to see
+what the outcome of these real-world trials are. So anyways, I want to say that first. Thank you.
+Yeah. For anyone tuning in, yeah, I'm Rezo on HackerOne on Twitter and other places. My name is Joseph
+Thacker. I live in the states, in the state of Kentucky. But I started my journey into hacking actually
+with doing mechanical engineering in college. And I was at an internship on my junior year and I was doing a
+lot of coding actually. I think we only had to have one or two coding courses as a mechanical engineer.
+And anyways, I was at an internship at GE Aviation and I was helping these engineers with writing VB macros
+to automate a lot of things they were doing in Excel. And they found so much value out of it. Like just
+automating things like optical character recognition of reports and then doing like automatic transforms or
+math on it. And then eventually we built an entire like kind of how-to dashboard where the, I mean,
+it would have been much better to actually code this in a real language, but we built it in Excel
+where you could click a button and then it would take you to a new sheet that would have the
+instructions on how to do something. And it would take you to a new sheet. And it was, I don't know,
+it was really transformative. It was way more fun. And I had dabbled in, you know, botting in like
+Diablo II and stuff in high school. And so I had a little bit of a computer science background. So
+I attribute all this to my wife. One day she said, Joseph, do you even enjoy mechanical engineering?
+And that was the straw that broke the camel's back. I was like, no, no, I don't. I need to switch to
+computer science. And so at University of Kentucky, I switched to computer science that year and it was
+one of the best decisions I've ever made. Around that time I was doing coding, but I was also watching
+some of those old school videos like Hack5 and, you know, how to hack Wi-Fi and do those sort of
+things. I even bought one of the monitor mode USB Wi-Fi adapters and played with Cali and stuff.
+And then I had a big gap, right? I graduated and I got a computer science job, like doing software
+engineering at a local company. And during that time, I kind of like didn't think much about security.
+But then after being there for five years, whenever we, we were, we'd actually lived in Haiti as
+missionaries for a little while. And while I was there, I got my security plus and just had been
+daydreaming about DEFCON. I'm actually wearing a miscreants DEFCON shirt today, but I'd been
+daydreaming about DEFCON and just always had this really strong desire to go into security. And so I'd,
+I'd searched around in my local town for the best pen testing company. And there was like only one,
+right. There was like, obviously the best one. And about the time that I was ready to switch,
+I got an online master's in cybersecurity with WGU. It's Western Governors University. It's like work at
+your own pace. And I did the whole master's program in six months and it included the certified ethical
+hacker and the CHFI, the certified hacking forensic investigator. So it was a really good value because
+my company paid for the degree for like continuing education credits. And then I, as a result of that,
+got two more certifications. So I was able to switch straight to doing essentially security
+engineering at that company that I was talking about. They weren't doing pen testing anymore
+because they had been acquired, but they were building an MDR platform. And for me, and I think
+this is a really good piece of advice for your listeners. I think getting into your first security
+job where you can do a variety of tasks is massive for career growth and for learning. Because when I was
+there, I was doing security analyst work, security engineering work. I was building tools. I was
+triaging alerts. I was writing detections. I was doing executive summaries with clients, right?
+And that exposure really builds your resume in a huge way because all of a sudden you have a little
+bit of a qualification for many jobs instead of pigeonholing yourself into one. And you also learn
+what you enjoy. And so even though I was doing all of that blue team stuff there, I was also doing bug
+bounty hacking on the side. I got started because I'd watched probably, honestly, I think I saw some tweets from like,
+Tommy, doggy G or maybe Ben, a homosec with, you know, some yay I was awarded
+tweets. And then, so I went and watched Jason Haddock's recon methodology and went and applied
+that and, you know, did hacker ones capture the flag and was always in the hacker one discord.
+And eventually got my first bounty as a result of that by just running dir search on a new bug
+cod program and finding like a spring boot. I think it was like some beans and points or something.
+And, you know, after that I was, I was, I was hooked just like everyone else. But yeah,
+from that point forward, I worked at the blue team at the manage detection response for a couple of
+years while doing bug bounty on the side. And that was a ton of fun and built both the skills on the
+defensive and on the offensive side. And then I saw a job posting on Reddit for a place to work at
+App Omni, which is where I currently work. They were around a startup at the time doing SaaS security.
+And they loved my resume because I had been writing connectors that pull in audit logs
+from things like Microsoft 365, ServiceNow, you know, Azure, and all these were things that they
+were wanting to support at App Omni. And so now, you know, fast forward now, we're around C startup.
+I still work there. I eventually transitioned to doing offensive stuff. So now I'm like a,
+essentially an offensive SaaS security researcher who hacks on things like Workday, ServiceNow, Salesforce.
+And yeah, during that whole time, I've been still pursuing bug bounty. I've been hacking on HackerOne
+and BugCrowd. I've been in, you know, live hacking events with HackerOne. And then as I'm sure we'll
+we'll cover in a minute, their last year has been much more focused on AI, AI security and hacking AI
+systems and large language models. Yeah, yeah, we'll definitely get to it. But you noticed how much
+you've learned as a security engineer and also on the blue team side. For those of us who just got
+straight away into the offensive side into pentesting, for example, what are the things that we maybe
+should learn from those other areas that could improve our hacking? Yeah, I mean, I think the number
+one thing to always remember is like the goal is to defend, right? As ethical researchers, the only reason
+we exist is to try to improve the security of these systems. Otherwise, we would just be black hats,
+right? And so the whole goal is to defend the system. And so with that as a mindset, you often
+do things differently. Like you might write a much better report, right? The point is not the bug.
+The point is actually to fix the system. And so if you write a report that does not help them know how
+to fix the system, then what you wrote was was pretty useless because the entire reason our industry
+exists is because there's some magical utopia where everything is fixed, right? And so we're chasing
+that goal. And I don't know if we'll ever get there, but it's an ideal that we need to be aspiring to,
+that we need to be pursuing. And so the actions and the steps that we take towards that direction
+not only are really important for getting reports triaged, handled faster, but they also build really
+strong networking rapport and value with these companies, right? Like if your tone of voice,
+the words you use in reports, the things you're reporting show that you want to add value to them
+and you want to secure the system for their end users, that bleeds through. I think that that really
+makes them feel much more fondly towards you and they're going to treat you better, right? Like they're
+going to want to invite you to their events. They're going to want to invite you to their challenges
+of their new programs. They're likely going to even have a little bit of a halo effect about you where they
+view you in a more positive light. And even subconsciously, they might give you a slightly
+larger bounty because you're easy to work with, right? They want you coming back. They don't
+want to work with people who are going to be argumentative or difficult. So, yeah.
+Yeah. And also, I don't know if I'm the only person that does this, but sometimes when I want to
+like show the company the impact of a bug and I want to like, I know that they may argue this,
+the way I usually portray is, is I mentioned customers of this client and you know how
+they can leak their data because sometimes we just think about bugs as, oh yeah, this is an
+exercise, you can do this and that. But thinking about, okay, this application is used by real people
+which have real data and that's the data that we want to protect. And I believe that mentioning this
+data in the report sort of reminds everyone what we are doing here. And as we've said, this probably,
+maybe even subconsciously, you know, sometimes increases the payouts and make, makes you look
+better in the eyes of, of the program you're talking with. Yep. Yeah, that's right. I think just
+like you said, what you do is very high value. Add a couple extra sentences explaining why this
+matters to their end users and it changes the, the name of the game completely for them. Um, because now
+they see the real impact, they think, oh yeah, it helps them be in the shoes of their customers
+effectively. Right? Yeah. Yeah. Yeah. So, uh, with the, still in the regular web two back bounties,
+uh, what type of hacker are you? Are you a recon type guy? As you mentioned your, your first finding
+with the deer search, are you more open domain application type of guy? Are you a zero day guy?
+What are you? Uh, definitely. I would say the majority of where I love to hack and my, you know,
+some of my best findings are from content discovery. So, you know, a lot of people put that under
+recon, but then, but then I think that leads people to believing that I'm, you know, incredible at recon
+like Eric or something like today is new, but, um, you know, I've never really set up a proper
+sub domain finding system, but I've set up probably 10 different systems for finding good content.
+So, you know, I, I definitely think that my strengths are with, uh, you know, custom word lists,
+finding hidden endpoints, fuzzing recursively. Um, yeah, that, that level of automation rather than
+on like the, the big recon, but I mean, anyone who's been doing bug bounty for, you know, three
+or four years, like I have has definitely done a lot of manual hacking. So I would say, you know,
+even though that's what I enjoy doing most, um, and that's where maybe 30% or 40% of my bugs come from.
+I still do a ton of manual hacking. I mean, you have to, right. If you want to find good vulnerabilities
+and you want to actually improve yourself and learn how to hack. Um, and if you want to find
+vulnerabilities on, on new programs. So I would say after, um, after content discovery, you know,
+the next thing that I probably check for the most are bugs, like path, reversal, IDORS,
+and then I would say, um, I would say the findings there are probably less, but, um, yeah. And
+honestly, a lot of it is just unrestricted access to pages. You shouldn't have access to whether it's
+four or three bypasses or, um, I do a lot of V host scanning. I would say, you know, I've probably
+found more, um, host header SSRFs like that, that style of virtual host, um, vulnerabilities than,
+than most people. Um, cause I do a lot of that as well. Do you just put like a collaborator URL
+in the host header and it's sometimes fires? No, no, no, no. I, um, during my content discovery
+scans that I run, um, anytime new hosts come online for the bug bounty programs that I monitor,
+or like if I'm about to start a new program and I kick off one of my, one of my scripts,
+one of the things it does is fuzz in the host header for common, um, common like short words,
+like just things like host colon dev, right. Or host colon whatever. But, um, usually they come
+from, you know, if you see localhost or one, two, seven dot zero dot one, they have a different response
+size. Um, and there are some false positives there. Like I think if something's hosted in S3,
+it often responds differently only with a host header of one, two, seven dot zero dot zero dot one,
+but then every other thing that you give it will just, um, respond normally. And, um,
+then the other way to fuzz is with subdomains that resolve to local IP addresses. So whenever you're
+resolving all of the, all of the subdomains that you've gathered for a target, if some of them resolve,
+either don't resolve or like if they resolve internally, then you can fuzz with that in the host
+header on domains that do exist or on IP addresses that do exist for the company. I usually just use
+the IP address as the, I never know what to call that because it feels like when in a browser,
+you don't have a notion of a host header and like, uh, a main URL. What did, what does that call it?
+Is there a term for the, you like the, the domain that's used in a request that is not in the host
+header? Is there a word for that? I think in the burp, it's called targets. So in target, yeah,
+yeah. So the target is usually an IP address and then the host header would be the, the subdomains
+that don't resolve. Or sometimes I'll just, um, if I find a uniquely, like if I find a root domain,
+that's like kind of wonky, I'll just fuzz like, um, almost like doing subdomain discovery, but in
+the host header field. So target is the IP address and then host is fuzz.rootdomain.com.
+And let's say you, you found an application, which responds with, uh, does, does the request
+to the local address, let's say one, two, seven, zero, zero one. Do you report it straight away?
+If you just see the response from the local or how do you escalate it?
+Yeah, no, I mean, uh, as many of your listeners know, you know, you have to show the impact. So
+just because it responds differently, it doesn't mean anything at all. But you know, if it, if it's
+exposing something internal that shouldn't be exposed, then I would report it. But if not,
+then that's just like a lead. And then I would, you know, start, start fuzzing kind of more broadly,
+but my automated scanner only uses like 250 different host headers when it's checking.
+But if I found a host that's responding, um, you know, kind of in a unique way or a way where I
+think it might be a lead for a vulnerability, then I would fuss with like a much larger word list and
+that host header, um, thing. And then I would also go ahead. And so one thing that's really interesting
+about these like, uh, VPNs inside of these cloud providers is, um, some IPs will resolve to a,
+like a ton of different subdomains. So if you find like an IP address and I don't know,
+I assume it's because it's running as a reverse proxy or something, but then you put in, um,
+but then you fuzz with the company subdomains in the host header, and you might get unique response
+sizes for lots of domains that exist. And now, you know, you're dealing with like a reverse proxy.
+And so you can, at that point, try to, um, fuzz on you other subdomains that don't exist or that
+didn't resolve externally. And if they resolve there, then you know, that is a vulnerability
+because it's actually supposed to be an internal host. And at that point, then I would report it.
+Okay. You also mentioned custom word lists. How do you create custom word lists for targets?
+Yeah. So actually I've seen some good stuff from Hack Luke recently. I feel like he's been
+posting a lot of one-liners, um, kind of in this, um, in this realm. In general, my philosophy is
+either to go, if it's not too large, I'll just, um, call Tom Nom Nom's tool, TOK, TOK, with, um,
+some delim exceptions. So by default, it actually truncates on dash and underscore. And so I'll often
+set those as delimiter exceptions because I, you know, I think it's useful to have both or at least have it
+with the underscore and dash. And so I'll, um, iterate over, especially JavaScript files, like
+the main JavaScript file for, um, for the application. I'll tokenize those and then I'll
+tokenize the root a lot of times. Um, if there's any unique paths, like, you know, of course, swagger
+files and other things, and I'll tokenize those. And, um, and then I also usually call link finder and
+xnl link finder. They actually seem to behave a little bit differently to pull out, um, links from all of
+those JavaScript files, um, as well as, you know, any kind of swagger or, um, JSON file that has
+routes or paths in it. And, uh, my goal is always get the maximum amount of words before I do any
+scanning. So I'll also usually, um, fuzz or sorry, I'll usually, um, manually hack in the application
+invert and just to gather more and more JavaScript files to gather more and more data. And, um, I usually
+kind of, um, do it authenticated. Um, and I hit as many points as I can, as many API points as I can,
+as many hosts as I can. And so the goal with that, because often when you're fuzzing, you know,
+you're an unauthenticated user and those, those can have really high impact. Like if you can, you know,
+hit an authenticated API point as an unauthenticated user, that would have a lot of, uh, security impact.
+So, um, you know, besides tokenizing link finding, then I actually pull all the paths that I generated
+organically by manually browsing the app, and then I'll sprawl those. So, um, if the path is,
+you know, slash API slash V1 slash user slash me, that would stay in the list, but then it would also
+truncate each level deep. And that's, that's especially useful with like, um, a lot of sites,
+especially legacy sites will have JavaScript hosted at like a 10 deep URL, like 10 different paths.
+And so you want to make sure you're fuzzing in every one of those paths and hitting each one of
+those paths. Cause if one of them has like a directory listing, then that can give you a lot
+more data about the client, a lot more details about what's exposed. So anyways, once I've sprawled
+all of those out and tokenized all of the files that are JavaScript or are routes based, then I'll append
+that to my already custom word list that I've been developing for years. And so now you end up with
+a really great list because it's, it's my curated word list over multiple years mixed with, you know,
+a great starting list that was, that's already been online mixed with a custom list that's from this
+company mixed with organic stuff. And so anyways, when you're fuzzing with something like that,
+I mean, the odds you find nothing are very low, right? You're, you're increasing your odds of success
+by so much. Yeah. It sounds like a really long list with like all the words from JavaScript files.
+Sounds to me like that's pretty extensive. Yeah. Yeah. It can be large. A lot of times I'll just.
+Would you estimate, is it like, I don't know, 10,000, 20,000 words? No. Yeah. It's usually,
+usually between a hundred and 200,000. Yeah. Okay. So that's, that's a lot. And when you root for
+something that's that big, uh, I assume you do it on the VPS. How do you throttle it to not get blocked?
+Yeah. I mean, in general, I use, um, Axiom to spin up a fleet, but I also am very cognizant of,
+I think I'm kind of famous for having brought down some systems by fuzzing too, too, too hard and too
+quickly. I've received a few warnings at life hacking events for that. Um, so I'm trying, I try to be more
+and more cognizant of that. Um, so, you know, if the policy says stay below 10 requests per second
+or whatever, then I'll just set the concurrency or the request rate and FFU have to, to match that
+whenever I fuzz and to make sure I get it done fast enough that I actually can go through the results
+before the end of the event or such that it's not irrelevant anymore. That's why I spin up a big fleet
+of, um, of Axiom droplets. Okay. How does Axiom works work? I've never used it.
+Nice. Yeah. It just spins up dynamically a bunch of, um, tiny VMs. Well, you can, you can pick the size,
+but it's cheaper of course to, to choose the small ones. Um, and I think by default, you can only spin
+up 10 or 20, but you can request a higher limit with them. So I can spin up a hundred VMs with a few
+commands and then it distributes the word list and it distributes the host and then it, um, and then it
+combines all the results at the end and downloads them. And, um, yeah, it's really useful. I mean, you can imagine,
+you know, at scale, if you're, if you're scanning a thousand domains and you have a hundred,
+a hundred VMs, then each one only has to scan 10 domains. And, um, I also kind of set a pretty
+aggressive, I mean, I care, I care a lot about being thorough, but there are just some domains
+that are too slow. So I set pretty aggressive timeouts on FFUF both. There's two types of timeouts
+you can set. You can set like a, like a job timeout, and then you can set like, um,
+um, a tie, like a, like a timeout for that specific like run effectively. And I set both
+to make sure that it never runs infinitely. I don't like to wait more than, you know,
+a couple hours or a day for my results. Yeah. Yeah. I get it. Um, so you've been quite a
+successful bug bounty hunter and hacker, and how did you become probably the most known person in our
+industry doing AI stuff? Yeah, honestly. Um, I think that it's because of the AI art stuff.
+Um, when Dolly two dropped last June, I think, um, sometime around then that's when I started
+playing with it was last year around mayor June. Um, I've always thought that hacker profile pictures
+and hacker art is just extremely cool. And it was pretty mind blowing to me that every image I was
+generating would have been like the best hacker art or hacker profile pic I could have ever imagined
+as like a high school or a college student. Like literally every single one was so good that I would
+have used it. And it was a little overwhelming to me because it's like, well, how now, which one do I
+pick? Because these are all amazing and I have to share these with the world. And so then when mid journey
+came out and it was like kind of mind-blowingly good every once in a while, this was back whenever
+their models were not creating, you know, perfect images every time. Um, I wanted to figure out how
+to automate that so that I could, um, you know, continue to create a bunch of high quality content.
+And honestly, it felt like I was adding value to like the bug bounty and hacker community because
+people would grab those and set them as their profile pictures or people would comment and request
+something else. And so for me, I I've always been a big sharer. Like I just love sharing high quality,
+um, content like videos or blogs or articles. Anytime I read anything that I love, I share it
+with everyone in my life. Um, that's similar with food. My wife makes fun of me for forcing her to eat,
+uh, food that I think is amazing that she just doesn't really want to try. I'm like, no, you have
+to try it. You have to try it. And so, uh, so yeah, I don't know. That's how I got started with messing with AI.
+And then as soon as GPT three, five, like as soon as chat GPT dropped and I was playing with it,
+I don't know. I mean, I'm sure you have different things that you feel, um, are like innately
+specific to you. Like you still feel specifically good at them. And one thing that I've like often
+felt specifically good at is understanding the deeper and long-term implications of something.
+As soon as I see it or mess with it, like I feel like I come to the conclusions and I'm more resolved
+in my conclusions than other people. And so as soon as chat GPT came out, I mean, obviously I'm sure
+that the people working at these companies knew it was going to be pretty groundbreaking, but I just
+felt like this is 100% the future and AI in general, um, feels like something out of a sci-fi novel.
+I read a lot of fantasy and sci-fi and to be playing with something that feels like it came out of a
+movie or out of a book felt magical to me. So naturally I use it a lot and I've told a lot
+of people about it, but you know, I also was hacking on it. I really wanted to find a vulnerability on it.
+And after they grew faster than tick tock and they were like the fastest growing platform
+ever on the planet. Um, like they had more users, I think in the first week than any,
+than any application ever built by humans. Like, um, I knew I wanted to find a vulnerability on there
+because it's like, this is me messing with and helping secure something that is going to affect
+billions of people and is pushing like, like the, not me, but AI itself, you know, what open AI is
+building and what these other companies are building is really going to change how humans do
+everything. And I don't know that everyone agrees with that even still, but, um, it feels very self
+evident to me. So anyways, you know, I was hacking on it and I found how to leak all of the plugins when
+they were first rolling out the plugins and that tweet went mega viral. A shout out to Sam Curry for
+helping me write that tweet. I found that vulnerability really early in the morning.
+And, uh, at least in the U S the best time to tweet things, um, is, I don't know, maybe 9 or 10 AM
+East coast. And so I found this vulnerability at like 8 15 or 8 30 AM and I knew I needed to get the
+tweet out that morning. And so anyways, he helped me, uh, kind of word that tweet and post it in a way
+that it went super viral. Um, it was kind of hilarious because, uh, they had been planning to
+open a bug money program on bug crowd the next week. And so it launched the next week. Uh, they did,
+they did pay me retroactively a small value, but I don't think they were super pleased with me. Um,
+you know, kind of making it look like they had poor security when really these plugins were not
+anything overly sensitive, right? This is just things that they had built internally that they were
+testing or that other companies had been building. So, I mean, it might've leaked their partnerships
+with a few companies, but it wasn't anything significant. Uh, so did you get paid for it,
+even though you just wrote a tweet about it or did you first report it to them?
+No. Yeah. So, I mean, I asked them when they rolled out their bug bunny program, if they would,
+you know, potentially pay it and they said, yeah. And so then I, I just sent in a report that they paid
+it on. Um, but, oh yeah. So where we were going with this was, you know, how did I get into AI
+security? So, you know, I think that that, that, that kind of gave me some visibility around AI
+security and I followed a bunch of people on Twitter that were doing kind of AI, um,
+like kind of prompt injection style stuff and, um, just started following the scene. You know,
+I would retweet, I would re explain things. I like, I posted a blog that kind of broke down,
+um, a prompt injection leads to like email disclosure type bug. Um, and that explanation
+also went kind of semi viral. I think it helped people to really understand like at a brass tax
+level. Oh yeah. If we plug in sensitive data to these LLMs in a way where it like, without really
+thinking through all of the possible implications, then there can be some serious security impact here.
+And, um, yeah, I don't know. I'm passionate about it. And I think it just kind of oozes through the
+content that I'm creating. And, um, I had a friend, you know, Justin Gartner, um, yeah,
+Rhino Raider, you know, he was like, man, why are you not doing something with this? He's like,
+you know, let's just do it together. So that's how we started. We hack AI, um,
+and specifically targeted at hacking applications that have AI or LLM based features. Um,
+and you know, neither one of us had, have had a lot of time to devote to that, but there's been a
+lot of hacker one challenges and hacker one private programs that are coming out, um, over the last
+three to six months that have had LLM, uh, based features. And then I've also done a lot of hacking
+on, um, Google's AI features. So they had a private LLM bug swat event where they only invited like 20
+people to hack on their AI features. And, um, I brought along Ronnie and Justin was in it too,
+but, um, Lupe is Ronnie. He and I, Justin did a lot of hacking on it. Um, well, me and Ronnie did a
+lot of Defcon and we found some good vulnerabilities. And then, um, we brought, we kind of made Justin
+start hacking on it and Justin and Ronnie found some good stuff. And then we found another thing as a
+group. Um, and then when they rolled out, uh, Bard's ability to integrate with your Google workspace,
+like documents and your emails, I mean, that to me was just like, oh gosh, we're like exposing
+people's real email and real documents to an AI system. And so, uh, you know, we immediately found
+some, found some significant ways to like leak check history and, you know, document, uh, details and
+stuff via prompt injection. And so, um, yeah, so that's been reported as well.
+Yeah. To me, the, the fact when I've heard about, uh, Google giving Bart access to our Gmail and
+things like that, this is what opens the eyes for those vulnerabilities because before this,
+yeah, I knew you can do like different attacks. We'll talk about types of attacks in a second,
+but it was always, yeah, but it's probably not, there are no user data in the model. So there's
+probably no impact and like the, this thing with Bart actually like shows me not some futuristic,
+uh, vision that yeah, but in some time, every model will have user data, but it shows, yeah,
+it's here. And you know, now if, if you can make me, um, prompt something in Gmail and, and,
+you know, give you the response, it's an easy way to, to like read my email. So this is,
+this is finally an impactful one, uh, but tell me what other attacks out there because I'm not,
+I'm sure that this is not the only attack scenario that's possible.
+Yeah. I have given a talk, um, a few times. I just presented it at a security conference in Louisville
+and then, um, I also kind of gave it to the top bug bounty program managers at companies like Google
+and Meta and Intel. Um, so there's a couple of things. One is the distinction between gel breaking
+and prompt injection. Um, gel breaking is really just getting the model to tell you something it
+should not. And then, you know, I would consider prompt injection something where you're able to
+leverage input into an AI based system that has some sort of significant security impact. Like you said,
+in the past, it's hard to imagine where that impact would be, but then when you plug in tools or
+plugins, that's where the impact happens. Right. Um, and like the most, the most benign feature can
+actually have security impact. So if you think about, um, something like markdown rendering,
+like markdown has the ability to render images. And so if you can get untrusted data into the system in
+any way, like maybe, maybe it's what system that's processing error logs for a website, like century
+logs, if you, as the end user can create an error log that has a prompt injection payload that tells
+the LLM to, um, append sensitive data to a URL and then render that URL as a markdown image, then when
+that actually happens in the user's browser, it will make a request to your server with that sensitive data.
+And so even like that system where only internal staff are using this AI feature, if it's processing
+user input at all, like in this example, the user input was the century logs, then it can actually
+still have significant security impact. So the way I think about, um, about prompt injection and, you know,
+there are people in the industry who think that maybe prompt injection isn't the best terminology, but it's what
+everyone calls it now. So I'm going to keep calling it that for this conversation, but, um, there are
+effectively, um, a few ways that I think, um, security impact is going to arise through this.
+And, um, I always think about it through the CIA triad because that's really what CVSS uses. And that's kind of
+what bug hunters are trained to think about, right? It's like, does this affect the confidentiality of the users or
+the intellectual property of the system, et cetera? Does this impact the integrity of the system? Like, can I access other
+users data? Can I make it do something it shouldn't be able to do? Can I privilege escalate, et cetera? Or does it affect the
+availability? Even availability sometimes I think to bug hunters feels a little bit lame. Like, oh,
+you can bring them the system, you know, DOS sometimes feels a little bit lame, but I do think
+that it's a good metric to have because especially with large language models, they can be very, um,
+expensive to run, right? They're, they're tying up a lot of compute. And so if a company is running
+something locally, like they only have a couple GPUs locally and a single user is able to dominate that
+infinitely, then it's not going to be able to process anybody else's request. And so, and so I
+think availability is a metric here that kind of matters a little bit, but you know, in general,
+I care a lot about integrity and confidentiality. And so the way that this plays out, you were asking
+me essentially, what are the different attack scenarios? Um, we lost you all for a second there.
+Sorry, my, one of my, uh, my recording device dropped. So the quality is slightly lower,
+but hopefully you all will still enjoy the content. Um, as I was saying before, yeah. So,
+you know, the security impact really boils down to the CIA triad. Um, and I'm pretty sure I just
+described that, but, um, even if not, you know, as people who are consuming this content, you are
+familiar with security. And so as we think through the security implications of the AI stack,
+I just released a blog yesterday. Um, not sure when this will go out, but if you look at the blog,
+josephthacker.com, I talk about the AI security terminology issues. And I think this is really
+useful for bug hunters to know and hackers to know specifically, because I think it can be
+overwhelming to think through all of the implications in AI security. So I'm just going to break it down
+here real quick so I can help you all know where to focus. So, you know, I think of AI alignment is like,
+is AI going to kill us? Will some future general artificial intelligence kill us or hurt us in some
+way? And I don't know that that is something we have the skillset right now to necessarily tackle.
+I think it would be a noble goal for people to pursue that. The next thing is like, um, kind of
+like model safety. And so, um, you know, will the model say things that shouldn't be able to say
+like jail breaks, like, can you get it to tell you how to make a bomb or how to make drugs or is it
+racist? Can you test for those things? And I actually think the bug bounty, um, and like the
+pen tester mindset is actually pretty good for thinking this through because we're kind of
+naturally social engineers and that can apply. And also you can do a bit of fuzzing. So you can come
+up with some sentences or some scenarios and you can fuzz. Like I I've been recently using, uh, GPT
+three, five and GPT four to create adversarial payloads, essentially prompt, or I mean,
+jailbreaking payloads to then test on other models to see if it'll potentially work. And so I think
+the hacker mindset does apply there, but I think our sweet spot is the next one, which is what I
+would call, um, AI app security. This isn't a thing yet that I know of, but I would like to popularize
+it. And so that's part of why I wrote that, that blog post. I think that we are going to find a lot
+of vulnerabilities around AI being incorporated in traditional kind of web to, um, applications.
+So when you expose an AI or an LLM to things like, um, the ability to make API requests,
+right? The ability to make HTTP requests, you're exposing it to a bunch of traditional
+vulnerabilities that we know a lot about. Let me set this to, um, do not disturb mode. So, um,
+if you think about how a AI system might be able to make a web request, what it, what happens if you
+ask it to hit localhost, what happens if you hit it, if you tell it to hit AWS metadata,
+if there is a AI feature that allows an LLM to call, um, you know, request functionality and it's
+running inside of EC2 in Amazon, like if you hit AWS metadata, what does it do? Will it return it to you?
+A lot of these AI applications are being built by young developers who are just like hustling and
+working hard and building cool things, but they might not be the most seasoned security engineers who
+know exactly how to secure against traditional vulnerabilities like SSRF. And a lot of the apps
+that I've seen are also kind of in like a beta or alpha phase. And so they might all be sharing
+an auth token for all users. And so if you can convince the system to request data about other
+users, then it's, it'll often fetch it back for you. And so there are a lot of, um, things that we
+should check for, like the authorization, the bearer token or the cookies for the user should be passed on to
+the AI so that when it requests data for you from the system, from the API, it's only able to return
+the data that you as the user actually have access to. And so that's like a really novel concept, right?
+But it's like pretty simple. Everyone can kind of understand it and we should be implementing that
+at scale. And then as hackers, we should be testing to make sure that's the case. Um, so yeah,
+so the way I think about it is, you know, AI alignment is keep AI from killing us. AI safety is
+keep AI from saying bad things. And then AI app security is like finding traditional vulnerabilities.
+And maybe there'll be some new novel vulnerabilities as well. Um, because like, for example, markdown
+rendering was never a vulnerability in the past, right? But now markdown image rendering actually
+can be a vulnerability because it can leak user chat history, user PII, depending on the tools you
+give it, it could maybe even leak emails or documents and that sort of thing. So, um, and then the kind of the
+fourth one that I cover in the blog post is what I, what I call model security. And I think, um,
+this is also going to be important, but it's probably not the strong suit for a lot of hackers
+and pen testers, but it's, um, it is something that I think we may have unique ways to, um, pursue.
+So, um, this is like, if you think about like model poisoning. So a lot of these models are trained on
+websites like Reddit, like, um, you know, maybe even websites where the domain is dead. And so if you
+register that domain and you host, you know, not really malicious content, but just content that's
+going to help the model, if it's trained on it, do what you want it to do later. Um, then you could
+potentially, you know, poison the AI model. And then there are other things like supply chain attacks or
+even model or like, um, deployment security. So a lot of these AI systems are just open source projects,
+right? On hugging face on GitHub, et cetera. And the code that's like a wrapper around the model or that's
+running the AI model underneath will often have vulnerabilities. You may have seen there
+was some remote code execution in Langchain. So Langchain is a library that you can use to, um,
+to make coding projects that use LLMs easier. So you, in Python, you would import Langchain and then you
+would use their functions or libraries. And one of the things you could do was expose it to tools like
+a math tool, a coding tool, et cetera. And the coding tool was just calling exec on the code that the LLM wrote.
+And so if you use, if you use another plugin or tool where a prompt injection payload got into the
+system, like all you had to do was have the, um, web request feature or plugin in Langchain,
+I think they call them tools. So if you had a web request tool and the code execution tool,
+if you fetched a website that said, Hey, just execute this code on this, on the host. And you ran this
+system via Langchain, which a lot of developers are doing, right? They're just developing and hacking
+and they're doing it on their own personal laptop. The owner of that website would have had code
+execution on your machine as a result of this. And so it's like, it's a pretty, it's a pretty, um,
+high impact vulnerability. Um, and so I kind of consider that, you know, like the AI library security
+type work, which, you know, we're also, we also are, I think, um, suited well to, to look for
+vulnerabilities in that. What opportunities to get back bounties by hacking sort of AI related
+functionality are, will be here, um, soon or are there already? For example, I see, I don't know,
+let's say a language application using a chat bot that allows me to chat in a different language.
+And if this application has the bug bounty program, what potential attacks can I try on this
+application to, to have any real impact on user data? Um, so on user data, it would depend on what
+they give for context. So for a translation app, it's probably not important for it to know much
+about the user. So it's generally going to be pretty secure or safe. But if I can pivot your example just
+a little bit, imagine a chat bot where you're talking about flights. Like let's say Delta Airlines
+was to roll out a chat bot and you can say like, Hey, when's my next flight? You know, what's going on?
+You know, like, um, how can I please change my flight? If you imagine that system having broken
+off that authorization on the back, what if I could change your flight? If I can convince this AI agent
+that knows details about me and my flight and my passport, it's also going to know that about you.
+And so if the backend system doesn't have strong authorization around which user it's chatting with,
+then I could ask it what flight Greg's going to be on change. Greg's like to do this. Right. So I really
+think it depends on the application for, for simple applications like the translating one.
+The biggest issue would be, let's say that they were using a big expensive model or a proprietary
+internal model. If they didn't have any kind of rate limiting on, then you could, you know, you could hit
+their server constantly if you had a jailbreak and use it for your own services. So if you had a jailbreak,
+which would take, which would like kind of take it out of translation mode and make it answer you any
+question you had, then you could write a web app that just calls their app under the hood and use
+all of their compute for free. Yeah. So, so one thing to check for with this is, is a essentially
+kind of like rate limiting. Um, because with bigger models that are more expensive, like let's say it was
+using GPT-4 under the hood. If my wrapper app that I'm deploying and putting on Hacker News and putting
+on a Reddit and having people use is actually using all of your compute under the hood, you're going
+to rack up a massive GPT-4 bill and you're funding all of my users. And this actually did occur. Um,
+I can't disclose who, but a friend of mine, um, yeah, they know about an instance where the person,
+account was used to kind of like, I guess you could call it model theft or API usage theft for $36,000.
+Oh, wow. Yeah. That's a huge deal. Right. How can developers prevent this?
+Yeah. So I think rate limiting is actually going to be pretty huge. Um, and I would assume most
+developers are going to be doing this anyways, because like I said, it is expensive. And so you
+don't want somebody spamming it. Also, if you're running a local model or like you're renting the
+GPU space from like a cloud provider, it can be expensive to rent those. And so if you have a single
+user who can eat up all of your compute, you're going to have to need to, you're going to need to
+scale horizontally and spin up more and more GPUs. And so your cost of running your company is going
+to go up by a lot. And so by, you know, this is why, for example, chat GPT has limits for like,
+or it did for a while. It might not anymore, but it would say you only get 25 requests every three
+hours on GPT-4 and it's because compute is not free, right? These are, these are systems which are
+expensive to run right now and the models will get smaller and cheaper over time. But yeah, so as a
+developer, if you're building a benign app, like a translator thing, one, I would test the system
+and try to make it at least hard to jailbreak. If a user just says, yeah, never mind, I don't want
+to translate it, just answer whatever question I have below and it works, then you should probably
+tweak your prompt, right? You can tweak your system prompt to be a little more hardened. I don't know
+that you can prevent it completely yet. And we could get into that debate if you want. A lot of people
+don't think that prompt injection is, you know, fully solvable yet, but there are a lot of things you
+can do to make it harder for end users to jailbreak the system. And so if you do that and it becomes
+much harder to jailbreak, then less users are going to try to milk it. And then implementing
+rate limiting, as I said, and I actually think rate limiting and doing some sort of like anomaly
+detection is going to be something that works down the line for detecting people who are trying to get
+prompt injection or jailbreaks. Because I've noticed in all my hacking, I'll have like a payload that sort of
+works. Like it works like 10% of the time or 5% of the time, but that's not really good enough for
+vulnerability. And it's not good enough for me to even use that myself if I were trying to,
+if I needed a system to tell me, because like, actually this is kind of interesting when I'm
+trying to get it to generate jailbreaking payloads, sometimes it'll deny me. And so, because it doesn't
+want to like, because it thinks you're trying to jailbreak it instead of write a new jailbreak.
+And so sometimes, you know, I might need a jailbreak just to get it to do what I want it to do.
+Anyways, my whole point there is I find myself making small iterations on a prompt over and over
+and over. So if there was some sort of anomaly detection where it's like, hey, this guy sent
+a prompt that is 99% the same 500 times, he's doing something malicious. We just need to ban him
+or like severely rate limit him or block his IP address. I think things like that will definitely help.
+Mitigations for the Delta example that we brought up, you need to have, you know, really strong
+authorization on the back end, as I said earlier, where the user and the AI agent have shared auth.
+And it's never mingled.
+Yeah, those are the things that I think about from like a security perspective on from a developer's end.
+Do you think in the future, the sort of model, the input to the LLM
+system will have a clear separation of sort of the prompt and the user data? Or you think this is
+this is not possible as a way to solve the prompt injection?
+Yeah, this is an idea a lot of people have initially.
+You know, I thought the exact same thing. It turns out that these models don't have,
+at least that I know of, I know this is true for 90% of them, there may be some specialized models
+out there, but they don't have a notion of understanding the difference between
+like two types of input. So the best example I can think of, if you imagine you were the LLM,
+Greg, and you're sitting in a box and all you there's an end, there's an end slot and an out slot.
+And all you get to piece of paper in and then you have to do what it says. You have to write it down
+on a different piece of paper and slide it on the out slot. The way it works now is even if there's like
+a system prompt or a regular prompt or, you know, it's all on one piece of paper. So the piece of
+paper will say, Greg, you should never say anything bad. Also, tell me how to build a bomb. And you're
+really confused, right? Your job is to please this unknown force on the other side of the wall, or
+they're going to kill you or they won't feed you or whatever. And so you're left without knowing what
+to do. You don't know what's going to please them because it's all one sheet of paper. Now imagine,
+maybe there's some, and so this is what I think you're thinking of. And I hope that this gets
+invented. I don't know if it's even feasibly possible because I'm not an AI or an ML expert,
+but it would make a lot more sense, right? If you've got a piece of paper that came in that said,
+this sheet of paper is the real piece of paper. It's the one that is, has the real instructions.
+That other piece of paper, ignore everything it says, because it's going to try to convince you to lie.
+All you can do with the data on that paper is translate it, or all you can do with that piece of paper is
+summarize it. You can't do anything in that other piece of paper. Then another piece of paper comes
+in and now it's easy, right? It's really easy for you to distinguish between that. But the large
+language models right now, I don't think have a notion of, you know, two pieces of paper. They
+don't understand that. It's just one in, one out. And that's, that's where the complication arises.
+Yeah. Yeah. That's exactly what's, what I'm wondering. And then probably someone that actually,
+you know, developed these LLMs, maybe they can, they can think about this because without it,
+yeah, it does seem to be impossible to completely secure anything from, from the prompt injection.
+Yeah. Because even if, even if you can write a very, very strong initial prompt that, you know,
+no matter what you put below, it doesn't really work. It's like, well, there's still a context window.
+What if they put so much that it, that it kind of pushes off the top. Right. Yeah. And there are lots
+of other, um, kind of things around that. Like, even if you've tested every payload that is humanly
+possible to think of, it's like, well, there's lots that we haven't thought of, right? There's
+near infinite variations of natural language. And so you can never know, you know, 100% that it's going
+to be totally secure. I also think that this, um, is going to mean that as these systems get more and
+more popular, especially at an enterprise level, we're going to have to do some sort of like auditing or
+reviewing of what actions the LLM took. So I think we're going to have kind of like, um,
+human overseers or human auditors who like anytime sensitive actions are taking place,
+will like need to like manually review what the AI did, even if it's just a spot check,
+right? Essentially like QA, like quality assurance engineers who are, who are like looking and verifying
+like that there's not anomalies or like weird cases where it's taking actions on data it's not supposed
+to and stuff like that. I think that's going to be really important.
+I think I saw two or three days ago that Microsoft starting Bing AI bug bounty program.
+Have you heard about it? And if, if you've heard, do you know what type of bugs are they looking forward to?
+Yeah, actually that reminds me, that was your question. I mean, just a second ago, you said,
+what opportunities are there to hack on AI systems?
+Yeah. Um, and so I'll cover Microsoft here in just a second, but yeah, Google has a really great program.
+You can hack on all of their stuff. It's all submittable. It's all bountable. Um, they don't pay for jail breaks.
+I think that's going to be a pretty common theme. Most companies won't pay for jail breaks unless maybe that's their core shtick.
+It's like that they are claiming that there's this un-jailbreakable, you know, then maybe I could see a program around that.
+But I think most companies are probably not going to pay for jail breaks unless there's significant security impact.
+And even then there's probably infinite variations of the prompt.
+So what they're actually paying for is the impact part and like the, the part they need to change on the back end, not the prompt specific piece.
+So yeah, Microsoft, I think that, so when I Googled this, someone sent me the same thing you're, you're referencing and I Googled it and I found a post from like April.
+So I think they've, they've kind of like paid some things up to this point, but they released this at blue hat, I think last week.
+And it appears to me they're willing to pay for a lot more at this point.
+Um, the, as far as the vulnerabilities they pay for, it did seem a little,
+esoteric. Like it did seem a little bit, um, they articulate it in a way where it seemed to me that it was maybe a little bit confusing or not.
+The way that I would define the vulnerabilities. Like, I think they mentioned things like adversarial attacks or, um, like, you know, data poisoning, like impact on other users.
+I think that that is a key phrase that has been in Microsoft's language and in Google's language.
+And I'm sure it's not, it may or may not be an open AI's bug bounty program language, but I'm sure they definitely care about it is like impact on other users.
+Um, so, I mean, as you, as you're going into, you know, hack these things like that's the holy grail, right?
+Can you impact what the system is saying to other users?
+Can you impact other users data?
+You know, that's what you were mentioning before.
+I don't have experience hacking on Microsoft.
+I would imagine that if you're finding something cool or new in their AI stuff, they'll probably treat you pretty well.
+It's an emerging field that they care deeply about.
+Um, but, uh, as far as these other companies, yeah, Google has been, you know, pretty generous and also pretty understanding with, uh, with the nuances of hacking AI stuff.
+Um, like, you know, if you're not sure if it's a vulnerability and you're, um, but you're pretty sure, but you think you've got something, you know, they seem to be pretty receptive around that.
+Um, open AI's program on bug crowd is pretty good.
+I know again, they don't accept jail breaks, but if you find anything, you know, security related, they've been, they've treated researchers really well.
+So.
+Okay.
+Uh, coming back maybe a little bit to the regular hacking, what are your favorite use cases for AI in the regular hacking process?
+Yeah.
+So I really like having it change, get request to post request to check for C-Surf or, um, sorry,
+changing from post JSON body to post URL form encoded for checking for C-Surf.
+Um, is that's pretty nice.
+I find myself, um, yeah, honestly copying and pasting in request, um, that I need to modify in a specific way.
+Um, maybe the, the one I've saved the most time on is hacking together scripts.
+So, you know, it's pretty, pretty common that we will need to slice and dice data in unique ways.
+And so because of that, you know, many hackers have developed really strong skill sets for like said
+and awk.
+And, you know, even just within, um, them, like I will often run a, like a, a file through like JQ and cut and said like many,
+many times to output the data in a useful way.
+Yeah.
+But there's like, I don't know, maybe 20 or 30% of the time when you're wanting to do something
+that's a little weird or that you don't know the exact commands for.
+And so, you know, obviously I asked the AI, you know, what's the set command for this?
+What's that command for that?
+But in the, even in the last week, I've probably used GPT for maybe 10 times to generate a Python script
+that takes a specific.
+File on input and then manipulates it in a way on output or that change together certain tools
+or that makes requests for me.
+I feel like I even did it this morning.
+But yeah, I mean, so I think essentially just having GPT for right, simple
+Python applications is one of the best ways to use it to save a ton of time these days.
+It also is really nice for, um, answering questions about like just simple bash,
+like write some bash script that does this or what, you know, what flag do I need for this?
+How do I expand out in map cider format to IP addresses?
+Like any little small question I have that I know is going to have an instant answer
+on Google, I'll have to click through or read a few things, but on LLMs, it just replies instantly.
+I also, um, have found it really nice for coming up with good ways to explain security concepts.
+So, you know, I'm a little bit of a content creator like you.
+And I think that, um, having multiple ways to describe something or to use an analogy for something
+is really helpful.
+And so the, I think the brainstorming process is one of the strengths of large language models right
+now, um, because you know, it's has infinite creativity and it can consume your requests
+instantly.
+And so if you're trying to describe a difficult security concept, or if you're trying to expand
+out a report to make more sense or what have you, those are really useful use cases.
+So, um, developers, I think are quite commonly appreciating GitHub's Copilot, which helps them
+develop code, or I think AWS has code whisperer.
+Do you think we as, um, let's say we mostly use Berber or Kaido for as a proxy, do you think we will
+also get to a point where we use AI as often as developers do who, who simply write the code with
+Copilot?
+Yeah, I really think so.
+So I don't know how much, um, you know about Andre's company.
+Um, Andre OXACV is a pretty famous hacker.
+He's hacker one elite.
+He has a company called Ethiac.
+And I wrote, yeah, so their, their goal is to kind of, to make like, uh, AI ethical hackers that
+they release upon scope and then it finds vulnerabilities.
+And, you know, I think they target small to medium sized businesses because at larger companies,
+they're going to have the internal security teams to run tools, to do manual hacking.
+They can set up bug bounty programs.
+But, um, he and I were having a discussion the other day and I actually think that this is a
+little bit of a controversial take, but I think that AI agents are going to be able to hack at
+bug bounty hunters level.
+Um, and who knows two to 10 years.
+Right.
+And I don't think that they're going to be able to find, like, let's say right now,
+if you were an omniscient God and you knew every vulnerability that existed in a web application,
+bug bounty hunters maybe find, I don't know, let's just throw out a random number.
+Let's say we say we find 70% or 60%, right?
+There's probably tons under the surface that we don't know about.
+And so, um, when you hire somebody to do a pen test, they're not going to find that full 60% that,
+uh, that a bug bounty hunter might find.
+Maybe they will, but lots of pen testers are lower quality than bug hunters, right?
+And there's low quality bug hunters too.
+And so you're kind of like, you're just increasing your security a little bit.
+You don't know if you're going to find 10% of the total bugs or 60%, but you're going to find some
+amount in there.
+And I think the top level hackers can find, let's say 70% of existing bugs in the system.
+Um, and then, uh, right now, let's say you gave all the automated tools,
+that exist like nuclei, Nessus, all of these things, the ability to hack on that app.
+And you just ran those, let's say they would find 5%.
+I think when you first instantiate AI agent hackers, they might be able to find 6%, 7%, 8%, right?
+But as the models get better, as the tooling gets better, as the code wrap around, it gets better.
+That number is going to go up.
+It's going to be 10.
+It's going to be 15.
+It's going to be 20.
+And I would rather have somebody in the bug bounty community, somebody in the ethical hacking
+space building this than some, you know, nefarious person building it.
+So I think it's important to pursue, even if, you know, I think it's, it's natural to want to
+defend your own turf, defend your own territory, to think what you're doing is novel and that it
+can't be automated.
+But you know what I've noticed, Greg, whenever I talk with top level hackers, when I'm sitting
+with them at live events and we're looking at a potential finding, all of our brains are
+going to the same place.
+Like one of us will say, try that.
+And guess what?
+The other three were thinking the exact same thing.
+They'll be like, yeah, yeah, yeah.
+I was just thinking that.
+And the other one will be like, now try this.
+Oh yeah, I was thinking that same thing.
+So what does that tell me?
+That tells me that there is actually a methodology here, right?
+There's actually clues in the request or in the response that our brains are picking up on.
+Right?
+And so you need to, all we have to do to get an AI agent to really be able to do it is to know
+all of those clues, to know all of that context.
+So maybe the implementation is a massive prompt, you know, with GPT for 32K, that's pretty big.
+With Claude, you get a hundred K context window.
+You can put a lot of context in there.
+Imagine if there was examples of SRF, like you've done a lot of really great breakdowns
+of these vulnerabilities, right?
+Imagine if your analysis of those vulnerabilities and the actual payloads and the example reports
+was all in the context, right?
+And then imagine you have somebody who's a really top hacker.
+Like let's say Justin Gardner, who does a monologue for five minutes on or 10 minutes on like what he
+looks for that really indicate a potential or a potential clue that there might be SSRF, right?
+Now you build in those clues.
+You build in those examples.
+You build in those reports, right?
+And now you have what I could call an SSRF AI agent.
+It doesn't look for other vulnerabilities.
+It looks for SSRF, right?
+You hand the request to that agent.
+Now it tries some things, try some other things.
+It like you give it like, Hey, if, if, if when you hit the, you know, the route and you get a four,
+you get a 400 or 404, then when you, you know, when you traverse, you get a different request.
+Then when you use collaborator and it gets a hit, then you get a different request.
+Then, you know, you can obfuscate it in these 40 different ways.
+And so it tries all of these things.
+Now it's going to have initially, I think what it'll create are some leads.
+Eventually though, I think it'll have like real findings.
+And so if you can build that type of agent for like every type of vulnerability, I think that
+this is really automatable.
+And I think a lot of people in our industry don't think it is.
+And so I'm excited about people who pursue this sort of thing.
+I think everyone should be kind of building this and trying to play with it.
+And so, yes, to, to, to come all the way back full circle to your question.
+I do think there will be a day when, you know, AI agents do all the hacking.
+I think that's really far in the future, but what I think isn't going to bridge the gap
+is exactly what you're talking about.
+A co-pilot hacker in Kaido, in Burp.
+And it kind of begs the question about whether Kaido and Burp are the best thing.
+I think they probably are, especially in the short term.
+But I wonder if in the longer term, there is some sort of way to have like a command line
+interface type thing where it's like, I'm finding like, you know, like the LLM is talking to you
+and it's presenting it in like a neat way.
+Like it's got some requests, it's got some boxes, maybe it's a UI.
+It's like, you know, which one do you want me to look at?
+I was trying this, but this didn't work.
+Now this work.
+It's almost like, yeah, I think the LLM is going to need human input for a while.
+And then we can even use that as training day to improve it over time.
+Because like, imagine the LLM ask you like, Hey, Greg, when I hit, when I hit this
+and when I got 404 and this one's 400, do you think that's a false positive or should I keep
+looking at it?
+And then you're like, no, yeah, that, that does actually seem like a bug.
+Try this and this and then check back with me and let me know what happened.
+And now that AI agent runs off.
+Right.
+And the best thing about the AI agents is that they, you could, they can scale infinitely.
+Right.
+So right now a new program launches on hacker one, it might get 20, 30, a hundred hackers
+on it.
+Imagine if you just throw 2000 AI agents at it, right?
+Even if they're lower quality, the, the fact that they can put in infinite time, which we
+can't do.
+And the fact that they can scale horizontally means that they're going to have a massive
+competitive advantage as well.
+So anyways, I don't know if that, if that brings anything to your mind or if that's insightful
+or if that's like something you've already thought of.
+That's crazy.
+Even because what you mentioned doesn't look like something very far away from us.
+It looks like, you know, as you showed the, the, the agent to find one vulnerability class,
+it sounds like something that will be here in months, maybe in a few years.
+And, uh, we should we, to anyone that's maybe scared of it, scared that it will take our job.
+We just have to adjust to it.
+We have to learn to use it properly.
+And maybe in the future we will have to sort of maybe pivot to another role or something else, but
+definitely it won't happen overnight.
+It won't overnight, you know, companies won't start, uh, laying off pentesters.
+There's just, we have to get used to using the AI and sort of, I'm not, not scared at all.
+I'm pretty sure that even, you know, the content creation side of things, I think this, this is
+even easier to automate than hacking, but I'm not at all scared because like, I know that smart people
+will find a way to, to make it work.
+And at first, like now we are just speeding up, uh, things that we can do because of using AI.
+Maybe in the future we will automate even more and we'll get to a point that everything is automated.
+Probably not.
+Maybe a lot of it will be automated, but probably not, not everything.
+And just things will change and we have to stay on, on top of it.
+Yeah.
+I think that we're not going to change what's going to happen by being ignorant to it, right?
+Like if it's going to get automated, somebody is going to do it, whether it's Google, whether
+it's Amazon, whether it's Microsoft, whether it's Andre, somebody is going to do it.
+And so being scared of it is, uh, I think a little counterproductive.
+Like you said, one, it's probably going to take a long time.
+Even if the proof of concepts are out in six months, it's going to take 10 years before
+it actually gets sold and applied and scaled.
+Um, and like you said, I think hackers actually have one of the best, um, competitive advantage
+when it comes to this, because we are looking for efficiency.
+We're looking for exploits.
+We're looking for, um, we're able to find, I think the unique components that are especially
+important in systems.
+And that skillset is applicable to way more than just hacking web apps.
+But in general, I think, yeah, just learning to use these kinds of tools, learning to hack on
+AI, like, yeah, even if we're not finding traditional volumes, like finding prompt injection
+and finding these things are also going to be really useful.
+So yeah, I, I, I would not want people to worry about it.
+I think that they should still push into it.
+We need people doing security for a long, long time.
+So yeah.
+And what, what are the things you think in, inside of, of hacking, uh, skillset, let's
+say that will be the hardest for AI to replace us at like, what, what skills should we invest
+in to be replaced later?
+Let's say.
+Um, yeah.
+So, I mean, one thing that jumped out to me when I was describing the SSRF example is the
+nuance that it does often require a second tool.
+So XSS, you know, it's like, if you put it in the input and then it
+appears on the output, it's like, well, it's pretty simple.
+Um, like if it's not sanitized in the response, then you know, it's going to pop.
+But that's not as, as true for XSS.
+That is time delayed.
+Like if it's an admin panel and it comes later, so blind XSS, or if it's in like, uh,
+like if it requires the website to be rendered.
+Um, so like, you know, XSS that's required it like would not fire normally and you have to
+like test it with a headless browser or something.
+So yeah, I think vulnerabilities that are one more complex that are more deep.
+I think vulnerabilities that require multiple steps or actions or require secondary tools or
+secondary contexts, um, are going to be a lot harder for the ad to find initially, right?
+Like IDORs are going to be very easy to find because I can already imagine a prompt that's like,
+Hey, keep an eye on these requests and I'm going to log in as two users.
+And so when you see two identical requests, but with different IDs, I want you to swap them and
+let me know if one of the, if they, if it returns data for the other user, like I can, I just
+articulated that prompt in 10 seconds.
+Right.
+And so those sorts of things I think are, if you want to be resilient, don't stick to like
+just IDORs.
+Like I think go deeper, look for things like blind XSS, things like X, X, X, X, X, E.
+Think about things like, um, SSRF, because even, I mean, I guess it's pretty simple to
+spin up interact.shell or collaborator.
+So maybe that's also like, you know, slightly lower hanging fruit compared to like XSS or IDOR.
+Um, but in general, yeah, the more complicated vulnerabilities, I would also say just like,
+um, increase your efficiency overall, like your ability to, um, write code, write scripts,
+do content creation.
+Like all of these things really add up to, um, skill sets.
+They're going to be really necessary to have at companies because, um, things like education
+are never going to go away.
+Like the ability to articulate and teach your teammates or to explain vulnerabilities to
+C-level executives and like a really well, um, like a well understood way are always going to be
+important.
+And so, yeah, I would just say continue to improve yourself, continue to stay on top of the
+industry, continue to do what you love.
+I mean, I think humans have always, uh, created better and better things, but we've always created,
+um, more and more efficiency.
+We've always automated away more and more.
+And I think we're still on a path towards improvement and like, it still makes the world better.
+So I think even if we were to automate more of this, I mean, what's the outcome?
+There's more security.
+Like things are more secure.
+It's like, that just feels like a net good for humanity and not something that we should necessarily
+worry about.
+Yeah.
+And sort of, uh, the industry developed anyway, like 20 years ago, I wasn't into security or,
+or anything for that matter, because I was five years old, but we can hear from, from other people
+that back then CSRF, not a thing XSS, nobody cares about because then you had a shell, you had SQL
+injection, you had bugs like this.
+And now we improved and now XSS is a proper vulnerability reward, sometimes thousands of dollars.
+So the fact that the industry is more secure in general does, does just, just means that sort of our
+standards changes.
+
+And so, and probably with the backbone industry, probably just payouts will be, will be a bit
+different, but it doesn't probably mean that we will all make less money.
+I don't think is the case.
+Yeah.
+And also I think there's always going to be new attacks.
+Like if you think about, um, you think about like, uh, these new like prompt injection via image,
+or you think about AI being incorporated into cars, or you think about being in the metaverse,
+like with the things that, um, Dolly three or not Dolly three, but, um, Oculus three, like the new
+Oculus, that's going to be coming out from meta, like new tech introduces new vulnerabilities.
+And so there's going to be new vulnerability classes that we need to look for that the AI
+doesn't comprehend yet because it is, you know, the AI agents that we build are going to be on the
+vulnerabilities we know about, but there's going to be new technology that has new vulnerabilities
+and new ways to attack it.
+And as you said, maybe it just lowers our threshold for what we, or raises our threshold for what we
+think is severe, right?
+Now we think CSRF is severe or XSS severe, whereas before we didn't.
+So, uh, the problem I sometimes have with AI is it did, I assume it did study all the reports that
+were at the training time in the internet.
+So we should have quite, okay, maybe not, but, but I assume that it did.
+And I assumed it's it does have quite an advanced level of knowledge.
+Yet when I use it, I find it extremely useful for, for stuff that you said before, for writing basic
+Python scripts for, for starting something new where I knew nothing about, or I had no script.
+Now I started the prompt and now I have a script.
+I need to tweak it probably, but it's good.
+Or this week, uh, I just
+gave it a policy of the image magic because I, I, first time I saw it and it explained it well,
+because I knew nothing about the image magic policy.
+But I think when we get to a bit more advanced level, I struggle to get better answers.
+I feel like it's still quite at the beginner level.
+And if let's continue this example, if I saw some image magic policy before, and I knew basic concepts
+of what it means, I don't think it would give me anything new if I, if I gave it a good policy.
+So if I were on the intermediate level, I struggle to get chat GPT to, to give me a
+advanced level answer. And I assume that it's because my prompts are not good enough.
+And if you think that, that maybe not, then tell me, but how can we improve writing our prompts to
+also get a bit more advanced answers?
+Yeah, I think we're going to see people really improving in the prompt writing space.
+I've already had people ask me this kind of question, you know, how can I improve on my
+prompt writing? I do think it makes a really big difference on the quality of your output.
+A couple of things I would say, one is, can you give it more context? So if you wanted to, like,
+let's say you're an intermediate or an advanced level image magic user, if you gave it a, like your best
+image magic policy you've ever written as context, and then you're thinking about ways to improve it,
+it would almost definitely give you ideas on how to improve it.
+Because it's working off your already high quality input. Essentially, yeah, like what you're trying to
+do when you're prompting is increase the value of the input by making it be more accurate towards what
+you want. And it doesn't understand the context of what you're working on. It doesn't understand the
+context of like what you're thinking. And so as much as you can articulate it, you need to. And so,
+yeah, I would say one thing is seeding good examples. Two, your prompts are probably sometimes
+more ambiguous than you think because you're drawing assumptions about what you want. And it
+doesn't know those assumptions. So like, I think as prompt writers, we'll probably over time learn to
+be more explicit and to talk to it in ways that understand. So one thing is like the delineation
+between tokens. So one thing that I do is like, I always have like all caps colon for different
+sections. So like task, task in all caps, colon, and I'll give it a task rules, you know, all caps,
+colon, and then kind of list out the rules, et cetera. And, you know, you always want to do
+kind of few shot where you give it a few examples of input and output that you want. If you're
+building something for more like production level or something that you're going to like reuse over
+and over, like you're putting it in a script or you're putting in like a bash alias because you
+plan to keep reusing it. Then, you know, you can also play with temperature. You can play with
+presence penalty, which determines, you know, how likely it is to repeat the same tokens. So these sort of
+things are things that I would recommend people playing with. Hrishi has a really good prompt
+injection thing. Maybe you can put it in the show notes. I'll send it to you after this. It's H-R-I-S-H-I.
+If you Google Hrishi prompt guide, you'll find that online. It's really high quality. One thing he
+mentions that I had maybe done once or twice, but that I've been doing a lot more now is seeding the
+AI. Like a lot of these AIs in their API, you can give it previous conversation context. You can make up
+what the AI said back to you, which is great because you can give it an example of what you want it to
+say. So you can like, um, you can give it your big prompt. Then you can give it an exam, like a good
+response, a good example response that you would want it to say to you as one of its responses. And
+then you say, okay, now do it again. And then you give it another really good high quality one you want.
+Now you say, okay, do it again. And then you just actually pass that to the LLM. And so now it's really
+going to have very high quality because you've already shown it speaking out of its own mouth,
+what you actually want. Interesting. Um, any other resources about learning, writing prompts
+that we would maybe like to share with our audience? The only other one that comes to mind is there's
+like a Claude, I think their company's name is what? Anthropic. Anthropic put out a really good prompting guide
+as well. I would say if you, if you consume Rishi's and the Claude one and, um, apply those,
+uh, that you'll be in a much better spot. Awesome. And how about learning AI for people
+that would like to not only write prompts to, to maybe speed up or make our hacking more productive,
+but would get to get more into it, more into jailbreaking prompt injection. What are the resources
+for them? So I had somebody asked me this recently and I don't know. I mean, the majority of my learning
+from that comes from following the right people on Twitter. So maybe, maybe that's the answer.
+Um, there's people like Kai Greshake. Um, there's a guy named Johan. I think his handle is like
+wonder was he Simon Willison is probably the best known in this space to be talking about AI security.
+His, um, his website is simonwillison.net. If you Google Simon W AI, he'll, he'll probably come up.
+So I follow these people and they follow more people. And so often if they, you know, if any of these people
+see something good, they all retweet it, they all share it. Um, there's a lot of really good papers,
+like articles. One of the best papers that I thought was really fascinating is called, um,
+universal and transferable adversarial prompt injection or something like that.
+It's the one you probably saw. It's at the website is llm-attacks.org. I think. And it shows an example.
+They, they came up with a jailbreak that is just an appended string to a prompt. And then that would make
+every model. It was like the, it was universal and transferable. So universal means it'll work
+for any request. Transferable means it will work for multiple models. And so I think that's kind
+of like the Holy grail for a jailbreak is that it's universal and transferable. Um, yeah. So a lot
+of the stuff that I'm reading that is, you know, helping me comes from all those people I mentioned,
+and it's often white papers, um, or, you know, research, but, uh, the space is still the wild west.
+And I think that should be encouraging. I mean, uh, if you'll let me indulge myself and try to convince
+the users to dive into this, uh, how much in retrospect would you have paid to have dove into
+security, like in the early two thousands, like in 2008, 2007, I mean, even knowing XSS at that point,
+you could have done whatever you wanted on the internet. Right. And I'm not advocating for that
+bad behavior, but then like, if you had leveled up and known about that going into the birth of bug
+bounty, you could have made, you know, way more money. You could have been really successful.
+You could have secured way more stuff. And I think we have that opportunity. It's a birthing industry.
+It's new. You know, I would just say, get involved, help us secure the most, um, you know,
+one of the biggest breakthroughs for humanity ever. Um, yeah, I think it's cool.
+Yeah. Yeah. And it's developing very quickly. Uh, by the way, what are some recent new features?
+Cause I feel there was a big hype like at the, in the beginning of the year and recently it's sort
+of slowed down a little bit, but what are some, some new features in, in the AI industry or in
+the chat GPT more specifically? Uh, yeah. So I don't know, I'm in like the alpha program, um,
+for open AI. And so I don't really know what of this is, um, you know, exposed to everyone yet,
+but I mean, things like Dolly three are amazing. Um, especially if you're creating content,
+like you can now get the text title of your blog post or of your newsletter or whatever you want
+to put out on the image in a very high quality, cohesive way for free. Like even if you don't
+pay for chat GPT on windows, uh, I think it's called like windows copilot or something, or maybe it's just
+being built into windows. You can, you can get Dolly three images. And then, you know, if you pay for
+chat GPT, you can obviously get access to GPT four and, um, Dolly three, if not now, then very
+soon. I know it's opened up to most users now, I think. Um, and then I think GPT four with vision,
+I'm sure most people have seen this again. I don't think it's rolled out to everyone yet,
+but it can process images and that's just going to be a game changer, completely groundbreaking for
+companies to be able to do like near perfect OCR and near perfect, um, processing of images.
+Like I can imagine a world where you just write a really nice prompt. It's like,
+Hey, tag everything in this image and we're like, you know, tag it. What I mean is identify every
+object in this image and return it, return it in a JSON blob. And so I think that's going to
+revolutionize so many industries where right now it requires manual humans to, you know, categorize
+things or solve those sorts of things. As those models get smaller and smaller and faster and faster,
+I could also imagine it would really transform the way that robots navigate the world.
+Like, um, you know, if you, you know, little home robots that map your house out and that sort of
+thing, imagine if they had the power of GPT four vision to know where things were, where to go,
+what to do. Like if you have a robot in your house, there's a kind of a famous, uh, Turing test,
+uh, that is, you know, the Turing test is always evolving because humans keep breaking through what
+we think is possible. There's a funny Turing test that's called the make coffee test. It's like,
+if you put a robot in a room or like in a kitchen and it can make coffee, then it's human or something,
+you know, or that's conscious or whatever. Like that's, that's the Turing test. And it's actually
+a hard problem, right? Because it needs to find out one, what machine do I use? If there's no machine,
+I guess I have to bullet on the stove. Then it has to assemble all the parts and ingredients.
+It requires, you know, it's kind of a difficult problem to solve, but I actually think assuming that
+robotics aside, assuming you had GPT four, I think it could solve this because you could just take a
+picture of the, of the kitchen, put it in GPT four and say, Hey, this is the kitchen. How do I make
+coffee? And it would say like, okay, well let's check the cabinets, go check that cabinet, that
+cabinet, that cabinet, right? Then you do it. And then it says, okay, this is what I found. Now,
+what do I do next? And it would tell you, oh, that's coffee, uh, ground or that's coffee beans.
+You need to grind it. Let's find the grinder. Okay. Where do I look? Okay. Go look in the cabinet.
+You know, I GPT four, I think could really guide you step-by-step with image exactly where to go and what to do
+and how to do it. So I think GPT four, so I think these vision based multimodal models is really going to, uh,
+transform a lot. I'm sure actually, I think it's even been mentioned. I think Sam ultimately mentioned the GPT five
+is in the works, not coming, not coming soon, but I mean, I'm sure it'll be out in the next, you know, six months
+or a year. So I think that's really going to change things. Um, yeah, I don't know. Honestly, I think if AI didn't
+evolve at all, we would not be able to fully grasp what could actually be done with GPT four for like
+another year or two, because there are so many people who are building around it, building on top
+of it. It takes humans time to come up with ideas, then to implement them and then to scale them and
+then refine them and find product market fit. Um, I think that we're going to, you know, see lots of
+amazing things be released in the next six months. Yeah. We'll be soon, uh, getting down to the end of
+the, of the amazing interview, but for now, tell me you are a parent of how many kids?
+Three. Three. How on earth do you still find time for the full-time job and for the development in the AI for being
+sort of a pioneer and also for blogging? How do you find time for all of that? Yeah. Squeezing it in, man.
+Anytime you can. Um, no. Yeah. And also I, you know, I definitely do that without, um,
+without kind of neglecting parental responsibilities. I, I adore my kids. I love them
+when they're awake and home from school. I, you know, spending time with them very seldom do I,
+do I hack or, or code or anything while the, while they're at home and awake. But a lot of it is,
+you know, during the evenings, my wife sometimes go to bed, goes to bed early and I'll neglect my sleep
+to keep hacking. Um, or a lot of it is, you know, on weekends or on my lunch break or what have you.
+So I just kind of squeeze it in whenever I can.
+Okay. Uh, what are you looking forward to achieve in the rest of this year?
+Oh man. Good question. Well, I would love to, um, you know, find some more good bugs from a bug bounty
+perspective. Um, I would love to put out more content around how to hack AI and LLM applications,
+like application security, uh, to be clear, like AI app sec. Um, I do think that I have a piece coming
+out, um, on bug crowds and around that, but, um, what else? Yeah. I don't know. Keep adding content.
+I'm, I'm a big fan of Alex or Mosey. I don't know if you know him, but he does a lot of business
+and content output. And, um, you know, I think one thing that he did not say initially, but has
+began saying over the last six months is that he realized he came to the conclusion that it's like,
+um, all of the massive companies, all of the massive, um,
+breakthroughs, all of like the biggest brands in the world are companies and organizations that have done
+uh, one thing pretty well for a really long time. And so if you think about Louis Vuitton or Coca-Cola
+or McDonald's, it's like they honed their craft and then they just stuck with it for a long time.
+And so I would just say that that's my goal, right? It's like keep hacking and keep doing it well for a
+long time, keep making good content and keep doing it well for a long time. Right. I think you just
+improve your ability to do those things and you continue to, um, get known for doing those things.
+And so, yeah, that's the goal for this year is keep doing the same stuff.
+Awesome. Awesome. I wish you good luck. Uh, where can people go to, to follow you for,
+follow your blog and all your content? Yeah. So I'm on josephthacker.com. It was formerly rezo.blog.
+Um, did you actually pay the $2,000 for the domain? I paid $700 for it. Yeah. Okay. Yeah. The,
+that story is kind of crazy. I'll summarize it shortly, but I bought josephthacker.com in college.
+And then, you know, as a broke college student, let it lapse at some point and a domain
+squatter got on it and was asking 3000 and then eventually they came down to 2000. And so I just
+gave up on it for years and then, uh, maybe a year and a half ago or something, I, I decided to, uh,
+pursue it again. And I think they were tired of setting on it for so long. So they let it go for
+$700. Um, my wife was not super thrilled about me spending that on it, but, um, yeah, I think it's
+really important to kind of, um, you know, have a single place where you can share everything you
+love, whether it's about your kids or about, you know, I've posted blog posts about parenting. And
+I think that, you know, humans are always, uh, drawn to authenticity and, and that authenticity shines
+through when you're talking about all the things that you love and that you, you know, enjoy doing
+and share that with the world. So, yeah. So I would say josephthacker.com and then I'm on Reza or on
+Twitter or X or whatever as Reza or EZ zero underscore underscore. Those are the two good
+places to find me. Yeah. And I think authenticity is one of the few things that will never be replaced
+by AI. So on this, on the positive notes, at least that we will never be replaced by AI. Thank you so
+much, Joseph for the amazing interview. Yeah. Thank you so much, Greg. What a fantastic interview full of
+things to act on immediately. If you are hungry for more interviews, I recommend you this one with
+Nahamsek about succeeding in bag penalty.

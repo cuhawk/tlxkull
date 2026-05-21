@@ -1,0 +1,343 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.180 --> 00:00:07.860
+Hello! The Web3 bug I will show you today is&nbsp;
+absolutely insane! Almost like I could tell you&nbsp;&nbsp;
+
+00:00:07.860 --> 00:00:14.100
+to give me some money and it would be directly&nbsp;
+transferred from your wallet to mine. That's&nbsp;&nbsp;
+
+00:00:14.100 --> 00:00:22.740
+why the bounty for it was the equivalent of $1&nbsp;
+mln. And we'll have the bug explained to us by&nbsp;&nbsp;
+
+00:00:22.740 --> 00:00:30.360
+someone with way better Web3 skills than I - lead&nbsp;
+offensive security engineer from Halborn - Michał&nbsp;&nbsp;
+
+00:00:30.360 --> 00:00:39.060
+Bajor. Enjoy! Hello Michał, thank you so much&nbsp;
+for joining me to explain the bug. The bug&nbsp;&nbsp;
+
+00:00:39.060 --> 00:00:44.940
+was in the process of exchanging the tokens.&nbsp;
+Different kinds of tokens. Could you talk us&nbsp;&nbsp;
+
+00:00:44.940 --> 00:00:53.160
+through what tokens were they? Sure, hi Greg,&nbsp;
+thanks for having me. Well, basically you have&nbsp;&nbsp;
+
+00:00:53.700 --> 00:01:02.280
+Near-specific tokens which are are called NEP-141&nbsp;
+compatibles and then you have ERC20 tokens which&nbsp;&nbsp;
+
+00:01:02.280 --> 00:01:08.940
+exist in the Aurora blockchain that implements&nbsp;
+basically an Ethereum-like network. And you have&nbsp;&nbsp;
+
+00:01:08.940 --> 00:01:15.300
+a token on the Near side and you want to transfer&nbsp;
+it to the Aurora. There is a process for this and&nbsp;&nbsp;
+
+00:01:15.300 --> 00:01:21.420
+the vulnerability we'll be talking about is was&nbsp;
+found exactly in this process. So could you show&nbsp;&nbsp;
+
+00:01:21.420 --> 00:01:26.580
+us the code? How did it look like normally,&nbsp;
+without messing up things yet? Absolutely!&nbsp;&nbsp;
+
+00:01:29.340 --> 00:01:35.040
+NEP-141 tokens on the Near side are specific&nbsp;
+because they contain an ft_transfer_call&nbsp;&nbsp;
+
+00:01:35.040 --> 00:01:43.320
+function which performs a similar thing as an&nbsp;
+ERC20 approval but with one transaction. It&nbsp;&nbsp;
+
+00:01:43.320 --> 00:01:48.240
+essentially means that you are transferring&nbsp;
+some tokens and with this transfer, you want&nbsp;&nbsp;
+
+00:01:48.240 --> 00:01:55.200
+to call some function in some other contract.&nbsp;
+In this case, you would use this function the&nbsp;&nbsp;
+
+00:01:55.200 --> 00:02:01.740
+ft_transfer_call on a token that you want to&nbsp;
+send to the Aurora. And specify that it should,&nbsp;&nbsp;
+
+00:02:01.740 --> 00:02:10.380
+that this token should call Aurora contract in&nbsp;
+the process. And this is standardized and in this&nbsp;&nbsp;
+
+00:02:10.380 --> 00:02:18.960
+case, the ft_on_transfer function will actually be&nbsp;
+called which is the case here. And well basically,&nbsp;&nbsp;
+
+00:02:18.960 --> 00:02:26.280
+there are arguments provided to this this call one&nbsp;
+of it is a message. That will be very important&nbsp;&nbsp;
+
+00:02:26.280 --> 00:02:36.720
+soon but if everything goes smoothly, then you&nbsp;
+go into the receive erc20 tokens in the Aurora&nbsp;&nbsp;
+
+00:02:36.720 --> 00:02:45.240
+contract. And this function looks like this. You&nbsp;
+basically parse this message that you have here&nbsp;&nbsp;
+
+00:02:45.240 --> 00:02:50.040
+but let me show you the vulnerable code actually,&nbsp;
+and not the one that that contains the fixes.
+
+00:02:52.500 --> 00:03:01.080
+There are ERC-20 tokens. It parses this message&nbsp;
+that's contained within the arguments because this&nbsp;&nbsp;
+
+00:03:01.080 --> 00:03:05.820
+message contains information about the recipient&nbsp;
+address and this is the address of the recipient&nbsp;&nbsp;
+
+00:03:05.820 --> 00:03:13.080
+on the Aurora Network and information about&nbsp;
+any fee that this person needs to pay for&nbsp;&nbsp;
+
+00:03:13.080 --> 00:03:20.760
+this transaction. And this fee might of course be&nbsp;
+zero. You parse it and then you check. Basically,&nbsp;&nbsp;
+
+00:03:20.760 --> 00:03:28.380
+the first 40 characters are related&nbsp;
+to the recipient and if there is something after&nbsp;&nbsp;
+
+00:03:28.380 --> 00:03:37.620
+those characters, then this will be considered as&nbsp;
+a fee that must be paid. If this fee is not zero,&nbsp;
+
+00:03:39.300 --> 00:03:44.340
+in this case, you basically... Is this fee&nbsp;
+the same when I do a transaction via Metamask,&nbsp;&nbsp;
+
+00:03:44.340 --> 00:03:49.560
+there is a pop-up about a fee of the transaction.&nbsp;
+Is this fee the same or does is this something&nbsp;&nbsp;
+
+00:03:49.560 --> 00:03:55.500
+different? This is not the same fee although they&nbsp;
+are related. The fee you're talking about is just&nbsp;&nbsp;
+
+00:03:55.500 --> 00:04:00.180
+the fee associated with sending a transaction&nbsp;
+and you still need to pay this fee here. But&nbsp;&nbsp;
+
+00:04:00.180 --> 00:04:09.420
+you will be paying for in the Near side, not in&nbsp;
+the Aurora. And this fee was designed by Aurora&nbsp;&nbsp;
+
+00:04:09.420 --> 00:04:19.380
+team for the cases where users would like to send&nbsp;
+tokens from the Rainbow Bridge to the Aurora and&nbsp;&nbsp;
+
+00:04:19.380 --> 00:04:27.120
+they wouldn't have the Near tokens, sorry, Near&nbsp;
+account ID. Like they wouldn't basically be using&nbsp;&nbsp;
+
+00:04:27.120 --> 00:04:31.920
+Near blockchain. They just would like to use the&nbsp;
+Aurora chain. However, it was actually never used&nbsp;&nbsp;
+
+00:04:31.920 --> 00:04:39.060
+like this. Aurora relayer is you sending those&nbsp;
+transactions to Aurora so users don't actually&nbsp;&nbsp;
+
+00:04:39.060 --> 00:04:45.960
+need to need to pay for them. However, in&nbsp;
+general that's the fee for for those cases&nbsp;&nbsp;
+
+00:04:47.280 --> 00:04:52.620
+because they they wouldn't be able to pay&nbsp;
+the Near transaction fee because they don't&nbsp;&nbsp;
+
+00:04:52.620 --> 00:05:00.420
+use Near so maybe they should pay some fee on the&nbsp;
+Aurora side in the Ether that's already on the Aurora.&nbsp;&nbsp;
+
+00:05:01.980 --> 00:05:09.000
+So if I would be sending some tokens to you&nbsp;
+then I decide what fee you should pay, right?&nbsp;&nbsp;
+
+00:05:10.440 --> 00:05:15.360
+Yes and this is the core of the of the&nbsp;
+vulnerability here because as you can see here,&nbsp;&nbsp;
+
+00:05:15.360 --> 00:05:20.880
+both the recipient and the fee are encoded in the&nbsp;
+message and the message is one of the arguments&nbsp;&nbsp;
+
+00:05:21.420 --> 00:05:26.280
+provided within the transaction. This is fully in&nbsp;
+the control of whoever is sending the transaction&nbsp;&nbsp;
+
+00:05:26.280 --> 00:05:32.100
+which means that it's fully in control of the&nbsp;
+attacker. So attacker chooses who will receive&nbsp;&nbsp;
+
+00:05:32.100 --> 00:05:39.000
+the tokens and how much fee that person will&nbsp;
+need to pay. So you can basically just make it&nbsp;&nbsp;
+
+00:05:41.160 --> 00:05:49.260
+a highest value possible and still Ether from that&nbsp;
+person, although there are some limitations to it.&nbsp;&nbsp;
+
+00:05:50.280 --> 00:05:56.280
+What are the limitations? Could I steal all your&nbsp;
+money? Yes, you could you can but not in a single&nbsp;&nbsp;
+
+00:05:56.280 --> 00:06:01.260
+transaction. In the single transaction,&nbsp;
+you actually are limited to the 18.4 Ether&nbsp;&nbsp;
+
+00:06:01.260 --> 00:06:10.440
+transfer. And that's because although the fee is&nbsp;
+parsed from the message that's 64 characters long&nbsp;&nbsp;
+
+00:06:11.040 --> 00:06:20.520
+and it's parsed into the uint256 type then within&nbsp;
+the transfer, it's actually casted as an unsigned&nbsp;&nbsp;
+
+00:06:20.520 --> 00:06:29.340
+integer of 64 bits length which is way smaller.&nbsp;
+And if you would provide something that doesn't&nbsp;&nbsp;
+
+00:06:29.340 --> 00:06:35.280
+fit into this 64 bits, then it would basically...&nbsp;
+The rust will panic and the whole transaction&nbsp;&nbsp;
+
+00:06:35.280 --> 00:06:41.040
+would fail so we would just need to provide um a&nbsp;
+smaller number. But then you can just execute the&nbsp;&nbsp;
+
+00:06:41.040 --> 00:06:47.700
+attack multiple times and still drain the funds&nbsp;
+of your target. And considering that apart from&nbsp;&nbsp;
+
+00:06:47.700 --> 00:06:55.680
+getting the fee, I have to send you something,&nbsp;
+how much value have to be the tokens that I&nbsp;&nbsp;
+
+00:06:55.680 --> 00:07:04.740
+send to you? Absolutely nothing! You can...&nbsp;
+That's the very interesting part because this&nbsp;&nbsp;
+
+00:07:04.740 --> 00:07:12.060
+Aurora is permissionless and it is very easy to&nbsp;
+create your own tokens in the Aurora and create&nbsp;&nbsp;
+
+00:07:12.060 --> 00:07:18.300
+the mapping between them - between the token&nbsp;
+on the Near site and the token on the in the&nbsp;&nbsp;
+
+00:07:18.300 --> 00:07:26.040
+Aurora. Anyone can do it without any additional&nbsp;
+authorization. So imagine a scenario that I create&nbsp;&nbsp;
+
+00:07:26.820 --> 00:07:33.420
+a meaningless token that I just will deploy&nbsp;
+to the Near blockchain. Then, I create one in&nbsp;&nbsp;
+
+00:07:33.420 --> 00:07:39.900
+the Aurora, I map between them which I can&nbsp;
+do in a single transaction in the Aurora,&nbsp;&nbsp;
+
+00:07:39.900 --> 00:07:48.180
+and then I send you some tokens in the Aurora&nbsp;
+and say that you need to pay for them 18.4&nbsp;&nbsp;
+
+00:07:48.180 --> 00:07:54.540
+ether. For the tokens that mean nothing to you&nbsp;
+and probably to anyone else. And I have no way&nbsp;&nbsp;
+
+00:07:54.540 --> 00:08:00.060
+of preventing this, right? No you don't, no you&nbsp;
+don't. This is the core of this vulnerability.&nbsp;&nbsp;
+
+00:08:01.680 --> 00:08:09.000
+So how was this fixed? Did they introduce some&nbsp;
+kind of verification for me to to confirm the&nbsp;&nbsp;
+
+00:08:09.000 --> 00:08:17.280
+transaction? Yeah, well, as I mentioned in the&nbsp;
+regular operation, this fee was actually never&nbsp;&nbsp;
+
+00:08:17.280 --> 00:08:24.120
+not zero which made it actually quite easy to fix&nbsp;
+this vulnerability because... Let me show you the&nbsp;&nbsp;
+
+00:08:24.120 --> 00:08:31.500
+fixed code. The the Aurora team basically just&nbsp;
+manually set the fee to be zero at all times.&nbsp;&nbsp;
+
+00:08:31.500 --> 00:08:41.340
+This is just a quick fix but then, later, in&nbsp;
+the newest version, you will not see fee at all&nbsp;&nbsp;
+
+00:08:41.340 --> 00:08:46.320
+in this in function. In this function, it was&nbsp;
+completely removed from the execution process.&nbsp;&nbsp;
+
+00:08:47.700 --> 00:08:54.840
+So is there any meaningful recommendation you&nbsp;
+could give to any developers to not make such&nbsp;&nbsp;
+
+00:08:54.840 --> 00:09:02.520
+a mistake? It seems quite stupid to me if I'm&nbsp;
+honest. Yes, it does because this was a flaw in on&nbsp;&nbsp;
+
+00:09:02.520 --> 00:09:10.800
+the design level. Basically, as a rule of thumb,&nbsp;
+in blockchain and probably not only in blockchain,&nbsp;&nbsp;
+
+00:09:12.420 --> 00:09:19.800
+if user didn't agree explicitly to something,&nbsp;
+don't make him pay for anything. So if,&nbsp;&nbsp;
+
+00:09:19.800 --> 00:09:27.300
+for instance, if this transaction would require&nbsp;
+the receiver to also sign this transaction somehow&nbsp;&nbsp;
+
+00:09:28.680 --> 00:09:36.180
+and explicitly say that they agreed to to receive&nbsp;
+the tokens, then in that case there may be some&nbsp;&nbsp;
+
+00:09:38.340 --> 00:09:44.880
+scenario where this sort of mechanism would be&nbsp;
+meaningful. But basically, as a rule of thumb,&nbsp;&nbsp;
+
+00:09:45.600 --> 00:09:51.000
+the person who's paying&nbsp;
+for anything should be only the one who sends&nbsp;&nbsp;
+
+00:09:51.000 --> 00:09:59.220
+the transaction. Okay, thank you so much for for&nbsp;
+explaining the bug. I'm happy that it's it's been&nbsp;&nbsp;
+
+00:09:59.220 --> 00:10:06.660
+fixed and I hope that as a whitehat, we will not&nbsp;
+see many of such mistakes done again. Oh, yeah,&nbsp;&nbsp;
+
+00:10:06.660 --> 00:10:13.560
+me too, for sure! If you want to see the video&nbsp;
+that was the world's largest bounty to date,&nbsp;&nbsp;
+
+00:10:13.560 --> 00:10:19.080
+check out this one on your screen right now&nbsp;
+about the vulnerability in Polygon blockchain.&nbsp;&nbsp;
+
+00:10:19.680 --> 00:10:22.560
+For now, thank you for watching and goodbye!
+

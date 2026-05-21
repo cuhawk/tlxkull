@@ -1,0 +1,459 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:01.020 --> 00:00:02.020
+Hello!
+
+00:00:02.020 --> 00:00:07.710
+In today's episode of Bug Bounty Reports Explained
+I will show how it was possible to send a
+
+00:00:07.710 --> 00:00:14.779
+malicious GIF image in WhatsApp that could
+take control over whole Android smartphone.
+
+00:00:14.779 --> 00:00:18.870
+The video is based on an article by a guy
+named Awakened.
+
+00:00:18.870 --> 00:00:22.500
+Link, as always is in the description.
+
+00:00:22.500 --> 00:00:27.830
+Low-level bug is something new on my channel
+and I hope you will enjoy that!
+
+00:00:27.830 --> 00:00:30.260
+Let's start with a GIF file.
+
+00:00:30.260 --> 00:00:36.260
+It contains multiple images and when those
+frames are being shown one after another,
+
+00:00:36.260 --> 00:00:38.460
+they create an animation.
+
+00:00:38.460 --> 00:00:43.739
+Usually, during such animation, frames have
+the same size.
+
+00:00:43.739 --> 00:00:48.720
+However, this is not enforced by GIF specification.
+
+00:00:48.720 --> 00:00:55.360
+Frames can have different sizes, including
+frames of size 0.
+
+00:00:55.360 --> 00:01:03.020
+This is the structure used to store information
+about GIFs from native Android library.
+
+00:01:03.020 --> 00:01:06.850
+Most important for us is the rasterBits buffer.
+
+00:01:06.850 --> 00:01:11.250
+It's where decoded frames are being stored.
+
+00:01:11.250 --> 00:01:17.780
+In a typical GIF where all frames have the
+same size, this buffer is just reused.
+
+00:01:17.780 --> 00:01:24.889
+However, when width or height of a new frame
+is greater than the previous one, the buffer
+
+00:01:24.889 --> 00:01:26.774
+must be reallocated.
+
+00:01:27.523 --> 00:01:32.090
+Reallocation is a combination of free and
+malloc functions.
+
+00:01:32.090 --> 00:01:37.110
+Malloc is a function used to allocate space.
+
+00:01:37.110 --> 00:01:42.439
+You need to use it when you create a new variable
+or an object.
+
+00:01:42.439 --> 00:01:48.119
+Free is the function used to free the memory
+after it's no longer needed so that it can
+
+00:01:48.119 --> 00:01:51.770
+be assigned to another variable.
+
+00:01:51.770 --> 00:01:57.850
+And coming back to our GIFs, the amount of
+space to reallocate is just the size of the
+
+00:01:57.850 --> 00:01:59.759
+new frame.
+
+00:01:59.759 --> 00:02:07.659
+So if a GIF would have frames of sizes 4x4,
+3x3 and 5x5, then after the first frame, there's
+
+00:02:07.659 --> 00:02:13.530
+no need for reallocation, but after the second
+frame the buffer would be reallocated with
+
+00:02:13.530 --> 00:02:16.730
+25 bytes of space.
+
+00:02:16.730 --> 00:02:24.170
+But what would happen if a new frame would
+have size 5x0?
+
+00:02:24.170 --> 00:02:30.900
+For the library it was enough if a new width
+or new height was greater than the one in
+
+00:02:30.900 --> 00:02:32.810
+the previous frame.
+
+00:02:32.810 --> 00:02:38.070
+So with frame 5x0, the reallocation would
+happen.
+
+00:02:38.070 --> 00:02:45.780
+But the malloc would try to reallocate 5*0=0
+bytes, so it would simply do nothing and the
+
+00:02:45.780 --> 00:02:49.630
+reallocation would only free the memory.
+
+00:02:49.630 --> 00:02:57.950
+So if we would have frames of sizes 4x4, 5x0,
+5x0, info-&gt;rasterBits would be freed after
+
+00:02:57.950 --> 00:03:01.010
+the first AND after the second frame.
+
+00:03:01.010 --> 00:03:03.850
+And this is the double-free vulnerability.
+
+00:03:03.850 --> 00:03:07.580
+But the question is - why is that actually
+a problem?
+
+00:03:07.580 --> 00:03:15.400
+It's the problem because in Android it leads
+to 2 subsequent memory allocations returning
+
+00:03:15.400 --> 00:03:17.400
+the same address.
+
+00:03:17.400 --> 00:03:24.510
+Size of those two reallocations must be the
+same as the size of double-freed buffer.
+
+00:03:24.510 --> 00:03:32.150
+So when the first frame was 16 bytes and it
+was double-freed, then the next 2 memory allocations
+
+00:03:32.150 --> 00:03:36.620
+of size 16 will return the same address.
+
+00:03:36.620 --> 00:03:39.905
+Now let's see how this worked in WhatsApp.
+
+00:03:41.600 --> 00:03:49.150
+When you opened preview of files from WhatsApp
+application, GIFs were parsed twice.
+
+00:03:49.150 --> 00:03:54.140
+Let's create a malicious GIF that will trigger
+the double-free vulnerability.
+
+00:03:54.140 --> 00:04:02.700
+It contains 4 frames and their sizes are:
+168, 0 bytes, 0 bytes and the size of the
+
+00:04:02.700 --> 00:04:04.680
+4th frame doesn't really matter.
+
+00:04:04.680 --> 00:04:08.340
+It's just there so the GIF is valid.
+
+00:04:08.340 --> 00:04:16.530
+Before parsing frames, GifInfo object is allocated
+with 168 bytes.
+
+00:04:16.530 --> 00:04:21.099
+This number is not dependent from the size
+of the first frame.
+
+00:04:21.099 --> 00:04:27.330
+It's just that the GifInfo struct has 21 properties,
+8 bytes each.
+
+00:04:27.330 --> 00:04:33.780
+And we chose the size of the first frame to
+match this number and not the other way around.
+
+00:04:33.780 --> 00:04:37.210
+You'll see later why we needed that.
+
+00:04:37.210 --> 00:04:40.080
+Now it's time to parse the frames.
+
+00:04:40.080 --> 00:04:47.749
+First, rasterBits buffer is allocated 168
+bytes for the first frame.
+
+00:04:47.749 --> 00:04:53.289
+Then, it's freed twice, while parsing frames
+2 and 3.
+
+00:04:53.289 --> 00:04:58.319
+Parsing frame 4 does not cause any problems.
+
+00:04:58.319 --> 00:05:07.150
+So now, after this buffer was double freed,
+next 2 allocations of size 168 will return
+
+00:05:07.150 --> 00:05:09.000
+the same address.
+
+00:05:09.000 --> 00:05:13.000
+Let's now see what happens during the second
+parse.
+
+00:05:13.000 --> 00:05:19.690
+Again, 168 bytes are allocated for a new GifInfo
+object.
+
+00:05:19.690 --> 00:05:27.659
+Then, the first frame is being parsed and
+again, 168 bytes are allocated for it.
+
+00:05:27.659 --> 00:05:32.639
+So this is the moment, when malloc returns
+the same address again.
+
+00:05:32.639 --> 00:05:39.400
+So now both info and info-&gt;rasterBits are
+pointing to the same address.
+
+00:05:39.400 --> 00:05:42.690
+So such GIF causes WhatsApp to crash.
+
+00:05:42.690 --> 00:05:48.460
+But it wasn't our goal, our goal was to execute
+arbitrary commands.
+
+00:05:48.460 --> 00:05:53.409
+Let's now take a look how this could be achieved.
+
+00:05:53.409 --> 00:05:59.629
+Soon after parsing each frame, info-&gt;rewindFunction
+was called.
+
+00:05:59.629 --> 00:06:07.110
+Since info object has the same size and address
+as our first frame, the program now thinks
+
+00:06:07.110 --> 00:06:14.199
+that our first frame is the info object so
+we have complete control over it.
+
+00:06:14.199 --> 00:06:18.409
+And the program remembers where the rewindFunction
+was.
+
+00:06:18.409 --> 00:06:24.050
+So now, we can prepare our first frame so
+that when the program wants to execute that
+
+00:06:24.050 --> 00:06:28.690
+function, it executes whatever we want.
+
+00:06:28.690 --> 00:06:29.960
+And what do we want?
+
+00:06:29.960 --> 00:06:33.639
+We want a reverse shell.
+
+00:06:33.639 --> 00:06:38.650
+Now stay calm people, because it's time for
+some assembly.
+
+00:06:38.650 --> 00:06:45.589
+To reach our goal, we need to set proper values
+to PC and X0 registers.
+
+00:06:45.589 --> 00:06:51.580
+Registers in assembly are like special variables
+that contain specific information.
+
+00:06:51.580 --> 00:06:57.099
+PC (program counter) stores the address of
+the next instruction.
+
+00:06:57.099 --> 00:07:00.849
+So we will want the address of the system
+function there.
+
+00:07:00.849 --> 00:07:06.110
+And the get it there, we need to replace the
+address of the rewindFunction.
+
+00:07:06.110 --> 00:07:12.800
+And X0 register stores the first function
+argument, so we want to put our reverse shell
+
+00:07:12.800 --> 00:07:15.020
+command in there.
+
+00:07:15.020 --> 00:07:22.580
+So now, the researcher had to find a function
+that will set the X0 register to what he wanted
+
+00:07:22.580 --> 00:07:26.289
+and then jump to the system function.
+
+00:07:26.289 --> 00:07:29.530
+And this is the gadget that he found.
+
+00:07:29.530 --> 00:07:35.919
+I will explain it while at the same time creating
+the first frame of the GIF, which will at
+
+00:07:35.919 --> 00:07:39.490
+the same time be a GifInfo object.
+
+00:07:39.490 --> 00:07:47.389
+The idea is that from rewindFunction we jump
+to this gadget, it sets a proper X0 register
+
+00:07:47.389 --> 00:07:52.009
+and the we go to the system function, reaching
+our goal.
+
+00:07:52.009 --> 00:07:59.430
+Originally, rewindFunction was at offset 0x80
+of the info object.
+
+00:07:59.430 --> 00:08:03.880
+So this is the place where we put the address
+of this gadget.
+
+00:08:03.880 --> 00:08:13.759
+Then, ldr instruction from this gadget loads
+the value from register X19 with offset 0x18
+
+00:08:13.759 --> 00:08:15.199
+to register X8.
+
+00:08:15.199 --> 00:08:19.240
+X8 will be the address where we jump next.
+
+00:08:19.240 --> 00:08:23.379
+It's what blr instruction at the end does.
+
+00:08:23.379 --> 00:08:26.589
+And X19 is our first frame.
+
+00:08:26.589 --> 00:08:32.960
+So at offset 0x18 we put the address of the
+system function.
+
+00:08:32.960 --> 00:08:40.390
+The second instruction loads the value form
+our first frame with offset 0x20 to register
+
+00:08:40.390 --> 00:08:44.720
+X0 which will our argument.
+
+00:08:44.720 --> 00:08:50.600
+So in our frame, at this offset we put our
+command with reverse shell.
+
+00:08:50.600 --> 00:08:53.340
+And that's pretty much the whole exploit.
+
+00:08:53.340 --> 00:09:00.060
+The problem is that we need to get the addresses
+of our gadget and the system function.
+
+00:09:00.060 --> 00:09:03.840
+And there are 2 practical attack scenarios
+for this.
+
+00:09:03.840 --> 00:09:10.010
+One of them is that a malicious application,
+installed on the victim's phone gets those
+
+00:09:10.010 --> 00:09:16.350
+addresses easily, because they are native
+libraries and the addresses only change while
+
+00:09:16.350 --> 00:09:18.350
+the phone is rebooted.
+
+00:09:18.350 --> 00:09:25.440
+Then, this application would create a malicious
+GIF, save on victim's phone and once the victim
+
+00:09:25.440 --> 00:09:29.570
+opened a preview in WhatsApp, the exploit
+would get triggered.
+
+00:09:29.570 --> 00:09:35.960
+The other attack scenario is that the attacker
+gets those addresses using information disclosure
+
+00:09:35.960 --> 00:09:41.580
+vulnerability and then the attacker prepares
+the GIF, sends to the victim and once the
+
+00:09:41.580 --> 00:09:46.090
+victim opens the preview in WhatsApp, in gets
+triggered.
+
+00:09:46.090 --> 00:09:52.320
+You can generate your own malicious GIF using
+the repo that's linked in the description
+
+00:09:52.320 --> 00:09:57.720
+but of course, the vulnerability has been
+patched and latest versions of WhatsApp are
+
+00:09:57.720 --> 00:09:59.820
+no longer exploitable.
+
+00:10:00.589 --> 00:10:06.900
+The vulnerability affected WhatsApp but it
+was actually a bug in native Android library
+
+00:10:06.900 --> 00:10:12.020
+so I don't think the researcher got any bounty
+for it, because WhatsApp security team just
+
+00:10:12.020 --> 00:10:15.430
+forwarded the report to library maintainers.
+
+00:10:15.430 --> 00:10:20.780
+Lately, both on YouTube and on Twitter I did
+a poll, asking you what you would like to
+
+00:10:20.780 --> 00:10:25.850
+see more on my channel and low-level bugs
+were highly rated, so I hope you like this
+
+00:10:25.850 --> 00:10:26.850
+video.
+
+00:10:26.850 --> 00:10:31.870
+But if you have any other suggestions, feel
+free to comment them down below.
+
+00:10:31.870 --> 00:10:35.910
+If you have learnt something new today, leave
+a like and leave a subscription.
+
+00:10:35.910 --> 00:10:37.690
+Thanks for watching and goodbye!
+

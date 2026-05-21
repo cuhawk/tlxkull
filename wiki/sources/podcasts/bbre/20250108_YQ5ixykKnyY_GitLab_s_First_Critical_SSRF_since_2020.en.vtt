@@ -1,0 +1,1033 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:00.869
+Hello everyone.
+
+00:00:01.149 --> 00:00:04.629
+So I'm here in Gothenburg with Johan
+Carlsson recording the podcast,
+
+00:00:04.659 --> 00:00:09.339
+but he was also kind enough to
+show us the SSRF in GitLab that
+
+00:00:09.469 --> 00:00:11.319
+he exploited in a very clever way.
+
+00:00:11.329 --> 00:00:14.609
+It's not the typical full read
+SSRF where you just read the
+
+00:00:14.609 --> 00:00:16.189
+metadata and you have the impact.
+
+00:00:16.639 --> 00:00:20.959
+It's the one when he actually had
+to work hard to get the critical
+
+00:00:20.959 --> 00:00:22.229
+impact and the good payout.
+
+00:00:22.399 --> 00:00:24.739
+And he will walk us through the bug today.
+
+00:00:25.699 --> 00:00:26.970
+so enjoy the video.
+
+00:00:27.518 --> 00:00:32.518
+can you tell us please, what's the
+functionality where the, bug started?
+
+00:00:33.268 --> 00:00:39.848
+So this bug was in a fairly new
+functionality, that it was, they
+
+00:00:39.848 --> 00:00:41.588
+called it analytic dashboards.
+
+00:00:41.888 --> 00:00:49.623
+It's like a, a third party integration
+thing where you could get data and
+
+00:00:49.623 --> 00:00:55.743
+send data to an analytic service
+that would monitor, yeah, how your
+
+00:00:55.743 --> 00:00:59.253
+application is used and that's,
+
+00:00:59.443 --> 00:01:03.233
+something that you configure as a
+URL as a third party website, right?
+
+00:01:03.303 --> 00:01:04.453
+Yeah, exactly.
+
+00:01:05.458 --> 00:01:09.348
+And for the context of this
+bug a bit later, I think that
+
+00:01:09.488 --> 00:01:14.078
+originally you configure this as
+an administrator on the platform.
+
+00:01:14.078 --> 00:01:22.208
+So you configured a set of, an analytic,
+analytic dashboard, a set of features
+
+00:01:22.268 --> 00:01:29.088
+that GitLab also provides as a Docker
+or not the Docker, or even worse,
+
+00:01:29.138 --> 00:01:32.678
+like a Kubernetes cluster thing.
+
+00:01:34.208 --> 00:01:41.703
+and, And then you, so yeah, so you
+provide it with four different, URLs,
+
+00:01:42.273 --> 00:01:45.573
+to four different services running
+inside of this Kubernetes cluster on
+
+00:01:45.573 --> 00:01:46.843
+different ports and stuff like that.
+
+00:01:48.783 --> 00:01:53.463
+and, what I found then was that all
+of these were in different ways,
+
+00:01:54.383 --> 00:02:01.253
+suspect to, SSRF, but only one of
+them were like a full read where
+
+00:02:01.253 --> 00:02:02.483
+you can actually get the error back.
+
+00:02:02.503 --> 00:02:08.323
+The other ones were blind and
+like semi blind and really blind.
+
+00:02:08.603 --> 00:02:09.123
+Yeah.
+
+00:02:09.173 --> 00:02:11.563
+How did it happen that one
+of them returned the body?
+
+00:02:11.903 --> 00:02:15.963
+Yeah, that was, when you look at
+the source code, it was just like
+
+00:02:15.963 --> 00:02:22.563
+one of them had, just that it was
+treating, it was trying to treat
+
+00:02:22.573 --> 00:02:24.413
+whatever it got back as a Jason.
+
+00:02:24.858 --> 00:02:31.398
+And they had, not their like general error
+message when things break, they just sent
+
+00:02:31.418 --> 00:02:35.188
+you back whatever the JSON parsing did.
+
+00:02:35.188 --> 00:02:38.028
+So you got back like an error,
+like we cannot parse this.
+
+00:02:38.058 --> 00:02:41.058
+And then you got like
+this giant payload back.
+
+00:02:41.118 --> 00:02:41.518
+Yeah.
+
+00:02:42.578 --> 00:02:45.028
+And so how did you show
+the impact of this?
+
+00:02:45.428 --> 00:02:45.668
+Yeah.
+
+00:02:45.668 --> 00:02:52.248
+So I think it's the reason why I
+chose to highlight this bug is because
+
+00:02:52.248 --> 00:02:58.798
+I think it, it proves how you can
+gain a higher impact by knowing.
+
+00:03:00.358 --> 00:03:05.378
+And, in this particular case, this
+bug went from, I reported this
+
+00:03:05.378 --> 00:03:09.868
+as a high because I had a full
+read and I thought that's usually
+
+00:03:09.868 --> 00:03:11.508
+a high or it at least could be.
+
+00:03:12.468 --> 00:03:18.923
+and then it got, I managed to first move
+it to critical and then it get bigger.
+
+00:03:19.323 --> 00:03:23.123
+Pushed down to medium again,
+and then I threw some fighting,
+
+00:03:23.123 --> 00:03:24.683
+got it back to critical again.
+
+00:03:25.063 --> 00:03:26.613
+Yeah, it was a
+
+00:03:26.613 --> 00:03:27.253
+long read.
+
+00:03:27.473 --> 00:03:28.663
+Yeah, it was a long ride.
+
+00:03:31.463 --> 00:03:37.703
+So the idea here was that I could
+get a full read both on, my,
+
+00:03:38.283 --> 00:03:42.953
+internal or like my self hosted
+instance, but also on the, prod.
+
+00:03:44.178 --> 00:03:47.868
+instance, where I could actually
+poke around in whatever they
+
+00:03:47.878 --> 00:03:49.268
+have in their infrastructure.
+
+00:03:49.788 --> 00:03:53.448
+I didn't really find
+anything super sensitive.
+
+00:03:54.208 --> 00:03:59.378
+they have had one critical SSRF in
+the past, which was this Grafana
+
+00:04:00.948 --> 00:04:05.708
+SSRF thing, where I think that Justin
+managed to actually show some real
+
+00:04:05.708 --> 00:04:11.188
+impact in the production, at least,
+poke at some real, systems there.
+
+00:04:11.808 --> 00:04:14.608
+And I think they've hardened
+it quite a lot since then.
+
+00:04:16.248 --> 00:04:21.648
+so I focused, a bit more
+on my self hosted instance.
+
+00:04:21.718 --> 00:04:21.988
+Yeah.
+
+00:04:22.068 --> 00:04:26.738
+To how does, if I can interrupt,
+how does GitLab rate the severity
+
+00:04:26.778 --> 00:04:31.328
+more based on the, your GitLab co
+instance or the self hosted one,
+
+00:04:32.058 --> 00:04:33.393
+which, is the most important one?
+
+00:04:33.538 --> 00:04:35.158
+No, it's actually the same.
+
+00:04:35.168 --> 00:04:41.008
+You can get the highest bounty, both
+for the, the self hosted and the.
+
+00:04:41.418 --> 00:04:42.128
+The.
+
+00:04:42.328 --> 00:04:49.308
+com one, you just have to, prove
+that it's not something that you
+
+00:04:49.308 --> 00:04:53.478
+have to like misconfigure, then it
+might be lowered, even for the S.
+
+00:04:53.638 --> 00:04:58.868
+So in this case, I wanted to show, if you
+just install it normally using their, like
+
+00:04:58.878 --> 00:05:04.598
+the packaged, version they have, and if I
+just install it and I could trigger this
+
+00:05:04.618 --> 00:05:09.478
+and it could get like a critical impact,
+then that's enough to get a full critical.
+
+00:05:09.478 --> 00:05:09.653
+Cool.
+
+00:05:12.373 --> 00:05:14.213
+So how did you achieve this?
+
+00:05:14.633 --> 00:05:21.638
+Yeah, I started to look at different
+services that are So when you install
+
+00:05:21.638 --> 00:05:27.328
+GitLab locally or as a Docker instance,
+they spin up a bunch of services that they
+
+00:05:27.368 --> 00:05:31.828
+actually list in their documentation, like
+all the ports where things are running.
+
+00:05:32.268 --> 00:05:35.028
+So you don't really have to
+do any scanning or whatever.
+
+00:05:35.028 --> 00:05:39.928
+You can just try it out and see if any of
+them have something interesting to use.
+
+00:05:41.358 --> 00:05:47.208
+so I looked at that list and I
+also tried to read all of the old
+
+00:05:47.778 --> 00:05:52.398
+SSRF reports I could find from
+GitLab, and I didn't find anything
+
+00:05:52.408 --> 00:05:55.528
+that managed to put it higher than
+
+00:05:57.763 --> 00:05:58.703
+a high, yeah.
+
+00:05:59.183 --> 00:06:05.573
+essentially, but I did find, which
+I think, you corrected me before
+
+00:06:05.573 --> 00:06:10.463
+her, but the, someone has collected
+like a list of blind necess r Yeah.
+
+00:06:10.703 --> 00:06:11.358
+the asset note
+
+00:06:11.543 --> 00:06:14.003
+blind necess R of chain
+recall we have, yeah.
+
+00:06:14.633 --> 00:06:16.283
+so on that list, there's actually like a.
+
+00:06:16.493 --> 00:06:26.143
+A small SSRF gadget from GitLab where they
+mentioned the, Redis exporter, which is a
+
+00:06:26.143 --> 00:06:32.733
+small tool that is used by, I think it's
+used by Prometheus to gain like statistics
+
+00:06:32.923 --> 00:06:35.033
+to show you about your instance.
+
+00:06:35.803 --> 00:06:43.043
+And this Redis exporter has a
+path that is called slash scrape.
+
+00:06:43.658 --> 00:06:46.898
+And then you can give it a
+URL as a query parameter.
+
+00:06:47.048 --> 00:06:47.388
+Yeah.
+
+00:06:48.308 --> 00:06:55.048
+And in the old asset note list, they
+just show you that you can point it to
+
+00:06:55.048 --> 00:06:58.068
+an IP address of the Redis instance.
+
+00:06:58.388 --> 00:07:01.718
+And then you can get like keys and
+values from the Redis instance back.
+
+00:07:02.208 --> 00:07:08.088
+Oh, so it's Designed to pull
+things out of the Redis instance.
+
+00:07:08.098 --> 00:07:08.528
+Yeah.
+
+00:07:08.558 --> 00:07:08.868
+Okay.
+
+00:07:08.898 --> 00:07:12.308
+And it's quite different from the
+other, they have a lot of exporters,
+
+00:07:13.763 --> 00:07:19.203
+But, and usually because Prometheus
+is supposed to show like metadata
+
+00:07:19.203 --> 00:07:20.473
+and statistics and stuff like that.
+
+00:07:20.473 --> 00:07:25.203
+So usually they don't contain anything
+sensitive, the things that you can export.
+
+00:07:25.513 --> 00:07:29.603
+But this Redis exporter is a bit different
+because it gives you keys and values
+
+00:07:30.053 --> 00:07:31.943
+and that's what you use Redis for.
+
+00:07:31.943 --> 00:07:36.263
+You store these keys and values in
+there and potentially they could
+
+00:07:36.273 --> 00:07:37.883
+be dangerous than was my thought.
+
+00:07:38.073 --> 00:07:38.393
+Yeah.
+
+00:07:40.123 --> 00:07:42.093
+but it, so it happened now that.
+
+00:07:43.278 --> 00:07:48.098
+Nowadays, apparently they are not
+exposing Redis, on an IP anymore.
+
+00:07:49.198 --> 00:07:53.978
+I guess they used to do it when asset
+notes found this gadget, but what I found
+
+00:07:53.978 --> 00:08:00.708
+out was that this Redis exporter also
+could work with Unix sockets, which is.
+
+00:08:01.648 --> 00:08:09.848
+If you're, I'm not like, low
+level hacker, but a Unix socket is
+
+00:08:09.998 --> 00:08:14.268
+some sort of, network, low level
+
+00:08:15.378 --> 00:08:15.878
+piece.
+
+00:08:16.128 --> 00:08:17.228
+It's something I didn't know.
+
+00:08:17.228 --> 00:08:19.208
+You can talk to when you have the SSR.
+
+00:08:19.408 --> 00:08:20.068
+That's for sure.
+
+00:08:20.328 --> 00:08:20.568
+no.
+
+00:08:21.948 --> 00:08:26.828
+And I guess you cannot really do it
+usually from like a web context, but
+
+00:08:26.858 --> 00:08:31.838
+this exporter it's built in a way that
+it can talk to Redis through, yeah.
+
+00:08:31.838 --> 00:08:34.808
+A socket as well, because
+Redis is also talking this
+
+00:08:34.808 --> 00:08:39.518
+really, low level TCP language.
+
+00:08:39.728 --> 00:08:40.178
+Yeah.
+
+00:08:40.478 --> 00:08:46.148
+which also previously you could get RCE
+just by talking to a Redis through HDP.
+
+00:08:46.388 --> 00:08:46.538
+Yeah.
+
+00:08:46.538 --> 00:08:50.228
+But they have, removed that,
+exploitation vector as well.
+
+00:08:51.248 --> 00:08:54.188
+No, but so I figured out that
+I could point to this red
+
+00:08:54.278 --> 00:08:55.658
+incident and then you could.
+
+00:08:56.148 --> 00:09:00.578
+Also, when you give it this URL, you
+could also give it another parameter
+
+00:09:00.598 --> 00:09:02.478
+that limits what you search for.
+
+00:09:02.838 --> 00:09:07.978
+So you can search for a word and put
+a star in, and you can like search for
+
+00:09:07.978 --> 00:09:11.638
+different keys in the Redis instance.
+
+00:09:12.618 --> 00:09:19.763
+And at that point, I thought it was
+Hi again, because you can get data,
+
+00:09:19.763 --> 00:09:22.923
+but I don't really know what they
+store in the, in Redis in GitLab.
+
+00:09:22.923 --> 00:09:25.263
+So I wanted to find
+something juicy in there.
+
+00:09:25.873 --> 00:09:29.673
+So I started, you can also then
+when you host your own GitLab
+
+00:09:29.673 --> 00:09:32.343
+instance, you can monitor so you can.
+
+00:09:33.148 --> 00:09:38.598
+log into the instance through SSH and you
+can start monitoring the logs from Redis.
+
+00:09:38.998 --> 00:09:44.868
+And I just, started like tailing and
+graphing through the logs while using
+
+00:09:44.868 --> 00:09:46.818
+GitLab to see if something interesting.
+
+00:09:46.818 --> 00:09:53.418
+So I created tokens, like connected
+some, tokens to my account and
+
+00:09:53.418 --> 00:09:57.418
+stuff like that to see if something
+of it like ended up in, in Redis.
+
+00:09:57.678 --> 00:10:03.708
+And I got some hits somewhere Ephemeral,
+like you could see them for a really
+
+00:10:03.708 --> 00:10:05.458
+short period and then they disappeared.
+
+00:10:05.918 --> 00:10:10.578
+So that could be something you
+could report, And then I also
+
+00:10:10.578 --> 00:10:16.648
+found that you could get like SSRF,
+no, CSRF tokens for all sessions.
+
+00:10:16.658 --> 00:10:22.198
+So you could get the IP and the token
+that is connected to that session.
+
+00:10:22.608 --> 00:10:28.448
+So you could scrape all of the CSRF
+tokens and then make a POC page where
+
+00:10:28.448 --> 00:10:30.338
+you match the IP who's coming in.
+
+00:10:31.238 --> 00:10:31.788
+Is, in
+
+00:10:31.788 --> 00:10:34.568
+GitLab CSRF token enough to get the CSRF?
+
+00:10:35.628 --> 00:10:36.578
+yeah,
+
+00:10:36.578 --> 00:10:38.678
+Because the cookies are, none.
+
+00:10:38.748 --> 00:10:40.388
+Oh, that's very kind.
+
+00:10:40.838 --> 00:10:41.188
+yeah.
+
+00:10:42.328 --> 00:10:45.808
+that vector could be abused as well.
+
+00:10:46.098 --> 00:10:49.548
+So I wrote that first, but that's
+also not really critical because you
+
+00:10:49.548 --> 00:10:50.708
+have to have a lot of using triggers.
+
+00:10:51.538 --> 00:10:52.198
+interaction.
+
+00:10:52.658 --> 00:10:52.978
+Yeah.
+
+00:10:53.928 --> 00:10:58.208
+And also you would have to have the
+JavaScript code that would match the IP
+
+00:10:58.208 --> 00:10:59.998
+of the CSRF token and hope it's enough.
+
+00:10:59.998 --> 00:11:00.128
+Yeah, it's a
+
+00:11:00.128 --> 00:11:08.158
+bit, it's a bit complex, but
+then eventually I stumbled on to
+
+00:11:08.158 --> 00:11:10.558
+something because I was like going
+through all of the tokens and
+
+00:11:10.558 --> 00:11:15.038
+stuff in my head, like sensitive
+things that you can do with GitLab.
+
+00:11:15.528 --> 00:11:20.288
+And then I tried out creating
+and connecting a GitLab runner.
+
+00:11:21.043 --> 00:11:25.853
+And the GitLab runner is when you're
+working on GitLab or GitHub or
+
+00:11:25.873 --> 00:11:30.163
+anything else, you have this concept
+of storing your code, but then you
+
+00:11:30.163 --> 00:11:35.393
+also have the concept of running
+pipelines or build jobs or, all of
+
+00:11:35.393 --> 00:11:38.303
+these other, like CI, CD, DevOps things.
+
+00:11:38.403 --> 00:11:38.653
+Yeah.
+
+00:11:39.283 --> 00:11:43.863
+and those in the context of GitLab,
+these are running on separate
+
+00:11:44.383 --> 00:11:46.183
+servers that are called the runners.
+
+00:11:46.863 --> 00:11:49.273
+And a runner is registered with the token.
+
+00:11:50.143 --> 00:11:56.113
+And then when the runner is idle, it
+will start like pulling the GitLab
+
+00:11:56.303 --> 00:11:58.383
+instance, like I'm ready for work.
+
+00:11:58.753 --> 00:12:02.553
+And then if someone has a project that
+is connected to this runner and they have
+
+00:12:02.553 --> 00:12:05.003
+a job, they will say this is my new job.
+
+00:12:05.733 --> 00:12:08.893
+And the runner will say
+okay, I take that job.
+
+00:12:09.103 --> 00:12:13.543
+It will pull the session and it
+can pull the code and it will run
+
+00:12:13.553 --> 00:12:15.843
+the code and do all the CI things.
+
+00:12:16.123 --> 00:12:18.243
+So the runner authenticates
+using the token?
+
+00:12:18.293 --> 00:12:18.813
+Yeah, exactly.
+
+00:12:18.873 --> 00:12:19.423
+Yeah, okay.
+
+00:12:19.473 --> 00:12:23.343
+And it starts like
+picking jobs using that.
+
+00:12:23.473 --> 00:12:27.153
+And then the idea is that you
+shouldn't really need to care
+
+00:12:27.173 --> 00:12:28.903
+which runner you are using.
+
+00:12:28.923 --> 00:12:33.753
+Like they are the same if you have
+allowed them to be used in your project.
+
+00:12:33.853 --> 00:12:34.123
+Yeah.
+
+00:12:35.273 --> 00:12:40.143
+So what I found then was quite
+interesting was that they actually
+
+00:12:40.153 --> 00:12:44.403
+used that token as a part of the ID
+
+00:12:46.553 --> 00:12:49.403
+in the key, value, in Redis.
+
+00:12:49.913 --> 00:12:50.173
+Yeah.
+
+00:12:50.183 --> 00:12:54.863
+So that was stored like
+indefinitely for what I could see.
+
+00:12:54.903 --> 00:12:58.543
+So you could actually ask for, you
+would ask for the beginning of the
+
+00:12:58.543 --> 00:13:00.053
+key, which was always the same.
+
+00:13:00.053 --> 00:13:03.833
+And then you would put a star there
+and then you would get the a list of
+
+00:13:04.003 --> 00:13:06.443
+all the runner tokens on the instance.
+
+00:13:07.203 --> 00:13:10.833
+And using these runner tokens, you
+could then create your own runner,
+
+00:13:11.543 --> 00:13:15.263
+connect to the GitLab instance and
+say okay, I want all of these jobs.
+
+00:13:15.373 --> 00:13:15.713
+Yeah.
+
+00:13:15.743 --> 00:13:19.543
+So there was no sort of IP
+validation of the runners.
+
+00:13:19.543 --> 00:13:21.303
+It was just, no, at
+
+00:13:21.303 --> 00:13:24.873
+least not, like in the,
+in a base scenario.
+
+00:13:24.883 --> 00:13:27.903
+And this is also something they
+warn about in the documentation.
+
+00:13:27.913 --> 00:13:31.763
+They say this token is supposed
+to be secret because if.
+
+00:13:32.078 --> 00:13:36.788
+You find it, you will be able to
+impersonate the runner and run jobs.
+
+00:13:37.633 --> 00:13:42.513
+And what that sort of creates in
+the end is actually RCE then in all
+
+00:13:42.523 --> 00:13:44.783
+of the runner jobs on the GitLab.
+
+00:13:44.953 --> 00:13:45.173
+Yeah.
+
+00:13:45.173 --> 00:13:48.043
+Because runner has access
+to all the source code.
+
+00:13:48.323 --> 00:13:48.543
+Yeah.
+
+00:13:48.553 --> 00:13:51.203
+Does it has push, access as well?
+
+00:13:51.273 --> 00:13:51.703
+Yeah.
+
+00:13:52.453 --> 00:13:56.323
+yeah, depending on what it's supposed
+to do, but it will definitely be.
+
+00:13:57.243 --> 00:14:03.243
+what a runner job usually does is
+that it's build things, it runs tests
+
+00:14:03.243 --> 00:14:09.443
+and stuff, it might push artifacts
+and it will, it could deploy code in
+
+00:14:09.443 --> 00:14:11.363
+production or in different places.
+
+00:14:11.363 --> 00:14:17.283
+And yeah, in a way you have
+all the keys to the kingdom.
+
+00:14:17.733 --> 00:14:18.463
+So that's,
+
+00:14:18.483 --> 00:14:19.283
+the best thing.
+
+00:14:19.683 --> 00:14:20.943
+How much time did it take you?
+
+00:14:20.943 --> 00:14:23.133
+Cause I assume you had the SSRF.
+
+00:14:23.753 --> 00:14:26.883
+And then you just spend a lot of time
+using different features to see if
+
+00:14:26.883 --> 00:14:28.623
+there's something sensitive in the Redis.
+
+00:14:28.743 --> 00:14:29.063
+Yeah.
+
+00:14:29.103 --> 00:14:31.843
+So how much time did it take for
+you to finally find this feature
+
+00:14:32.213 --> 00:14:33.433
+that, gave you the critical?
+
+00:14:34.083 --> 00:14:37.173
+I think I spent like a week or two.
+
+00:14:37.933 --> 00:14:42.063
+I also had to, but not like full time.
+
+00:14:42.093 --> 00:14:45.770
+It's like tinkering on, like thinking
+about new ways of exploiting,
+
+00:14:45.770 --> 00:14:50.276
+because I also was at the same time,
+like fighting with the triagers.
+
+00:14:50.276 --> 00:14:52.323
+So GitLab hadn't even seen the bug.
+
+00:14:52.808 --> 00:14:53.698
+Yeah, really.
+
+00:14:53.848 --> 00:14:54.108
+Yeah.
+
+00:14:54.628 --> 00:14:58.108
+so I just had it like in the back of my
+mind, like I want to exploit this more.
+
+00:14:58.108 --> 00:15:01.718
+So I just thought about different
+things and tested out and,
+
+00:15:04.358 --> 00:15:08.438
+and so from the beginning, I actually
+found this through code review,
+
+00:15:09.218 --> 00:15:12.498
+because they were using a feature.
+
+00:15:12.498 --> 00:15:13.968
+They were actually using a safe.
+
+00:15:14.538 --> 00:15:19.768
+A wrapper to send HTTP requests,
+which they also always use, but they,
+
+00:15:20.618 --> 00:15:25.768
+had put in the flag, allow local
+requests or something like that.
+
+00:15:27.268 --> 00:15:31.548
+and that flag is used only when
+they know that it's safe to do this.
+
+00:15:31.938 --> 00:15:37.958
+So I assume that they first built
+this for the admin, side of GitLab.
+
+00:15:38.208 --> 00:15:44.478
+And then they exposed it to, like groups
+and projects to configure on their own.
+
+00:15:45.048 --> 00:15:47.268
+Cause could any user configure this?
+
+00:15:47.358 --> 00:15:47.788
+Yeah.
+
+00:15:47.898 --> 00:15:51.908
+At the point when I found it, you
+can just be a regular user with
+
+00:15:51.908 --> 00:15:53.068
+your own project and you can,
+
+00:15:53.608 --> 00:15:57.548
+so that's why it was critical because
+there was no privilege required.
+
+00:15:58.238 --> 00:15:58.458
+Yeah.
+
+00:15:58.478 --> 00:16:00.778
+They will put it as
+privilege required low.
+
+00:16:01.988 --> 00:16:04.258
+but it is a self registration
+now, so this is the,
+
+00:16:04.318 --> 00:16:08.963
+yeah, but on the self So they have
+in their scope policy, like a special
+
+00:16:08.973 --> 00:16:14.053
+edge case that they always treat, if
+you need an account, it will be low.
+
+00:16:14.143 --> 00:16:19.793
+And that's because on self hosted
+instances, it's not guaranteed.
+
+00:16:19.833 --> 00:16:20.343
+Oh, cause there's
+
+00:16:20.343 --> 00:16:21.613
+no always self signup.
+
+00:16:21.743 --> 00:16:22.363
+No, exactly.
+
+00:16:22.373 --> 00:16:22.693
+Okay.
+
+00:16:23.013 --> 00:16:23.413
+Fair enough.
+
+00:16:23.463 --> 00:16:23.723
+Yeah.
+
+00:16:24.103 --> 00:16:26.823
+But the rest was like, top.
+
+00:16:27.033 --> 00:16:27.443
+So that's why.
+
+00:16:27.443 --> 00:16:28.483
+Yeah, so exactly.
+
+00:16:28.483 --> 00:16:32.573
+So then you could just go in there
+and you could get, I don't think that
+
+00:16:32.573 --> 00:16:35.393
+they put anything else, any lower.
+
+00:16:36.528 --> 00:16:38.438
+Yeah, and the scope was changed then.
+
+00:16:39.868 --> 00:16:44.598
+I guess that's part of, SSRF,
+to begin with, I'm not sure.
+
+00:16:44.618 --> 00:16:47.428
+Scope is really hard to, yeah, but I
+
+00:16:47.428 --> 00:16:50.608
+guess if you have different companies,
+you can leak data from readies.
+
+00:16:50.728 --> 00:16:51.038
+Yeah.
+
+00:16:51.038 --> 00:16:51.128
+And
+
+00:16:51.568 --> 00:16:55.758
+and you're actually in the runner then,
+which is a separate application as well.
+
+00:16:55.758 --> 00:16:56.018
+Yeah.
+
+00:16:56.018 --> 00:16:56.028
+Yeah.
+
+00:16:56.708 --> 00:16:56.978
+yeah,
+
+00:16:57.478 --> 00:16:57.748
+cool.
+
+00:16:58.378 --> 00:16:58.758
+Nice.
+
+00:16:59.218 --> 00:17:00.558
+Congratulations for that.
+
+00:17:01.028 --> 00:17:01.268
+Thank you.
+
+00:17:01.948 --> 00:17:06.458
+if you enjoyed it, listen to our whole
+interview that will be published.
+
+00:17:07.363 --> 00:17:12.063
+About two weeks after this bug
+is published, we'll talk about
+
+00:17:12.133 --> 00:17:13.483
+way more interesting things.
+
+00:17:13.483 --> 00:17:16.643
+So for now, thank you
+for watching and goodbye.
+

@@ -1,0 +1,72 @@
+Hello, in this video you will learn how it was possible to steal all your private and
+unlisted videos from YouTube by spoofing a YouTube TV and exploiting a CSR vulnerability.
+Unlike the previous write-up I covered on my channel about the topic, this bug allows to
+steal the whole video with sound, with original quality and without knowing the video ID.
+It was identified by a hunter who knows everything about YouTube, David Schultz.
+Link to his blog post is in the description. Enjoy!
+On YouTube you can pair your phone or your browser with the TV to control it remotely.
+To do this you can be signed to a different account and you can be on a different network than the TV.
+Interestingly, on the TV you can also play your private videos.
+And I'm not gonna lie, a few times I was wondering how does this work.
+But I thought that in order to test this I would need to somehow attach to my TV, so I didn't do that.
+But the truth is that YouTube TV app just uses a WebView.
+WebView allows the application to embed a website and YouTube TV app just embeds youtube.com.tv URL this way.
+While visiting this address from your browser you can just change the user agent and you will be served
+the TV version of the application. Then you can pair a TV with the browser or the phone.
+The process looks like this.
+First, the TV requests a screen ID from generate screen ID endpoint.
+Then, using this screen ID the TV requests a launch token.
+This token will be very important later in the exploit.
+Next, the TV sends a request to get pairing code endpoint with the launch token and in the response
+there's a nine-digit pin code. This pin code is presented on the screen.
+Then, the user fills in this pin code in the browser. The browser makes a request to get screen endpoint
+with this pin code. If the pin code is valid, the response contains a launch token for the user.
+It's the same token as in step 3 and it allows the user to control the TV.
+From now on, the TV periodically sends requests to the bind endpoint to see if there are any new comments
+from the user. When the user clicks on watch on TV button, the browser makes a post request to the
+bind endpoint with the ID of the video and the launch token. Then, the launch API responds to the TV
+with ID of the video which is then played for the user. So, we can just change the ID of the video to a
+private one, you might think. But it's not that easy. Because when the video is private, the response
+from the launch API contains an additional parameter – CTT. It's a token that allows the TV
+to access the private video. And the hunter did not identify any bugs on this side of the process,
+at least in this write-up. But there was a problem on the client side of the flow. Namely, the post
+request to the bind endpoint had no CSRF protection at all. So, let's change the attitude here. Instead of
+attacking the YouTube server to give us access to private videos of other users, we will attack the
+user and play his private video on our TV. What do I mean by our TV? Well, YouTube TV is just a website.
+To play the video as a TV, you don't need any hardware token or anything. You just need to make
+a few API calls to be able to communicate with YouTube API. High-level overview of the attack looks
+like this. First, we create a malicious TV or rather just a script that communicates with YouTube API
+like a TV. Then, we pair the victim browser with our TV from step one. Next, using the CSRF attack,
+we make the victim play their private videos on our TV. This, bypassing the access control.
+Let's take a closer look at pairing the victim with our TV. It's a five-step process and the user
+must fill in the pin code first. It would be hard to perform this using just a CSRF. But in our case,
+we don't need that actually. The process is created like this so that the normal user only needs to
+rewrite 9 digits into their browser. Then, the browser exchanges this pin for a launch token.
+Obviously, it would be insane to make the user rewrite the whole launch token. But in our case,
+when we are executing a CSRF attack, the victim will be on our website anyway. So, we can skip this
+part with pin codes and just put the launch token on the CSRF Proof of Concept website for the victim to use.
+With this, we have the pairing process taken care of. How about the video ID? At the beginning,
+I told you that this attack doesn't require leaking the video ID. What do we then send to the bind
+endpoint in context of the victim? Instead of video ID, we can send ID of the playlist.
+When you create a new playlist, it gets an identifier that is not predictable. However,
+you have a few playlists that YouTube creates for you by default. Watch later playlists with identifier
+WL. Liked videos with identifier LL. But the most useful for us is uploads playlists with all your videos
+including private ones. You can create the playlist ID based on the channel ID of the victim. For example,
+this is my channel ID. You can see it by just visiting my channel. It's not secret. And this is the ID of my
+uploads playlist. They differ only on the second character. Instead of C, there is U letter. If you
+open that playlist, you can only see my public and unlisted videos, but I will also see the private ones
+there. So in our exploit, instead of requesting a video ID, we request a list ID with the uploads playlist
+ID. You can hard code it onto the web page when targeting a victim. Then this request will be sent
+from our website in the context of the victim. The authentication cookie will be attached. How does
+this happen with same side cookie attribute? Well, Google doesn't seem to particularly like the security
+mechanism and sets the same side value to none for most cookies which makes the CSRF possible.
+After the request is sent to the launch API, our TV makes a request to the bind endpoint which responds with the video
+ID from the first video from the uploads playlist and a CTT token that allows watching a video if it was private.
+David created a proof of concept script that does this whole exfiltration phase for you and reads all
+victims' private and unlisted videos. You can read the script yourself if you want. The link is in the description.
+It also contains all the steps required to communicate with YouTube API like a TV. He was rewarded $6,000 for that report.
+The fix was simple. Now the bind endpoint requires a better authentication header making the CSRF impossible.
+That's it for this video. If you've made it that far, feed the YouTube algorithm with a like so that it recommends the
+video to other hackers that can learn something from it. Also, sign up for my newsletter. Apart from getting
+more tips and tutorials from me, you can also get there the best deals for any products that I create.
+But for now, thank you for watching and goodbye.

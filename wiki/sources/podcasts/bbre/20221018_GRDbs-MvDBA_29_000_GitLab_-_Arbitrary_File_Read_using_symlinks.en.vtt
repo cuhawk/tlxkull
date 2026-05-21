@@ -1,0 +1,223 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.240 --> 00:00:04.980
+Hello! In this episode of Bug&nbsp;
+Bounty Reports Explained, I have a&nbsp;&nbsp;
+
+00:00:05.940 --> 00:00:12.660
+$29,000 arbitrary file read vulnerability&nbsp;
+in GitLab. The bug had to do with symlinks&nbsp;&nbsp;
+
+00:00:12.660 --> 00:00:17.760
+and I'm quite surprised we don't see&nbsp;
+this trick used more often. Anyway,&nbsp;&nbsp;
+
+00:00:17.760 --> 00:00:24.360
+the report was submitted by William Bowling whose&nbsp;
+reports I regularly cover on my channel because&nbsp;&nbsp;
+
+00:00:24.360 --> 00:00:30.420
+they are really, really good. So is this one&nbsp;
+so without further ado, enjoy my explanation!
+
+00:00:33.660 --> 00:00:40.620
+On GitLab, we can create groups and milestones&nbsp;
+within them which isn't that important but&nbsp;&nbsp;
+
+00:00:40.620 --> 00:00:45.960
+important is the fact that we can also upload&nbsp;
+files as attachments to these descriptions.&nbsp;&nbsp;
+
+00:00:47.580 --> 00:00:54.660
+And GitLab can work as gitlab.com, the global&nbsp;
+instance, but it can also work as self-hosted&nbsp;&nbsp;
+
+00:00:54.660 --> 00:01:01.020
+one which you install in, for example, your&nbsp;
+own company. And if you create a group in one&nbsp;&nbsp;
+
+00:01:01.020 --> 00:01:07.740
+instance and then you want to move everything&nbsp;
+into another one, GitLab allows you to do&nbsp;&nbsp;
+
+00:01:07.740 --> 00:01:16.380
+this by simply importing the URL of the GitLab&nbsp;
+instance and also the access token. GitLab can&nbsp;&nbsp;
+
+00:01:16.380 --> 00:01:23.700
+then go and fetch all the information about your&nbsp;
+original group and import it to another instance.&nbsp;&nbsp;
+
+00:01:25.200 --> 00:01:32.040
+For this particular report, the setup that&nbsp;
+William created looks like this: from gitlab.com,&nbsp;&nbsp;
+
+00:01:32.040 --> 00:01:41.820
+you import a group which actually imports itself&nbsp;
+also from gitlab.com. The reason is that we don't&nbsp;&nbsp;
+
+00:01:41.820 --> 00:01:47.580
+care about importing most of the things. There is&nbsp;
+only one file that we will have to change and our&nbsp;&nbsp;
+
+00:01:47.580 --> 00:01:56.340
+proxy server changes one single response and the&nbsp;
+rest of requests go simply back to gitlab.com but&nbsp;&nbsp;
+
+00:01:56.340 --> 00:02:06.840
+gitlab.com does not know about it. Let's talk&nbsp;
+about symlinks. Symlinks or symbolic links are&nbsp;&nbsp;
+
+00:02:06.840 --> 00:02:14.280
+files that refer to other files on the filesystem.&nbsp;
+There are two types of them and we are talking&nbsp;&nbsp;
+
+00:02:14.280 --> 00:02:22.020
+about soft links which don't actually store the&nbsp;
+file's data but they refer to the actual file's&nbsp;&nbsp;
+
+00:02:22.020 --> 00:02:30.300
+location. You can think of it as a shortcut. And&nbsp;
+this is the command that I would use to create a&nbsp;&nbsp;
+
+00:02:30.300 --> 00:02:37.380
+symbolic link to my /etc/passwd file and the&nbsp;
+symbolic link itself is called 'symlink'.&nbsp;&nbsp;
+
+00:02:38.220 --> 00:02:46.740
+If I do anything on this file, the system will&nbsp;
+work as if I was working on /etc/passwd file.&nbsp;&nbsp;
+
+00:02:47.340 --> 00:02:55.020
+The attack scenario we could try is to upload&nbsp;
+a file - a symlink to the server, referring the&nbsp;&nbsp;
+
+00:02:55.020 --> 00:03:02.100
+/etc/passwd on the server, hoping that the&nbsp;
+server will resolve the symlink and give us the&nbsp;&nbsp;
+
+00:03:02.100 --> 00:03:09.060
+/etc/passwd file or any other file from the&nbsp;
+server. But the problem of this approach is that&nbsp;&nbsp;
+
+00:03:09.660 --> 00:03:17.280
+the browser, when we do this, will just upload&nbsp;
+our own /etc/passwd file to the server. In fact,&nbsp;&nbsp;
+
+00:03:17.280 --> 00:03:23.220
+when I first learned about this vulnerability,&nbsp;
+that's exactly what I've done - I uploaded my&nbsp;&nbsp;
+
+00:03:23.220 --> 00:03:28.500
+own file to the server and I thought, for&nbsp;
+a second, that I found arbitrary file read.&nbsp;&nbsp;
+
+00:03:29.160 --> 00:03:34.440
+The problem of this approach is that the&nbsp;
+information about the fact that it's&nbsp;&nbsp;
+
+00:03:34.440 --> 00:03:40.320
+a symlink and not the file is not in its&nbsp;
+contents but in information about the file.&nbsp;&nbsp;
+
+00:03:40.320 --> 00:03:48.240
+And whenever you have a file upload functionality,&nbsp;
+you usually only upload file contents and not, for&nbsp;&nbsp;
+
+00:03:48.240 --> 00:03:56.400
+example, permissions or information that it's a&nbsp;
+symlink. Normally this attack won't work. Unless,&nbsp;&nbsp;
+
+00:03:56.400 --> 00:04:03.360
+you have a functionality that doesn't work on a&nbsp;
+single file but works on archives like Zip or tar.&nbsp;&nbsp;
+
+00:04:04.260 --> 00:04:10.200
+In this case, when importing all the data about&nbsp;
+the group from one GitLab instance to another,&nbsp;&nbsp;
+
+00:04:10.200 --> 00:04:17.640
+our attachments were packed into a tar&nbsp;
+archive and then unpacked on the new server.&nbsp;&nbsp;
+
+00:04:18.540 --> 00:04:23.580
+What GitLab should do to be secure is&nbsp;
+it should remove the symlinks on every&nbsp;&nbsp;
+
+00:04:23.580 --> 00:04:26.760
+single unpacked file. But in this case, it didn't.&nbsp;&nbsp;
+
+00:04:28.680 --> 00:04:35.280
+This is how you could exploit this on gitlab.com.&nbsp;
+First, you create a new group and a new milestone.&nbsp;&nbsp;
+
+00:04:35.280 --> 00:04:42.000
+In its description, you upload an arbitrary file&nbsp;
+- doesn't really matter what are the contents.&nbsp;&nbsp;
+
+00:04:42.600 --> 00:04:48.120
+It's uploaded to a folder with a random name&nbsp;
+which you have to copy. And then locally,&nbsp;&nbsp;
+
+00:04:48.120 --> 00:04:55.740
+you create the directory with the same name and&nbsp;
+inside, you use this command to create a symlink.&nbsp;&nbsp;
+
+00:04:57.000 --> 00:05:01.080
+The first argument is the file that&nbsp;
+you want to steal from the server&nbsp;&nbsp;
+
+00:05:01.080 --> 00:05:07.020
+and it can be an arbitrary name. Then,&nbsp;
+you create an archive with this file.&nbsp;&nbsp;
+
+00:05:08.100 --> 00:05:15.120
+Now, you create a proxy server that will forward&nbsp;
+all requests back to gitlab.com so it can fetch&nbsp;&nbsp;
+
+00:05:15.120 --> 00:05:22.140
+all the data about the group that you are trying&nbsp;
+to import. You only modify a single response - the&nbsp;&nbsp;
+
+00:05:22.140 --> 00:05:30.060
+one with the uploads.tar.gz file and instead&nbsp;
+of requesting this one from an actual GitLab&nbsp;&nbsp;
+
+00:05:30.060 --> 00:05:38.280
+instance, you return the tar file that you just&nbsp;
+created. The vulnerable GitLab instance will then&nbsp;&nbsp;
+
+00:05:38.280 --> 00:05:44.940
+unpack this file without removing symlinks and all&nbsp;
+of a sudden, if you try to open the uploaded file,&nbsp;&nbsp;
+
+00:05:44.940 --> 00:05:50.160
+you will see the /etc/passwd file&nbsp;
+or whatever else you tried to steal.&nbsp;&nbsp;
+
+00:05:51.180 --> 00:05:58.260
+After some arguments about the risk and, in&nbsp;
+particular, about the integrity impact of this&nbsp;&nbsp;
+
+00:05:58.260 --> 00:06:08.460
+bug, it was classified as critical and the payout&nbsp;
+was $29,000. The bug was fixed in GitLab 14.6.2.
+
+00:06:12.480 --> 00:06:18.540
+If you want to see other reports by William,&nbsp;
+check out this GitLab playlist. There is his&nbsp;&nbsp;
+
+00:06:18.540 --> 00:06:26.220
+$20K RCE in image metadata but also his XSS&nbsp;
+that he escalated into an arbitrary file&nbsp;&nbsp;
+
+00:06:26.220 --> 00:06:32.040
+read. XSS into arbitrary fire read.&nbsp;
+A fantastic report! The playlist is&nbsp;&nbsp;
+
+00:06:32.040 --> 00:06:37.020
+on your screen right now. For now,&nbsp;
+thank you for watching and goodbye!
+

@@ -1,0 +1,734 @@
+In this episode of the podcast, I have an amazing guest who has come a long way from
+reporting unexploitable bugs to Google which were denied through valid bugs and being on
+their Hall of Fame up until working at Google and improving browser security mechanisms.
+The name of my guest is Michal Bendkowski. Enjoy.
+Hello Michal, thank you so much for joining me in today's podcast.
+To start off, can you tell me and our audience what is your background and how did you get to the point
+you are currently at? Start wherever you want to start.
+Hey everyone. Hey Greg. So I started my career in cyber security around 10 years ago.
+I was a pentester for many, many years and that was my main job.
+I was always interested more in attacking than prevention.
+In 2014, I think, or 13, I started ByteBounty as a kind of a side job.
+I was hacking mainly Google programs like Google Web VRP and the Chromium.
+Well, I also reported like some bugs in some other Badmoney platforms.
+And after like many, many years working as an attacker, at some point I decided that
+instead of finding like an XSS number 100, maybe it will make more sense in trying to do some stuff that
+will prevent this XSS from happening in the future. Or maybe if we cannot prevent that, then maybe we can
+do something that will mitigate the side effects of this vulnerability.
+So in essence, I was on the offensive side, both in my daily job and in back hunting. But like recently,
+I started my shift from the offensive to the defense.
+And where do you work now?
+So now I work at Google. I joined Google at the beginning of this year.
+I am in the information security engineering team.
+We actually recently started a blog on the back counters at Google.com,
+which is like the blog specifically of our team, which I think is pretty nice.
+And this team does many different things. But in essence, what I'm interested in is trying to prevent
+as many bug classes as possible. And the perfect way to prevent a bug class would be if that would be
+possible in the web platform. So like developer of an application doesn't have to do anything,
+but we make some changes in the specifications or in the implementations of browsers.
+And thanks to that, like everybody is safer basically.
+Yeah, that's very annoying to us attackers when browsers make changes because then it
+applies to pretty much every single application at once.
+Whereas when it's some changes in the server side frameworks, like I don't know, introducing
+a prepared statement for SQL, it takes years, long years between before everyone uses the new change.
+But in browsers, it's pretty much instantly after after it's it gets to the stable branch of Chromium
+or whatever it's just everywhere. So so so that's something I don't like.
+Yeah, I think from my perspective, that's pretty cool. Like even if the application is not supported at
+all, but people update their browsers and the auto updating mechanisms in browsers are pretty good,
+then they can still profit from from the changes that we made. And yeah, in a nutshell, my joke now
+is that like the more I will annoy you, the better.
+Yeah, unfortunately, that's that's true. What bug class are you working on at the moment?
+I'm I I'm trying to prevent mutation XSS. That's one of it.
+Basically, there there is a change that I made in Chromium a few months ago to change how HTML is
+serialized. Maybe how DOM tree is serialized to the HTML because the mutation XSS, like the root cause of
+mutation XSS is that if you have a DOM tree and then you serialize it and then you parse it again,
+then you are not guaranteed that the first DOM tree will be equivalent to the second DOM tree.
+So I think, by the way, that it is a really bad feature of like HTML because imagine that if you had a
+JSON, if you had an object and you would serialize an object to JSON and then you would deserialize this
+object, this JSON to an object and you would get a completely different object, then you would say
+that it is pretty bad. But this is exactly what happened in the HTML and it is actually by design.
+There is an actual warning in the HTML specification that when you do a run strip of HTML and the DOM tree,
+you are not guaranteed to get the same stuff that you got before. So I think there are basically two main
+surfaces on which we need to work with. And the first one is the serialization of attributes
+because there was a decision made in the HTML working group. And that was like 10, 15 years ago, I think,
+that characters such as the less than character and the greater than character are not escaped in attributes.
+And this is actually bad because it might happen that something that was supposed to be an attribute will
+be mistreated as an opening tag. So it is actually a really slight change that they're trying to make is
+that when you serialize an attribute, then the less than character is serialized to, you know, ampersand
+LT and the greater than two ampersand GT. But what's also like interesting and something that I need to work
+with right now is that we added a use counter to Chromium. So use counter is basically when we try to make
+a change that we believe can be backwards incompatible, then we are adding counters to Chromium. And we want to
+see how many people actually use a feature. So how likely it is to break the web. Yeah. And it turns out that if I remember
+correctly, around 5% of page loads, uh, serialize attributes with less than or greater than characters in that, which
+is much greater than I had expected before. It doesn't mean that if we make the change, like to, you know, stable Chromium,
+the sides will break, but there is a potential that they might break. So we are doing some kind of analysis to see
+if this will really happen. And another problem besides attributes is that some tags such as style,
+this is the most prominent example. Um, when you serialize the style, then you don't do any escaping.
+So inside style, the less than character is just serialized as the less than character without the entity.
+And this also can be abused to mutation access. There is basically no way in the HTML spec to safely
+serialize a style tag, because if it contains the end tag for, I mean, if you use the DOM API and you
+set like style that text content is equal to end tag to style and then some stuff after that,
+then it, there is no way to serialize that safely. And yeah, I'm also trying to do something about that,
+but this is actually super, super tricky. And I am not even sure if that's possible at this moment.
+Oh yeah.
+Uh, you know, I mean, it is possible, but can we do that without breaking the web? That's, that's, that's the
+question. But when it comes to the attributes, it's also tricky because of the highest percentage of
+usage. So, um, yeah, we need to do some more analysis before we can say that it is safe to
+like flip this flag in the stable Chromium. By the way, if you use, um, the Chromium flag called,
+uh, enable experimental web platform features, then the serialization algorithm is changed to the,
+uh, to the attributes. So if you, if you use that flag and if you see that anything breaks,
+please report the back Chromium or let me know, because I would be very interested in any use
+case that it actually breaks. I use that flag on daily basis for a few months now, and I don't think
+I saw anything breaking, but that's just like anecdotal one person. That's not enough.
+I think it can also, if I understand this correctly, it can also break some CSP bypasses where you could
+only inject an attribute and then you used, I think bootstrap with data HTML attribute to, and your,
+the value of the attribute became an actual HTML. So if I understand correctly, this will also break
+this CSP bypass. Um, I mean, if you use a DOM API, like, uh, get attribute or like a data set and you
+get the value of an attribute that it doesn't check. Like the parsing doesn't check. Okay.
+Only the serialization. So I don't think that this bypasses will.
+Okay. So serialization here means using, using what exactly?
+Uh, that you have a DOM tree. Yeah. And you create a textual output from the
+DOM tree. So create an HTML text from the DOM tree. Because maybe let me, uh, explain why, why is this
+the problem? Because I, I think I didn't, uh, explain that. Um, the problem is like, if you have, um,
+HTML sanitizer and well, HTML sanitizers usually work this way, that you have an input string that you
+consider able and it outputs an, another string that is supposed to be same. But what happens internally
+is that, uh, the HTML sanitizer parses the HTML, it traverses the DOM tree and it removes everything
+that it considers bad. And then it needs to serialize to a textual output to a string. But then when you do
+something like div that inner HTML is equal to like, don't purify, sanitize something, then the HTML is
+parsed again. Okay. Because the sanitizer serialized the DOM tree. But when you, uh, assign something to
+inner HTML, then it is parsed again. And that's the problem because you might have a DOM tree that the
+sanitizer considers safe, but it is not safe after another reparsing. That's basically a mutation
+exercise. So the problem is that, um, for instance, uh, one example of a mutation exercise that actually
+happened in Google a few years ago, there's a video by LiveOverflow about it. Uh, it was done by Masato
+NewGovah. Uh, basically you have a no script element in the HTML specification and it is a very interesting
+element because it is parsed differently depending on whether you have scripting enabled or disabled.
+So if your scripting is enabled, the no script is treated pretty much as style. I mean, it is parsed
+pretty much the same way. So everything inside is treated as text. But if you have scripting disabled,
+then it is parsed as div basically. So two completely different parsing modes. And the problem is that
+if you use the, um, browser provided HTML parser, such as DOM parser, parse from string, that it parses
+the HTML as if the scripting was disabled. But if you assign it to... By default, is it disabled or enabled?
+Uh, disabled. You can, and you can change that. It is assumed that the scripting flag is disabled
+and it's always parsed this way. There is like no way in the API to change that. But when you assign
+to innerHCMR, then you obviously assign it to a document which has the scripting enabled.
+Yeah. So the problem is that the sanitizer parses the NoScript kind of differently than what the,
+how it will be parsed afterwards. So suddenly you might have a DOM tree that the sanitizer
+considers safe. And it, like after that reparsing and the difference in mouse script, it is no longer
+safe. There are other examples where after a few parsing trips, you can have very different effects.
+But I think this is the easiest one to explain why, why this is a problem, why this might occur. And by the
+way, if you use a sanitizer that exposes, like client-side sanitizer, that exposes an API that it can
+return not a string, but a DOM node, then use it because then you don't have any problem with
+mutation accesses because the HTML is not reparsed. Yeah. Yeah. These things I got a little bit into
+like knowing the more advanced or hidden, you know, you can say features of HTML, like namespaces and
+types of nodes and everything you say like here. So guys, if you, if you are new to this, I recommend
+you a blog post by Michal. They are really good. And I, I'm not only saying this because you are my
+guest. I actually did mostly use your, your write-ups to learn about this stuff. Which actually did lead
+to the, to, to, to the XSS, let's say in, in Golang's HTML library, which, which didn't use, which
+wasn't as advanced as, as those things, but, but I'm happy that I learned something. But I know that
+you didn't start your back hunting career or your web security career by finding these,
+let's say state of the art XSS. I think you started with, with the very simple one. So can you tell me
+what was the first bug you ever reported?
+I mean, when it comes to my bug hunting career, then the first bug I imported
+was an XSS in Google blogger and it was actually discarded. I mean, I didn't get a reward for that
+because the attack scenario was that I needed to send a zip file to the victim and the victim needed
+to upload it themselves. So yeah, I mean, I think I agree that like if I can make a victim do that,
+then I would just put something else in the zip file that, you know, take over the computer. Why,
+why bother with that XSS in that case? Um, yeah, so that was the first bug I reported in, in bug bounty,
+but I think I reported some bugs before, uh, just like, you know, casually I found something in some
+library. I think like my first part, like the first report that I did for some external software was
+to PHP my admin. And I think that was in 2011, maybe something like that. Uh, that was completely,
+uh, you know, inexploitable XSS. Um, but there was a bug that, uh, I, I, I might, you know,
+misremember the details, but it was something like that, uh, that if you use like order by in your
+SQL query, uh, then in the result, the PHP my admin would say that these are a result from two.
+And if you put an SQL comment in that, then it would just, you know, reflect that SQL comment.
+So if you put like a snippet of HTML in the comments that it would just, you had an XSS in that case,
+but it was inexploitable because that was basically, um, that was like a side XSS pretty much,
+uh, because it has like C serve token and all stuff like that. But yeah, there was a bug that just
+didn't escape data as they should, or maybe they should cast it to an integer.
+Uh, I think that's what they ended up doing. Uh, yeah, but you know, I, I was thinking if I should
+report that or not because I, I knew it wasn't explainable, but then I, I mean, I found it.
+Maybe they would say that, okay, it doesn't matter. Uh, I also didn't really brag about this report.
+I don't think I ever put that even on my Twitter or anything. Just there is a CVE for that, which I
+think is really funny. Uh, because yeah, but you know, I, I think that, uh, like recently there's been
+a discussion about the usefulness of CVEs and, uh, uh, like some, somebody reported on SQL injection
+in the dem vulnerable web application. So yeah, CVEs are pretty useless sometimes, but yeah, I got CVE
+from that even though that wasn't, but you know, I, I didn't brag about it because it wasn't anything
+special or anything, um, exploitable. Yeah. I think a lot of us just start with, with bugs that are not
+exploitable. And, and then as we go, we learn about the attack scenario and how important this is,
+that it's something practical. So can you tell me how did you then transition, let's say from self
+excesses into, uh, ones that were rewarded? Yeah. I, I mean, I, I think that my work as a pen tester was,
+uh, very, um, I, I mean, um, yeah. Uh, so the work as a pen tester,
+gave me really much here, uh, because I was talking to clients constantly and oftentimes we had some
+discussions, uh, whether a bug is exploitable and whether we should consider this bug, uh,
+security issue of it, if it's like a high severity or medium severity or stuff like that.
+So it like the discussions with customers, um, make me, you know, think more about the attack scenarios.
+And by the way, I actually am thinking about, uh, hosting a video on my YouTube channel about that,
+about the attack scenarios. And when an attack makes sense, when it doesn't make sense.
+Uh, but I think like, uh, during my practicing career, like in security, um, I was a person who
+tempted to lower the salary of bugs, like the most of all people, uh, because, uh, yeah, I, I, I remember,
+uh, I think I can, I, I won't share any specific details, but like some, uh, general idea. I remember
+that I was testing some application in like a path test of an application and I found a SQL injection.
+And at that point in my head, SQL injection was pretty much an automatic, you know, high severity
+or critical severity, but okay. I tried to exploit it further. And, uh, this was a SQL injection in an
+insurance application and you could ensure your car in that. So it turns out that the database
+contains only data about cars. So, you know, models, manufacturers, types of engines and stuff like
+that. There was absolutely no data of users. And you know, when I reported the bug and like,
+automatically I gave it like high severity, but before sending this report, I just, you know,
+stopped for a while. And, um, I, I was just thinking to myself, what if the customer comes back
+and asks me, why is this the high severity? And then I realized that I can't convince myself that this is
+high severity because I didn't, you know, gather anything from that. I, everything that was in the
+database was public data anyway. So yeah, I, I remember that was the first time that I know
+where the severity of SQL injection, I don't remember to medium or to low, uh, what was that? Uh, but it
+wasn't like high severity because it's just, you know, I, I couldn't, how, how can I, uh, convince somebody
+else that it is, uh, high severity if I cannot convince myself. And that's, I think that was a pretty,
+pretty important moment for me, uh, because it made me realize that you cannot just have an
+automatic assignment that this type of vulnerability is this type of severity. It's, you know, all depends
+on many different factors, like how, what kind of data you can access, how likely the attack, like,
+I don't know, I guess that some people consider like start XSS as more severe than reflected XSS,
+but it also doesn't have to be true in all cases. There might be cases where reflected XSS
+will actually be more likely to execute the stored XSS. Uh, like if there is like a super common
+application like Google docs, for instance, and if you have a reflected XSS in Google docs, then,
+you know, it's very, very easy to mount that attack. But if you have a stored XSS in a web interface of
+some network device that the admin visits once a year, then, you know, you, you, this XSS might never
+actually get executed. So yeah. Um, I think that during my fantastic job, uh, and like, you know, clients
+keep, uh, talking about that. They, the clients just like to not agree with the, you know, assignments of severity.
+And when it happens over and over again, then you start thinking about it more. You kind of like to prepare
+and to think about what they might say, what might be their arguments, what they might not like about
+this vulnerability, about this scenario. Oftentimes it's difficult to, uh, you know, as a pentester,
+you only see a fragment of the whole ecosystem. You might not understand how everything is connected
+because right now I was talking that we might consider a vulnerability, a high severity, but the
+client might consider it lower, but sometimes it was actually the other way around. Sometimes we didn't
+consider something very severe, but the client knew how we interacted with some different part in the
+system, or maybe that we didn't consider something serious, but the client knew that doing some stuff
+actually generates some costs. And if you can do that, like without limits, then it's a pretty serious
+problem for them. Then, you know, it's, it also can happen this, this way around. So, so yeah, like over
+all of these years, I, I really like like whether an attack scenario is viable, whether it makes sense. And
+uh, I always like to think about the preconditions for an attack. So, you know, the main question is,
+um, if we consider an attack scenario and we know that the attacker has to be in a certain place
+to mount this attack, are there other attacks that are much, much simpler than that that they can do
+given this, you know, precondition? Uh, it's like I said with the XSS in Blogger, that was my first
+XSS reported in Google bug bounty. Like if we can make somebody take a zip file from us and do
+something with that, then why would we bother with an XSS in, you know, a blogger admin interface?
+We would probably be able to do much more severe stuff without having to have any, you know, vulnerability
+in the application itself. Maybe you could just make them run dev tools and do something in that,
+or maybe just run an executable from the zip file. So yeah, I, uh, yeah, that's, that's the change
+that happened. But I think that's like, just comes with experience. You see how people react, what it
+imports, and then you understand also their point of view. And that not every vulnerability that you find
+is something that the world needs to stop to fix that. And there might actually be vulnerability that
+people might acknowledge, but they might decide that they don't want to fix that bike right now,
+or maybe for the next couple of months. And it can also make sense that whether, when you, uh, keep
+the threat model in mind. Yeah. I think I, I started paying more attention to the actual impact in the sort of
+bug bounty world than in the pentesting world. In pentesting, I feel like there was more, uh,
+using of pre pre-written templates of bug descriptions and things like that, because when you report, you
+know, 10, 15, 20 vulnerabilities in, in one week, you need to be- By the way, I can interrupt. I actually
+hated that. I mean, I, I, I didn't use template to the descriptions. I, I hated doing that.
+Really? Okay. Yeah. Would you write a personal description of every single bug in pentest?
+I mean, if, um, for most of them, yes. Like only for like, if I have an exercise, then I would
+always write a report, like what you can do in the context of this application with this exercise.
+Okay. That's nice. I didn't, I, I, well now in the bug bounty, I obviously have to do it in, in
+pentesting. I admit I didn't, and, and only, you know, in bug bounty where you have to convince
+the other side in every single report that you have an actual impact. It taught me to, to also
+start paying attention to this due during pentests. Yeah. Back, back when I worked there.
+Um, yeah, I, I think that's, yeah. I mean, yeah, I, I think that's, that's good. Yep. We've had also
+some like fantastic clients who just accepted everything, whatever we write there. Okay with that.
+Um, but, but yeah, um, we, we had, we, of course we had a security, some, you know, pre-written
+templates for like many, many types of bugs. Um, but I, I mean, I used some of them, but I, I don't know.
+There's something in me that I, I just don't like use template, uh, template descriptions. I,
+I, I, I want to make it, you know, more specific to, to the application. Of course, it also depended
+on this case because if I had like, if there was like an every possible bug in the application,
+in every possible place, it also happened, then it probably doesn't make that much of a sense to
+describe everything. Uh, but, uh, yeah, what I did, like if I had like many XSSs in a single application,
+that's also an interesting question. Like if you find the same vulnerability in different places,
+would you report it as a one bug with like different locations or would you report it as a few bugs? Um,
+Yeah. Um, and as usual, it depends. Yeah. Uh, like my, my approach was that,
+of course, when, when I do pentesting or bug bounty, it's usually a black box, so I cannot see the source
+code. I don't know exactly which cause, but sometimes you can see if you have a few instances of
+probably the same bug. And when I, um, when I assumed that this is the case that, okay, this is
+like different locations, different parameters, different endpoints, but the root cause is probably
+the same that I reported it as a run bug. But if there, if I thought that there are several different
+root causes, then I would report this as, uh, distinct bugs. And the main reason that this is
+also really interesting, uh, I think that, uh, in, in the pentesting, we often do retests. So yeah, we,
+we report bugs, the customer fixes those bugs and we need to do retests. And if I report like two
+different XSSs in, you know, one bug and then I do a retest and one is fixed and one is not fixed,
+that it's more difficult to state that in the report. You need to say that it's partially fixed.
+It's pretty bad. I mean, you can do that of course, but I didn't like that. So if you have two separate
+issues, then you can say, okay, this one is fixed. This one is not fixed. It's pretty obvious.
+Uh, but if you report many different things in one bug and they fix some of them, but like not all of
+them, then it's starts being not that, you know, it's just not easy to grasp what, what exactly it
+means. Like partially fixed. You need to state exactly these endpoints are fake. These endpoints
+are not fixed. And then there's being, you basically kind of start reporting this as a separate box,
+but in one bug, you need to, you know, make your description much longer. So yeah, that's, and, um,
+speaking of doing retests, it also, uh, taught me one very, I believe it's a very important skill.
+It is writing proof of concepts. And I have a nice story here. It happened in the beginning of my
+career as a pen tester, um, was that I did a pen test of some application and the client came back
+with a retest, I think a year later. So you don't remember about this application anything basically.
+And then I had, uh, you know, proof of concept or the description of the attack in the report.
+And I wasn't able to replicate that. It was too fake. It was too bad to be able to, you know,
+if you don't remember the details, then you can't do that from the description alone. And I spent really
+long time trying to, you know, remember what exactly I was doing, how I was able to get to this place to
+mount this attack. And yeah, that, that taught me that my, from like that point, my proof of concept
+are really step by step. You need to click here. You need to go here. You need to make sure that you
+are logged in as an account with this and that privilege and stuff like that. And yeah. And
+basically my reason for writing better proof of concept was that I should be able to,
+you know, reproduce that back from this proof of concept. It should be, uh, or maybe to put it
+another way, if you have a person who never saw this application before, then that person should
+be able to reproduce the back based on your proof of concept. That was like my line of thinking.
+Yeah. And that's good for bug vanity because, um, sometimes we think that we report the bug to
+someone that knows the application really well, but the truth is that often it's three years by a person
+who is responsible for many different bug bounty programs and they do not know anything about the
+application you are reporting the bug currently. So I also, I don't know who, who, who told this
+where, but I remember a bug, a tip from someone to actually include things like creating an account,
+logging in, uh, using proper settings, setup or whatever, and only then doing the proof of concept.
+And I also see, I'm not a tree user, obviously, but when I do the case studies, sometimes I
+study a lot of like tens or hundreds of, of bug bounty reports of a particular bug class.
+And so obviously I want to, and I extract some information about the report and I see that, um,
+there is a good proof of concept, like step by step reproduction is the quickest way for me to like
+understand, okay, what is this report about what the impact and things like that. And then I, I often
+don't even need to take a look at the description and the, what they wrote about the impact because
+the, the good proof of concept is, is replacement of anything.
+Yeah, that's right. Also, um, yeah. Also in Google, for instance, like there are also some people on
+triage, uh, when it comes to the VRP, for gravity, work program. And you know, Google has like, uh,
+thousands of applications, literally, and there are like, I don't know, 50 people on triage.
+So there's, there is no way that they know every single application. And also I think like, um,
+good way of thinking about it is that if you are a bug hunter and you spend a lot of time on a single
+application, then it's really, really likely that you know more about this application than any person
+from the triage. Yeah. So keep, uh, like write as many details as you possibly can. You will make life
+easier for, for the people in triage. It will also make it easier to, uh, you know, grade your report,
+uh, and to understand what's, what's the real impact. Yes. Yeah. Especially when, when the bug is
+complex and speaking about the complexity, when I look at your bugs from like 2013, 14, uh, maybe even
+15, those exercises are often quite simple. And then you started getting deeper into this and reporting the
+more advanced exercises, the mutation exercises, the crazy stuff, a lot of us don't even know about.
+How did this transition happen and how did you learn those more advanced things?
+Yeah, that's, that's an interesting question because I don't think I have a good answer for that,
+to be honest. Um, I think it just came. I mean, what, one thing that truly happened
+was that my approach in the beginning of my backhand career was that I was trying to find
+old applications. Basically I was using some Google hacking and yeah, Google hacking on Google
+and try to find like forgotten old application on Google. And it was possible. There were like many, many of them.
+And at some point I was out of ideas, like what else can I do? I, you know, at some point you ran out of ideas.
+And yeah, that was the point when I started to just, um, digging deeper into the application that I know,
+uh, to, to, to find some bugs. And also another factor was, uh, I think it was in 2015 or maybe 16,
+that Google introduced research grants. And the idea of research grants was that they gave money
+up front to bug hunters to specifically look at certain applications. So, uh, of course, if you report
+a bug, you get a normal reward, but the grant was supposed to motivate you to look for some application.
+And I think it really worked for me. Um, cause I looked at some applications like, you know, very,
+very carefully digging very, very deep. And I was, I tried to understand exactly what happens.
+Uh, yeah. What happens inside. And I knew that I, I won't probably get some easy XSS. Like, you know,
+you could just, uh, get parameter and you have an easy XSS. So I needed to understand what exactly
+happens in the application, how it transforms processes the input, uh, what are the sources,
+what are the sinks? So yeah, but I, I don't have like, um, good answer to like how exactly the transition
+happened. I, I believe that it's just something that comes with experience and, um, you know, when you
+report some simple stuff, you also maybe at some point here, you get kind of bored of that and you
+want to do something more interesting and yeah, you start looking at like different stuff. Um, also,
+uh, I think that for me, um, yeah, like many people like during the trainings that I gave in my
+previous company, we will probably talk about it a little bit later. Yeah. Uh, but many people asked
+me what is my methodology for, you know, finding security bugs in bug bounty or in fantasy. And
+I didn't like this question because, um, you know, some people have like some kind of methodologies.
+They like to do this and that and that, uh, maybe they use some other references like OWASP or whatnot,
+but I'm the kind of person that uses my punch and I don't have any specific methodology. I'm just,
+you know, clicking randomly on the application, seeing what it does. I'm trying to understand what
+kind of library it uses. And yeah, I just go with what my hunch says. And I know it's pretty bad from the,
+you know, educational perspective because it doesn't give any practical advice to, to anyone.
+Um, but yeah, that's the, that's actually how I, how I approach. I, I, I just look at the application
+and I, um, try to see something specific to this application. Uh, what can be, uh, a potential
+issue and yeah, that, that actually works for me. Yeah. What tools do you use for this? Is it mostly
+developer tools inside the browser? Uh, yeah. When it comes to the client side issues, then yes, I, I,
+I use, uh, adapters in Chromium and, um, let me think. Yeah. I think that's, that's pretty much it
+when it comes to front end. I sometimes write some scripts for myself or some browser's extension.
+What do they do? Sorry. What do those scripts do? Um, they usually do something automatically
+that would be to deduce to the dead manually, like some kind of transformation or, um, like one of
+things that I actually make public, made public was a script for finding prototype pollution gadgets.
+So it took a snippet of JavaScript and it transformed it in such a way that if the script is trying to
+access another existing property that it is a possible gadget for, you know, client side for the
+type pollution. Yeah. Uh, sometimes I'm just adding some logging because I'm just interested in, you know,
+what happens exactly on the application. Um, but in most cases that was like pretty. So basically just
+things to, to sort of speed up the, the feedback loop of, of, of what happens. Do you often debug the
+JavaScript inside the browser or do you rather statically read it? Yeah. Um, I, I, I'm a big proponent of
+dynamic analysis. Uh, that's, I think that my main tool, uh, how I work with the code. Yeah. Um,
+the pretty nice tricks actually in the Chromium DevTools, I believe are not widely known. Uh, like
+there, that, that for instance, that there is a function called debug that you can use in the devtools
+and you can pretty much debug everything. You can even debug a setter on, you know, in our HTML or
+stuff like that. Uh, and I really, really like to use that, you know, to find the piece of code that
+is interesting for me quickly. Uh, there are also pictures like, you know, you, practically everybody
+who used, uh, like debugger knows that you can set a breakpoint in, uh, like in the devtools, but you
+can also set like a conditional breakpoint. So the breakpoints that is fired only in certain,
+if certain conditions are met, but also you can have, uh, I think it's called lock point. So it is
+not a breakpoint, but you can, you know, just do a constant lock in this line, wherever the kind of
+code is called. So you, your, your code is not stopped because sometimes it is pretty annoying,
+especially when the application is doing like a lot of stuff. For instance, if you try to set a
+breakpoint on post message in any Google application, then you, your debugger will
+stop like every single second. It's just not usable at all. Yeah. Uh, yeah. So this kind of tricks is
+what I'm using. I also, I, I don't remember what or why exactly I did that, but I remember that at one
+point I also used the Krogan. I mean, I used the puppeteer it's called, I think the node.js library for
+controlling Chromium. Yeah. Uh, because I don't know the application was doing something annoying
+and I wasn't able to work with that and puppeteer, I was just, uh, intercepting the JavaScript and I was
+changing something in the JavaScript. So it's not that annoying. That was okay. I, I don't remember
+detail, but I, I, I remember I did something like that. Okay. Did this use case I didn't, didn't know
+about, but, um, for, for our listeners, I, in BBRP, I just finished, uh, uh, like four part series
+about dev tools and all the things that, uh, we have described here are there. So, so you may want to
+check this out. One thing I, I, I learned while writing those articles and while writing the docs
+is that you can reset frames, um, while debugging. So you can run over the same function over and over
+again, which I didn't know about. And, and it, it also speeds up the work massively. Yeah.
+Another, another track that I, I, I like to use is for instance, assume that, um, you test an
+application that uses some kind of HTML sanitizer. And sometimes it is pretty annoying to do that,
+like directly from, from the application, because I don't know, you need to pick some check boxes or
+you need to press a button every single time and stuff like that. So I also like to like find
+the, in place in the JavaScript code that does synthesization. The assumption here is that it's
+client-side synthesization. And if you can get a reference function, like it at debugger,
+because the nice thing about, uh, using the debugger in Chromium or in any other browser,
+is that if you execute a command in the console, then you are in the context of where you are currently
+stopped. So we can use the lock on variables and stuff like that. So if I can find the method with
+performance, the synthesization that I can just go to the console and, you know, call it directly
+without doing all this user interface stuff. And it also... Yeah, that's a good tip. How would
+you find this function? Yeah, that's, that's an interesting question. Um, there might be several
+ways to do that. Um, I might assume that if the application is doing HTML sanitization,
+then it uses a browser provide HTML parser, such as like the DOM parser parse from string. So I might
+try to set a break point on that. Um, I might try to set a break point on, um, inner, uh, inner,
+on the setter of inner HTML. Um, it is also possible, like, it, uh, if you know that the sanitized HTML,
+it's put somewhere in the DOM tree that in dev tools, it is also possible to set a break point
+whenever a domino changes. So you can set a break point on a certain domino, for instance, if any
+child is appended. So then you can, you can do that. If you know that this is where the sanitized HTML
+ends up, and then you can go up through the, you know, uh, stack trace to, to find the place. Because
+if you know that it is out with it here, that somewhere near, hopefully, uh, this generated.
+So I, I focus, uh, on either the sink or the source. So I'm trying to take, and you know, sometimes, uh,
+you can assume that there is a sanitizer, you can just look for the word script. Because like,
+if there's one tag that every single time it's strips out and it's script. Yeah. Uh, so you might
+be able to apply it, you know, just by looking for some strings that you assume that the sanitizer will
+have. Yeah. Yeah. That's a, that's a good tip right here. Um, and what are your tips for reading?
+Um, because I, I saw also some of your, some of your work was that you found out new stuff or in the
+browser or new, new ways to define something in the browser. How do you get knowledge about those
+changes in the browser? Um, basically from Twitter or X. Okay. Um, I, I follow people who,
+well, I mean, among people that I follow, there are also people that work in browsers, like in Chromium,
+in, in, in, in the Safari team or, uh, in the Firefox team. And when something new happens,
+then they like to tweet about it. Um, there is also, uh, there are also some Twitter accounts
+like, um, I don't remember the names, but something like intense too, I think it's called,
+because there is a process in the, in, in all browsers that if they want to introduce a new
+feature, then they do something like intense to experiment, intense to shape and stuff like that.
+So there is some kind of documentation that they want to introduce something new. And then you can,
+uh, yeah, get, get the information about that from, uh, from the sources. Uh, sometimes, but sometimes
+these are just random tweets. I remember that, uh, a few years ago I did a security analysis of portal
+element, uh, from this unknown Chromium. And the inspiration from that was from a tweet by Frederick
+Brown, which by the way is in the Firefox scene. And that was a tweet, something along the lines of,
+Hey, uh, you have a specification for the portal element, but it doesn't have any security consideration.
+And I thought, ah, that's interesting because I mean, the security considerations might be empty because
+this specification doesn't really relate to security, that might be the case. But also maybe nobody really
+thought about the security considerations. And yeah, I believe, uh, the, the latter was the case in,
+in, in portal, unfortunately, unfortunately for me.
+And that's what happened later with the portal element. I'm sorry. What happened later with your
+research on the portal element? Uh, what happened after this question? Uh, because I, I, I think I saw
+your bug, uh, using the portal element, the same origin, same margin policy bypass. Yeah. Yeah. How did you get
+to, from reading the tweet into finding the same origin policy bypass? I see. Um, so, um, yeah, I read the spec,
+I read the spec and I was just trying to understand what, well, why do we even need portals? What does it even do?
+And it is similar to iframe. That was the first thing that was easy to notice, but it's not exactly iframe. The main difference was that, um,
+in portal element, you could call a, a method. I think it was called activate. And then the portal element is like upgraded to be in the top frame, like,
+instantaneously without, uh, any reload. So yeah. So, you know, the first thing that I could notice was that,
+okay, it is similar to iframe. And in iframe, one thing that, one thing that you can do is that you can set the
+source attribute to like JavaScript one. So yeah, I'm just trying to do the same thing on portal and it worked.
+But the question was in what context does the JavaScript execute? And it's turned out that in portal,
+the JavaScript executed in context of the page that was already loaded. It was pretty much equivalent to
+what happens if you just, you know, paste the JavaScript into the address bar.
+Yeah. So if you enter the JavaScript, like JavaScript colon and stuff, then it executes in the current
+delivered page. And if you try to navigate portal, then it was pretty much equivalent to enter some
+stuff in the address bar. So if you were on like accounts, google.com, that was my example, and you
+could, you know, enter JavaScript in the address bar. If I tried to navigate portal to JavaScript, then it
+executed in the context of accounts, google.com. But you know, when I got the idea that this is equivalent to,
+um, to, to, to entering an URL in the address bar, then the natural next step for me was that, okay,
+but in the address bar, you can also navigate to a file URL. You cannot do that in iFrame. I mean,
+you cannot do that in iFrame if you are in the HTTPS protocol, because this is like,
+it is not possible to navigate to local resources from HTTPS. But in portal, when I tried to navigate
+to file, it worked. It really, uh, showed the file in, in the portal. So what you could do was that you
+could navigate to file URL, like etc password, and then you can navigate to JavaScript to get the
+content of that password. So that was not on the same origin policy bypass, but it was also
+reading corrective files, which is even worse. Yeah, really bad.
+Yeah. Uh, but yeah, I think that this bug was, I think it was kind of obvious. I mean, in a way
+that it was the really natural thing to check, like, okay, it is similar to iFrame. In iFrame,
+this thing is blocked. Let's see if it is blocked in a portal. I need one. Yeah. And that's pretty
+much the story about portal. I found like five or six bugs, I think. Yeah. And most of them were like,
+okay, this is normally blocked. The question is, is that black report? Oh, it's a bug report.
+Do you know if the portal elements, because back then it was in experimental mode or something like
+this in, in Chromium? I, I, I think it still is. I, I, I don't think it's actually used. I mean,
+they obviously picked those bugs. Um, but yeah, it's still, uh, I, I think it's also not under the
+enable, like, an experimental web platform features, but it's under a separate flag, like,
+enable portals. Okay.
+So even less people have that. Um, there's also an opposition from other browsers. Uh, so I, I'm not
+really sure what is the status of, of portals. I know that, uh, there were many, many, many security
+issues because like I found the security issues and some other people, when they found out that
+something called portal even exists, they started to look for other issues. And I, I know that there
+were several like memory corruption issues in portals as well. So it was really a gold mine for
+backhunters. Does Google pay normally for features that are experimental or they have like lower, lower
+a bounty table for them? I'm not exactly sure what the policy currently is, to be honest. I, um, I think
+it's the policy changed a few times in the meantime and, um, I, I, I'm not sure what, what, I'm not sure
+if the bugs would be rewarded today, to be honest. Maybe they would, maybe they wouldn't. I, I don't know
+what is, what is the policy. Okay. Um, and also this is the, the back in the browser, not, not really in,
+in a website. Yeah. And it's also, um, a, a shift that, that was present in your career. Yes. What, uh,
+what was your drive to, to looking at bugs from just bugs in normal websites to bugs in browsers?
+Yeah. Um, uh, yeah. As, as I mentioned, when it comes to bug hunting, I focused pretty much on Google
+web application. And at some point it started to be more and more difficult to find bugs in like
+exercises or the client side issues in also the server side issues in Google applications that are
+not like acquisitions because acquisitions have many bugs, but the rewards for acquisitions are much lower.
+And yeah, I, I, I was interested in, you know, Google that can't domain basically.
+And at some point it started to be more and more difficult. And, um,
+um, you know, they, my feeling, my punch was that there might be more bugs, but there might be difficult
+to find using black box approach. And the really nice thing about looking for bugs in browsers is that
+all browsers are open source. I mean, all the engines are open source. And if you believe that you are
+on to something and you can just look at the source code, you can find, uh, what exactly happens. It's not
+always easy to find like exactly what part of the source code is responsible for the functions you are
+currently testing. Uh, but you know, the, yeah, the easiest way is that if you have any error message,
+then it's usually, uh, the easiest way to find the binary message or place in the code. Um, but yeah,
+I think that the portal element was actually the first thing that I did that was related directly to the browser.
+Uh, I believe that it actually motivated me to, to, to look more. So one thing was that it was more and more
+difficult to find bugs in web applications. The other thing was that, you know, you have source code of the browsers,
+the browser mechanism, but also it just, I, it just didn't know it before that when I tried to find some
+bugs in a browser mechanism, then I was able to do that. And that was a really interesting lesson, uh, for me.
+That's by the way, I think that general, my lesson, like during my whole life is that you might
+have some assumptions, whether you are good at something, but this assumption might be wrong.
+I mean, you might think that you like doing something, but when you do that more than you
+started to see that, okay, it's not actually what you like. And the other way around, you might not,
+because I think that before portals, I didn't even think about testing browsers, but okay. I tried that.
+And yeah, it went well, like in the beginning of my pen testing career, I thought that the most
+interesting area of pen testing is the infrastructure. You know, I, I remember that I saw some presentations
+about Metasploit and stuff like that. And I thought it's super, super interesting. And I want to do
+infrastructure pen testing. And I did a little bit, uh, but it just happened that I was better at doing
+web basically. So, you know, at some point I decided that I don't think that I want to do the
+infrastructure anymore, at least not, uh, not like much of it. And I want to focus more and more on
+web because it just happens that I'm, I'm better at it. And, uh, I think that's a nice place to, to
+share also a fun story. How, how my interest in like security in general started, uh, because it was
+an infrastructure thing. Uh, I think I was in high school at that point. Uh, I already knew a little
+bit of programming. I programmed in Python and visual basic, uh, that was actually my first programming
+language. Uh, I knew some stuff around, but networking was like, uh, pure magic for me. I, I didn't know
+at all how networking works. Uh, one day like randomly I found an article on Wikipedia about, uh, ARP
+spoofing. And, you know, I always assumed that what happens in the network is like some magical,
+super advanced algorithms, but then you read how the ARP protocol works and it's like super,
+super simple, super naive. And then we see how the attack works and the attack is like super easy
+in theory, basically, uh, for those of you who don't know, um, the basic idea of the ARP spoofing attack
+is that I mean, imagine that you are standing in front of the group of people and you are asking
+who is John and you assume that the John will rise. He said, but for my class might rise their hand,
+that's John. And then you give something that was supposed to go to John to that person. And this is
+pretty much how it works in networking. You, we trust that when we ask who is this it address or this
+MAC address, then we trust that the right machine responds. And then I learned about a tool.
+I don't remember how it's called. Um, anyway, it doesn't matter, but there was a tool with which
+you could, uh, mount the ARP spoofing. And I tried that in my local network and, you know, it was in a
+year before like HTTPS everywhere. So it was pretty, pretty nice that I could tell my brother,
+I'm heading over to this website and suddenly some other attacks. Shout out. And yeah, that was pretty
+much my, my, my first proof of concept that I did, uh, of an attack, uh, that, you know, some random
+text change on, on some pages because everything was under HTTP. And yeah, the, uh, at that point,
+that was really a turning point for me because, Hey, the network is not pure magic. It's actually
+pretty simple. At least some of the protocols are simple, not all of them, of course, but yeah, I,
+so it all started with infrastructure thing and now I'm not doing any infrastructure at all.
+Yeah. To be honest, when I, when I started learning about security, I also wasn't attracted to web
+security at all for, I don't really know why, but I thought I want to do like reverse engineering or
+something in this direction. And I think I was just afraid of, of complexity of the web. Um, and then I
+just started learning it for, for some reason and, and I got into it. Um, and, and apparently it works,
+works well. There's also a good book, um, called, I think be so good. They can't ignore you. And it
+really, uh, touches upon the fact that. To, to, to like something, you just have to become good enough
+at something. And, and then you, you sort of start liking it and it, um, and it's against people that are
+saying that you have some natural abilities for one and one profession only. Um, and I think the book is
+really good. I, I can recommend it to, to, to anyone, but the takeaway is just when you are getting good at
+something, uh, then you, you sort of start liking it naturally. Obviously that's not always the case. Um,
+I do think that people have some predispositions. Are they more analytical or more relationship oriented or,
+or whatever, but within such a space as security where it's pretty much, um, similar skillset.
+I think for most people, they could like a lot of different branches of, of security and they could
+jump around, um, and, and learn, learn pretty much anything. Yeah. The nice thing is also that
+if you know, like one area or security, well, then it's easier to, to jump into another one because you
+have some background and you understand, uh, like what it all about a little bit better. Even if it's
+like, I mean, if I, I was supposed to do, I don't know, a Linux exploit development, then I would start
+pretty much from zero. Uh, but I think like, given some of the background that I have, that would still
+be easier for me to jump into the topic than to a person who didn't have any experience with security
+at all. Yeah. 100%. So, so yeah, that's, that's also nice that, uh, all of these experiences that you
+have can, can also be useful. Or maybe like if you have, uh, like different kind of background than other
+people working in this field, that could also be useful because, uh, this, uh, this background might
+come useful in certain situations. Like if you, you know, you mentioned reverse engineering. So if you
+are a reverse engineer with good knowledge about web, it can come useful if you happen to reverse engineer
+something related to web in some way that the other people might not be very committed with.
+Yeah. And speaking of learning, I have never found a prototype pollution bug. Uh, and what would be your
+tips for me to find one? Yeah, that's, that, that's interesting question because in bug bounty, I also
+did a dripboard, a single prototype pollution bug. Okay. Uh, so that's, that's also a little bit of a shift.
+Uh, like at some point I started sharing more research stuff instead of just bugs. And I just found
+prototype pollution interesting. I mean, okay. We might say that I reported some bugs, but it wasn't in,
+like, it wasn't in bug bounty. It was like, I don't know. I think I reported that to Dom Purify or some
+other. How about the Tibana RCA? Uh, yeah. Uh, that, I, that, that, that, that, that's also an interesting
+story. Uh, that's a bank, a bug that wasn't found by me. It was just found by somebody else. I don't know
+even by who, to be honest. Um, the study here was that during a training organized by Sekariton, there was one
+participant that said that he wants to, you know, um, understand prototype pollution better and found
+this Kibana vulnerability that doesn't have a public proof of contact. And he was able to find like,
+what kind of module has this vulnerability. And yeah, we can look at that and maybe we can, you know,
+find some kind of scenario. So yeah, that also, that also something that happened a lot, like in my
+career that some things happen by accident pretty much because yeah, the prototype, the, if it wasn't
+for that one participant of the training, then I mean, maybe I would have dived into prototype pollution
+a little bit later, but yeah, that was, that, that was the motivation. Uh, yeah. But anyway, um, yeah,
+prototype pollution was more of a research project for me. Um, I just found it interesting. I, I believe that
+this is not a bug that is, you know, much talked about and it was just interesting for me from, you know,
+purely technical perspective and, um, yeah, I was, um, I was just trying to understand how viable this
+attack scenario is. And of course I, I did try to test some like Google properties for prototype
+pollution, but I wasn't able to, to, to, to, to find, uh, find any bugs. Um, yeah. But when it comes to
+tips, I think there is a really good research. Um, I think it was called just something like exploiting
+client-side prototype pollution, something like that. And they shared some techniques, uh, how, how,
+how they found, uh, the sources for prototype pollution. Like if you are looking for the, uh,
+from client-side prototype pollution, then you can just randomly add a proto parameters to get to poems,
+to JSONs, everywhere. And you can just look into your browser, um, dev tools and to see if you can see
+new properties on object prototype. I think that the way Chromium sorts the properties, it's like a side
+effect of an implementation, is that the new properties are always in the beginning. So if you
+look like an object prototype, then your new properties shouldn't be at the beginning. I, I, I,
+I'm not about a hundred percent sure that it happens, but I think that, that, that, that was the case.
+I also think that the bar, uh, suite has some features, some new features related to prototype
+pollution, but I, I, I didn't have much chance to, to test that. There is, there is the DOM invader,
+which is like a bar, a browser extension actually. And I absolutely love this extension for DOM access.
+And it also has some features to find prototype pollution, but the, the, the prototype
+features I haven't tested actually. Now I think I probably should, uh, turn it on and see, see what,
+what comes. Yeah. That might be interesting to see about what kind of issues can find.
+Yeah. And speaking of trainings, what kinds of trainings did you lead and, and for, for who?
+Yeah. So, um, during my last few years at Securitium, I was really focused on giving trainings,
+public talks, um, basically on education. Uh, and, um, so I had many different trainings.
+The most popular one was called Web Application Security and it was a two day workshop,
+um, about, you know, SQL injection, XSS, authorization issues, authentication issues,
+server-side request forgery and stuff like that. And, uh, we just, um, taught people about security
+issues they can expect in web applications by showing them how they are, how they can be exploited.
+We, uh, the participants care got like a training license for the verb. So they could work with that
+themselves. And yeah, the basic idea, the usual target for these trainings were developers to,
+you know, try to teach them, uh, about web security and what kind of security issues they can expect.
+And yeah. Um, I remember that like in the beginning, I, I kind of expected that, you know, when people
+leave the training, then they should just write super, super secure code after that. And because,
+you know, they learned everything they, that they need to know about at least the basic security stuff.
+Um, but at some point I, uh, understood that this is not what happens. And I considered a success of my
+training. If a person can recognize a security issue, like if, when they write a code, then they can,
+you know, suddenly a light bulb above their head that, Hey, I, I think there might be something wrong
+with this code. So my goal was to build some kind of intuition because if we talk about some specific
+security issues, but we can also try to generalize them a little bit. Uh, and, uh, yeah. And, uh, like,
+I would consider a success if a person when writing a code think twice, Hey, this probably is something
+that might be not safe, but also something that happened a few times during the trainings was that
+like after the first day of the training, people started to test their own applications. And on the
+second day they, you know, we start the training and they say, Hey, we found this bug, uh, in our
+application. And that was actually super cool. And that's one of the best things that could happen on
+on the training because, you know, you're, you immediately, you know, that for the people, it was
+for it to, to go to the training. Yeah. What did you see them getting wrong the most often about security?
+Um, I think the understanding of attack scenarios, the, the stuff that we talked about before, um,
+because one, and example, one of the arguments that was brought up your tires was that when I say that
+we have like client side, HTML sanitizers, and that you probably want to use client side, client side,
+HTML sanitizers, because you use exactly the same HTML parser that is used by your browser. So it makes
+sense. And then some people would argue that, okay, but it is client side sanitizer, then, you know,
+you can disable it or stuff like that. If it happens on the client, how we can trust it? And yeah. And
+that was the point when you needed to, uh, describe what is the threat model. And I believe that it is
+widely, it is really widely, widely misunderstood. I mean, it's not easy if you don't really, also,
+if you don't think about it that much, and it's really easy to misunderstand. Um, but I also had,
+had a training like that was called front-end security training. And it was about XSS,
+basically the whole first day was about XSS. And the second day was about other front-end issues.
+And yeah, the thing that I was trying to, I was hoping for the people to understand was that
+the attack scenario here, basically for most front-end issues is that you sent a link to someone and that
+you can do something. Because if we start talking that you can do something in the dev tools of the
+browsers or that you can, I don't know, intercept the HTTPS traffic, in theory, you can do that. You
+know, if, if you have some impossible supercomputer or you find a bug in the algorithm, you can do that.
+But this is not something that we care about in context of issues like XSS. You just complete the
+outside of the HVAD model. And it is very tricky, like, how to describe that to people so that they
+understand, like, even HTTPS, which is like the most widely deployed security mechanism in the world.
+And there were people who asked, like, if the side had HTTPS, why did they have a student bridge?
+And yeah, yeah. And we might, we might laugh about it a little bit, but it's actually really tricky,
+like, educational issue. Like, how can we make people understand what they are protecting against when they
+use HTTPS or any other security mechanism? Another good example, I believe, is that if you have an
+encrypted messenger on your, like, WhatsApp or Signal or whatever, you know, end-to-end encryption,
+nobody can read the messages. But if you leave your phone unlocked on the table, that it doesn't matter
+if the communication is encrypted end-to-end because anyone who can just take the phone can read the
+messages. And yeah, and sometimes, you know, in the internet, you can see some comments or discussions,
+hey, they signaled it has end-to-end encryption, how the, you know, government organization was able to
+decrypt the message. And they probably didn't even have to decrypt anything. They probably had direct
+access to the screen. So it's really, really tricky because we have many, many different mechanisms
+that prevent some specific attacks. And people who, I mean, I believe that people should have some
+general understanding about security. By the way, I really think that it is something that should be
+taught in school, you know, in the informatics lessons, like some basics. I mean, I don't know what
+is currently being taught at school, too. Maybe it is actually, but I, yeah, so people, you know, should
+have some general understanding, but I can understand that they don't need to know that HTTPS
+also keeps the integrity of the data. Because like, when you talk about HTTPS, you usually think that
+it encrypts, but it's not all it does, actually. And it probably doesn't matter for most people that it
+also checks the integrity of the data. But it is actually, from the cryptographic perspective, super,
+super important. Yeah. If you wouldn't do that, then it would be a really bad protocol, to be asked.
+So, yeah, that was tricky, because if you get a question about, you know, security, about the threat
+model, about the attack scenario, and it's very tricky to answer that question, to describe it, without some
+broader context. And, yeah. Of course, there are, like, other things that people get wrong, like, I don't know how to use
+verb. I mean, I love verb, but let's be honest, user interface is not the best in the world, especially
+when you need to use it for the first time. But that's something that you can just learn. But
+the attack scenario, the threat modeling is something that you need to understand, kind of get that,
+what's it all about. So, yeah, I think it mainly came up in the front-end training
+that, you know, stuff like, it doesn't make sense to have some kind of security mechanism in the browser,
+because, like, you can bypass everything that happens in the browser. That was the argument.
+Yeah. You can, I mean, the argument that I typically use is that just because you can do something on your
+own computer, it doesn't mean that it's easy to do on somebody else's computer. So, you can run DevTools
+in your own browser, and you can delete everything. You can change the code as much as you like, but it
+doesn't mean that it's easy to do to someone else. And I think that's the shortest answer to this question.
+But, yeah, it's really interesting to, you know, dig deeper. And it's also very relevant, you know, to pen
+testing and the backbunding reports to also understand the threat models and if something
+is a vulnerability or how severe of a vulnerability that is.
+Yeah, I think also from my experience as I don't do trainings now, but I used to. And I think server
+side vulnerabilities are so much easier to explain to people than client side stuff, because with XSS,
+you have the same modern policy, you have different types of XSS. Like, for example, when you have an
+XSS in the uploaded file, it's really hard to explain to the person that if it is a sandbox domain,
+it's not a risk. But if it's a normal domain, it is a risk, even though there is nothing on the page,
+but you can do the request. There's so much complexity there that I really think XSS, even though it's the
+most popular vulnerability type, I think, from the from the web vulnerabilities. It is super complex and
+super misunderstood.
+Yeah, that's right. I also think that the typical proof of concept for XSS also doesn't do it any favors,
+because people always see the other one. They don't have any idea what you can realistically do.
+That's basically like what I started with my trainings before even saying what XSS exactly is,
+how we can exploit that. I was just showing like a real example that you can get some data. Like I had
+a demonstration that you could take over an admin account in WordPress, thanks to XSS. So I started with
+that and I was just saying that from now on, we will see most the other one, but keep in mind that
+instead of the other one, we could do all the stuff that I just showed. Yeah.
+That was my idea. But I think like, I mean, it was only new for many people. So like at the second day,
+some of the people kind of forgot about that and asked again, like, okay, but yeah, I have it,
+but I can do other ones. So what? And yeah, but I also learned over, I mean, I remember that when
+I started doing trainings, I think it was in 2014 or 15, I assumed that people will know more about
+security in general. And I thought that there are more stuff that I, that are widely known that there
+actually are. And like, for instance, something that kind of surprised me, but it doesn't surprise me
+anymore as JSFAC, which is a way to write JavaScript code. Yeah. It is really widely known among, you know,
+security people because it's very useful. If you want to bypass some filter, then you can perhaps use it.
+But for developers, I mean, if they are interested in some low level details of how JavaScript work,
+then they know about JSFAC. But many people didn't even hear about it. But it was kind of surprising
+for me in the beginning, because it's like super interesting stuff about JavaScript. Yeah.
+The thing is that they don't need to know that at all, because why? They don't need to use the
+tricks. Like they don't need to know that you can use, I don't know, RA constructor,
+constructor to have access to a financial network. And even it's super useful for security people,
+but developers that need that. Yeah. Yeah. I've had a similar realization one day when
+I think we were talking with the Java developer while developing a Java deserialization exploit or
+gadget or whatever and or asking them about some like reflections or whatever. And they just didn't
+even know how to execute system level code in Java because it is actually a good thing because they don't
+don't do it in normal web applications. And, you know, and we know a few ways in every single language
+how to execute code. Yeah. So yeah, that was a really, that was a good insight that, okay, that developers
+need other stuff than security people and something that might seem obvious for us isn't really obvious
+or even relevant for them. Like on the training, I also had some challenges related to SQL injection,
+that's a good thing. And, you know, it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing.
+And it's a good thing. And it's a good thing. And it's a good thing.
+Yeah. Okay. And it's a good thing. And it's a good thing.
+I saw you started a YouTube channel yourself recently. What are your plans regarding this?
+Yeah. So my plan... I don't have any specific plans what I want to do with the channel.
+Probably I will have some videos. I mean, my first video was not technical. I think it's not that
+technical. And it was pretty well received, which I think is pretty nice. And I'll have some other ideas
+for other topics that I want to talk about that are not purely technical. But I think people might
+find them interesting. Like one of the topics is like the attack scenarios and the threat model and
+like to understand what we can do with some kind of attack. I specifically want to talk about
+HTML sanitization on the client and why it makes sense. Because recently I saw a YouTube short.
+I don't remember what was the channel, but it was about the sanitizer API that is introducing browsers.
+And there were like many comments under that video about the sanitization must be done on the server.
+Because if you have it on the client, then it's bad. You can bypass it. You can remove it, disable it. And yeah, that was an inspiration for me.
+That's okay. I think that that's something that we have to explain to people so that they understand that
+it actually makes sense to sanitize on the client. And that's a good excuse to have a little bit of a broader talk
+about, you know, threat modeling, I think in general. Yeah, we'll link this this video in the description.
+I watched it really nice stories about bugs from from Michal's bug bounty journey. For now, Michal, thank you so much for
+joining me today. Loads of knowledge for me and and for my audience. Where can people find you to to follow you in the internet?
+Michal Kuzmowski I think the best place is on Twitter or X. My handle is security MB. And from that, you could see links from all other places where I'm currently at. But basically, I'm using mainly Twitter.
+Okay, once again, thank you so much for joining me today.
+Thank you for the invitation and for the last talk we had.
+What a great episode. If you want to watch the video on Michal's channel about his bug bounty reports, check out the link that's in the description.
+And if you want to listen to another interview, I suggest you this one with Johan Carlsson, who went from nothing to six digit bug bounty earnings in only one year.
+For now, thank you for listening and goodbye.

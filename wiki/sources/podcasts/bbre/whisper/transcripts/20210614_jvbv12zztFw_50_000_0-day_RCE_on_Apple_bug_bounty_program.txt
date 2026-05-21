@@ -1,0 +1,75 @@
+Hello! In this episode of Bug Bounty Reports Explained, you will learn how two hackers,
+Harsh Jaiswal and Rahul Mahini got a shell on not one but three different Apple servers,
+for which they were rewarded 50,000 bounty. As always, the report and their Twitter profiles
+are in the description. If you ever wondered where do I find all those write-ups for my videos,
+usually it's in Integrity's Bug Bites weekly newsletter, which contains the best write-ups,
+tutorials, tools and videos from IT security world. And Integrity is a bug bounty platform that cares
+about the community and they also decided to sponsor this video. They have over 30,000 researchers
+and 200 active programs. Sign up on GoIntegrity.com slash BBRE and start hacking now.
+Well, not literally now. First, watch the video. The hackers wanted to find a critical,
+well-paid bug on Apple Bug Bounty Program. They decided to focus on a server called Lucy that was
+found on three different Apple domains. It's a Java-based scripting language that uses templates
+that look like this. It's named CodeFusion and it reminds me a bit of a PHP code.
+The logic is contained inside the template file that's rendered when the user requests this file.
+Importantly, Lucy also exposes an admin panel, which is a very appealing target.
+Hunters decided to run the server locally and try to find a zero-day there to then attack the Apple
+server with it. It's a huge advantage of testing an open source application. To get the maximum impact,
+the vulnerability has to be exploited without authentication. But in CFM files used for admin
+panel, requestAdminType property was checked to see if the user is logged in as an admin. Of course,
+those attempts failed at first.
+But importantly, this check was not always at the beginning of the file. That meant that all the code
+above this was still executed. This is a crucial feature. It means that if we find a file that has a
+vulnerability before this check, this can be exploited without authentication. And finding an RCE was
+surprisingly easy. There was a file emgProcess.cfm that contained this code. It took the content from
+emgSrc parameter, the file name from file parameter and saved it inside admin.ext.sumdates directory.
+CFM files are very powerful and, among other things, you can create a webshell, which will allow you to
+execute commands on the server. But to do this, you need to upload the CFM file inside the webroot.
+Webroot is a directory under which files can be accessed from the web. When you want to get an RCE
+by uploading a webshell, it must be inside the webroot. Of course, by default, this emgProcess script
+saved files in different directory outside the webroot. But thankfully, it was vulnerable to path
+traversal and you could traverse back to the webroot. One problem was that double underscore was added at
+the beginning of the file name. It's a problem because in Linux, the path must exist even if you
+traverse back from it later. So this path will not be found because the double underscore directory does not
+exist. Luckily, the emgProcess.cfm has attribute createPath equals true. So first, you can send such
+requests so that the double underscore directory is created, so then you can execute directory traversal
+later. This is the request that gave you an RCE on the local instance. But it didn't work on Apple server.
+It's because Apple Web Application Firewall, which is very strict and does not allow ./. characters to be
+present in the URL. It successfully prevented this attack. Hunters needed to find a bypass for that.
+They found admin index.search.cfm file which seemed to copy files from one location to another.
+This could be chained with the emgProcess. In the first step, you would upload a shell using emgProcess
+to a safe directory without path traversal. Then in the second step, you would copy this file inside
+the webroot. Using absolute paths would allow avoiding ./. characters. But turned out it wasn't a normal copy.
+It didn't even copy the file contents. But if you had a file which name matched this expression and contents
+that matched this regex and you would upload it to a directory pointed by this parameter, the name of
+this file would be saved inside .search.index.cfm file inside the data.dir directory. The file name would
+be saved inside .json that's nested in the .cfm file. This allows you to put the cfml tags inside the name of
+the file. The code inside those tags will be executed when the search index.cfm file is requested. For this,
+it must be placed inside the webroot. But again, you control the directory in which it will be saved.
+Connecting all this together, you can achieve an RCE. Let's now go through it step by step.
+First, you create a file with the payload inside its name. The content of this file doesn't matter a lot,
+but it must match this regex. Then, using .emg process endpoint, this file will be saved
+inside admin.ext.sumdates directory outside the webroot. To keep the file name short, do not put
+the whole web shell there. This code allows you to upload any file which can be used to upload the
+web shell later. Then, in the second step, you trigger the copy function that searches through
+admin.ext.sumdates directory and save the name of your file inside .search.index.cfm file,
+which is saved inside the webroot. Then, you request the search index endpoint which lets you to upload
+any file. You can upload this web shell there. In step 4, you have success. You achieved an RCE.
+At least on the one host with the newer version of Lucy. But turned out that 2 out of 3 servers run
+the older version of Lucy which doesn't have the .emg process file. But similar method was used to
+achieve an RCE on those two hosts. The difference was that instead of using .emg process to upload the
+file, our hunters used .ext.application.upload.cfm file. Even though reaching this endpoint caused the
+application to throw an exception about no permissions, the file was still uploaded. It was
+because the code responsible for the upload was before the permission check. It was very important
+that hunters did not believe this error but manually checked if the file was uploaded or not.
+To upload a script using this endpoint, you can use the same payload as previously but it must be zipped
+and the name of the file must be changed to .lex. Your file with payload in its name must be inside the zip archive.
+Then to the copy function you provide this name with the zip protocol and then the server will unpack this for you.
+This method gave the webshell on the remaining two hosts. The hunters were rewarded solid 50 000 dollars for
+those free RCEs. Apple reported the issue to Lucy maintainers and the fix they deployed is that
+unauthenticated users can now only request free endpoints. It makes this attack impossible unless you
+are an admin but then you can execute code anyway. And that's it. I think this vulnerability really shows
+how deep you can get when you are testing an open source application and also how rewarding this can be.
+Thanks for everyone reading the newsletter. I saw an open rate of about 50% where 30% is generally
+considered as a very good result. I'm also getting a lot of messages and I'm very happy that you like it.
+If you are not subscribed already, make sure to do it using the link in the description. But for now,
+thank you for watching and goodbye.

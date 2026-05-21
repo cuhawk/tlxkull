@@ -1,0 +1,209 @@
+I analyzed this closed GraphQL reports to see what works in real life.
+And it's incredible what a variety of bugs I've seen, because I have to admit,
+before I mostly just tested authorization.
+So this was very valuable for me and hopefully for you as well.
+Enjoy.
+In this video, we'll go through the types of bugs to which GraphQL led and the most
+common one, of course, it was authorization.
+And I also have it split into three different groups, read, create, update and delete.
+And we'll start with the read box.
+And this was by far the biggest group of them all, with as much as 59 reports.
+Some of them were pretty simple, like this one, where you have the query that fetches
+and you don't even change the parameter to another user is not like the typical
+ID or where you change the ID and you get the data of another user.
+Here you just added the email attribute to the request.
+So along these medias, whatever it was,
+you would also get emails of users.
+And this is definitely valuable information,
+impactful information that Instagram does not want to have leaked.
+But the majority of reports were pretty simple ideas like this one.
+And I feel like I've seen the same report
+like five or six time copy pasted report on HackerOne
+because they had very, very similar issues just in different queries.
+You just have some some query.
+You change the the idea or in this case,
+the handle and you just get the data of something you shouldn't be able to access.
+And here this was twenty five hundred dollars bounty.
+There were a lot of reports that were exactly like this one
+with exactly the same bounty.
+Then there were some that were a little bit less impactful.
+So the bounty was a bit less, but the reports were very, very similar.
+So this is sort of the most typical GraphQL bug you will ever see.
+So with this we'll jump to the second biggest group,
+the create or update mutations.
+And we had very, very interesting bugs here.
+The most impactful one, I would say, was this one from Watson group by J.
+Fran Cbit, whatever you should read this.
+And I understand from the summary, because the report itself is not visible.
+I understand from the summary
+the GraphQL was not supposed to be public.
+So the first step, which is sort of not visible from from this part,
+is the discovery of the endpoint.
+Maybe it was under the different path, maybe on some hidden subdomain.
+But then the user could register on some website.
+And then as a registered user,
+they could also have the create admin user mutation.
+So they will go from being unauthenticated to being authenticated
+with low privileges to being authenticated as the admin.
+So it was reported.
+It was rewarded as a critical.
+And I would say it was probably one of the most impactful bugs of the case study.
+Then to complete the four operations,
+you can do with the data because you can read, create or update.
+But you can also delete, which is always I'm saying you should also test for this
+because it's less natural to test for deletion.
+It's a little bit harder to test for deletion.
+So bugs here will definitely happen.
+And the one I have here from GitLab,
+it is very, very interesting what happened here.
+So it's not your typical ID where you just change the ID
+and turns out you can delete the object.
+You shouldn't be able to delete.
+Is the case where you have the mutation that's called destroy snippet.
+I don't know what snippet is exactly in GitLab,
+but we all understand what it is.
+And the title of report is you can delete the repository.
+So how come you can delete the repository using the delete snippet mutation?
+And the answer is
+the hunter used the identifier like this.
+So they use the destroy snippet
+mutation, but then they used this identifier,
+which and we have the sort of source code analysis here,
+which caused this argument to not be a snippet by but a div note object.
+And apparently the code that was there
+happens to just delete the repository when this happened,
+which does not make sense at all to me.
+So even by looking at these snippets, which seem understandable,
+it's hard to to sort of accept how this could happen.
+But it's very, very interesting.
+And the good information is
+this type of identifier.
+This is not something GitLab specific.
+I've seen the same form of Git in HackerOne.
+I've seen the same in Meta.
+So this is not something created by GitLab.
+It is sort of more widely used.
+So if you're testing the something that's that uses GraphQL,
+you can try to do this to sort of confuse what object are you trying to modify or delete.
+This video is based on the free part of the case study.
+If you're enjoying it, you'll surely also like the full article where there are crazy
+bugs like the either that's only exploitable for three seconds.
+secondary past traversals, race conditions, cash related issues, crazy, crazy things.
+And also you will get access to the whole database with all the reports,
+as well as the other 12 case studies.
+If you want to access them, go to study at bug bounty explained dot com.
+Next, we'll go to denial of service bugs.
+And we had a few reports here, but only one of them is from
+from bug bounty that was actually rewarded.
+The other are zero days.
+And if you've watched this presentation by Ronnie about practical exploitation of
+denial of service in bug bounty, you know that GraphQL has big,
+big potential to be vulnerable to denial of service bugs.
+And I can also confirm this from my experience that it is quite easy to find.
+The bigger problem is if you can get rewarded for it, because as those bugs go,
+they are a bit random whether the program will reward them or not.
+So it's always a bit of a mystery when you're reporting the bug.
+And here they got the bounty of, well, actually the base bounty was just $1,000.
+But then they got the bonus for the coolest bug of the of the whole event,
+because this was the Google event.
+So they got another $5,000 on top of this.
+So it was a really nice bug.
+They batched the directives, which were used in a little bit of an unnatural way for them.
+So it was very, very creative and very, very nice and nice for Google to reward it as well.
+So then as the next group, we have SQL injection and this one,
+you can of course expect some some to some extent the SQL injection in the parameter
+because GraphQL itself, it is not a database.
+It is not actually something that stores your data.
+What it does is it takes your ACTP request with the GraphQL query in it
+and it translates to something that the developers implement on the backend.
+So it might be the HTTP request to some backend service.
+It can just be something that from you to the server, you send the GraphQL query
+and the server makes different REST API requests on the backend because it's much quicker
+for the server than it would be for you to send, let's say, 10 REST API requests.
+Another case may be SQL query where
+the GraphQL query is transformed to SQL query and the data is then returned.
+So normal SQL injection is somewhat expected,
+but the one that was here in HackerOne
+was really, really interesting because it actually did not happen inside of the query.
+It's something that before the query is executed, set some session keys and values.
+And apparently it was used sort of internally without user input ever getting to here.
+So there was no problem with this.
+But then there was some other code,
+which I don't think is mentioned here,
+that caused the the URL parameter to land in this session.
+So here you can see the request
+and you can see there is not even a GraphQL query in this request.
+There is just the request to the GraphQL endpoint
+and you have the query parameter with the fairly typical
+Postgres SQL injection payload with the sleep command.
+And you can see the times here to confirm it.
+So a very, very interesting bug.
+I don't know if without access to the source code,
+someone would someone would think that you should also test for SQL injection
+in the parameters of the request itself, not the GraphQL parameters.
+So it's very, very interesting and very,
+very cool bug with with big impact.
+Of course, this was not rewarded because it's it's sort of it was found internally
+by the hacker one team, but they still submitted this hacker one reports.
+And this they they sort of give reports the real severity.
+And this was a 10 out of 10 critical, understandably.
+Then we'll go to the next group, which is not something that I like.
+And if you if you're a long time viewer of the channel,
+you probably know this because there were three reports that I found that were
+nothing more but reporting just the fact that the GraphQL schema was
+was disclosed, which by itself is not a vulnerability.
+It can allow vulnerabilities to happen
+and it can make the exploitation easier.
+But by itself, I don't think there is any security impact.
+But some some people did report it.
+And this report that I have here,
+it even got the bounty of I think he said between six and eight hundred dollars.
+So
+you can probably try to do it, but I would not advise it.
+If you have so much data, try to find what queries and mutations you can use
+or do what we did or the hunter did in the beginning of the video,
+where you have the usual query, which is something you have access to.
+It is not a violation of of any access control,
+but you just add some attribute to it that all of a sudden leaks the sensitive data
+back to you.
+This is what I think you should try if you have the introspection.
+And finally, we have one last group, the CSRF.
+And I very much liked the finding that was here.
+It is actually not the back bounty.
+It is the security auditing report by Doyensec.
+And they found the CSRF using the head method.
+And if you remember a few years ago,
+there was the
+of CSRF in GitHub that used exactly the same method.
+So there was code like this,
+which
+sort of explicitly checked if the method is get.
+And then there was some
+some things that were happening if the method was get were not state changing
+because the get is not subject to CSRF protection.
+So it cannot change or modify any data.
+So in context of GraphQL,
+speaking directly,
+it should get should only be allowed to do GraphQL queries and not GraphQL mutations.
+But here
+there was the explicit check for the get method.
+And the thing is, automatically the router would send head request to the same sort of piece of code.
+So heads would
+implicitly land in the same function as gets.
+But then when it comes to the check like this,
+head is no longer treated the same way as the get is.
+So head would not have the CSRF protection and then not get to this
+non-state changing part of the source code.
+So it would land in the same place as post would.
+And you could easily just have the query in the in the URL
+parameter.
+So a very, very nice report.
+I really like the one in GitHub a few years ago,
+and I really like this one as well.
+And this is everything when it comes to to the back classes in GraphQL.
+Again, appreciate you sticking around to the end.
+If you want to deepen your knowledge even more about GraphQL,
+check out the full article, check out the report database.
+And you prefer just sticking to the free stuff.
+Check out the playlist that's on your screen right now.
+For now, thank you so much for watching and goodbye.

@@ -1,0 +1,49 @@
+Hello, today's video will be about two similar reports from two different bug bounty programs
+on HackerOne. They both have been submitted by the same hacker, EvanCustodio, known as DevParam.
+Both vulnerabilities exploit HTTP request smuggling to take over random user accounts.
+I will start the video with the explanation of this type of attack and then I will proceed to
+describing those specific reports. Let's get started. So let's start with such a simple request.
+When we send it to the server, server just sends us the response and everything is clear and simple.
+However, we could also send multiple HTTP requests in a single TCP packet and then a server will see
+a list of requests in his buffer and the server needs a way to determine where does the request
+start and end. And usually we indicate to the server the length of the request using the content
+length header where the value is simply the amount of bytes in the request body. Another header that
+can do this is transfer encoding chunked. It's very similar but the difference is that in this case
+in the body we have a number which is the length of the next segment, then we have a segment,
+then the length of the next one, and so on until we find the length zero which indicates the end of the request.
+And what the hacker should be thinking right now is what happens when we send both headers at the same time.
+And the truth is that the server should prioritize the transfer encoding header but in reality it's not
+always the case and that's exactly what allows HTTP request smuggling to happen. But when we have just one server
+in such case even if it prioritizes the content length header this behavior is incorrect but it's far from
+being a vulnerability. But in modern web applications we often have more than one server. At least there's a
+front-end server also sometimes called a reverse proxy or a load balancer which just passes the request from
+the server to the backend server also called application server and then the front-end server passes the
+response back to the user. And what's important here is that now the stream of requests at the backend server
+will have requests of multiple users which means if we can do something with this we can make much more
+impactful actions. But how can we actually do this? Well now if we send both content length and transfer
+encoding headers then if the front-end server will prioritize content length header and the backend server
+will prioritize transfer encoding header then we can either prepend a part of our request to the request of another user
+or append a part of another user's request to our request. And what can we actually achieve by doing this
+you will better see on the specific example of today's reports. Let's get into them. The first report that
+I have for you is from Slack bug bounty program the vulnerability allowed to take over random users
+accounts and Slack awarded the report 6.5 thousand dollars. And the first thing we see is that Devparam uses
+his custom built tool called smuggler that scans for http request smuggling vulnerabilities. This tool is open
+source and I will put the link to it in the description. The type of request smuggling found here is CLTE which means
+that if both content length and transfer encoding headers are present in the request then front-end server
+takes the content length header and the backend server prioritizes the transfer encoding header. But sending
+a standard header was not enough to exploit this vulnerability. In order for this attack to work
+there had to be a space between transfer encoding and the colon. Now why do we need this space?
+Well if we send both content length and transfer encoding headers both server would prioritize transfer encoding header
+just as they should. However when there was a space the front-end server did not recognize this header as the transfer encoding header
+while the backend server maybe did remove this space before actually recognizing this header as the transfer encoding header
+that it looked for. So now the attacker can prepare a request that looks like this and it has both content length and transfer encoding
+the header with a space. And the content length value is that big so this whole body gets included. But transfer encoding is prepared this way so it looked like the request ends right here.
+So the front-end server gets this request, thinks that it's all one request and forwards it to the backend server.
+The first line of the victim's request is put into the header which is irrelevant. It will be ignored. As the result attacker can prepend anything to the victim's request. The victim is actually totally random and there is no way of targeting a specific user.
+There are multiple ways to exploit such behavior but in this case it was enough to put your server's URL in the first line of the victim's request and the backend server would redirect the front-end server to the specified location
+and the front-end server would forward the request along with the cookies and data. And in your server's logs you would see the victim's cookie and you could basically take over your account.
+The second report is from Zomato and it's actually very very similar. It's also CLTE but in this case instead of having a space before the colon you had to put a tab character after the colon.
+The exploitation part was basically the same with the redirect. One catch here is that this method did not work with GET nor POST requests. It worked with DELETE request which was not included in the tool but the hunter decided to test it anyway.
+For this report he was awarded $5000 even though at the moment maximum award on Zomato back bounty program was only $2000.
+And that's it for today's video. If you have learned something new leave a like and a subscription so as not to miss any of my future videos and for now goodbye.
+Goodbye.

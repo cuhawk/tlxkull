@@ -1,0 +1,312 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.160 --> 00:00:06.640
+Hello! Welcome to another Bug Bounty Reports&nbsp;
+Explained video! Today, I will show you how&nbsp;&nbsp;
+
+00:00:06.640 --> 00:00:13.360
+Ryan Pickren found a chain of zero-days that&nbsp;
+led to universal cross-site scripting in Safari&nbsp;&nbsp;
+
+00:00:13.360 --> 00:00:20.480
+which allowed hacking any website. Literally,&nbsp;
+any website: Facebook, Gmail, PayPal or your&nbsp;&nbsp;
+
+00:00:20.480 --> 00:00:28.880
+crypto wallet - whatever... He got a huge bounty&nbsp;
+of $100,500 for it. The link to the original, well&nbsp;&nbsp;
+
+00:00:28.880 --> 00:00:36.400
+well-written blog post, is in the description.&nbsp;
+Enjoy! This episode is sponsored by Blaze&nbsp;&nbsp;
+
+00:00:36.400 --> 00:00:42.400
+Information Security. It's a team of experienced&nbsp;
+hackers who specialize in penetration testing&nbsp;&nbsp;
+
+00:00:42.400 --> 00:00:49.120
+and application security services. They can offer&nbsp;
+your company a wide range of services: pentests,&nbsp;&nbsp;
+
+00:00:49.120 --> 00:00:55.040
+red teams, threat modelling and even the whole&nbsp;
+assessment of your remote work infrastructure.&nbsp;&nbsp;
+
+00:00:55.040 --> 00:01:03.120
+They also have a special package for startups. If&nbsp;
+you want to know more, check out blazeinfosec.com.&nbsp;&nbsp;
+
+00:01:03.120 --> 00:01:11.840
+And I know the owner - he was hacking before&nbsp;
+I was even born so he knows his business.
+
+00:01:12.960 --> 00:01:20.880
+Webarchive files are used to save whole websites:&nbsp;
+HTML, CSS, JS and images - everything in a single&nbsp;&nbsp;
+
+00:01:20.880 --> 00:01:28.800
+file. It's an XML-based format and it looks&nbsp;
+like this. The base64 encoded content is here&nbsp;&nbsp;
+
+00:01:28.800 --> 00:01:36.720
+and here is the origin. Yes, you heard me right&nbsp;
+- there is an origin specified. Back in 2013, if&nbsp;&nbsp;
+
+00:01:36.720 --> 00:01:42.960
+you could control the contents of this file, you&nbsp;
+could just put an arbitrary origin, encode the XSS&nbsp;&nbsp;
+
+00:01:42.960 --> 00:01:49.280
+payload and you would be able to execute the code&nbsp;
+on any domain and access any domain's cookies.&nbsp;&nbsp;
+
+00:01:50.880 --> 00:01:58.400
+Such an attack is called universal XSS. It's not&nbsp;
+a bug in a particular website but in the browser&nbsp;&nbsp;
+
+00:01:58.400 --> 00:02:04.960
+which makes it insanely powerful. The attacker&nbsp;
+can steal data from every website that you use&nbsp;&nbsp;
+
+00:02:04.960 --> 00:02:11.760
+so the potential impact is huge. According&nbsp;
+to Google, almost as valuable as an RCE.
+
+00:02:13.920 --> 00:02:19.840
+So back in 2013, if you could force the victim&nbsp;
+into downloading and opening such a file,&nbsp;&nbsp;
+
+00:02:19.840 --> 00:02:27.040
+you could perform this attack. But it's not how&nbsp;
+it works in 2022 with more security mechanisms&nbsp;&nbsp;
+
+00:02:27.040 --> 00:02:35.680
+in Safari and macOS but let's try to bypass them.&nbsp;
+The attack has to start with phishing the victim&nbsp;&nbsp;
+
+00:02:35.680 --> 00:02:42.000
+into visiting our website. It should not be a&nbsp;
+big problem but every single user interaction&nbsp;&nbsp;
+
+00:02:42.000 --> 00:02:48.560
+makes the attack less and less likely. The first&nbsp;
+problem that we encounter from here is prompt&nbsp;&nbsp;
+
+00:02:48.560 --> 00:02:54.240
+about downloading a file. Because the first&nbsp;
+time you download a file from any domain,&nbsp;&nbsp;
+
+00:02:54.880 --> 00:03:01.520
+Safari will ask you for permission. It would&nbsp;
+look quite bad with the attacker domain.&nbsp;&nbsp;
+
+00:03:02.720 --> 00:03:10.480
+The same goes for opening applications with custom&nbsp;
+URL schemes. If you open, let's say a Discord URL,&nbsp;&nbsp;
+
+00:03:10.480 --> 00:03:16.960
+it will try to use the custom URL scheme.&nbsp;
+Safari will then ask you for permission to&nbsp;&nbsp;
+
+00:03:16.960 --> 00:03:24.960
+open the desktop Discord application. But it's&nbsp;
+not for every single URL scheme. There's an&nbsp;&nbsp;
+
+00:03:24.960 --> 00:03:32.320
+allowlist of trusted Apple applications that&nbsp;
+don't have to ask for permission. Among others,&nbsp;&nbsp;
+
+00:03:32.320 --> 00:03:39.920
+you can use icloud-sharing:// which is opened by&nbsp;
+ShareBear application for, as the name suggests,&nbsp;&nbsp;
+
+00:03:39.920 --> 00:03:47.120
+sharing files over iCloud. It's much helpful&nbsp;
+because, apart from being whitelisted by Safari,&nbsp;&nbsp;
+
+00:03:47.120 --> 00:03:54.160
+it's also a perfect vector for delivering the&nbsp;
+webarchive file to the victim - that's great!&nbsp;&nbsp;
+
+00:03:56.000 --> 00:04:02.480
+But there is a catch. The first time opening&nbsp;
+a file, the victim has to confirm it. This is&nbsp;&nbsp;
+
+00:04:02.480 --> 00:04:08.640
+not an ideal attack scenario but also&nbsp;
+not the end of the word. Importantly,&nbsp;&nbsp;
+
+00:04:08.640 --> 00:04:15.520
+after one confirmation of opening the file,&nbsp;
+the attacker can modify the file completely&nbsp;&nbsp;
+
+00:04:15.520 --> 00:04:22.640
+and the victim won't have to reconfirm&nbsp;
+opening it. After the modifications,&nbsp;&nbsp;
+
+00:04:22.640 --> 00:04:27.840
+ShareBear will automatically download the new&nbsp;
+version of the file to the victim's machine.
+
+00:04:30.160 --> 00:04:36.720
+Ok, so we have delivering the file to the&nbsp;
+victim taken care of and now we can run it.&nbsp;&nbsp;
+
+00:04:37.680 --> 00:04:44.320
+...unless we can't because Gatekeeper&nbsp;
+blocks it. Because by default,&nbsp;&nbsp;
+
+00:04:44.320 --> 00:04:51.920
+any downloaded file on macOS is quarantined.&nbsp;
+Gatekeeper prevents executing quarantined files&nbsp;&nbsp;
+
+00:04:51.920 --> 00:04:59.120
+like shell scripts and webarchives. Yes, they&nbsp;
+also thought about webarchives and they explicitly&nbsp;&nbsp;
+
+00:04:59.120 --> 00:05:05.600
+mentioned them in the documentation.&nbsp;
+So when Safari tries to open a file,&nbsp;&nbsp;
+
+00:05:05.600 --> 00:05:12.800
+it goes through the Gatekeeper and in this case,&nbsp;
+webarchives get blocked. We could bypass that&nbsp;&nbsp;
+
+00:05:12.800 --> 00:05:20.320
+if we would find a vector where Safari opens a&nbsp;
+file without asking Gatekeeper. And after a bit of&nbsp;&nbsp;
+
+00:05:20.320 --> 00:05:29.520
+research, Ryan found out that windows URL files do&nbsp;
+exactly that. It's a format that specifies things&nbsp;&nbsp;
+
+00:05:29.520 --> 00:05:36.480
+like the URL of the shortcut, the icon and so on.&nbsp;
+You can just make a desktop shortcut to a website.&nbsp;&nbsp;
+
+00:05:37.040 --> 00:05:43.440
+You can also use a file:// protocol. And&nbsp;
+turns out that if you open this shortcut file,&nbsp;&nbsp;
+
+00:05:43.440 --> 00:05:52.000
+with a path to webarchive instead of opening the&nbsp;
+webarchive directly, it bypasses the Gatekeeper.&nbsp;&nbsp;
+
+00:05:52.000 --> 00:05:57.200
+And one last piece of the puzzle is the&nbsp;
+path of the downloaded webarchive file.&nbsp;&nbsp;
+
+00:05:58.160 --> 00:06:06.400
+Normally, it will be inside the user directory so&nbsp;
+we would need to know the macOS username. It's ok&nbsp;&nbsp;
+
+00:06:06.400 --> 00:06:13.280
+when you target a specific victim but hard to&nbsp;
+predict with an attack on a big scale. To solve&nbsp;&nbsp;
+
+00:06:13.280 --> 00:06:20.880
+this problem, you can use a DMG file. It's a disk&nbsp;
+image format that contains an archive with another&nbsp;&nbsp;
+
+00:06:20.880 --> 00:06:28.400
+files inside. The reason why it solves the problem&nbsp;
+is that it's mounted into /Volumes/ directory&nbsp;&nbsp;
+
+00:06:28.400 --> 00:06:36.240
+which means we don't need to know the username&nbsp;
+to predict its location. So what is it finally?
+
+00:06:36.240 --> 00:06:43.360
+A webarchive? A DMG? A URL file? I know that you are&nbsp;
+confused so let's go through the whole exploit.&nbsp;&nbsp;
+
+00:06:44.160 --> 00:06:51.680
+First, you have to trick the victim into visiting&nbsp;
+your website. This website contains such JavaScript&nbsp;code.
+
+00:06:51.680 --> 00:07:00.400
+It contains a link to a harmless image&nbsp;
+shared over iCloud. The user has to confirm the&nbsp;&nbsp;
+
+00:07:00.400 --> 00:07:07.760
+prompt about opening a file. This is the last&nbsp;
+piece of user interaction that we need. Now,&nbsp;&nbsp;
+
+00:07:07.760 --> 00:07:15.440
+you have to modify the contents of the image to a&nbsp;
+DMG file that contains the webarchive inside. In&nbsp;&nbsp;
+
+00:07:15.440 --> 00:07:20.240
+the real attack scenario, you would probably&nbsp;
+need some scripts to do this automatically.&nbsp;&nbsp;
+
+00:07:21.200 --> 00:07:27.440
+Now Safari launches this file and the disk&nbsp;
+image is mounted into /Volumes/ directory.&nbsp;&nbsp;
+
+00:07:27.440 --> 00:07:34.160
+The webarchive is available under this path.&nbsp;
+Now, you modify the contents of the file again.&nbsp;&nbsp;
+
+00:07:34.880 --> 00:07:41.200
+Importantly, the disk image is already mounted&nbsp;
+in /Volumes/ directory and it's not removed&nbsp;&nbsp;
+
+00:07:41.200 --> 00:07:49.040
+from there or modified even though you make a&nbsp;
+modification on your iCloud account. This time,&nbsp;&nbsp;
+
+00:07:49.040 --> 00:07:55.440
+you turn this file into the URL format,&nbsp;
+pointing to the webarchive which is inside&nbsp;&nbsp;
+
+00:07:55.440 --> 00:08:02.480
+/Volumes/ directory. Inside the webarchive&nbsp;
+file, there is your arbitrary JavaScript code&nbsp;&nbsp;
+
+00:08:02.480 --> 00:08:10.080
+and arbitrary domain which you'd like to attack.&nbsp;
+After the webarchive file is launched in Safari,&nbsp;&nbsp;
+
+00:08:10.080 --> 00:08:17.120
+your code gets executed on whichever domain&nbsp;
+you chose. With universal cross-site scripting,&nbsp;&nbsp;
+
+00:08:17.120 --> 00:08:23.200
+you can do whatever the user can do in their&nbsp;
+browser - attack PayPal and transfer funds to you,&nbsp;&nbsp;
+
+00:08:23.840 --> 00:08:30.160
+attack Gmail and steal or send emails as the&nbsp;
+victim. You can attack a website like Zoom or&nbsp;&nbsp;
+
+00:08:30.160 --> 00:08:36.000
+Facetime which is likely to have permission to the&nbsp;
+camera and you can see what the victim is doing.&nbsp;&nbsp;
+
+00:08:37.120 --> 00:08:46.240
+And many, many more... The reward for this bug&nbsp;
+was $100,500 and there were two CVEs issued.&nbsp;&nbsp;
+
+00:08:47.120 --> 00:08:53.200
+As for the fixes, the ShareBear application&nbsp;
+now only reveals a file instead of launching it&nbsp;&nbsp;
+
+00:08:53.200 --> 00:09:02.240
+directly and WebKit now won't open any quarantined&nbsp;
+files, even via Windows shortcuts. If you've&nbsp;&nbsp;
+
+00:09:02.240 --> 00:09:07.760
+learned anything new from this video, leave a like&nbsp;
+and subscribe to the channel. If you want to see&nbsp;&nbsp;
+
+00:09:07.760 --> 00:09:13.760
+other bug bounty reports from Apple, check out&nbsp;
+this playlist on your right. You can find there a&nbsp;&nbsp;
+
+00:09:14.640 --> 00:09:22.800
+$28,000 IDOR in Apple Shortcuts or $50k RCE. But&nbsp;
+for now, thank you for watching and goodbye!
+

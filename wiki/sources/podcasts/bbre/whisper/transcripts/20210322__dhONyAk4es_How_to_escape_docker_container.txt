@@ -1,0 +1,91 @@
+Hello! In this video you will learn how to escape a privileged docker container. Before I understood
+how docker containers work, I thought they are insanely complicated. They are surely not easy,
+but they are also not that hard. This video will give you an idea about it. The episode is based
+on a blog post by Disconnected from Trail of Beats. He's also my friend and he hugely helped me to
+start my cyber security career, so make sure to give him a follow. Links, as always, are in the
+description. Enjoy! Docker containers are somewhat similar to virtual machines. Each one is better
+for different use cases. The difference is, among others, that VMs virtualize the hardware and have
+separate kernel. Containers, on the other hand, are much lighter. On the lower level they are just
+processes isolated from the rest of the system. It has many benefits when you want to create an
+application. For example, the container will be much lighter than the VM and much easier to deploy.
+However, from the security point of view, it is more risky because there is less isolation
+between the container and the host operating system. It is possible to configure your container securely.
+Then, even if you would have an RCE in the web app that's inside the container, the attacker wouldn't be able
+to escalate his privileges to the host machine. However, creating a secure container is not trivial.
+Often, the easiest way to solve some problem is by giving the container additional privileges.
+In today's episode, you will see how easy it is to escape a container that has too much permissions.
+Keep in mind, I am not showing you a Docker vulnerability that only works in outdated versions.
+It's a repeatable way to escape the container with specific privileges in the newest version of Docker.
+It is a container that has to be used in the container.
+Precisely, we need to run in the container as root user and we need the ability to use the mount command.
+Let's start by explaining control groups or just C groups.
+It's a Linux feature that allows grouping processes and limiting resources like CPU time of those groups.
+It's also one of mechanisms with which Docker isolates processes inside the container from those of the host.
+And there is a feature that allows to execute a specific command once all processes in the C group are terminated.
+For example, this can be used to notify the kernel that all processes in the C group are terminated and the group can be removed.
+This is the feature that will be exploited to escape the container because this command will be executed on the host.
+Let's jump to the exploit and explain it step by step.
+So we start an Ubuntu container.
+These are the insecure options that will allow us to use the mount command.
+CAP ADD is for adding capabilities.
+Now what are capabilities?
+Before them, each process would be either non-privileged, subject to all permission checks,
+all privileges effectively run as root bypassing all kernel permission checks.
+Capabilities divide those privileges and allow more granular granting.
+For example, th-own capability allows changing files owner while kill capability allows sending any signals.
+Sysadmin is a very powerful capability which will give us the ability to use the mount syscall.
+Deciding on granting or restricting each capability upon creation of a new container would be very time consuming.
+This problem is partially solved by AppArmor.
+Among other things, AppArmor can specify a list of restricted capabilities.
+This command turns off Docker default AppArmor profile because it restricts the sysadmin capability which we need.
+Running this command gives us a shell inside the container and our goal is to execute a command on the host.
+The first step of the exploit is creating a new C group and using mount command,
+telling the system where are the files that describe this C group.
+Because in practice, C group is just a bunch of files and this is its structure.
+There is one file particularly interesting for us.
+Notify on release.
+When the value inside this file is zero,
+nothing happens when all processes from the C group are terminated.
+However, when the value is 1, upon terminating all processes,
+a command from release agent file from AppArmor directory is executed.
+So in our exploit, we put the value 1 inside the notify on release file in our C group.
+The command that we will want to execute will be put in the slash cmd file inside the container.
+If our attack will be successful, this file will be executed by the host.
+However, if we run slash cmd on the host, there will be no such file error because the host won't know
+that this file is inside the container.
+And obviously, being in the container, we can't just write a file on the host operating system.
+So we need to find under what path files from inside the container are reachable on the host.
+For this, we need to look in the .etc mtab file and we'll use a handy regex to extract this path.
+Next, we put this path inside the release agent file.
+Then, we put our commands that will be executed on the host inside the cmd file.
+In this case, we'll just list processes of the host and put the result in the output file inside the container,
+so we can read it later.
+So for this whole thing to be triggered, all processes from the C group must be terminated.
+So we can see that we can see the process in the C group.
+So we can see that we can see the process in the C group.
+To add process to the C group, we need to put its process ID inside the C group.prods file.
+So we create a new process and all it does is putting its PID inside this C group.prods file.
+Double$ is a special bash variable that contains each process own ID.
+And the process is terminated just after doing that.
+And that's the moment that the release agent is executed.
+And in this case, the release agent is our cmd file.
+So on the host, the ps command is executed and the result is put into the output file inside the container.
+We can then cut this file and see the result, which proves that the attack was successful and we were able to escape the container.
+To prevent such attack from happening, when creating a docker container, always remember to avoid using privilege flag,
+because it basically gives the container full access to the host.
+So we can see that the attack is not the same.
+
+
+
+
+
+
+Also, never mount docker socket inside the container, because then the attacker would be able to create a new privileged container himself and use this technique.
+And also, never run as root inside the container, because it opens a lot of potential attack vectors to escalate privileges.
+Because keep in mind that the root inside the container is not some different root.
+By default, it's exactly the same user as root on the host.
+I hope that after watching the video, you understand container escapes a little bit better.
+If you do, support the channel by leaving a like or maybe even buying me a coffee.
+Also, sign up for my mailing list to not miss any of my videos or other products.
+Anyway, for now, thanks for watching and goodbye.
+Bye.

@@ -1,0 +1,206 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.060 --> 00:00:05.100
+Security code review of a big codebase&nbsp;
+is very difficult. In the beginning,&nbsp;&nbsp;
+
+00:00:05.100 --> 00:00:11.160
+you are just overwhelmed by the amount&nbsp;
+of things you don't understand. However,&nbsp;&nbsp;
+
+00:00:11.160 --> 00:00:16.020
+there are things you can do to make it&nbsp;
+easier and find more bugs by reviewing&nbsp;&nbsp;
+
+00:00:16.020 --> 00:00:23.040
+the code. In this video, I will show them on&nbsp;
+the example of my bug in Golang's HTML parser,&nbsp;&nbsp;
+
+00:00:23.040 --> 00:00:27.420
+which is in scope of Google&nbsp;
+Open Source Bug Bounty. Enjoy!
+
+00:00:28.200 --> 00:00:34.680
+The first step is understanding, on a high&nbsp;
+level, what you are reviewing. I usually do&nbsp;&nbsp;
+
+00:00:34.680 --> 00:00:41.820
+this by just using the product and by reading the&nbsp;
+documentation. But by no means this one step&nbsp;is
+
+00:00:41.820 --> 00:00:49.680
+enough to make a complex codebase easy to review.&nbsp;
+Especially, when we are talking about HTML parser,&nbsp;&nbsp;
+
+00:00:49.680 --> 00:00:58.440
+because HTML is extremely complex with hundreds of&nbsp;
+states, namespaces, different parsing rules… But&nbsp;&nbsp;
+
+00:00:58.440 --> 00:01:06.900
+the fact that the whole library is complex doesn't&nbsp;
+mean that every single line does crazy things. The&nbsp;&nbsp;
+
+00:01:06.900 --> 00:01:13.320
+whole library is composed of many small pieces&nbsp;
+which by themselves are easy to understand.
+
+00:01:15.120 --> 00:01:18.540
+The first thing that I do when I'm&nbsp;
+jumping to reviewing a code like&nbsp;&nbsp;
+
+00:01:18.540 --> 00:01:24.240
+this is I find a small piece like this,&nbsp;
+a piece that fits onto a single screen,&nbsp;&nbsp;
+
+00:01:24.240 --> 00:01:31.860
+and I try to understand what happens there.&nbsp;
+This gives my brain the signal that it's not&nbsp;&nbsp;
+
+00:01:31.860 --> 00:01:37.920
+as overwhelming as I initially thought. And this&nbsp;
+does not have to lead me to a bug straight away.
+
+00:01:37.920 --> 00:01:44.940
+Let's be honest, when I'm approaching a target&nbsp;
+like this, I am not hoping to find an easy bounty&nbsp;&nbsp;
+
+00:01:44.940 --> 00:01:53.700
+in one day. Especially since I am not an HTML&nbsp;
+expert or an XSS god. The code I stumbled upon is&nbsp;&nbsp;
+
+00:01:53.700 --> 00:02:00.660
+this function that's used to parse HTML comments.&nbsp;
+This is how HTML comments normally look like.&nbsp;&nbsp;
+
+00:02:02.220 --> 00:02:05.220
+And you may be wondering: what's the point of&nbsp;&nbsp;
+
+00:02:05.220 --> 00:02:08.580
+messing up with comments? what&nbsp;
+could I potentially achieve?
+
+00:02:09.300 --> 00:02:16.800
+So imagine I have a website where I allow users&nbsp;
+to use simple HTML in their descriptions. For&nbsp;&nbsp;
+
+00:02:16.800 --> 00:02:24.180
+simplicity, let's only allow header tags. So I&nbsp;
+write some code that takes the description&nbsp;&nbsp;
+
+00:02:24.180 --> 00:02:32.100
+from the user, parses the HTML, and checks whether&nbsp;
+all tags that are in this HTML are allowed or not.&nbsp;&nbsp;
+
+00:02:33.300 --> 00:02:40.200
+If they are not, I forbid the user from saving&nbsp;
+this description. If they are, I'd consider this&nbsp;&nbsp;
+
+00:02:40.200 --> 00:02:46.920
+description safe and I show it to other users,&nbsp;
+where this HTML is being parsed in their browsers.
+
+00:02:47.940 --> 00:02:56.880
+So the HTML is parsed twice: once by my code,&nbsp;
+which uses Golang's HTML parser, and then by&nbsp;&nbsp;
+
+00:02:56.880 --> 00:03:03.840
+the browser of my potential victim. If I can&nbsp;
+find any inconsistency between these parsers,&nbsp;&nbsp;
+
+00:03:04.380 --> 00:03:10.500
+I can hide some XSS payloads so that the&nbsp;
+validator doesn't see those payloads,&nbsp;&nbsp;
+
+00:03:11.100 --> 00:03:15.540
+but they are executed in the browsers&nbsp;
+in the context of the victim.
+
+00:03:16.260 --> 00:03:21.360
+When you are looking for bugs in libraries&nbsp;
+like this, you have to come up with these&nbsp;&nbsp;
+
+00:03:21.360 --> 00:03:26.880
+attack scenarios yourself. Just make sure&nbsp;
+that you are using the library correctly,&nbsp;&nbsp;
+
+00:03:26.880 --> 00:03:29.820
+because if you misuse it,&nbsp;
+you will not be rewarded.
+
+00:03:30.720 --> 00:03:35.820
+So let's come back to the comment&nbsp;
+syntax. This is the typical comment.&nbsp;&nbsp;
+
+00:03:35.820 --> 00:03:42.420
+But the specifications of how parsers should&nbsp;
+parse the comments mention a few exceptions.&nbsp;&nbsp;
+
+00:03:43.200 --> 00:03:49.620
+One rule says that if a &gt; character&nbsp;
+is immediately after the beginning,&nbsp;&nbsp;
+
+00:03:50.640 --> 00:03:58.500
+this is considered an empty comment. Another&nbsp;
+rule says that if a comment is closed with&nbsp;&nbsp;
+
+00:03:58.500 --> 00:04:08.520
+this sequence: !--&gt;, it is also considered a valid&nbsp;
+comment closing. Golang's library had no problems&nbsp;&nbsp;
+
+00:04:08.520 --> 00:04:15.960
+with applying these two rules. But tell me,&nbsp;
+what do you think should happen with this?
+
+00:04:17.940 --> 00:04:25.020
+If you combine the logic from these two rules, you&nbsp;
+should interpret this as a valid empty comment.&nbsp;&nbsp;
+
+00:04:26.580 --> 00:04:32.640
+However, there is nothing in the specification&nbsp;
+saying that these two can be used together.&nbsp;&nbsp;
+
+00:04:33.540 --> 00:04:40.320
+It means this is only a comment opening,&nbsp;
+and that's also how browsers process this.&nbsp;&nbsp;
+
+00:04:40.920 --> 00:04:48.720
+But Golang's HTML parser saw this as an&nbsp;
+empty comment. So if I use a payload like this,&nbsp;&nbsp;
+
+00:04:48.720 --> 00:04:56.940
+then my hypothetical validator would see&nbsp;
+an empty comment first, and then an H1 tag&nbsp;&nbsp;
+
+00:04:56.940 --> 00:05:02.220
+with some attributes, which are considered&nbsp;
+safe. So this description would be allowed.&nbsp;&nbsp;
+
+00:05:03.180 --> 00:05:10.380
+But then, it would be shown to users and processed&nbsp;
+by their browsers. And the browser would see here&nbsp;&nbsp;
+
+00:05:10.380 --> 00:05:17.400
+only a comment opening and the H1 tag would&nbsp;
+be the comment's content. Then, the comment&nbsp;&nbsp;
+
+00:05:17.400 --> 00:05:26.100
+would be closed, and the rest will be processed as&nbsp;
+valid HTML. This way, we smuggled an a tag past&nbsp;&nbsp;
+
+00:05:26.100 --> 00:05:32.820
+the validator, and the XSS can execute in the&nbsp;
+victim's browser if they click on this link.
+
+00:05:44.400 --> 00:05:51.840
+Google paid me $3,133.70 for this bug.&nbsp;
+If you want to learn more about XSSes,&nbsp;&nbsp;
+
+00:05:51.840 --> 00:06:01.380
+check out this video with some of my conclusions&nbsp;
+after studying 174 bug bounty XSS reports.&nbsp;&nbsp;
+
+00:06:01.380 --> 00:06:03.960
+For now, thank you for watching, and goodbye!
+

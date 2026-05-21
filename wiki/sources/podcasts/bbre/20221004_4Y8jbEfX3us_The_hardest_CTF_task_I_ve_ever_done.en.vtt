@@ -1,0 +1,455 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:06.960
+I've always loved CTFs! Not only are they a&nbsp;
+fantastic learning resource, but also they give&nbsp;&nbsp;
+
+00:00:06.960 --> 00:00:12.600
+me the feeling of competitiveness that I miss&nbsp;
+from the days when I played football. However,&nbsp;&nbsp;
+
+00:00:12.600 --> 00:00:19.620
+I didn't play CTFs much in the last few years&nbsp;
+so I decided to change that. I've reached out&nbsp;&nbsp;
+
+00:00:19.620 --> 00:00:25.500
+to my friends from JustCatTheFish team -&nbsp;
+TOP 12 in the world on CTFtime last year.&nbsp;&nbsp;
+
+00:00:25.500 --> 00:00:32.640
+I played with members of this team a few years&nbsp;
+ago. Now, they invited me to play 0CTF with them.&nbsp;&nbsp;
+
+00:00:33.300 --> 00:00:40.320
+I knew that tasks on real CTFs are really hard but&nbsp;
+I still didn't appreciate them enough. Especially&nbsp;&nbsp;
+
+00:00:40.320 --> 00:00:47.400
+that this CTF had maximum weight on CTFtime.org&nbsp;
+world ranking which means it should also be&nbsp;&nbsp;
+
+00:00:47.400 --> 00:00:54.720
+adequately difficult compared to other CTFs.&nbsp;
+During the CTF, I struggled a lot but honestly,&nbsp;&nbsp;
+
+00:00:54.720 --> 00:01:00.900
+one of the reasons I'm here is to make mistakes&nbsp;
+and learn from other people. Because people in&nbsp;&nbsp;
+
+00:01:00.900 --> 00:01:07.140
+this team are extremely skilled hackers and&nbsp;
+I can learn so much from them! In this video,&nbsp;&nbsp;
+
+00:01:07.140 --> 00:01:14.460
+I will show you how we solved the 'where are you&nbsp;
+from?' task which involved two CVEs: AJP request&nbsp;&nbsp;
+
+00:01:14.460 --> 00:01:21.780
+smuggling and the Ghostcat vulnerability.&nbsp;
+Enjoy! For the task, we had an Apache httpd&nbsp;&nbsp;
+
+00:01:21.780 --> 00:01:27.840
+as a front-end server and Apache Tomcat as a&nbsp;
+backend and we had no access to the source code.&nbsp;&nbsp;
+
+00:01:29.160 --> 00:01:35.340
+There was no real functionality - the server&nbsp;
+only responded with some internal IP address&nbsp;&nbsp;
+
+00:01:35.340 --> 00:01:40.980
+which we didn't know what it meant. And the&nbsp;
+name of the task, plus having our own instance,&nbsp;&nbsp;
+
+00:01:40.980 --> 00:01:45.960
+suggested a bug like request smuggling,&nbsp;
+some kind of desync, maybe an SSRF.&nbsp;&nbsp;
+
+00:01:47.460 --> 00:01:54.720
+From server headers, we could judge versions&nbsp;
+of httpd and Tomcat. The front-end server was&nbsp;&nbsp;
+
+00:01:54.720 --> 00:02:02.160
+2.4.53 which was only one from latest version&nbsp;
+which I initially ignored. Tomcat, however,&nbsp;&nbsp;
+
+00:02:02.160 --> 00:02:11.700
+was version 9.0.30 which was from 2020. And I&nbsp;
+saw that it is vulnerable to potential remote&nbsp;&nbsp;
+
+00:02:11.700 --> 00:02:18.960
+code execution via AJP protocol. And I immediately&nbsp;
+connected the dots that I saw the vulnerability in&nbsp;&nbsp;
+
+00:02:18.960 --> 00:02:26.520
+httpd about request smuggling, also in the AJP&nbsp;
+which, at that point, I didn't know what it was.&nbsp;&nbsp;
+
+00:02:27.960 --> 00:02:34.620
+AJP stands for Apache JServ Protocol and it&nbsp;
+is a binary protocol which is used between&nbsp;&nbsp;
+
+00:02:34.620 --> 00:02:39.480
+these two servers to communicate&nbsp;
+instead of using an HTTP protocol.&nbsp;&nbsp;
+
+00:02:40.500 --> 00:02:47.220
+For example, instead of wasting 12 bytes in&nbsp;
+every single request for the Content-Type header,&nbsp;&nbsp;
+
+00:02:47.220 --> 00:02:51.780
+there is a two-byte sequence that indicates&nbsp;
+this header and so on, and so on...&nbsp;&nbsp;
+
+00:02:53.040 --> 00:03:00.960
+So when I send GET to the front-end server, it&nbsp;
+translates this HTTP request into an AJP packet.&nbsp;&nbsp;
+
+00:03:00.960 --> 00:03:08.400
+One request - one packet, nothing interesting.&nbsp;
+The format of the packet looks like this. First,&nbsp;&nbsp;
+
+00:03:08.400 --> 00:03:16.380
+there are two magic bytes 0x12 0x34. Next, there&nbsp;
+is the length of the whole AJP packet. Then,&nbsp;&nbsp;
+
+00:03:16.380 --> 00:03:23.280
+there's a byte that says the type of the&nbsp;
+packet. In our case it will always be 0x02&nbsp;&nbsp;
+
+00:03:23.280 --> 00:03:30.060
+which means forward request packet. Then,&nbsp;
+the next one will indicate the HTTP method.&nbsp;&nbsp;
+
+00:03:30.780 --> 00:03:38.880
+The GET is indicated by code 2 and POST is 4.&nbsp;
+Then, there's some data about the request like&nbsp;&nbsp;
+
+00:03:38.880 --> 00:03:45.120
+the host, the request URI, then there are headers&nbsp;
+and finally, there are some additional parameters.&nbsp;&nbsp;
+
+00:03:46.560 --> 00:03:52.320
+And that's what happens when we send a GET request&nbsp;
+without the body. But what happens when we send&nbsp;&nbsp;
+
+00:03:52.320 --> 00:04:00.120
+a POST? It gets a bit more interesting because&nbsp;
+the body of our request is sent separately from&nbsp;&nbsp;
+
+00:04:00.120 --> 00:04:07.980
+the headers. So we have one HTTP request but two&nbsp;
+AJP packets. And that's a good start if you are&nbsp;&nbsp;
+
+00:04:07.980 --> 00:04:16.440
+looking for request smuggling. Our goal is to&nbsp;
+split these two packets so that Tomcat treats&nbsp;&nbsp;
+
+00:04:16.440 --> 00:04:24.180
+the body of our request as a new request. It's&nbsp;
+because the AJP protocol in itself gives us a lot&nbsp;&nbsp;
+
+00:04:24.180 --> 00:04:31.620
+of power and in this particular case, we need
+it to exploit arbitrary file read on Tomcat.
+
+00:04:34.320 --> 00:04:40.140
+In the packet with headers, there are magic&nbsp;
+bytes, then there is the length of the packet&nbsp;&nbsp;
+
+00:04:40.140 --> 00:04:46.800
+and then there is type of the packet and type&nbsp;
+of the HTTP method. And I would think that the&nbsp;&nbsp;
+
+00:04:46.800 --> 00:04:53.280
+request body would look similarly. I would expect&nbsp;
+magic bytes as well, I would expect a packet&nbsp;&nbsp;
+
+00:04:53.280 --> 00:05:00.540
+length and then I would expect some kind of byte&nbsp;
+indicating that this packet is a request body.&nbsp;&nbsp;
+
+00:05:01.380 --> 00:05:08.640
+But it's not the case. Turns out that in request&nbsp;
+body, there is no packet type at all and the&nbsp;&nbsp;
+
+00:05:08.640 --> 00:05:15.360
+packet length is followed by the data length&nbsp;
+which, in all packets I've noticed, was just&nbsp;&nbsp;
+
+00:05:15.360 --> 00:05:23.160
+packet length -2. And then, there's your whole&nbsp;
+body which is forwarded without any modifications.&nbsp;&nbsp;
+
+00:05:24.180 --> 00:05:29.640
+I didn't read the docs as meticulously when I&nbsp;
+was solving the challenge but when preparing&nbsp;&nbsp;
+
+00:05:29.640 --> 00:05:36.840
+for this video, I saw that even the docs say that&nbsp;
+"this seems like a mistake". Because how does the&nbsp;&nbsp;
+
+00:05:36.840 --> 00:05:47.400
+Tomcat know if this AJP packet is a request body&nbsp;
+with length 514 or is it a GET forward request?&nbsp;&nbsp;
+
+00:05:48.720 --> 00:05:54.600
+Tomcat looks at the previous packet. If&nbsp;
+it contained the Content-Length header,&nbsp;&nbsp;
+
+00:05:54.600 --> 00:06:02.280
+Tomcat treats the next one as its body. So&nbsp;
+every time any AJP packet arrives to Tomcat,&nbsp;&nbsp;
+
+00:06:02.280 --> 00:06:08.100
+it asks a question: did the previous&nbsp;
+packet contain a Content-Length header?&nbsp;&nbsp;
+
+00:06:08.100 --> 00:06:15.240
+If it didn't, the current packet is a brand new&nbsp;
+request. If it did, the current packet is a body.&nbsp;&nbsp;
+
+00:06:16.380 --> 00:06:24.720
+So if you could trick httpd to send your&nbsp;
+body of the request in a situation where the&nbsp;&nbsp;
+
+00:06:24.720 --> 00:06:30.660
+previous packet would not have the Content-Length&nbsp;
+header, you would have the AJP request smuggling.&nbsp;&nbsp;
+
+00:06:32.100 --> 00:06:36.720
+But how do you do this? If you don't&nbsp;
+send the Content-Length header at all,&nbsp;&nbsp;
+
+00:06:36.720 --> 00:06:43.080
+you GET 400 Bad Request and you're not even&nbsp;
+talking with Tomcat. The next idea you might&nbsp;&nbsp;
+
+00:06:43.080 --> 00:06:50.820
+have is to send Transfer-Encoding: chunked header.&nbsp;
+However, when that happens Apache httpd doesn't&nbsp;&nbsp;
+
+00:06:50.820 --> 00:06:57.480
+send the body at all. I didn't find any piece of&nbsp;
+the documentation that would explain this behavior&nbsp;&nbsp;
+
+00:06:57.480 --> 00:07:04.740
+but the comment in the source code says that&nbsp;
+"the AJP protocol does not want body data yet".&nbsp;&nbsp;
+
+00:07:06.120 --> 00:07:12.900
+How about an invalid Transfer-Encoding header?&nbsp;
+When you do this, you also get 400 Bad Request.&nbsp;&nbsp;
+
+00:07:14.100 --> 00:07:21.480
+But when you send Transfer-Encoding: chunked,&nbsp;
+chunked, it's valid enough that you don't GET&nbsp;&nbsp;
+
+00:07:21.480 --> 00:07:30.480
+400 Bad Request but it's also not equal to&nbsp;
+string "chunked" which would make httpd get&nbsp;&nbsp;
+
+00:07:30.480 --> 00:07:37.920
+inside the if that would not send the body. So&nbsp;
+when you do this, it forwards the request with&nbsp;&nbsp;
+
+00:07:37.920 --> 00:07:45.240
+this header and then sends your body in the&nbsp;
+next AJP packet. And what does the Tomcat do&nbsp;&nbsp;
+
+00:07:45.240 --> 00:07:50.460
+with the Transfer-Encoding header? I looked at&nbsp;
+the source code of Tomcat and it doesn't even&nbsp;&nbsp;
+
+00:07:50.460 --> 00:07:57.840
+mention the Transfer-Encoding header so I think&nbsp;
+it doesn't do anything with it. All Tomcat&nbsp;&nbsp;
+
+00:07:57.840 --> 00:08:04.320
+does when it sees our body is asking itself&nbsp;
+a question: did the previous request contain&nbsp;&nbsp;
+
+00:08:04.320 --> 00:08:11.040
+a Content-Length header? And in this case it&nbsp;
+didn't so our body is processed as a new request.&nbsp;&nbsp;
+
+00:08:12.420 --> 00:08:22.020
+And this is the first half of the task which&nbsp;
+is CVE-2022-26377 AJP request smuggling in&nbsp;&nbsp;
+
+00:08:22.020 --> 00:08:30.180
+Apache httpd. And I was reading the analysis of&nbsp;
+this vulnerability in a Chinese blogpost and,&nbsp;&nbsp;
+
+00:08:30.180 --> 00:08:37.200
+of course, back then, nothing was as clear to&nbsp;
+me as it is now. And there was a payload in this&nbsp;&nbsp;
+
+00:08:37.200 --> 00:08:43.680
+blogpost but I didn't know what it was doing. To&nbsp;
+understand it, I created a simple python script&nbsp;&nbsp;
+
+00:08:43.680 --> 00:08:52.200
+to parse the AJP message which I then extended&nbsp;
+by the ability to create my own AJP messages.&nbsp;&nbsp;
+
+00:08:53.580 --> 00:09:03.720
+The trick is to make the body of our request&nbsp;
+exactly 514 bytes long. Why? Because, after&nbsp;&nbsp;
+
+00:09:03.720 --> 00:09:13.620
+being hex encoded, it is 0x0202. And these bytes&nbsp;
+are prepended by httpd to our request. These two&nbsp;&nbsp;
+
+00:09:13.620 --> 00:09:21.060
+packets are forwarded to Tomcat. The first one is&nbsp;
+processed without any problems - it's a normal AJP&nbsp;&nbsp;
+
+00:09:21.060 --> 00:09:28.260
+packet without the Content-Length header. Then,&nbsp;
+the second packet is processed by Tomcat - the&nbsp;&nbsp;
+
+00:09:28.260 --> 00:09:35.280
+request body. Tomcat asks the question did&nbsp;
+the previous packet contain a Content-Length&nbsp;&nbsp;
+
+00:09:35.280 --> 00:09:41.040
+header and in this case it didn't because it&nbsp;
+contained Transfer-Encoding: chunked, chunked&nbsp;&nbsp;
+
+00:09:41.640 --> 00:09:49.680
+so Tomcat does not treat this as a request&nbsp;
+body. On bytes 4 and 5, there is the length&nbsp;&nbsp;
+
+00:09:49.680 --> 00:09:58.380
+of the packet but now Tomcat processes it as a new&nbsp;
+request. It decodes it as forward request method&nbsp;&nbsp;
+
+00:09:58.380 --> 00:10:07.620
+and in this case GET HTTP method. And the rest of&nbsp;
+our packet must look like a valid AJP packet which&nbsp;&nbsp;
+
+00:10:07.620 --> 00:10:13.200
+gives us possibility to send requests anywhere&nbsp;
+and further exploit the second vulnerability.
+
+00:10:15.660 --> 00:10:21.000
+And now it's time to exploit Tomcat.&nbsp;
+It's a vulnerability where you can use&nbsp;&nbsp;
+
+00:10:21.000 --> 00:10:26.940
+request attributes within an AJP packet&nbsp;
+that override what you are requesting.&nbsp;&nbsp;
+
+00:10:27.660 --> 00:10:34.860
+So in the original request URI, you said that you&nbsp;
+want to request index.jsp which, of course, is&nbsp;&nbsp;
+
+00:10:34.860 --> 00:10:41.880
+perfectly fine. But then, in the attributes, you&nbsp;
+override this and you say you've changed your mind&nbsp;&nbsp;
+
+00:10:41.880 --> 00:10:49.980
+and you wanted to request the web.xml instead.&nbsp;
+This file often contains Tomcat credentials.&nbsp;&nbsp;
+
+00:10:50.580 --> 00:10:55.680
+And, of course, you can read any other&nbsp;
+file that can give you something. However,&nbsp;&nbsp;
+
+00:10:55.680 --> 00:11:02.760
+when solving the challenge, we couldn't get&nbsp;
+any file read for a long time. The problem was&nbsp;&nbsp;
+
+00:11:02.760 --> 00:11:11.880
+that this was very random - you send a POST with&nbsp;
+your smuggled AJP packet but the response to it&nbsp;&nbsp;
+
+00:11:11.880 --> 00:11:18.600
+is returned in one of the future responses. And&nbsp;
+it wasn't the next response or the second next.&nbsp;&nbsp;
+
+00:11:19.320 --> 00:11:25.980
+It could be a few responses or it could even be&nbsp;
+a few tens of responses further. And I wasted&nbsp;&nbsp;
+
+00:11:25.980 --> 00:11:33.420
+hours here because I didn't account for that and&nbsp;
+I didn't understand why the same things sometimes&nbsp;&nbsp;
+
+00:11:33.420 --> 00:11:41.220
+work and other times they don't. And initially,&nbsp;
+I saw the good error - the error that showed me&nbsp;&nbsp;
+
+00:11:41.220 --> 00:11:47.340
+that the server tried to read the web.xml&nbsp;
+file but it didn't work and then for hours,&nbsp;&nbsp;
+
+00:11:47.340 --> 00:11:54.960
+I couldn't replicate getting the same error. At&nbsp;
+this point, I left the task to my teammates and&nbsp;&nbsp;
+
+00:11:54.960 --> 00:12:01.620
+I went on to check another one. In hindsight,&nbsp;
+it was my mistake because I was very close to&nbsp;&nbsp;
+
+00:12:01.620 --> 00:12:08.040
+solving this challenge but had I been doing&nbsp;
+it alone I probably would not solve it.&nbsp;&nbsp;
+
+00:12:09.180 --> 00:12:16.440
+Later, our solution to this problem was sending&nbsp;
+only one POST request with a payload and then&nbsp;&nbsp;
+
+00:12:16.440 --> 00:12:23.880
+sending multiple GETs in an infinite loop until we&nbsp;
+would get a response to the smuggled AJP packet.&nbsp;&nbsp;
+
+00:12:24.960 --> 00:12:32.700
+And the trick that was key to finally solving this&nbsp;
+challenge had to do with JSP files. They look like&nbsp;&nbsp;
+
+00:12:32.700 --> 00:12:38.820
+this - kinda like templates. And when you request&nbsp;
+this file, you usually will get the rendered&nbsp;&nbsp;
+
+00:12:38.820 --> 00:12:47.520
+version. However, when your original request URI&nbsp;
+in the AJP packet is not JSP but whatever else&nbsp;&nbsp;
+
+00:12:48.060 --> 00:12:53.580
+and then in your attributes you,&nbsp;
+override this to get the index.jsp,&nbsp;&nbsp;
+
+00:12:53.580 --> 00:13:02.700
+then the JSP file is not rendered but instead, you&nbsp;
+see the whole content. Inside the index.jsp file,&nbsp;&nbsp;
+
+00:13:02.700 --> 00:13:09.000
+there was just an if that checked the remote&nbsp;
+address which had to be equal to a hard-coded one.&nbsp;&nbsp;
+
+00:13:09.720 --> 00:13:15.540
+It was not a problem because it's one of the&nbsp;
+fields from the AJP packet which we had full&nbsp;&nbsp;
+
+00:13:15.540 --> 00:13:23.100
+control over. This is the final packet that my&nbsp;
+teammate sent which gave him the flag. We were&nbsp;&nbsp;
+
+00:13:23.100 --> 00:13:28.680
+one of the 10 teams to solve the challenge&nbsp;
+and we ended the CTF at strong fifth place.
+
+00:13:30.780 --> 00:13:35.700
+Thank you for watching this video! If you&nbsp;
+want to check another write-up from CTF,&nbsp;&nbsp;
+
+00:13:35.700 --> 00:13:38.280
+check out this one where I solve the challenge&nbsp;&nbsp;
+
+00:13:38.280 --> 00:13:43.320
+created by LiveOverflow. For now,&nbsp;
+thank you for watching and goodbye!
+

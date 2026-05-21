@@ -1,0 +1,324 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:05.580
+Five digit bounties seemed to me like&nbsp;
+something reserved for top hunters with&nbsp;&nbsp;
+
+00:00:05.580 --> 00:00:13.680
+their crazy payloads. But recently, I made it.&nbsp;
+I got a $20,000 bounty for a path traversal that&nbsp;&nbsp;
+
+00:00:13.680 --> 00:00:19.560
+allowed me to leak files of other users. In&nbsp;
+this video, I will show you what the bug was&nbsp;&nbsp;
+
+00:00:19.560 --> 00:00:26.400
+and also why I think others have missed it so&nbsp;
+make sure you stay until the end. But for now,&nbsp;&nbsp;
+
+00:00:26.400 --> 00:00:33.480
+enjoy the explanation. I was short after listening&nbsp;
+to a critical thinking episode with Alex Chapman&nbsp;&nbsp;
+
+00:00:33.480 --> 00:00:40.920
+and my understanding of his methodology is that he&nbsp;
+goes mostly for high and critical vulnerabilities.&nbsp;&nbsp;
+
+00:00:41.580 --> 00:00:47.880
+But the thing is he goes for bugs that rely on&nbsp;
+specific functionality. Because for example,&nbsp;&nbsp;
+
+00:00:47.880 --> 00:00:53.880
+when you have an IDOR, an IDOR can be in almost&nbsp;
+every single request or authorization bug.&nbsp;&nbsp;
+
+00:00:54.600 --> 00:01:01.260
+But for a bug like SSRF, you need a specific&nbsp;
+functionality. And my understanding of Alex's&nbsp;&nbsp;
+
+00:01:01.260 --> 00:01:07.920
+methodology was that he goes for this&nbsp;
+functionality. And I started looking at my&nbsp;&nbsp;
+
+00:01:07.920 --> 00:01:14.880
+unnamed target because it's a private bug bounty&nbsp;
+program with this approach in mind. So I wanted to&nbsp;&nbsp;
+
+00:01:14.880 --> 00:01:22.380
+find some functionality where I can find high and&nbsp;
+critical risk bugs. But really, there wasn't much.&nbsp;&nbsp;
+
+00:01:22.380 --> 00:01:28.680
+There wasn't much interesting functionality. But&nbsp;
+one that caught my attention was uploading files&nbsp;&nbsp;
+
+00:01:28.680 --> 00:01:37.200
+because I could upload an avatar to my profile.&nbsp;
+I saw that this target uses Amazon S3 buckets&nbsp;&nbsp;
+
+00:01:37.740 --> 00:01:43.920
+and that they use the same bucket for avatars&nbsp;
+and for other sensitive files that I as user can&nbsp;&nbsp;
+
+00:01:43.920 --> 00:01:50.580
+upload. So I knew that any bug here will be very&nbsp;
+impactful. And when it comes to the integration&nbsp;&nbsp;
+
+00:01:50.580 --> 00:01:58.200
+with Amazon S3, there are a few options. One,&nbsp;
+the conventional option would be that you send&nbsp;&nbsp;
+
+00:01:58.200 --> 00:02:04.980
+a request to the server with your new profile&nbsp;
+picture, and then the server talks with S3 sort of&nbsp;&nbsp;
+
+00:02:04.980 --> 00:02:11.880
+in the backend, and then your new avatar is saved.&nbsp;
+And maybe the user does not even see that the S3&nbsp;&nbsp;
+
+00:02:11.880 --> 00:02:19.740
+is used. The problem with this approach is that it&nbsp;
+is very consuming on the server because the server&nbsp;&nbsp;
+
+00:02:19.740 --> 00:02:27.600
+sort of acts as a proxy between the S3 and the&nbsp;
+user and its images, its other files, which are&nbsp;&nbsp;
+
+00:02:27.600 --> 00:02:36.060
+quite heavy. So there is another way to do this&nbsp;
+functionality. The ideal method would be to just&nbsp;&nbsp;
+
+00:02:36.060 --> 00:02:43.620
+let the user talk directly with the S3 bucket,&nbsp;
+bypassing the server, bypassing the need of server&nbsp;&nbsp;
+
+00:02:43.620 --> 00:02:53.460
+to proxy the images. But then the problem you come&nbsp;
+up to is how do you maintain an authorization when&nbsp;&nbsp;
+
+00:02:53.460 --> 00:03:00.660
+the user talks directly to the bucket? Because&nbsp;
+then I could just upload my avatars as avatar&nbsp;&nbsp;
+
+00:03:00.660 --> 00:03:05.880
+of another user. I could maybe delete them.&nbsp;
+I could at least read other people's files.&nbsp;&nbsp;
+
+00:03:05.880 --> 00:03:13.440
+So this wouldn't be that good. That's why there&nbsp;
+is the mechanism that's called pre-signed URLs.&nbsp;&nbsp;
+
+00:03:13.440 --> 00:03:20.940
+And the way it works is I send the request to the&nbsp;
+server, to my target, saying, hello, I'm Greg,&nbsp;&nbsp;
+
+00:03:20.940 --> 00:03:28.080
+and I want to upload an avatar. I'm already&nbsp;
+authenticated, so there is no problem with this.&nbsp;&nbsp;
+
+00:03:28.740 --> 00:03:36.480
+And now the server responds with a URL, which&nbsp;
+allows me to upload the file there. This URL&nbsp;&nbsp;
+
+00:03:36.480 --> 00:03:45.000
+allows me to talk to the S3 API, and I can only&nbsp;
+upload my file to a specified location. This&nbsp;&nbsp;
+
+00:03:45.000 --> 00:03:52.080
+URL is signed cryptographically, so I cannot&nbsp;
+mess up with these parameters. And then after&nbsp;&nbsp;
+
+00:03:52.080 --> 00:04:00.000
+I send the request to the S3 API, I save my file&nbsp;
+there. I confirm to my target server that, yes,&nbsp;&nbsp;
+
+00:04:00.000 --> 00:04:05.820
+I have saved my file at this location which&nbsp;
+you gave me. So this is a three-step process,&nbsp;&nbsp;
+
+00:04:05.820 --> 00:04:14.160
+and it was robust. I couldn't do anything. I tried&nbsp;
+uploading XSS files. I tried path traversals. It's&nbsp;&nbsp;
+
+00:04:14.160 --> 00:04:21.120
+just nothing you can do here. When it comes to&nbsp;
+this pre-signed URL, if you could break the SHA-1&nbsp;&nbsp;
+
+00:04:21.120 --> 00:04:28.440
+signature, you could probably break half of the&nbsp;
+internet. So this is also not happening. But the&nbsp;&nbsp;
+
+00:04:28.440 --> 00:04:34.440
+three-step process is only uploading of the file,&nbsp;
+and of course, the file has to be read somewhere.&nbsp;&nbsp;
+
+00:04:34.440 --> 00:04:42.600
+That's why we upload it. So then when I go to&nbsp;
+my account page, I see that the image tag with&nbsp;&nbsp;
+
+00:04:42.600 --> 00:04:51.300
+my avatar, it has the pre-signed URL as well.&nbsp;
+The difference is that this time, I didn't send&nbsp;&nbsp;
+
+00:04:51.300 --> 00:04:57.420
+this request specifically for the pre-signed&nbsp;
+URL. This time, the URL was just embedded in&nbsp;&nbsp;
+
+00:04:57.420 --> 00:05:03.780
+the HTML of the response, and it contained&nbsp;
+the link to my avatar, which I could request.&nbsp;&nbsp;
+
+00:05:05.040 --> 00:05:14.880
+And the file name that was used here is the name&nbsp;
+I used in step three previously. So my idea was,&nbsp;&nbsp;
+
+00:05:14.880 --> 00:05:22.920
+what if I send here a file that does not belong&nbsp;
+to me? And the first thing that I tried was an&nbsp;&nbsp;
+
+00:05:22.920 --> 00:05:30.060
+avatar that I've uploaded from my other account,&nbsp;
+and it worked. And I could see on my account page,&nbsp;&nbsp;
+
+00:05:30.060 --> 00:05:38.940
+the avatar uploaded from another account, which&nbsp;
+didn't have any impact yet, but it showed me that&nbsp;&nbsp;
+
+00:05:38.940 --> 00:05:47.880
+there's probably no authorization check in place.&nbsp;
+Then I moved one step ahead, and I, instead of&nbsp;&nbsp;
+
+00:05:47.880 --> 00:05:56.220
+using the avatar, I used another document uploaded&nbsp;
+from my another account, something I just uploaded&nbsp;&nbsp;
+
+00:05:56.220 --> 00:06:03.600
+in another functionality of this application. And&nbsp;
+when I went to the account page, my image did not&nbsp;&nbsp;
+
+00:06:03.600 --> 00:06:10.680
+load. My image did not load, but the image tag&nbsp;
+still had the pre-signed URL. And when I opened&nbsp;&nbsp;
+
+00:06:10.680 --> 00:06:17.280
+it in the new tab, it did show me the document,&nbsp;
+the sensitive document from my another account.&nbsp;&nbsp;
+
+00:06:18.360 --> 00:06:25.500
+At this point, I was confident that this is&nbsp;
+a valid bug and there is impact to it. But&nbsp;&nbsp;
+
+00:06:25.500 --> 00:06:32.340
+the problem was that the name of the file from my&nbsp;
+another account, I couldn't brute force it. It was&nbsp;&nbsp;
+
+00:06:32.340 --> 00:06:38.820
+too complex to be brute forcible. So I wanted&nbsp;
+to find a way to leak this to get the maximum&nbsp;&nbsp;
+
+00:06:38.820 --> 00:06:46.800
+payout. I think if I reported the bug as it was,&nbsp;
+I would get a payout, but probably as a P2 or P3,&nbsp;&nbsp;
+
+00:06:47.640 --> 00:06:55.500
+and I wanted the maximum bounty. The thing with&nbsp;
+pre-signed URLs is that they can point to a file,&nbsp;&nbsp;
+
+00:06:55.500 --> 00:07:03.780
+but they can also point to a directory. So what&nbsp;
+I did was, instead of using the file name in step&nbsp;&nbsp;
+
+00:07:03.780 --> 00:07:11.580
+three, I just used the directory and I left it&nbsp;
+this way. As always, I went to the account page,&nbsp;&nbsp;
+
+00:07:11.580 --> 00:07:18.480
+my avatar didn't load, so I copied the pre-signed&nbsp;
+URL from the image tag, pasted into the browser,&nbsp;&nbsp;
+
+00:07:18.480 --> 00:07:26.640
+and I saw a lot of different files, which I saw&nbsp;
+did not belong to me. Now, this funny problem I&nbsp;&nbsp;
+
+00:07:26.640 --> 00:07:32.040
+had is even though there were thousand files,&nbsp;
+because this is by default, the limit of AWS,&nbsp;&nbsp;
+
+00:07:33.120 --> 00:07:38.040
+I didn't access any of them because I saw&nbsp;
+that this is probably customer information,&nbsp;&nbsp;
+
+00:07:38.040 --> 00:07:43.980
+but by file names, they didn't look as&nbsp;
+sensitive as some of the files in the system.&nbsp;&nbsp;
+
+00:07:44.640 --> 00:07:55.380
+So I found, I later found the AWS S3 parameters&nbsp;
+that allow me to show more than 1,000 objects on&nbsp;&nbsp;
+
+00:07:55.380 --> 00:08:03.600
+the directory listing or the object listing to&nbsp;
+be precise. And at this point, I just knew that&nbsp;&nbsp;
+
+00:08:03.600 --> 00:08:10.560
+this is a critical bug, and as expected, I got&nbsp;
+the maximum payout. I was really happy with it,&nbsp;&nbsp;
+
+00:08:10.560 --> 00:08:16.980
+especially that it came after quite a bad period&nbsp;
+when it comes to bug bounty. More on this in the&nbsp;&nbsp;
+
+00:08:16.980 --> 00:08:23.220
+bounty vlog, subscribe to not miss it, but it&nbsp;
+just showed me that those big five-digit payouts,&nbsp;&nbsp;
+
+00:08:23.220 --> 00:08:26.940
+there is no magic to them. It's just&nbsp;
+persistency, continuous learning, and&nbsp;&nbsp;
+
+00:08:27.480 --> 00:08:33.660
+putting in the time and the bugs just come. I&nbsp;
+think the reason that others have missed this bug,&nbsp;&nbsp;
+
+00:08:34.320 --> 00:08:43.380
+maybe because the pre-signed URL was hidden in the&nbsp;
+HTML of the response. If there will be another API&nbsp;&nbsp;
+
+00:08:43.380 --> 00:08:49.560
+call that would only return the pre-signed URL,&nbsp;
+I'm pretty certain that then somebody would report&nbsp;&nbsp;
+
+00:08:49.560 --> 00:08:58.140
+it before me because this attack is nothing new.&nbsp;
+In fact, I did cover it on my channel in 2021. And&nbsp;&nbsp;
+
+00:08:58.140 --> 00:09:05.340
+by the way, it's just nice confirmation to see on&nbsp;
+my example and on your examples that the content&nbsp;&nbsp;
+
+00:09:05.340 --> 00:09:13.320
+that I create is actually useful in real life and&nbsp;
+gets me and gets you, my subscribers, bounties. If&nbsp;&nbsp;
+
+00:09:13.320 --> 00:09:19.740
+you want to learn even more with me, I encourage&nbsp;
+you to join BBRE Premium. Only until the end&nbsp;&nbsp;
+
+00:09:19.740 --> 00:09:27.420
+of October, 2023, you can join for a monthly&nbsp;
+subscription. After the end of October, there&nbsp;&nbsp;
+
+00:09:27.420 --> 00:09:33.840
+will be only a yearly one. The reason is that it&nbsp;
+just becomes too good of a deal that someone can&nbsp;&nbsp;
+
+00:09:33.840 --> 00:09:40.620
+access all the articles in the archive by paying&nbsp;
+$10 for a monthly subscription. So if you want to&nbsp;&nbsp;
+
+00:09:40.620 --> 00:09:47.580
+join before this, go to BBRE.dev slash premium.&nbsp;
+For now, thank you for watching and goodbye.
+

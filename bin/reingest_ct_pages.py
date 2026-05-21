@@ -45,6 +45,7 @@ async def main() -> None:
 
     targets = [
         (str(REPO / "wiki" / "sources" / "podcasts" / "ct"), "*.md"),
+        (str(REPO / "wiki" / "sources" / "podcasts" / "bbre"), "*.md"),
         (str(REPO / "wiki" / "techniques" / "dom-xss"), "*.md"),
         (str(REPO / "wiki" / "techniques" / "oauth"), "*.md"),
         (str(REPO / "wiki" / "techniques" / "saml"), "*.md"),

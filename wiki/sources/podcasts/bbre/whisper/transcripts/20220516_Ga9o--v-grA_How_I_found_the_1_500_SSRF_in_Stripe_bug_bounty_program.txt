@@ -1,0 +1,92 @@
+Hello! In this episode of Bug Bounty Reports Explained, I will cover my own bug, a $1500
+SSRF in Stripe. And the good thing about explaining my own reports is that not only
+I will tell you what the bug was, but also how I chose the target, how I tested it,
+what tools did I use and so on. So, enjoy the explanation.
+Before I start, a quick announcement about BBRE Premium.
+From June, the price goes up. It doesn't affect current members, so if you subscribe in May,
+you will lock in the current low price forever. I also migrated BBRE Premium to a new platform
+recently and now you can subscribe using PayPal. If you've been thinking about it for a while,
+this is the best time to join BBRE Premium.
+Smokescreen is Stripe's open source tool that proxies traffic to the external world. In simple
+words, I have integrations that wait for new BBRE Premium subscribers. When you subscribe,
+Stripe's server finds what webhooks I've configured for this event and sends the request with that
+information to my server. Where is smokescreen in this process? It's between Stripe's server and the
+external world. It makes sure that if I will add, let's say, a cloud metadata endpoint or localhost
+as the webhook address, no request will be sent there. Only the public internet is allowed.
+The particular behavior is based on smokescreen rules that Stripe's developers created.
+When doing my 100 hours bug bounty challenge on Stripe, I saw very early that the whole organization's
+GitHub is in scope. But at the beginning, I did not want to test smokescreen. The idea of bypassing
+domain or IP validation in a tool that's created strictly for this purpose seemed like a tall order.
+I prefer to attack applications where developers don't expect it. In this case, it was an eye-to-eye
+duel. But after about 70 hours and weeks without finding a bug, I decided to take a look.
+It's an open source tool, so instead of blindly adding another webhook endpoints, I prefer to set
+up my environment and, apart from just reading the code, debug the application as it runs. I set it up
+on macOS without any VMs or containers. This is the access control list that I used for testing. And I
+have no idea what these services, projects and roles mean. I only used default rules because the same
+code is used for comparisons anyway. I was switching between allow lists and deny lists. And this is my
+config file, which just makes sure that I don't have to use any role, whatever it is. And finally, this is
+the curl command to send a request through the proxy. If it's denied, you get an error. Otherwise, you just see
+example.com.
+The first thing I wanted to check was DNS rebinding. I spent several hours understanding the protections,
+as it's programmed the way I've never seen before, but I wasn't able to find anything wrong there.
+So I went on and I wanted to find the code responsible for comparing domain names.
+So first, I noticed check if request should be proxied function, so I put a breakpoint there.
+But all it does is call check ACLs for request and handles its response. So I jumped to that function.
+It also handles some metrics, logging, but it does not contain the logic of comparing a domain or an IP
+address. So I stepped into the decide function, which sounds more interesting. This one checks different
+rules one by one. And finally, there is the host matches globe function, which contains the actual
+comparison of one domain to the other. Of course, the first time I was doing that, it took me much more
+time to figure all this out and I was also checking out what other functions are doing. The host matches globe
+function takes two arguments. Host and domain globe. Host is our potentially malicious host. Domain globe is the
+rule. It can be a literal domain or a domain with wildcard subdomains. This function only checks if
+those match and it does not care whether it's an allow list or deny list. When the domain globe is not a
+wildcard, there is a simple equals equals comparison. As simple as that. If there is a wildcard, it checks if
+our host ends with the domain globe. So these rules are quite strict. I did not come up with a way to bypass
+an allow list. But what about a denial list? Have you ever noticed that when making a DNS query, there is
+always the dot at the end? For a long time, I didn't really care what it means. But it's actually quite
+significant. DNS is divided into zones. If you create your own zone, you have control over DNS inside.
+The internet is under the root zone, indicated by the trailing dot at the end. So when you visit
+example.com with the trailing dot at the end, it's a proper absolute domain name. But usually, you visit
+example.com without the dot. From HTTP or rather HTTPS protocol standpoint, some websites work with
+both, but others, including mine, don't work with HTTPS with trailing dots. Without the dot, it's a
+relative domain name, but the dot is implicitly appended in your DNS search list. So coming back to
+the validation, by using the trailing dot, you could bypass domain deny list. We can confirm this by
+stepping into the function and evaluating that host and domain globe are not equal in this case. The same
+attack works if the rule forbids traffic to a wildcard subdomain. Before I submitted the report,
+I've checked if any tools like curl, Python's requests or browsers will strip this dot when making a request,
+but no. So what can you do by bypassing a domain denialist? The truth is, this is much less impactful
+than bypassing IP denialist. But that's what I like about testing open source tools. Not only do I have the
+local debugging setup, but also I have more possibilities. You see, if I was only testing
+Stripe.com, there would either be an SSRF there or not. In this case, not. But when testing an open source
+tool that's also used by other organizations, you only need to find one configuration where the bug exists.
+Of course, it can be a super unlikely scenario, but you still have much more freedom. So even though this
+was only exploitable in a specific configuration, Stripe rewarded me with $500 of base payout plus $1000
+bonus for finding the bug in the critical piece of their infrastructure. As for the fix, dots are now
+trimmed from the right before the comparison. We can see that when using the same command as previously,
+host and domain glob are still not the same, but the new trimmed variables are. So the attack is not
+possible. Also, the domains are lower cased before the comparison. I spent a while trying to come up with
+some kind of Unicode collision attack on this lower casing process, but I couldn't make the attack work.
+If you want to learn more about debugging, check out my presentation from Nahumcon about the topic.
+Also, I'm covering debugging in BbRE Premium. If you want to check it out, go to bbre.dev.com.
+Just make sure to join before the price rises. For now, thank you for watching and goodbye.
+Thank you.
+
+
+
+Thank you.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

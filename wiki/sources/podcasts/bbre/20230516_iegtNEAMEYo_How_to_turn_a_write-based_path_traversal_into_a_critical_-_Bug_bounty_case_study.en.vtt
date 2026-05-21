@@ -1,0 +1,492 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:05.880
+When you have a read-based path traversal,&nbsp;
+it's easy game. You just read a file usually&nbsp;&nbsp;
+
+00:00:05.880 --> 00:00:13.260
+at /etc/passwd and you get a quick payout. But&nbsp;
+what about file write? You have to somehow prove&nbsp;&nbsp;
+
+00:00:13.260 --> 00:00:19.860
+the vulnerability exists. Usually you don't&nbsp;
+know where are you at and you have to watch&nbsp;&nbsp;
+
+00:00:19.860 --> 00:00:26.280
+out to not overwrite a sensitive file because you&nbsp;
+may disrupt the service. To answer this question,&nbsp;&nbsp;
+
+00:00:26.280 --> 00:00:33.180
+I studied all the path traversal reports that I&nbsp;
+found in the internet and I saw which one of them&nbsp;&nbsp;
+
+00:00:33.180 --> 00:00:40.140
+were write-based path traversals and if yes, what&nbsp;
+file did the hunters write. In this video I will&nbsp;&nbsp;
+
+00:00:40.140 --> 00:00:48.420
+show you those results along with some methods to&nbsp;
+escalate path traversal to an RCE. Enjoy! If it's&nbsp;&nbsp;
+
+00:00:48.420 --> 00:00:55.020
+your first time here, I do these case studies&nbsp;
+regularly. I take a bug class, I extract all&nbsp;&nbsp;
+
+00:00:55.020 --> 00:01:01.368
+the reports that I can find in the internet and&nbsp;
+then I study those reports. I already did SSRFs,&nbsp;&nbsp;
+
+00:01:01.368 --> 00:01:09.780
+XSSs, IDORs and SQL injections and path traversals&nbsp;
+are the fifth vulnerability class. They are mostly&nbsp;&nbsp;
+
+00:01:09.780 --> 00:01:16.860
+available in BBRE Premium but they always share&nbsp;
+some part to the public for free, such as in this&nbsp;&nbsp;
+
+00:01:16.860 --> 00:01:24.240
+case I share the part where I will show you which&nbsp;
+file did the hunters write to prove the impact.&nbsp;&nbsp;
+
+00:01:25.440 --> 00:01:34.260
+So in most cases actually hunters didn't&nbsp;
+really write any specific files. In these&nbsp;&nbsp;
+
+00:01:34.260 --> 00:01:39.900
+cases the hunters would just write a&nbsp;
+file that's outside the directory so&nbsp;&nbsp;
+
+00:01:40.500 --> 00:01:48.720
+they would prove that they can write a file&nbsp;
+where they shouldn't, outside the safe directory,&nbsp;&nbsp;
+
+00:01:48.720 --> 00:01:54.840
+but they wouldn't really care about&nbsp;
+what the file content or file name.&nbsp;&nbsp;
+
+00:01:54.840 --> 00:02:02.880
+Like in this case we have a write based path&nbsp;
+traversal in croquis vulnerability in GitLab&nbsp;&nbsp;
+
+00:02:04.380 --> 00:02:10.680
+and we can see here that the hunter&nbsp;
+would just write a temporary file,&nbsp;&nbsp;
+
+00:02:10.680 --> 00:02:18.840
+a test file write txt because if you write a&nbsp;
+file outside the safe directory obviously it's&nbsp;&nbsp;
+
+00:02:18.840 --> 00:02:25.740
+not the directory where the file should have been&nbsp;
+saved. This is enough to prove to the program,&nbsp;&nbsp;
+
+00:02:25.740 --> 00:02:33.240
+especially to a mature program like GitLab, that&nbsp;
+you can really write a file anywhere and often&nbsp;&nbsp;
+
+00:02:34.020 --> 00:02:41.640
+you can turn it into an RCE. In some programs&nbsp;
+you also have to prove this. In this case,&nbsp;&nbsp;
+
+00:02:41.640 --> 00:02:49.080
+in case of GitLab, I think they just believe&nbsp;
+that if you can have a file right you can easily&nbsp;&nbsp;
+
+00:02:50.520 --> 00:02:58.320
+just turn it into an RCE. And this is the&nbsp;
+trend here that these reports with writing&nbsp;&nbsp;
+
+00:02:58.320 --> 00:03:06.960
+any file but writing it outside safe directory&nbsp;
+is present in applications where hunters have&nbsp;&nbsp;
+
+00:03:06.960 --> 00:03:11.640
+access to the source code. It's open source&nbsp;
+and hunters just install this on their own&nbsp;&nbsp;
+
+00:03:11.640 --> 00:03:19.980
+machine where they can monitor what files are&nbsp;
+being created and it just makes it easier to&nbsp;&nbsp;
+
+00:03:19.980 --> 00:03:25.680
+detect a path traversal like this because if&nbsp;
+it's a black box test you may just struggle&nbsp;&nbsp;
+
+00:03:27.240 --> 00:03:37.140
+to do anything. Also in this case study I noticed&nbsp;
+much more than usual zero days like bugs in Ruby&nbsp;&nbsp;
+
+00:03:37.140 --> 00:03:46.320
+on Rails, bugs in Apache, bugs in Node.js. There&nbsp;
+were many many more of them compared to other case&nbsp;&nbsp;
+
+00:03:46.320 --> 00:03:52.980
+studies that I have done. While the overall amount&nbsp;
+of reports, the number of reports was smaller. It&nbsp;&nbsp;
+
+00:03:52.980 --> 00:03:59.820
+was only 74 reports of path traversals that I&nbsp;
+found online which is way less than for example&nbsp;&nbsp;
+
+00:03:59.820 --> 00:04:09.300
+XSS. And some bugs were like this. We can see it's&nbsp;
+a bug in the library in Ruby and the hunter just&nbsp;&nbsp;
+
+00:04:09.300 --> 00:04:16.260
+creates their own vulnerable source code. It's not&nbsp;
+even a direct attack on the web application right&nbsp;&nbsp;
+
+00:04:16.260 --> 00:04:25.740
+in Ruby or created in Ruby but it's just a library&nbsp;
+bug and in this case also it's just creating a&nbsp;&nbsp;
+
+00:04:25.740 --> 00:04:33.240
+temporary file in arbitrary directory and the&nbsp;
+hunter didn't have to prove anything more.&nbsp;&nbsp;
+
+00:04:37.080 --> 00:04:43.740
+Here we also have a very interesting bug. A bug&nbsp;
+that I was not aware of because I'm not a mobile&nbsp;&nbsp;
+
+00:04:43.740 --> 00:04:52.920
+hacker but the report is partially disclosed but&nbsp;
+it's really describing what happened there. So we&nbsp;&nbsp;
+
+00:04:52.920 --> 00:05:00.120
+have a typical zip slip attack where the attacker&nbsp;
+can create a malicious zip with a file that's&nbsp;&nbsp;
+
+00:05:00.120 --> 00:05:06.360
+outside the safe directory after unpacking the&nbsp;
+archive. Two weeks ago I created a video about&nbsp;&nbsp;
+
+00:05:06.360 --> 00:05:12.540
+my codeQL query to detect these kinds of bugs&nbsp;
+so watch the video if you haven't already. But&nbsp;&nbsp;
+
+00:05:12.540 --> 00:05:18.780
+what happens here is this is not an attack on&nbsp;
+the server. This is an attack on the mobile app&nbsp;&nbsp;
+
+00:05:19.740 --> 00:05:25.020
+and the way it works is for some reason,&nbsp;
+I'm not sure for what reason, the file&nbsp;&nbsp;
+
+00:05:25.020 --> 00:05:34.560
+is extracted on the mobile phone of the victim&nbsp;
+and there within the file system of the mobile&nbsp;&nbsp;
+
+00:05:35.580 --> 00:05:43.980
+the file is extracted outside the safe&nbsp;
+directory. In this case the hunter has shown&nbsp;&nbsp;
+
+00:05:43.980 --> 00:05:50.520
+that just overwriting apps private folders.&nbsp;
+I'm not sure what's the real impact of this&nbsp;&nbsp;
+
+00:05:51.540 --> 00:05:58.800
+but there was another very similar report in slack&nbsp;
+where the hunter was able to somehow, it was not&nbsp;&nbsp;
+
+00:05:58.800 --> 00:06:06.900
+disclosed exactly how, was able to leak access&nbsp;
+tokens of the victim using this very attack.&nbsp;&nbsp;
+
+00:06:09.000 --> 00:06:16.860
+Going forward in three cases the hunters were&nbsp;
+able to upload just a shell to the server which&nbsp;&nbsp;
+
+00:06:16.860 --> 00:06:25.200
+is I think the most straightforward way&nbsp;
+to exploit a write-based path traversal.&nbsp;&nbsp;
+
+00:06:25.740 --> 00:06:30.720
+It will not work in modern programming&nbsp;
+languages like Python, like Node.js.&nbsp;&nbsp;
+
+00:06:31.380 --> 00:06:39.900
+It will work in PHP based technologies. Here we&nbsp;
+have a bug in Apache so this is more general.&nbsp;&nbsp;
+
+00:06:40.620 --> 00:06:48.480
+I believe the hunter simply used PHP as an&nbsp;
+example because why not because they could&nbsp;&nbsp;
+
+00:06:49.440 --> 00:06:55.680
+and in this case you can just upload your shell&nbsp;
+anywhere. This report is very interesting because&nbsp;&nbsp;
+
+00:06:55.680 --> 00:07:07.080
+take a look at this bypass. I'm not sure if&nbsp;
+you recognize this but the encoded %32 means&nbsp;&nbsp;
+
+00:07:07.080 --> 00:07:20.880
+digit two and %65 means letter f, small f. If you&nbsp;
+decode these and join it with this % sign you get&nbsp;&nbsp;
+
+00:07:21.960 --> 00:07:31.920
+%2f which is regular encoded forward slash but&nbsp;
+what we see here is we have an unencoded % in&nbsp;&nbsp;
+
+00:07:31.920 --> 00:07:39.420
+the beginning and then we have the 2f encoded so&nbsp;
+this is not a typical double URL encoding payload&nbsp;&nbsp;
+
+00:07:39.960 --> 00:07:46.320
+because what should happen here is I believe&nbsp;
+according to the specs this should be&nbsp;&nbsp;
+
+00:07:46.860 --> 00:07:54.180
+invalid input. This should be denied because&nbsp;
+the percent sign is not followed by a hex number&nbsp;&nbsp;
+
+00:07:55.920 --> 00:08:00.420
+and this is probably what happened is&nbsp;
+the first component would see this,&nbsp;&nbsp;
+
+00:08:00.420 --> 00:08:07.680
+would ignore this case that I just told you&nbsp;
+about, would decode these two characters to 2f&nbsp;&nbsp;
+
+00:08:08.400 --> 00:08:14.640
+and then the next component, the next component&nbsp;
+may be just a function or whatever happens there,&nbsp;&nbsp;
+
+00:08:14.640 --> 00:08:22.500
+I didn't study it in detail, takes the %2f&nbsp;
+which is a regular encoded forward slash&nbsp;&nbsp;
+
+00:08:23.280 --> 00:08:31.440
+and decodes it leading to this pass traversal&nbsp;
+and this is a very good example of why sometimes&nbsp;&nbsp;
+
+00:08:31.440 --> 00:08:38.340
+we should look for inconsistencies and when you&nbsp;
+have an inconsistency it is enough to have a bug&nbsp;&nbsp;
+
+00:08:38.940 --> 00:08:47.880
+because there is nothing inherently bad about&nbsp;
+accepting this invalid input if your component&nbsp;&nbsp;
+
+00:08:47.880 --> 00:08:55.200
+is on its own but in this case with many&nbsp;
+transformations happening to the URL it led&nbsp;&nbsp;
+
+00:08:55.200 --> 00:09:03.840
+to a bug, it led to a critical pass traversal in&nbsp;
+Apache which is something but we also have more&nbsp;&nbsp;
+
+00:09:04.500 --> 00:09:10.560
+payloads that probably they don't&nbsp;
+look like valid URL encoded strings.&nbsp;&nbsp;
+
+00:09:11.700 --> 00:09:20.160
+So it was an interesting one, we also had&nbsp;
+one bug in WordPress where the hunter also&nbsp;&nbsp;
+
+00:09:20.760 --> 00:09:28.740
+I think only mentioned that it can&nbsp;
+lead to an RCE, he didn't actually&nbsp;&nbsp;
+
+00:09:29.580 --> 00:09:39.900
+exploit it I believe and this is something you&nbsp;
+can exploit in WordPress or in PHP based app but&nbsp;&nbsp;
+
+00:09:39.900 --> 00:09:47.700
+if you're working with Python with Ruby this&nbsp;
+will not work because Python or Ruby do not&nbsp;&nbsp;
+
+00:09:47.700 --> 00:09:54.720
+process files the same way PHP does. In PHP you&nbsp;
+can just upload the file to a particular directory&nbsp;&nbsp;
+
+00:09:55.320 --> 00:10:02.160
+and then you can just send a URL, send a&nbsp;
+request and if the file is in the directory&nbsp;&nbsp;
+
+00:10:02.160 --> 00:10:10.560
+it will be returned. Most modern languages&nbsp;
+don't work this way and you can't do this&nbsp;&nbsp;
+
+00:10:11.640 --> 00:10:19.920
+so as simply as you can in PHP but you can still&nbsp;
+get something similar. Here we have an example of&nbsp;&nbsp;
+
+00:10:21.120 --> 00:10:29.700
+another zero day in Ruby on Rails and in this&nbsp;
+case the hunter was able to, it was obviously&nbsp;&nbsp;
+
+00:10:29.700 --> 00:10:38.460
+also file based, file write based vulnerability&nbsp;
+and to exploit this vulnerability the hunter&nbsp;&nbsp;
+
+00:10:39.660 --> 00:10:48.240
+would overwrite a template. So the way Ruby&nbsp;
+on Rails application works is you have some&nbsp;&nbsp;
+
+00:10:48.240 --> 00:10:57.360
+templates that are usually ERB templates which&nbsp;
+means it's saved in a file called text.erb in&nbsp;&nbsp;
+
+00:10:57.360 --> 00:11:07.740
+this case I believe it's often html.erb and it&nbsp;
+looks like a normal html but inside you can have&nbsp;&nbsp;
+
+00:11:08.940 --> 00:11:19.800
+variables like this so you can have a dynamic&nbsp;
+html and contrary to normal shell uploads which&nbsp;&nbsp;
+
+00:11:19.800 --> 00:11:27.720
+won't work in Ruby this can work in Ruby so&nbsp;
+when the hunter would overwrite this file&nbsp;&nbsp;
+
+00:11:28.440 --> 00:11:35.100
+it may look like a very random name but if you&nbsp;
+are familiar with Ruby you probably can predict&nbsp;&nbsp;
+
+00:11:36.360 --> 00:11:47.940
+that this path would exist and the hunter would&nbsp;
+just overwrite with this bug this file with an&nbsp;&nbsp;
+
+00:11:47.940 --> 00:11:55.680
+arbitrary command because the template allows the&nbsp;
+user to execute arbitrary Ruby code which also in&nbsp;&nbsp;
+
+00:11:55.680 --> 00:12:03.900
+this case means executing system level commands&nbsp;
+so it is a proper RCE and then when you upload&nbsp;&nbsp;
+
+00:12:03.900 --> 00:12:10.980
+something like this it means that the controller&nbsp;
+of books which is supposed to show you a book&nbsp;&nbsp;
+
+00:12:12.930 --> 00:12:20.160
+will try to open this file and fill it with some&nbsp;
+information about the book so to trigger the RCE&nbsp;&nbsp;
+
+00:12:20.160 --> 00:12:29.160
+you have to send another request which will speak&nbsp;
+to the books controller in this case and it will&nbsp;&nbsp;
+
+00:12:29.160 --> 00:12:39.420
+just fetch any book and in this case it will try&nbsp;
+to it will try to execute this template which also&nbsp;&nbsp;
+
+00:12:39.420 --> 00:12:47.040
+executes this code and the hunter proved it by&nbsp;
+just using the ls command and the file is here we&nbsp;&nbsp;
+
+00:12:47.040 --> 00:12:55.800
+had touch me which means it creates an empty file&nbsp;
+called me and it was created another case where&nbsp;&nbsp;
+
+00:12:55.800 --> 00:13:01.560
+the hunter just had access to the source code&nbsp;
+and had everything under control with blackbox&nbsp;&nbsp;
+
+00:13:01.560 --> 00:13:10.500
+test it is perfectly possible to predict this path&nbsp;
+but it's definitely harder than doing it whitebox&nbsp;&nbsp;
+
+00:13:11.940 --> 00:13:19.800
+so watch out for this and also if you have a file&nbsp;
+write based path traversal or another bug when you&nbsp;&nbsp;
+
+00:13:19.800 --> 00:13:27.540
+can write files and you're not working with php&nbsp;
+try to see if the application works with template&nbsp;&nbsp;
+
+00:13:27.540 --> 00:13:34.440
+files because overwriting a template file may&nbsp;
+be the easiest way to turn your bug into an RCE&nbsp;&nbsp;
+
+00:13:35.700 --> 00:13:47.160
+and finally there was also one bug where the&nbsp;
+RCE exploit was done by overwriting the ssh&nbsp;&nbsp;
+
+00:13:47.160 --> 00:14:00.060
+authorized keys so the way it works is you have&nbsp;
+a file in linux that's ssh.ssh authorized keys&nbsp;&nbsp;
+
+00:14:01.200 --> 00:14:10.200
+which contains public encryption keys and when&nbsp;
+you log into the server you can use your username&nbsp;&nbsp;
+
+00:14:10.200 --> 00:14:19.620
+and password if that's enabled but if you are&nbsp;
+authenticating yourself with your private key&nbsp;&nbsp;
+
+00:14:19.620 --> 00:14:26.640
+and your public key is in the authorized keys&nbsp;
+file it means you can log in automatically to&nbsp;&nbsp;
+
+00:14:26.640 --> 00:14:34.260
+the server and this is what the hunter did here&nbsp;
+he overwrote the ssh authorized keys file with the&nbsp;&nbsp;
+
+00:14:34.260 --> 00:14:41.820
+content of his public ssh key which meant that&nbsp;
+when now authenticating to the target machine&nbsp;&nbsp;
+
+00:14:42.480 --> 00:14:50.820
+he could authenticate with his private key which&nbsp;
+is easy. The problem with this works magnificently&nbsp;&nbsp;
+
+00:14:50.820 --> 00:14:57.480
+if you have access to the attack machine the&nbsp;
+network access over port 2020 which is which&nbsp;&nbsp;
+
+00:14:57.480 --> 00:15:06.000
+should be rare and also the machine has to be&nbsp;
+configured to not prevent this attack then then&nbsp;&nbsp;
+
+00:15:06.000 --> 00:15:11.580
+it works like a charm in this case we have we have&nbsp;
+gitlab so the hunter could set it up as he wanted&nbsp;&nbsp;
+
+00:15:12.780 --> 00:15:20.520
+in case of a black box test it shouldn't work&nbsp;
+it may work so you should always try this but&nbsp;&nbsp;
+
+00:15:20.520 --> 00:15:26.940
+it should not work because the machine should&nbsp;
+not expose port 2020 to the internet without a&nbsp;&nbsp;
+
+00:15:26.940 --> 00:15:33.180
+vpn or or whatever but in case you need this&nbsp;
+in case you are in the internal assessment&nbsp;&nbsp;
+
+00:15:33.780 --> 00:15:39.360
+definitely you can exploit file right by&nbsp;
+overwriting authorized keys with your public&nbsp;&nbsp;
+
+00:15:39.360 --> 00:15:46.500
+key and then you just ssh into the machine and&nbsp;
+you have a shell and these are all the different&nbsp;&nbsp;
+
+00:15:46.500 --> 00:15:53.520
+files that were wrote which I saw during this&nbsp;
+case study I hope that you did learn some new&nbsp;&nbsp;
+
+00:15:53.520 --> 00:15:59.580
+tricks in this video if you did leave a like and&nbsp;
+if you enjoyed this small part of the case study&nbsp;&nbsp;
+
+00:16:00.180 --> 00:16:05.940
+if you join BBRE premium you will get access to&nbsp;
+the whole case study as well as the previous case&nbsp;&nbsp;
+
+00:16:05.940 --> 00:16:13.680
+studies about ssrfs xss idors and sql injections&nbsp;
+and if you want to watch another video with the&nbsp;&nbsp;
+
+00:16:13.680 --> 00:16:20.580
+free part of the case study I suggest you this&nbsp;
+one where I broke down what payloads for xss&nbsp;&nbsp;
+
+00:16:20.580 --> 00:16:26.580
+were hunter using to get the biggest payouts&nbsp;
+for now thank you for watching and goodbye!
+

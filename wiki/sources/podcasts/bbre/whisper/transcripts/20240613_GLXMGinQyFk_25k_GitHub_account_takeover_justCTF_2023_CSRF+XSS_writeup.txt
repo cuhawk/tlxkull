@@ -1,0 +1,92 @@
+In a sense, every single security vulnerability comes from a developer making some wrong assumption.
+Just the difference is, one time it's just a mistake by the developer to make this assumption,
+and another time frameworks do something so strange that it's hard to even blame anyone for not understanding what happened.
+In this video, I will show you two examples like this, based on which I created a CTF challenge,
+which was actually inspired by a real-world $25,000 account takeover on GitHub. Enjoy!
+When you create a new route in a web application, you usually, regardless of the framework or the programming language,
+do something like this. You specify the path, you specify the methods, and you specify the function that wants to serve this particular request.
+Sometimes, you may want to create different functions to handle different methods,
+but you can also handle different methods within the same function, just you have an if statement inside,
+to serve something else for the get, to just serve a static response,
+and to actually process some parameters and make some changes if the request is post, put, delete, or whatever.
+Also, the implicit difference that you cannot see here is the CSRF protection.
+Both GitHub and MyCTFTask used middleware to protect against CSRFs,
+and the way it works is it automatically requires the CSRF token for all post, put, delete,
+and other requests that are supposed to change something on the server,
+and the CSRF protection is not required for requests like get that are only supposed to serve the respondents.
+Because of this, even with same size non-cookies, you couldn't reach this block without a proper CSRF token.
+If you could, in GitHub, it would allow you to take over the account,
+and in MyCTFTask, you would have to also exploit the XSS, to which I will get later in this video.
+Just the question is how to do it.
+And I'll get to answer it in a second, but before I do, I'd like to invite you to take part in this year's CTF organized by my team Just Cut the Fish.
+The task I'm showing you is my task from last year.
+Of course, for this year, I have a new one, and I promise you, it is a fun one, so you should definitely try.
+And apart from this, my teammates have also prepared amazing, amazing tasks,
+so you should definitely challenge yourself, because it's an amazing way to develop your hacking skills.
+The online teaser starts on 15th June and lasts 24 hours.
+The link is in the description.
+I'd also like to thank our sponsors Trail of Bits, OtterSec, Hex Race, and Sex Force for making it possible.
+You have links to sponsors in the description, and remember, by checking them out, you support both me and my team.
+With this said, let's go back to our task.
+The trick is to use the head method.
+And you may ask what head method.
+We can see in the controller it's only supposed to root get and post, so how on earth do you get a head method here?
+But the thing is, a lot of frameworks on the routing stage treat head the same way as they treat get,
+because the logic is head will be the same thing as get, just the body of the response will be stripped before sending it to the client.
+So the head method will also be routed to the same function.
+But at this stage, with this if statement, it is no longer true.
+At this stage, head and get are separate methods.
+So if you have an if statement that checks if the method is get, it will also be false for the head method,
+which means the head method will not be, will not require the CSRF protection, yet you can get to this block down there.
+And yes, we do not have the request body, but the way parameters are processed,
+it is equivalent to have the request body with a post and to have URL parameters of a head.
+And this way you could take over account in GitHub and in my task, you could change the description where you had to exploit an XSS.
+And let's now take a look at it because there is some robust, almost robust sanitization.
+And this is the code that was used to sanitize the description.
+And it is quite aggressive.
+It only allows a few basic tags with no attributes.
+And to my knowledge, you cannot execute JavaScript code if you cannot use either a script tag or some attribute.
+But this is not where the mistake was made.
+The mistake was made a few lines above this.
+Here, when the code was not parsed, but tokenized.
+And if you are confused as to what on earth is the difference between tokenizing and parsing, I don't blame you.
+I also don't blame developers that do not know this difference.
+Because most stack overflow answers are confused as well.
+Well, the difference between tokenizer and the parser with a simple HTML will be none.
+If you have a simple code like this, the outcome would be the same.
+But it becomes confusing when you introduce HTML namespaces.
+Because every HTML tag has a namespace.
+Most of them, in most websites that we use, are just in the HTML namespace.
+But within the HTML, you can also embed objects from a math or SVG namespace.
+And the thing is, the same tag can behave differently in HTML namespace and in SVG namespace.
+For example, the text area tag in the HTML namespace can only contain text inside.
+So this code will not work.
+You can put any XSS payload from the word and it will not execute until you close the text area tag.
+Because of this, according to the rules I've shown before, this payload is fine because even though it looks like so, it does not contain the script tag.
+It only contains a text that looks like the script tag.
+But this stops being true when we wrap this in the SVG tag, which changes the namespace.
+And this is when we finally get to the difference between the tokenizer and the parser.
+The parser will apply these namespace rules to this and we'll see the script tag being inside.
+The tokenizer will ignore the namespace.
+So it will still not see the XSS payload here.
+The browser, of course, parses our HTML.
+So this code will look innocent to the sanitizer, but it will execute in the browser.
+This giving you the XSS.
+Once you had this, you could easily exfiltrate the flag.
+So this would be the final payload that you had to use.
+Last year, nine teams found a solution to my task.
+And you will believe this year you can be one of them.
+Challenge yourself by participating in the CTL.
+The link is in the description.
+In the meantime, if you want to check another video with a CTF task, check out my write-up to Live Overflows SQL Injection task.
+The link is on the screen right now.
+For now, thank you for watching and goodbye.
+.
+
+
+
+
+
+
+
+

@@ -1,0 +1,795 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.125 --> 00:00:04.958
+Hello! In this video, I will show you how
+ I solved a challenge from Alles
+
+00:00:05.000 --> 00:00:09.916
+CTF created by a YouTuber
+ who you probably know - LiveOverflow.
+
+00:00:10.208 --> 00:00:11.500
+The solution involves 
+
+00:00:11.500 --> 00:00:15.291
+multiple steps and make sure
+ to watch the video until the end,
+
+00:00:15.541 --> 00:00:19.875
+because I used a method that allowed me
+ to get the first blood on the challenge
+
+00:00:20.125 --> 00:00:25.916
+because I was able to exfiltrate the flag 95%
+ faster than the naive solution.
+
+00:00:26.375 --> 00:00:28.250
+And that number is not a bait. 
+
+00:00:28.250 --> 00:00:31.416
+It's an actual calculation -
+ you will see for yourself.
+
+00:00:32.416 --> 00:00:36.166
+If it's your first time here,
+ my name is Greg and here on YouTube,
+
+00:00:36.208 --> 00:00:40.625
+I explain advanced hacking
+ techniques used in bug bounty reports.
+
+00:00:40.916 --> 00:00:44.791
+I also have a podcast
+ and the newsletter, both free and paid.
+
+00:00:46.750 --> 00:00:49.458
+To fully understand
+ my solution to the challenge,
+
+00:00:49.541 --> 00:00:53.833
+you should first watch a video on
+ LifeOverflow's channel where he explains
+
+00:00:54.000 --> 00:00:56.666
+how the challenge is built
+ and what are the components.
+
+00:00:56.833 --> 00:00:59.208
+I will mainly focus on hacking it.
+
+00:00:59.541 --> 00:01:03.833
+Right now click the card or the link
+ in the description to watch that video.
+
+00:01:04.916 --> 00:01:06.500
+I think he's a guy that 
+
+00:01:06.500 --> 00:01:10.916
+doesn't need introduction,
+ but in case you missed it, he's a YouTuber
+
+00:01:10.958 --> 00:01:13.916
+with over 600,000 subscribers
+
+00:01:13.916 --> 00:01:17.583
+and over 300 public IT security videos.
+
+00:01:17.875 --> 00:01:21.791
+There's a whole range of topics
+ covered from web security,
+
+00:01:21.791 --> 00:01:26.083
+through CTFs to low-level
+ and even hardware exploitation.
+
+00:01:26.375 --> 00:01:30.708
+If you are not subscribed or YouTube
+ does no longer recommend you his videos,
+
+00:01:30.916 --> 00:01:34.083
+check out tons of free,
+ high-quality content.
+
+00:01:35.750 --> 00:01:37.125
+Did you watch it already? 
+
+00:01:37.125 --> 00:01:40.166
+I hope, yes, so we can go ahead
+ with the walkthrough.
+
+00:01:40.333 --> 00:01:43.166
+Let's quickly see
+ what the application does.
+
+00:01:43.500 --> 00:01:45.583
+There are two separate directories.
+
+00:01:45.708 --> 00:01:48.541
+First, I took a look at the app itself.
+
+00:01:49.250 --> 00:01:50.875
+When seeing the source code, 
+
+00:01:50.875 --> 00:01:54.541
+I did not spend too much time
+ on those helper functions.
+
+00:01:54.833 --> 00:01:58.083
+Instead, I went straight
+ down to controllers.
+
+00:01:59.208 --> 00:02:00.416
+In most of them, 
+
+00:02:00.416 --> 00:02:03.791
+queries are executed
+ using prepared statements.
+
+00:02:04.333 --> 00:02:09.958
+It means that the application knows those
+ parameters are not trusted and SQL
+
+00:02:09.958 --> 00:02:14.791
+injection won't happen in them unless,
+ of course, there's a bug in the library.
+
+00:02:15.958 --> 00:02:20.958
+However, in one function
+ there is a query created the unsafe way.
+
+00:02:21.500 --> 00:02:23.666
+The prepared statement is used
+
+00:02:23.666 --> 00:02:27.375
+but the order argument
+ is not a statement's parameter.
+
+00:02:28.250 --> 00:02:32.291
+Python creates the string before
+ even calling query_db.
+
+00:02:32.916 --> 00:02:36.041
+The function considers
+ this string as trusted,
+
+00:02:36.041 --> 00:02:39.875
+including the order parameter
+ which is controlled by the user.
+
+00:02:40.791 --> 00:02:43.666
+Every time there is just one place
+
+00:02:43.666 --> 00:02:46.875
+where something is done
+ differently, is a good lead.
+
+00:02:47.458 --> 00:02:52.750
+Of course, there is a chance that cheeky LifeOverflow planted this as a red herring,
+
+00:02:52.750 --> 00:02:55.541
+but one way or another,
+ I had to check this.
+
+00:02:56.291 --> 00:02:58.458
+I launched the application locally.
+
+00:02:59.333 --> 00:03:02.000
+I quickly confirmed SQL injection
+
+00:03:02.083 --> 00:03:05.958
+by using asc limit 0 and I saw no notes.
+
+00:03:06.750 --> 00:03:10.208
+It meant that my limit clause
+ was present in the SQL
+
+00:03:10.250 --> 00:03:12.583
+query and it returned zero rows.
+
+00:03:13.500 --> 00:03:15.666
+Then I tried with the union.
+
+00:03:16.416 --> 00:03:19.708
+However, I got blocked by web
+ application firewall.
+
+00:03:20.208 --> 00:03:25.083
+At this point, I had to understand the
+ relationship between the two applications.
+
+00:03:26.000 --> 00:03:29.500
+If you did watch
+ LifeOverflow's video you know it.
+
+00:03:29.666 --> 00:03:34.708
+The crypter works like a reverse proxy,
+ and the app itself is not exposed.
+
+00:03:34.958 --> 00:03:39.000
+I found that out
+ by examining contents of Dockerfiles.
+
+00:03:39.000 --> 00:03:42.833
+Inside the source code,
+ there is only one controller
+
+00:03:42.833 --> 00:03:47.833
+which forwards the requests to the app,
+ but before doing that,
+
+00:03:47.958 --> 00:03:51.583
+the was_param function was called
+ on all the parameters.
+
+00:03:52.458 --> 00:03:54.625
+Its logic was very simple. 
+
+00:03:54.625 --> 00:03:57.458
+It filtered only
+ a few words or characters.
+
+00:03:57.791 --> 00:04:00.875
+Those included select, union and quotes.
+
+00:04:02.000 --> 00:04:05.416
+It's a short list,
+ but it seemed quite convenient to me.
+
+00:04:05.833 --> 00:04:10.875
+There was also no unusual things that
+ could open a way to more advanced attacks.
+
+00:04:11.416 --> 00:04:16.791
+So I wanted to find a way to smuggle my
+ parameters without entering this function.
+
+00:04:17.583 --> 00:04:20.791
+I spent some time here
+ by trying to find the bypasses
+
+00:04:20.791 --> 00:04:24.958
+using those unfiltered values
+ like content-type header or cookie header,
+
+00:04:25.208 --> 00:04:28.208
+but I didn't come up with anything smart.
+
+00:04:29.125 --> 00:04:31.916
+Then I thought about
+ spending a bit more time
+
+00:04:32.125 --> 00:04:34.625
+on the way those URLs are created.
+
+00:04:35.083 --> 00:04:38.500
+Every time I see an address
+ just concatenated like this,
+
+00:04:38.708 --> 00:04:40.958
+I feel like something might be off.
+
+00:04:42.125 --> 00:04:44.208
+And I was right this time. 
+
+00:04:44.208 --> 00:04:47.041
+The path variable is a URL parameter.
+
+00:04:47.625 --> 00:04:52.958
+There are no explicit transformations
+ here, but Flask automatically decodes it.
+
+00:04:53.625 --> 00:04:57.250
+So if I used a path
+ with URL-encoded question mark,
+
+00:04:57.458 --> 00:05:01.000
+then the request was sent
+ with the question mark decoded.
+
+00:05:01.541 --> 00:05:04.458
+The reverse proxy didn't consider those
+
+00:05:04.458 --> 00:05:07.541
+to be parameters,
+ but rather a part of the path.
+
+00:05:07.833 --> 00:05:12.916
+So this way I was able to smuggle my
+ payloads, bypassing the WAF.
+
+00:05:14.000 --> 00:05:16.250
+Note the ampersand at the end.
+
+00:05:16.250 --> 00:05:21.083
+It's important because if it wasn't there,
+ the question mark would be treated
+
+00:05:21.083 --> 00:05:24.833
+as the part of the parameter,
+ breaking my SQL query.
+
+00:05:25.875 --> 00:05:30.708
+I confirmed that this bypass works
+ and I was ready to create the exploit.
+
+00:05:31.208 --> 00:05:33.458
+I took a look into where the flag is.
+
+00:05:33.583 --> 00:05:35.666
+It was added as the first note.
+
+00:05:36.583 --> 00:05:38.666
+I wanted to use sqlmap for it
+
+00:05:38.666 --> 00:05:42.125
+because it's much faster
+ when it comes to exfiltrating data,
+
+00:05:42.666 --> 00:05:46.458
+but I couldn't configure it
+ to work with my specific case
+
+00:05:46.458 --> 00:05:48.916
+where the payload was
+ the part of the path.
+
+00:05:49.916 --> 00:05:53.416
+I didn't think creating tamper script
+ would help either.
+
+00:05:53.958 --> 00:05:57.125
+Modifying the source code was an option
+ that I considered,
+
+00:05:57.375 --> 00:06:00.333
+but they opted to write
+ my own exploit instead.
+
+00:06:01.708 --> 00:06:06.833
+The first step is determining
+ what query to use to extract the flag.
+
+00:06:07.791 --> 00:06:09.875
+Testing this on a running web app 
+
+00:06:09.875 --> 00:06:13.916
+would be very inefficient way,
+ even if it was running locally.
+
+00:06:14.208 --> 00:06:18.500
+I would have to make additional effort
+ in order not to break encoding.
+
+00:06:19.833 --> 00:06:24.666
+Instead, I took an advantage of the fact
+ that this is an open source task.
+
+00:06:25.166 --> 00:06:28.666
+I just copied the database file
+ from the Docker container
+
+00:06:28.666 --> 00:06:30.791
+and started testing different queries.
+
+00:06:31.750 --> 00:06:36.416
+At this point, I noticed that there is
+ no plaintext flag in the database.
+
+00:06:36.666 --> 00:06:39.083
+Instead, it's encrypted. 
+
+00:06:39.083 --> 00:06:43.208
+Considering the name of the challenge,
+ I could have expected this.
+
+00:06:44.083 --> 00:06:47.041
+It was time to understand
+ the logic of this WAF.
+
+00:06:47.708 --> 00:06:50.125
+Again, I was just briefly mention it in
+
+00:06:50.125 --> 00:06:53.125
+the full explanation
+ is on LifeOverflow's channel.
+
+00:06:53.875 --> 00:06:56.166
+I didn't find anything out of place
+
+00:06:56.166 --> 00:06:59.833
+in generating a secret
+ or encryption/decryption functions.
+
+00:07:00.875 --> 00:07:04.291
+What was interesting,
+ however, was that when ciphering,
+
+00:07:04.291 --> 00:07:07.916
+the string ENCRYPTED:
+ was prepended to the content.
+
+00:07:07.916 --> 00:07:11.208
+Most POST and GET params were ciphered.
+
+00:07:12.166 --> 00:07:16.083
+Then, the decrypt
+ function took the whole response body
+
+00:07:16.083 --> 00:07:20.625
+and deciphered everything
+ that had the string ENCRYPTED: prepended.
+
+00:07:21.416 --> 00:07:26.541
+So my idea was to get the encrypted
+ input anywhere in the response.
+
+00:07:27.000 --> 00:07:29.375
+Of course, it couldn't be in the note
+
+00:07:29.666 --> 00:07:32.750
+because then it would
+ simply be encrypted twice.
+
+00:07:34.125 --> 00:07:37.958
+However, there were some inputs
+ that weren't encrypted,
+
+00:07:37.958 --> 00:07:41.666
+and those were very good candidates
+ for this purpose.
+
+00:07:42.916 --> 00:07:46.333
+I quickly scanned the controller
+ for the presence of those
+
+00:07:46.333 --> 00:07:51.458
+first three parameters,
+ but only so uuid used and in the redirect.
+
+00:07:51.791 --> 00:07:53.833
+So I quickly dismissed the idea.
+
+00:07:54.625 --> 00:07:59.291
+I thought, why not create an account
+ with the encrypted flag as the username?
+
+00:07:59.833 --> 00:08:01.500
+And it did work. 
+
+00:08:01.500 --> 00:08:05.541
+I created a user
+ using the extracted, encrypted flag.
+
+00:08:05.833 --> 00:08:10.291
+And what I saw after the login
+ was the flag from my local environment.
+
+00:08:11.000 --> 00:08:14.083
+So I had the encryption
+ aspect taken care of.
+
+00:08:14.750 --> 00:08:19.541
+Now, how to get this
+ encrypted flag out of the database?
+
+00:08:20.625 --> 00:08:24.583
+At first I tried the simple union,
+ but it didn't work.
+
+00:08:25.083 --> 00:08:30.375
+It was because Union mustn't be after
+ the order clause in SQL query.
+
+00:08:31.333 --> 00:08:33.958
+So this is a blind SQL injection.
+
+00:08:34.583 --> 00:08:38.583
+I couldn't use union,
+ but what I could do is a subquery.
+
+00:08:39.666 --> 00:08:43.833
+That means that you can do
+ arbitrary queries to the database,
+
+00:08:43.833 --> 00:08:46.833
+but you just can't
+ return them as the result.
+
+00:08:47.416 --> 00:08:52.250
+There are many methods which you can use
+ to exfiltrate one bit at a time.
+
+00:08:52.708 --> 00:08:56.291
+And if you can exfiltrate one bit,
+ you can exfiltrate
+
+00:08:56.291 --> 00:08:58.583
+the whole flag after enough time.
+
+00:08:59.416 --> 00:09:04.791
+My idea was to return ascending
+ or descending order using a subquery.
+
+00:09:05.500 --> 00:09:09.166
+So I would check
+ if the first character of the flag is A.
+
+00:09:09.166 --> 00:09:12.708
+If it was, my subquery
+ would return ascending.
+
+00:09:13.125 --> 00:09:15.458
+If it wasn't, it would return descending.
+
+00:09:16.041 --> 00:09:19.416
+In most SQL databases, there are functions
+
+00:09:19.416 --> 00:09:22.416
+like if and substring
+ that will make it possible.
+
+00:09:23.625 --> 00:09:25.666
+I could easily observe if
+
+00:09:25.666 --> 00:09:29.083
+it's ascending or descending
+ by looking at the response.
+
+00:09:29.583 --> 00:09:34.875
+If it was descending, then I knew that
+ the first character of my flag was not A.
+
+00:09:35.000 --> 00:09:37.375
+So I tried to B, C and so on.
+
+00:09:38.416 --> 00:09:41.250
+After I finally saw ascending order,
+
+00:09:41.250 --> 00:09:45.958
+I knew the first character of the flag
+ so I could move on to the second one.
+
+00:09:46.791 --> 00:09:49.833
+I would repeat this
+ until I got the whole flag.
+
+00:09:50.958 --> 00:09:53.166
+Of course, this process is not manual.
+
+00:09:54.541 --> 00:09:58.583
+The problem was I didn't find a way
+ to return ascending
+
+00:09:58.583 --> 00:10:02.416
+or descending from a subquery
+ as those are not strings.
+
+00:10:03.666 --> 00:10:07.708
+So then I started to think
+ what can be after the order clause.
+
+00:10:08.500 --> 00:10:10.375
+The answer was the limit clause 
+
+00:10:10.375 --> 00:10:13.291
+which I used at the beginning
+ but then forgot about.
+
+00:10:14.208 --> 00:10:18.166
+It tells the database
+ how many records we want to return.
+
+00:10:19.708 --> 00:10:21.458
+I easily modified 
+
+00:10:21.458 --> 00:10:25.916
+my subquery to return 0 or 1 inside
+ the limit clause.
+
+00:10:26.833 --> 00:10:28.875
+It did work locally. 
+
+00:10:28.875 --> 00:10:31.000
+However, it's a primitive solution.
+
+00:10:31.333 --> 00:10:33.375
+It generates a lot of traffic.
+
+00:10:34.708 --> 00:10:38.583
+For each character
+ of the encrypted and encoded flag,
+
+00:10:38.625 --> 00:10:42.583
+I needed to send 64 requests
+ in the worst case.
+
+00:10:43.666 --> 00:10:46.416
+Considering the output had the IV,
+
+00:10:46.416 --> 00:10:50.208
+the ciphertext and the auth tag,
+ it could take very long.
+
+00:10:50.708 --> 00:10:54.333
+I think the real flag
+ had about 200 characters.
+
+00:10:55.833 --> 00:10:58.125
+If I were playing the CTF for points,
+
+00:10:58.125 --> 00:11:01.916
+I would likely just leave the script
+ running for a few hours.
+
+00:11:03.041 --> 00:11:07.541
+But I didn't. Instead,
+ I wanted to have a bit more fun.
+
+00:11:08.666 --> 00:11:12.000
+So I decided to create
+ an efficient exploit,
+
+00:11:12.166 --> 00:11:17.166
+especially that I saw that the challenge
+ was yet to be solved by anyone.
+
+00:11:18.750 --> 00:11:20.375
+Usual tricks you can 
+
+00:11:20.375 --> 00:11:25.333
+use to speed up blind SQL injection
+ exfiltration are binary search,
+
+00:11:25.333 --> 00:11:28.541
+which reduces it
+ to 6 requests per character,
+
+00:11:29.166 --> 00:11:32.875
+using multiprocessing to brute force
+ many characters at once
+
+00:11:33.208 --> 00:11:36.500
+or using regexes,
+ combining those two techniques.
+
+00:11:38.041 --> 00:11:40.833
+But I knew I could do it
+ even quicker than this.
+
+00:11:42.333 --> 00:11:45.125
+Considering that
+ we are in the limit clause,
+
+00:11:45.125 --> 00:11:48.458
+we are not restricted to returning 0 or 1.
+
+00:11:49.083 --> 00:11:51.833
+It can be any number. 
+
+00:11:51.833 --> 00:11:53.916
+My idea was to add 
+
+00:11:53.916 --> 00:11:58.416
+128 notes and return the amount of notes
+
+00:11:58.750 --> 00:12:02.750
+equal to ASCII code
+ of the next character of the flag.
+
+00:12:03.916 --> 00:12:06.708
+So when the first character was capital E
+
+00:12:06.750 --> 00:12:11.875
+with ASCII code 69,
+ then my query would return 69 notes
+
+00:12:12.000 --> 00:12:16.708
+because my limit clause
+ would be 69 as a result of this subquery.
+
+00:12:18.166 --> 00:12:20.708
+To see what was the
+ value of the limit clause,
+
+00:12:20.750 --> 00:12:24.250
+I could just count the amount of notes
+ in the response.
+
+00:12:25.458 --> 00:12:28.125
+I did overcomplicate this part a bit.
+
+00:12:28.750 --> 00:12:31.750
+Instead of counting notes,
+ I named them LIMIT0
+
+00:12:31.750 --> 00:12:36.416
+to LIMIT127, which caused some boring
+
+00:12:36.416 --> 00:12:39.625
+and annoying problems,
+ but I somehow dealt with them.
+
+00:12:40.791 --> 00:12:45.458
+Finally, I successfully tested my script
+ on the local instance,
+
+00:12:45.458 --> 00:12:48.583
+and I was ready to smash
+ the live environment.
+
+00:12:49.333 --> 00:12:52.000
+My approach meant that I only needed
+
+00:12:52.000 --> 00:12:56.083
+128 requests at the beginning to add notes
+
+00:12:56.291 --> 00:13:00.625
+and then one request
+ per each character of the encrypted flag.
+
+00:13:02.208 --> 00:13:05.250
+It meant that with 200 characters flag,
+
+00:13:05.500 --> 00:13:09.000
+I only needed 328 requests.
+
+00:13:10.000 --> 00:13:14.041
+That's a lot less than 1200 requests
+ of binary search
+
+00:13:14.208 --> 00:13:17.500
+and 12,800 of native solution.
+
+00:13:18.666 --> 00:13:22.375
+That's the worst case,
+ but even if we take half of that number
+
+00:13:22.375 --> 00:13:27.625
+as an average complexity,
+ my solution was still 95% faster.
+
+00:13:28.583 --> 00:13:30.958
+The server had some latency issues,
+
+00:13:30.958 --> 00:13:34.916
+as probably many players were brute
+ forcing simultaneously.
+
+00:13:35.208 --> 00:13:38.416
+But after some time,
+ I finally got the flag.
+
+00:13:39.625 --> 00:13:43.458
+Thanks to the fact that I invested
+ a bit more time offline
+
+00:13:43.583 --> 00:13:47.416
+to prepare my exploit,
+ I saved a lot of time online.
+
+00:13:48.041 --> 00:13:52.250
+That's probably the reason why I was
+ the first one to solve the challenge.
+
+00:13:52.500 --> 00:13:56.291
+If you enjoyed the video,
+ make sure to subscribe to the channel.
+
+00:13:56.583 --> 00:14:00.041
+If you want to learn even more from me,
+ join my newsletter
+
+00:14:00.041 --> 00:14:03.750
+and get the best hacking tips delivered
+ right to your inbox.
+
+00:14:03.958 --> 00:14:08.394
+Sign up now for free
+ at mailing.bugbountyexplained.com.
+
+00:14:08.394 --> 00:14:10.916
+For now, thank you
+ for watching and goodbye!
+

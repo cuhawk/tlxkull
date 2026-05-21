@@ -1,0 +1,472 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.960
+In a sense, every single security vulnerability
+
+00:00:02.960 --> 00:00:06.920
+comes from a developer making some wrong assumption.
+
+00:00:06.920 --> 00:00:09.360
+Just the difference is one time,
+
+00:00:09.360 --> 00:00:11.040
+it's just a mistake by the developer
+
+00:00:11.040 --> 00:00:12.200
+to make this assumption.
+
+00:00:12.200 --> 00:00:16.639
+And another time, frameworks do something so strange
+
+00:00:16.639 --> 00:00:19.120
+that it's hard to even blame anyone
+
+00:00:19.120 --> 00:00:21.540
+for not understanding what happened.
+
+00:00:21.540 --> 00:00:24.840
+In this video, I will show you two examples like this
+
+00:00:24.840 --> 00:00:28.260
+based on which I created a CTF challenge,
+
+00:00:28.260 --> 00:00:32.619
+which was actually inspired by a reward $25,000
+
+00:00:32.619 --> 00:00:34.939
+account takeover on GitHub.
+
+00:00:34.939 --> 00:00:35.779
+Enjoy.
+
+00:00:36.660 --> 00:00:39.419
+When you create a new route in a web application,
+
+00:00:39.419 --> 00:00:41.939
+you usually, regardless of the framework
+
+00:00:41.939 --> 00:00:44.540
+or the programming language, do something like this.
+
+00:00:44.540 --> 00:00:47.340
+You specify the path, you specify the methods,
+
+00:00:47.340 --> 00:00:49.060
+and you specify the function
+
+00:00:49.060 --> 00:00:52.540
+that wants to serve this particular request.
+
+00:00:52.540 --> 00:00:55.520
+Sometimes you may want to create different functions
+
+00:00:55.520 --> 00:00:57.099
+to handle different methods,
+
+00:00:57.099 --> 00:00:59.639
+but you can also handle different methods
+
+00:00:59.639 --> 00:01:01.240
+within the same function,
+
+00:01:01.240 --> 00:01:03.520
+just you have an if statement inside
+
+00:01:03.520 --> 00:01:05.440
+to serve something else for the get
+
+00:01:05.440 --> 00:01:07.559
+to just serve a static response
+
+00:01:07.559 --> 00:01:10.120
+and to actually process some parameters
+
+00:01:10.120 --> 00:01:12.599
+and make some changes if the request is post,
+
+00:01:12.599 --> 00:01:14.919
+put, delete, or whatever.
+
+00:01:14.919 --> 00:01:18.720
+Also, the implicit difference that you cannot see here
+
+00:01:18.720 --> 00:01:21.120
+is the CSRF protection.
+
+00:01:21.120 --> 00:01:24.919
+Both GitHub and  my CTF task used middleware
+
+00:01:24.919 --> 00:01:27.000
+to protect against CSRFs,
+
+00:01:27.900 --> 00:01:30.660
+and the way it works is it automatically requires
+
+00:01:30.660 --> 00:01:34.180
+the CSRF token for all post, put, delete,
+
+00:01:34.180 --> 00:01:36.620
+and other requests that are supposed to change
+
+00:01:36.620 --> 00:01:38.180
+something on the server,
+
+00:01:38.180 --> 00:01:41.220
+and the CSRF protection is not required
+
+00:01:41.220 --> 00:01:42.779
+for requests like get
+
+00:01:42.779 --> 00:01:45.940
+that are only supposed to serve the response.
+
+00:01:45.940 --> 00:01:49.660
+Because of this, even with SameSite=None cookies,
+
+00:01:49.660 --> 00:01:54.019
+you couldn't reach this block without a proper CSRF token.
+
+00:01:54.019 --> 00:01:55.980
+If you could, in GitHub,
+
+00:01:56.000 --> 00:01:58.559
+it would allow you to take over the account,
+
+00:01:58.559 --> 00:02:02.559
+and in my CTF task, you would have to also exploit
+
+00:02:02.559 --> 00:02:06.360
+the XSS, to which I'll get later in this video.
+
+00:02:06.360 --> 00:02:09.399
+Just the question is how to do it,
+
+00:02:09.399 --> 00:02:11.440
+and I'll get to answer it in a second,
+
+00:02:11.440 --> 00:02:13.699
+but before I do, I'd like to invite you
+
+00:02:13.699 --> 00:02:17.160
+to take part in this year's CTF organized by my team,
+
+00:02:17.160 --> 00:02:18.440
+justCatTheFish.
+
+00:02:18.440 --> 00:02:21.800
+The task I'm showing you is my task from last year.
+
+00:02:21.800 --> 00:02:23.839
+Of course, for this year, I have a new one,
+
+00:02:23.839 --> 00:02:26.460
+and I promise you, it is a fun one,
+
+00:02:26.460 --> 00:02:28.380
+so you should definitely try.
+
+00:02:28.380 --> 00:02:30.979
+And apart from this, my teammates have also prepared
+
+00:02:30.979 --> 00:02:32.699
+amazing, amazing tasks,
+
+00:02:32.699 --> 00:02:34.779
+so you should definitely challenge yourself,
+
+00:02:34.779 --> 00:02:38.779
+because it's an amazing way to develop your hacking skills.
+
+00:02:38.779 --> 00:02:43.300
+The online teaser starts on 15th June and lasts 24 hours.
+
+00:02:43.300 --> 00:02:45.339
+The link is in the description.
+
+00:02:45.339 --> 00:02:47.820
+I'd also like to thank our sponsors,
+
+00:02:47.820 --> 00:02:51.059
+Trail of Bits, OtterSec, HexRays, and SECFORCE
+
+00:02:51.059 --> 00:02:52.460
+for making it possible.
+
+00:02:52.460 --> 00:02:54.759
+We have links to sponsors in the description,
+
+00:02:54.759 --> 00:02:56.559
+and remember, by checking them out,
+
+00:02:56.559 --> 00:02:59.520
+you support both me and my team.
+
+00:02:59.520 --> 00:03:02.720
+With this said, let's go back to our task.
+
+00:03:02.720 --> 00:03:05.119
+The trick is to use the head method,
+
+00:03:05.119 --> 00:03:07.000
+and you may ask, what head method?
+
+00:03:07.000 --> 00:03:08.839
+We can see in the controller,
+
+00:03:08.839 --> 00:03:11.000
+it's only supposed to route get and post,
+
+00:03:11.000 --> 00:03:14.479
+so how on earth do you get a head method here?
+
+00:03:14.479 --> 00:03:18.000
+But the thing is, a lot of frameworks on the routing stage
+
+00:03:18.000 --> 00:03:21.000
+treat head the same way as they treat get,
+
+00:03:21.020 --> 00:03:24.539
+because the logic is head will be the same thing as get,
+
+00:03:24.539 --> 00:03:27.179
+just the body of the response will be stripped
+
+00:03:27.179 --> 00:03:29.899
+before sending it to the client.
+
+00:03:29.899 --> 00:03:33.699
+So the head method will also be routed to the same function,
+
+00:03:33.699 --> 00:03:37.380
+but at this stage, with this if statement,
+
+00:03:37.380 --> 00:03:38.500
+it is no longer true.
+
+00:03:38.500 --> 00:03:41.580
+At this stage, head and get are separate methods,
+
+00:03:41.580 --> 00:03:44.460
+so if you have an if statement
+
+00:03:44.460 --> 00:03:46.979
+that checks if the method is get,
+
+00:03:46.979 --> 00:03:50.139
+it will also be false for the head method,
+
+00:03:50.160 --> 00:03:53.600
+which means the head method will not be,
+
+00:03:53.600 --> 00:03:56.119
+will not require the CSRF protection,
+
+00:03:56.119 --> 00:03:59.320
+yet you can get to this block down there.
+
+00:03:59.320 --> 00:04:02.520
+And yes, we do not have the request body,
+
+00:04:02.520 --> 00:04:04.839
+but the way parameters are processed,
+
+00:04:04.839 --> 00:04:08.520
+it is equivalent to have the request body with a post
+
+00:04:08.520 --> 00:04:11.759
+and to have URL parameters of a head.
+
+00:04:11.759 --> 00:04:15.639
+And this way, you could take over account in GitHub,
+
+00:04:15.639 --> 00:04:18.980
+and in my task, you could change the description
+
+00:04:19.000 --> 00:04:21.279
+where you had to exploit an XSS.
+
+00:04:21.279 --> 00:04:22.959
+And let's now take a look at it,
+
+00:04:22.959 --> 00:04:27.959
+because there is some robust, almost robust sanitization.
+
+00:04:28.320 --> 00:04:30.000
+And this is the code that was used
+
+00:04:30.000 --> 00:04:33.119
+to sanitize the description, and it is quite aggressive.
+
+00:04:33.119 --> 00:04:37.000
+It only allows a few basic tags with no attributes.
+
+00:04:37.000 --> 00:04:40.600
+And to my knowledge, you cannot execute JavaScript code
+
+00:04:40.600 --> 00:04:44.839
+if you cannot use either a script tag or some attributes.
+
+00:04:45.739 --> 00:04:48.320
+But this is not where the mistake was made.
+
+00:04:48.339 --> 00:04:51.260
+The mistake was made a few lines above this,
+
+00:04:51.260 --> 00:04:56.260
+here, when the code was not parsed, but tokenized.
+
+00:04:56.619 --> 00:04:59.380
+And if you are confused as to what on earth
+
+00:04:59.380 --> 00:05:01.720
+is the difference between tokenizing and parsing,
+
+00:05:01.720 --> 00:05:02.779
+I don't blame you.
+
+00:05:02.779 --> 00:05:04.359
+I also don't blame developers
+
+00:05:04.359 --> 00:05:06.779
+that do not know this difference,
+
+00:05:06.779 --> 00:05:11.239
+because most Stack Overflow answers are confused as well.
+
+00:05:11.239 --> 00:05:15.059
+Well, the difference between tokenizer and a parser
+
+00:05:15.059 --> 00:05:17.540
+with a simple HTML will be none.
+
+00:05:17.540 --> 00:05:19.640
+If you have a simple code like this,
+
+00:05:19.640 --> 00:05:22.239
+the outcome would be the same.
+
+00:05:22.239 --> 00:05:26.440
+But it becomes confusing when you introduce HTML namespaces,
+
+00:05:26.440 --> 00:05:30.200
+because every HTML tag has a namespace.
+
+00:05:30.200 --> 00:05:33.359
+Most of them, in most websites that we use,
+
+00:05:33.359 --> 00:05:35.559
+are just in the HTML namespace.
+
+00:05:35.559 --> 00:05:39.040
+But within the HTML, you can also embed objects
+
+00:05:39.040 --> 00:05:41.640
+from a math or SVG namespace.
+
+00:05:41.640 --> 00:05:45.160
+And the thing is, the same tag can behave differently
+
+00:05:45.160 --> 00:05:48.339
+in HTML namespace and in SVG namespace.
+
+00:05:48.339 --> 00:05:52.059
+For example, the text area tag in the HTML namespace
+
+00:05:52.059 --> 00:05:54.619
+can only contain text inside.
+
+00:05:54.619 --> 00:05:56.799
+So this code will not work.
+
+00:05:56.799 --> 00:06:00.480
+You can put any XSS payload from the world,
+
+00:06:00.480 --> 00:06:04.820
+and it will not execute until you close the textarea tag.
+
+00:06:04.820 --> 00:06:07.660
+Because of this, according to the rules I've shown you
+
+00:06:07.660 --> 00:06:09.679
+before, this payload is fine,
+
+00:06:09.679 --> 00:06:12.359
+because even though it looks like so,
+
+00:06:12.359 --> 00:06:14.500
+it does not contain the script tag.
+
+00:06:14.500 --> 00:06:18.679
+It only contains a text that looks like the script tag.
+
+00:06:18.679 --> 00:06:22.559
+But this stops being true when we wrap this in the SVG tag,
+
+00:06:22.559 --> 00:06:24.380
+which changes the namespace.
+
+00:06:24.380 --> 00:06:27.000
+And this is when we finally get to the difference
+
+00:06:27.000 --> 00:06:29.799
+between the tokenizer and the parser.
+
+00:06:29.799 --> 00:06:34.440
+The parser will apply these namespace rules to this,
+
+00:06:34.440 --> 00:06:37.000
+and we'll see the script tag being inside.
+
+00:06:37.000 --> 00:06:40.399
+The tokenizer will ignore the namespace,
+
+00:06:40.399 --> 00:06:43.700
+so it will still not see the XSS payload here.
+
+00:06:43.720 --> 00:06:47.040
+The browser, of course, parses our HTML,
+
+00:06:47.040 --> 00:06:51.320
+so this code will look innocent to the sanitizer,
+
+00:06:51.320 --> 00:06:53.799
+but it will execute in the browser,
+
+00:06:53.799 --> 00:06:56.079
+thus giving you the XSS.
+
+00:06:56.079 --> 00:06:59.799
+Once you had this, you could easily exfiltrate the flag,
+
+00:06:59.799 --> 00:07:02.920
+so this would be the final payload that you had to use.
+
+00:07:02.920 --> 00:07:06.239
+Last year, nine teams found a solution to my task,
+
+00:07:06.239 --> 00:07:09.239
+and we believe this year you can be one of them.
+
+00:07:09.239 --> 00:07:12.519
+Challenge yourself by participating in the CTF.
+
+00:07:12.519 --> 00:07:14.579
+The link is in the description.
+
+00:07:14.579 --> 00:07:17.459
+In the meantime, if you want to check another video
+
+00:07:17.459 --> 00:07:20.140
+with a CTF task, check out my write-up
+
+00:07:20.140 --> 00:07:23.420
+to LiveOverflow's SQL injection task.
+
+00:07:23.420 --> 00:07:25.859
+The link is on the screen right now.
+
+00:07:25.859 --> 00:07:28.619
+For now, thank you for watching, and goodbye.
+

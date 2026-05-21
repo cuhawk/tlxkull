@@ -1,0 +1,78 @@
+Hello, from this video you will learn how it was possible to add infinite funds to your
+Steam account by exploiting a flow in the integration with the payment service.
+The vulnerability was reported on HackerOne by D.R. Briggs who got $7.5,000 for it.
+The link to the original report is in the description. I also created hands-on labs
+where you can reproduce the vulnerability. Watch the video until the end to see how you can access
+them. I will also have a gift for you, but for now enjoy the video.
+For those of you who don't know, Steam is a place where you buy games. The hunter wanted to find a bug
+in the functionality of adding funds. Let's see how the flow looked normally. First, in Steam you choose
+the amount you want to add, fill in your address, choose the payment method and information like this.
+The process consists of multiple requests, but for us the last two ones are the most important.
+Post to any transaction with all this data as parameters. In response to that, there is a JSON
+which contains transaction ID. What probably happens on the backend, Steam adds this transaction to the
+database with the transaction ID, amount of funds to add, the user and other data about it.
+Next, there's a GET request to external link endpoint with transaction ID as the parameter.
+In the HTML of the response, there's a form that will be sent to smart to pay server.
+I chose Przelewy24 as my payment provider, but that's a local Polish company. For a global firm like Steam,
+it could be hard to integrate with different providers for different countries. That's why they use smart to pay.
+It's a bridge between Steam and payment methods in the whole world. Steam integrates with one smart to pay API,
+which on the other side integrates with over 200 payment methods for different countries.
+So Steam must somehow redirect me to smart to pay with proper parameters. Namely, there must be an amount
+which I am supposed to pay and the transaction ID. But I'm a hacker. You can't just tell me to not modify
+those parameters. What you can do, however, is sign them with a secret IDon't know using a hash.
+Hash is a one-way function that takes some input and generates a hash which looks like this.
+For SHA256, it has 64 characters when written in hex format.
+It was generated based on the parameters I created in Steam and a secret value that I don't know.
+By seeing the hash, I can't guess the values used to generate it. And if I only change one character
+in any of those parameters, the hash would look completely different.
+How does this help? The secret is shared between Steam and smart to pay.
+When I send the post request to smart to pay, it also creates a hash based on my values and the secret.
+It then compares the hash that I send with what smart to pay thinks it should be.
+If I would change the amount or any other parameter, the hash would no longer be valid
+and the transaction would be rejected.
+If it's valid, smart to pay communicates with the chosen payment provider and the transaction is finalized.
+In case of this bug, we don't really care about integrations between smart to pay and payment providers,
+but rather between steam and smart to pay.
+And after the transaction is completed, no data is sent to steam on the client side.
+What happens on the backend is that smart to pay sends an information to steam that the transaction with specific ID was completed.
+It can be done, for example, using a webhook.
+Then steam looks into its database for this transaction, adds funds to the proper user and marks the transaction as complete.
+So where's the bug?
+Let's take a closer look at how exactly do these systems create a string from parameters when calculating a signature.
+So for my body, the string would look like this.
+SHA256 hash is calculated using this value and a secret at the end.
+So this is the request that's sent to smart to pay API.
+Then smart to pay takes the whole request body and splits it first by ampersands and then by equals signs.
+And those characters are not in the string used for calculation.
+Considering this, all these requests would be equivalent.
+What can you do with that?
+You can arbitrarily put ampersands and equals signs in the body.
+However, you still can't add or modify any values.
+But if your email happened to contain a parameter name and value, you could overwrite the existing parameters that were used when generating a signature.
+So you can create a steam account with email greg amount100 greg at example.com.
+Then you can create a new transaction in steam for as high value as you can.
+In Poland, it's 400 PLN, so the amount parameter will be 40,000.
+Then steam creates a new transaction in the database with amount 40,000 and generates a valid signature for your parameters.
+Next, before sending the request to smart to pay, you modify the body.
+You move the equal sign from the original amount parameter.
+Instead of amount equals 40,000, you want to have amount 4 equals 0000,
+because amount 4 is a parameter that will never be used by smart to pay API.
+Then you add ampersands and equal signs inside your email to add the new amount parameter with the value 100.
+You didn't modify anything besides ampersands and equal signs, so the signature is still valid.
+But smart to pay sees the amount parameter with value 100, so you proceed to pay 1 PLN.
+After the transaction is complete, smart to pay sends a webhook to steam that the transaction with id from step 3 is complete.
+Then steam takes a look into the database, finds a transaction with this id and sees that it has an amount of 400 PLN.
+So it adds 400 PLN to your account when you only paid 1 PLN.
+The vulnerability was classified as critical and Hunter was awarded 7.5 thousand dollars.
+So, thank you for watching the video until the end.
+You can access hands-on labs if you are a subscriber of BBRE Premium.
+Apart from that, you will also receive even better version of my newsletter with the best hacking tips
+and tricks, tool tutorials and many, many more.
+And to show how much I appreciate you for watching the whole video, here is a code for 25% off, amount 100.
+With that, you can get BBRE Premium for only 5 dollars a month.
+You can only use the code until 9 September but it will be valid forever,
+which means you will get 25% off every single recurrence of the subscription.
+Find more details at premium.backbountyexplained.com.
+For now, thank you for watching and goodbye.
+If they use secrets that are as complex as these examples from the documentation,
+then you could easily break those hashes.

@@ -1,0 +1,86 @@
+You are trying to log in to a website. The domain looks good, you opened it like you always do.
+You think you typed your password correctly, but the app tells you didn't, so you retype it again,
+it happens. But little you know that by doing that you just gave your passwords to the attacker.
+Hello, the vulnerability I will show you today is the most fun and creative exploit I have ever done
+for bug bounty. I chained SSRF with phishing, which doesn't really sound familiar, does it?
+Unfortunately, even though I'm very happy with this bug, I still didn't take the most out of it
+and learned the lesson the hard way. But for now, enjoy the explanation.
+I found this bug on a private program, let's say it's Redacted.com. There is a way to set up two-factor
+authentication via Duo. The way it works is you create an account on Duo. It generates credentials
+for you and assigns a subdomain that looks like this. api-random.duosecurity.com.
+To set it up on Redacted.com, you copy these credentials and the host name. Then Redacted does
+the validation. It checks if the host starts with api- and ends with duosecurity.com. And these
+validations are robust if you do them on the host. But Redacted.com did not. It didn't normalize the
+address and these validations were run on your whole input, not just on the host. So it's quite easy.
+You can use this address to bypass it while still controlling the host name.
+And after the validation, Redacted.com makes a request to auth v2.checkendpoint.
+It just concatenates your host to this path and this is the final location where your request is sent.
+This way you can trick the server into sending requests to arbitrary location. It's a typical
+server-side request forgery. As you could not read the response, it's a blind one. And of course,
+after this request, Redacted through an error because my service was not responding to this request
+with the expected format. But since it's a blind SSRF anyway, it doesn't really matter. The request was
+already sent. Usually, to elevate the impact of a blind SSRF, you need to find another service in the
+internal network which you can exploit with a single request. So impact of this bug varies a lot. But
+Redacted is an open source application which you can install yourself. So impact here is greater because,
+you know, the company can say we don't have any internal services that can be changed with a blind
+SSRF. But they can't say none of our clients have services in the internal network that could be changed
+with it. So I reported the blind SSRF and I went to sleep as it was quite late and I'm not a night owl.
+But remember, I told you earlier there was an error due to my server not responding with the expected
+format. When I was falling asleep, I was wondering what would happen if my server would return a proper
+response just like a real Duo API server would. Maybe I even dreamt about it, but I don't remember that.
+So the next morning, I came back to it. I thought that maybe if I managed to set up the integration
+with my server, something interesting will be sent to me during the login process.
+So I created a Duo account and used real credentials. And this is the response that my
+proof of concept server had to return. And it worked. I successfully added two-factor authentication
+with my server. And the way the Duo integration works is that after the login, the iframe from my
+subdomain is opened with the input field where you fill in the OTP code that you received via a text
+message from Duo. So when I was trying to log in, the server tried to open an iframe from my own server.
+It was a perfect attack scenario. I created a proof of concept that looked like Reducted.com's login page.
+And after the login, my form was shown in the victim's browser. It looked exactly like the one from Reducted.com
+minus my HTML CSS skills.
+The domain of the iframe is not visible to the victim. So this is pretty much a perfect phishing.
+In the real world attack, I could also add the message about invalid password. It's because the
+victim is taken to my iframe after a successful login. I would show them an alert about an invalid
+password so that they retype it again. But the question you might be asking yourself is what's the
+impact of phishing myself? The thing is that Reducted.com also has teams. And as the admin of the team,
+I can set up two-factor authentication for all members. And with this attack, I can get their
+plaintext passwords. This, however, makes the attack less likely. So even though the exploit is super cool,
+it's not as impactful. And that's the place I find myself quite often when doing bug bounty.
+I have like a childish curiosity. I just want to break things and not care about the impact.
+I'm not sure if that's a good thing, because not always cool attacks result in equally great impact.
+And I feel that if I want to get maximum return on investment from doing bug bounty,
+I should focus on things that are the most impactful and not necessarily the coolest.
+But on the other hand, in some situations, the curiosity is definitely helping me out.
+This attack gave me so much satisfaction.
+So I added the comment to the original report. One problem was that the CSP didn't allow
+opening iframes from my domain. It reminded me of my recent endeavors with content security policy.
+On Stripe, I didn't initially report my accesses because of the CSP. Later,
+turned out they rewarded me for them very well, treating CSP only as a defense in depth mechanism.
+So here, I didn't consider turning off CSP a big problem.
+I was a fan of CSP. But this program had different attitude.
+They only rewarded me $500, which looked like a reward that didn't consider the phishing attack
+scenario, only the blind SSRF. So I replied to them, saying why I think I should get more.
+I mentioned a possible bypass of the first fix and explained the second attack scenario.
+But unfortunately, by doing it, I spoiled it and I'm still angry with myself for that.
+I thought about bypassing content security policy. But it's an iframe and I only controlled the host,
+so I couldn't think of anything worth trying here. And for my argumentation, they gave me $500 more.
+And initially, I was very happy with that reward.
+But after a few days, when the bug was fixed and the report was closed, I logged in to Reducted.com,
+but this time not via the website, but with an app. And to my eyes, my phishing page popped up
+without turning off content security policy. Turned out that my phishing exploit was complete
+just via another login channel. And in case of this app, I think it may be the more popular way to log in
+than the website itself. I don't know how much more they would be willing to pay me, but definitely
+something more. But after already arguing one time, I didn't want to do it the second time,
+since the report was already closed. And I'm still angry with myself for that. It's a hard way to learn to
+always, always check different channels. But even though I didn't mention it in the report,
+I know that my proof of concept was complete and this was the coolest exploit I have ever done.
+At least so far. And after all, $1000 is not bad, especially that I found it after just starting
+hunting on the program. With this money, I'm fulfilling one of my dreams to go to an F1 race.
+In fact, right now, as this video is published, I'm in Barcelona on Spanish Formula 1 Grand Prix.
+And less than a year ago, I was a pentester and even though I had web security skills,
+I just couldn't find bugs in bug bounty. I was learning a lot and I hoped that it will finally
+yield results. Although bug bounty is not easy and definitely not a get-rich-quick scheme,
+I can see that all this learning pays off and I'm finding cool bugs that enable me to fulfill my dreams.
+If you want to learn with me, subscribe to BBRE Premium. I'm documenting things that I learned there.
+What tools do I use, what methodology, what hacking techniques. It's all about continuous learning of
+intermediate and advanced level topics. Check out BBRE.dev.com. For now, thank you for watching and goodbye.

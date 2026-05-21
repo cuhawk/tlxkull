@@ -1,0 +1,72 @@
+Hello! In today's Bug Bounty Report Explained, you will learn how it was possible to hack
+Facebook in not one, but three different ways. Those vulnerabilities were submitted across two
+reports for which the researcher Alaa Abdul Rija got $55,000 in total. Links to the original blog
+posts are in the description. Enjoy! So there were two blog posts by the same author. In part one,
+he found an application legal.tabprd.thefacebook.com. There was no registration,
+but he found a hidden endpoint save password which allowed him to take over arbitrary account.
+From JavaScript files, he prepared a valid body and then brute force the list of usernames.
+The endpoint allowed changing anyone's password provided that we know their username,
+so it was complete account takeover. During his brute force, he hit one correct username to prepare
+the proof of concept. He reported the bug and got $7,500 for it. But he wanted more. His idea was
+to test session management. He had to look into his burp history to see what was going on when he was
+testing for the first vulnerability. He noticed ASPX auth cookie. It's a default cookie name from
+standard.net's form authentication class. It works this way. There is this thing called ticket which
+contains your data that you want to be stored inside the cookie. Usually, it's data that can identify the
+user, for example, user name or user ID. First, the ticket in cleartext is signed using SHA-1 algorithm.
+Then, the whole ticket along with the signature is encrypted and then the encrypted block is signed
+again using SHA-1. SHA-1 is a default algorithm for signing, while AAS is a standard encryption algorithm.
+The developer must set at least two keys. Validation key for signing and decryption key for encryption
+and decryption of the data. The typical flaw looks like this. When you successfully log into the application,
+some of your data is being put in this cookie and this cookie is sent with your every request. And upon
+every request, the application must validate the first signature, decrypt the cookie and validate the
+second signature. At the end, it decodes your username or user ID from the ticket and it confirms that it's
+actually you. If something goes wrong along the way, you are not authenticated. Keys are sufficiently strong,
+so that the cookie is not brute-forcible. There is also no known way to disclose those keys.
+But the bug hunter assumed that this application is vulnerable once he saw this cookie name. Why was that?
+The documentation tells you to just provide the username. No user ID, no application ID, nothing like this.
+And what's important, your username is shared across many different applications. Is that a problem?
+It's not. Until you use different keys for different websites. And according to the blog post, only 20% of
+applications do this properly and 80% of them are vulnerable. I find this number a bit hard to believe,
+but I have never myself tested for this vulnerability. The attack looks like this.
+You have application one to which you can't log in. It uses ASPX auth cookie to identify the user.
+Then you find the second application that must also use the ASPX auth cookie, but this website must allow
+registration. Those applications must be related, running on the same server. For this attack to work,
+you must know the user name from user from app 1, whose account you will take over. In our case, the bug hunter brute force the
+username during the first attack. Now if validation key and decryption key are shared across those two
+applications, you can take the victim's login from app 1 and sign up using this username to app 2.
+After logging in, app 2 will sign your cookie and encrypt it and then sign it once again.
+Then you copy this cookie from app 2 to app 1. App 1 will successfully validate and decrypt the cookie
+because keys are shared between those applications. Then the application will take the ticket which was
+inside the cookie. There is no application ID that mismatches here. There is no unique user ID. There is only the username.
+So app 1 logs you in with that username, finishing our arbitrary account takeover.
+That's exactly what the hunter did here. Unfortunately, details of the second application are not disclosed in the blog post.
+If you are like me, right now you are wondering how did this happen that developers from such a big company
+just copied the keys from one app to another. But turns out they probably didn't. By default, keys are not created manually but auto-generated using machine key element.
+And those keys are derived from the machine properties, so if you have multiple websites running on the same server,
+they will have the same keys. To avoid that, you need to use isolate apps modifier, which makes the key being generated using the application ID.
+At least that's what one page from the documentation says. The other page says that it only uses virtual paths.
+This would work if you would have one domain and one application would work under slash path and the other would work under slash app too.
+They would have different virtual paths, thus different keys. But in today's world, it's not the most common use case.
+More likely, your two applications will work on two different ports, let's say 8080 and 8081.
+Then you would have a reverse proxy that routes the traffic from one domain to port 8080 and the traffic to other domain to port 8081.
+The customer only uses port 443 on both domains. But coming back to our app isolation,
+both of them in such case would have slash as their virtual paths.
+So if isolate apps modifier was used, keys will still be exactly the same across those applications.
+As this is the default setting, I'd assume that's what happened with Facebook.
+The fix for that is changing isolate apps modifier to isolate by app ID, which actually uses the app ID.
+This is a typical example of insecure by default and I wouldn't even put much blame on the developers.
+No way they could see this coming reading this documentation.
+Even for me, when I knew exactly what am I looking for, it took a few hours to dig deep to find all this information.
+So he could get another 7.5 thousand dollars for that. But it wasn't enough.
+This time he wanted to go further. He asked for permission to test for SSRFs because there was a
+functionality that brought his attention. API trigger. It was pretty much SSRF by design. You could make requests anywhere.
+Facebook gave him green light to test for this. It even has an internal endpoint that you can request to show the proof of concept of your SSRF.
+So he created a custom script in some editor that allowed him to make requests to arbitrary URLs,
+but also with arbitrary headers and arbitrary methods.
+It's important because Facebook SSRF guidelines say that for SSRF when you can read responses, you get 40 thousand dollars.
+But if you can control the whole request, including headers, you get 5 thousand bonus.
+In total, he got 54 thousand dollars for those two reports. Quite a good payout if you ask me.
+And that's it. I myself didn't know about this ASPX auth cookie before. And even searching strictly for that,
+I didn't find many sources about it. Considering that form authentication class is a part of .NET's standard
+security module, it's probably quite common. So if you also didn't know about this, leave a like under this video. Also, sign up for my mailing list to be the first to know about any of my future projects.
+For now, thank you for watching and goodbye.

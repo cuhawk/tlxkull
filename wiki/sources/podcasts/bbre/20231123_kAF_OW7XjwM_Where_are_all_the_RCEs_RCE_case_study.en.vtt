@@ -1,0 +1,1450 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.960
+RCEs are quite strange because on one hand,
+
+00:00:02.960 --> 00:00:06.320
+they are possible in many different functionalities,
+
+00:00:06.320 --> 00:00:10.560
+but in practice, they are quite rare and very valuable.
+
+00:00:10.560 --> 00:00:13.840
+So if you want to improve in finding RCEs,
+
+00:00:13.840 --> 00:00:16.200
+you're in a good place because in this video,
+
+00:00:16.200 --> 00:00:19.920
+I will show you in what functionalities I observed them
+
+00:00:19.920 --> 00:00:24.920
+during my case study of 126 disclosed bug bounty reports.
+
+00:00:25.680 --> 00:00:27.100
+Enjoy.
+
+00:00:27.139 --> 00:00:30.900
+So this was definitely the most difficult case study
+
+00:00:30.900 --> 00:00:33.540
+because I always try to somehow aggregate
+
+00:00:33.540 --> 00:00:35.419
+those labels together,
+
+00:00:35.419 --> 00:00:40.099
+but RCEs were completely all over the place.
+
+00:00:40.099 --> 00:00:43.259
+So in total, I have 13 functionalities
+
+00:00:43.259 --> 00:00:45.259
+and we'll go through them one by one.
+
+00:00:45.259 --> 00:00:47.860
+And the first, the most common one
+
+00:00:47.860 --> 00:00:50.980
+is some kind of import or sharing functionality.
+
+00:00:50.980 --> 00:00:52.540
+And it's definitely something
+
+00:00:52.540 --> 00:00:54.700
+that you should pay attention to
+
+00:00:54.700 --> 00:00:57.619
+as one of the most critical functionalities.
+
+00:00:57.619 --> 00:01:01.860
+For example, we had a lot of those bugs in GitLab
+
+00:01:01.860 --> 00:01:05.440
+where for example, you can migrate a repository
+
+00:01:05.440 --> 00:01:08.099
+from one GitLab instance to another.
+
+00:01:08.099 --> 00:01:10.800
+And it's a very dangerous functionality
+
+00:01:10.800 --> 00:01:13.360
+because you have to copy some files
+
+00:01:13.360 --> 00:01:14.980
+from one place to another.
+
+00:01:14.980 --> 00:01:18.379
+And every single interaction with a file
+
+00:01:18.379 --> 00:01:21.860
+is a place where RCEs are possible.
+
+00:01:21.860 --> 00:01:26.339
+Here, for example, to check a size of the archive,
+
+00:01:26.339 --> 00:01:30.000
+the system level command would be executed.
+
+00:01:30.000 --> 00:01:33.279
+And it is quite a complex report.
+
+00:01:33.279 --> 00:01:35.980
+We will not go into the details of it.
+
+00:01:35.980 --> 00:01:37.559
+But the bottom line is,
+
+00:01:37.559 --> 00:01:39.860
+it was just quite a complex functionality.
+
+00:01:39.860 --> 00:01:43.720
+There was a lot of source code review involved here.
+
+00:01:43.720 --> 00:01:46.900
+But in the end, the payload is not so complex.
+
+00:01:46.900 --> 00:01:50.820
+It just, the simplest escaping of the argument
+
+00:01:50.820 --> 00:01:53.620
+and it could inject your own comments.
+
+00:01:53.620 --> 00:01:57.739
+So similar thing here in GitHub this time.
+
+00:01:57.739 --> 00:01:59.540
+That one was in GitLab.
+
+00:01:59.540 --> 00:02:01.500
+This one is in GitHub.
+
+00:02:01.500 --> 00:02:04.940
+Here as well, you have the processing of the file.
+
+00:02:04.940 --> 00:02:09.020
+This time it's GitHub pages, creating GitHub pages.
+
+00:02:09.020 --> 00:02:11.479
+And it would process YAML files
+
+00:02:11.479 --> 00:02:15.460
+with apparently some insecure configuration,
+
+00:02:15.460 --> 00:02:19.300
+which would allow you to create an arbitrary file.
+
+00:02:19.300 --> 00:02:22.179
+And if you can create arbitrary files,
+
+00:02:22.179 --> 00:02:27.179
+you can often get the RCE quite easily.
+
+00:02:27.539 --> 00:02:31.399
+And in the case here, this report was 25K.
+
+00:02:31.399 --> 00:02:36.300
+The previous one was $33,000.
+
+00:02:36.300 --> 00:02:39.539
+We'll now go to the second most common category,
+
+00:02:39.539 --> 00:02:41.660
+which unfortunately is called other
+
+00:02:41.660 --> 00:02:46.660
+because these, I just couldn't fit to anything else.
+
+00:02:47.539 --> 00:02:51.619
+For example, you have this bug,
+
+00:02:51.619 --> 00:02:56.619
+which I would never think that this is something possible.
+
+00:02:56.860 --> 00:03:00.580
+We have exposed the Git repository
+
+00:03:00.580 --> 00:03:02.660
+so that the hunter could see the source code.
+
+00:03:02.660 --> 00:03:06.559
+Nice that he also included the recon steps that he took.
+
+00:03:07.460 --> 00:03:10.179
+And turned out that the source code looked like this.
+
+00:03:10.179 --> 00:03:13.860
+You had some hard-coded secrets in the source code.
+
+00:03:13.860 --> 00:03:16.899
+And if those secrets were correct,
+
+00:03:16.899 --> 00:03:19.940
+the application would just execute system level comments
+
+00:03:19.940 --> 00:03:22.380
+without any escaping.
+
+00:03:22.380 --> 00:03:25.660
+And normally without those secrets, you couldn't do it.
+
+00:03:25.660 --> 00:03:28.699
+But yeah, just leaking the secret was enough
+
+00:03:28.699 --> 00:03:32.059
+to execute arbitrary comments here.
+
+00:03:32.059 --> 00:03:34.059
+And it's interesting because I saw this report
+
+00:03:34.059 --> 00:03:37.539
+and I thought it's like 2015 or 2016.
+
+00:03:37.539 --> 00:03:41.919
+It's 2023 and it's $10,000 of bounty.
+
+00:03:41.919 --> 00:03:45.279
+And yeah, most of these cases in the other functionality,
+
+00:03:45.279 --> 00:03:50.240
+in the other category is something quite specific.
+
+00:03:50.240 --> 00:03:52.839
+Then we have file uploads.
+
+00:03:52.839 --> 00:03:56.139
+And when we take a look here at those average bounties,
+
+00:03:56.139 --> 00:03:58.839
+we can see that the average bounty for file uploads
+
+00:03:58.839 --> 00:04:02.820
+is a bit lower than those above it and below it.
+
+00:04:02.820 --> 00:04:05.080
+But the difference is not huge.
+
+00:04:05.080 --> 00:04:08.279
+But when we take a look at them here,
+
+00:04:08.279 --> 00:04:12.080
+we can see bounties are not so great in this category.
+
+00:04:12.080 --> 00:04:14.800
+And the reason is many of them are just
+
+00:04:14.800 --> 00:04:17.040
+the simplest web shell uploads
+
+00:04:17.040 --> 00:04:20.279
+where the application would do no verification.
+
+00:04:20.279 --> 00:04:23.079
+And it often happens in smaller applications,
+
+00:04:23.079 --> 00:04:25.760
+in applications maybe where the company
+
+00:04:25.760 --> 00:04:28.100
+doesn't have a proper security team.
+
+00:04:28.100 --> 00:04:31.239
+But the average bounty is bumped up
+
+00:04:31.239 --> 00:04:35.239
+by this 50,000 bounty from Apple.
+
+00:04:35.239 --> 00:04:37.760
+But if we take this one away,
+
+00:04:37.839 --> 00:04:39.799
+let's do it like this.
+
+00:04:39.799 --> 00:04:41.000
+If we take this one away,
+
+00:04:41.000 --> 00:04:44.720
+the average bounty goes down to $2,700,
+
+00:04:44.720 --> 00:04:49.359
+which is way less than anything else here.
+
+00:04:49.359 --> 00:04:51.279
+And before you ask me,
+
+00:04:51.279 --> 00:04:53.760
+because every single video like this has a comment,
+
+00:04:53.760 --> 00:04:57.260
+can I access this database with those reports?
+
+00:04:57.260 --> 00:05:00.660
+So this video is a part of the case study,
+
+00:05:00.660 --> 00:05:03.959
+which is in BBR Premium, which is behind the paywall.
+
+00:05:03.959 --> 00:05:05.640
+If you are a BBR Premium member,
+
+00:05:05.640 --> 00:05:08.279
+you just scroll down to the bottom of the article,
+
+00:05:08.279 --> 00:05:10.600
+which is quite long to be honest.
+
+00:05:10.600 --> 00:05:12.779
+And then you have the database embedded here
+
+00:05:12.779 --> 00:05:14.640
+and you can also filter it.
+
+00:05:14.640 --> 00:05:15.959
+You can also export it.
+
+00:05:15.959 --> 00:05:17.459
+You can do whatever you want.
+
+00:05:17.459 --> 00:05:20.720
+You can download it to the tool of your choice.
+
+00:05:20.720 --> 00:05:24.440
+And you can also access the direct Notion link here
+
+00:05:24.440 --> 00:05:27.559
+because I use Notion, I love Notion.
+
+00:05:27.559 --> 00:05:31.320
+So I decided to also add the Notion option
+
+00:05:31.320 --> 00:05:33.480
+for those of you who also do this.
+
+00:05:33.480 --> 00:05:35.760
+And if you want to join now is the good time
+
+00:05:35.760 --> 00:05:37.959
+because this video comes out
+
+00:05:37.959 --> 00:05:40.160
+when the Black Friday promotion starts
+
+00:05:40.160 --> 00:05:43.200
+and it's the only promotion of BBR Premium
+
+00:05:43.200 --> 00:05:44.799
+for the whole year.
+
+00:05:44.799 --> 00:05:46.859
+And it's actually the last chance ever
+
+00:05:46.859 --> 00:05:48.679
+to get BBR Premium at this price
+
+00:05:48.679 --> 00:05:51.059
+because before the next Black Friday,
+
+00:05:51.059 --> 00:05:52.359
+there will be a price rise.
+
+00:05:52.359 --> 00:05:55.779
+So the next year's discounted price will be higher.
+
+00:05:55.779 --> 00:05:57.940
+So it is the last chance ever to join
+
+00:05:57.940 --> 00:06:00.500
+at the $80 price mark.
+
+00:06:00.500 --> 00:06:03.079
+And also if you do this now,
+
+00:06:03.720 --> 00:06:05.320
+you lock in the lower price forever.
+
+00:06:05.320 --> 00:06:09.760
+So every year your subscription will renew
+
+00:06:09.760 --> 00:06:10.880
+using the lower price.
+
+00:06:10.880 --> 00:06:14.920
+So now it's a very good time to join.
+
+00:06:14.920 --> 00:06:16.679
+But coming back to our reports,
+
+00:06:16.679 --> 00:06:21.679
+you're probably curious what is this $50,000 report to Apple?
+
+00:06:21.880 --> 00:06:24.299
+And I also covered it on my channel.
+
+00:06:24.299 --> 00:06:27.239
+I will link all the videos that I mentioned
+
+00:06:27.239 --> 00:06:29.019
+in the description down below.
+
+00:06:29.859 --> 00:06:34.019
+And it was functionality or actually the framework.
+
+00:06:35.100 --> 00:06:37.359
+Lucy, I've never heard about it,
+
+00:06:37.359 --> 00:06:40.899
+but they were able to convince the Lucy
+
+00:06:40.899 --> 00:06:43.739
+with some parameters and some templates
+
+00:06:43.739 --> 00:06:45.700
+to create an arbitrary file.
+
+00:06:45.700 --> 00:06:49.380
+And from there, the shell was possible.
+
+00:06:49.380 --> 00:06:51.220
+So it's also a shell upload,
+
+00:06:51.220 --> 00:06:56.220
+but it's definitely not an easy one or a simple one.
+
+00:06:56.299 --> 00:06:58.160
+Next, we have authentication.
+
+00:06:58.239 --> 00:07:00.640
+And authentication, I know there are a lot of bugs there,
+
+00:07:00.640 --> 00:07:04.720
+but I just wouldn't expect RCEs to be precise.
+
+00:07:04.720 --> 00:07:06.640
+And there were some, I would say,
+
+00:07:06.640 --> 00:07:09.079
+random ones like this one,
+
+00:07:09.079 --> 00:07:12.359
+where the application would just take the value
+
+00:07:12.359 --> 00:07:16.040
+from the cookie and evaluate it.
+
+00:07:16.040 --> 00:07:18.200
+So we have the payload here.
+
+00:07:18.200 --> 00:07:20.940
+I'm not sure if this screenshot is visible,
+
+00:07:20.940 --> 00:07:24.399
+but there is base64 encoded command here,
+
+00:07:24.399 --> 00:07:26.839
+which is just executed by the server.
+
+00:07:26.839 --> 00:07:29.679
+And unfortunately, I cannot give you a recipe
+
+00:07:29.679 --> 00:07:31.279
+on how to find bugs like this
+
+00:07:31.279 --> 00:07:35.040
+because it just looks completely random to me.
+
+00:07:35.040 --> 00:07:37.160
+And I definitely would not find this bug
+
+00:07:37.160 --> 00:07:38.359
+without the source code.
+
+00:07:39.279 --> 00:07:41.839
+But one pattern in authentication that I saw,
+
+00:07:41.839 --> 00:07:45.880
+and I want you to know about it because it can be useful,
+
+00:07:45.880 --> 00:07:50.880
+is that sometimes the session cookie is a serialized object.
+
+00:07:51.480 --> 00:07:54.279
+And it's dangerous because if you could
+
+00:07:54.279 --> 00:07:57.519
+get your arbitrary objects to be deserialized,
+
+00:07:57.519 --> 00:07:59.279
+you could get an RCE.
+
+00:07:59.279 --> 00:08:02.119
+So to prevent this, all modern frameworks
+
+00:08:02.119 --> 00:08:05.000
+sign those cookies cryptographically
+
+00:08:05.000 --> 00:08:07.480
+so that you cannot create your own cookie
+
+00:08:07.480 --> 00:08:08.859
+and get it to deserialize.
+
+00:08:08.859 --> 00:08:10.880
+You need the signature to be valid.
+
+00:08:10.880 --> 00:08:14.920
+So in practice, you need the server to generate the cookie.
+
+00:08:14.920 --> 00:08:15.880
+But the thing is,
+
+00:08:17.320 --> 00:08:21.320
+if you can disclose the secret used to sign the cookie,
+
+00:08:21.320 --> 00:08:23.040
+you can get an RCE.
+
+00:08:23.040 --> 00:08:27.000
+For example, here we have verbose errors in Rails,
+
+00:08:27.000 --> 00:08:29.179
+in the Rack framework.
+
+00:08:29.179 --> 00:08:32.520
+And the verbose error disclosed the cookie signing secret.
+
+00:08:32.520 --> 00:08:35.479
+So in this case, if you find something like this,
+
+00:08:35.479 --> 00:08:36.960
+not report it straight away.
+
+00:08:36.960 --> 00:08:40.919
+Do not report that the application disclosed some secrets,
+
+00:08:40.919 --> 00:08:42.799
+even if they look good.
+
+00:08:42.799 --> 00:08:45.960
+If you disclose the cookie signing secret,
+
+00:08:45.960 --> 00:08:48.320
+you should create your own malicious cookie
+
+00:08:48.320 --> 00:08:52.719
+with a malicious object and sign it using that secret.
+
+00:08:53.400 --> 00:08:56.119
+And this will get you an RCE, like in this case.
+
+00:08:56.119 --> 00:08:59.640
+And this was a $5,000 reward.
+
+00:08:59.640 --> 00:09:01.440
+Then we have something that I called
+
+00:09:01.440 --> 00:09:03.719
+high privilege functionality.
+
+00:09:03.719 --> 00:09:06.599
+And the difference here is that the functionality
+
+00:09:06.599 --> 00:09:09.119
+is supposed to execute code,
+
+00:09:09.119 --> 00:09:11.799
+just the attacker shouldn't be able to.
+
+00:09:11.799 --> 00:09:16.799
+For example, the first report that I have here,
+
+00:09:17.919 --> 00:09:21.000
+the functionality is like cloud-based stuff.
+
+00:09:21.000 --> 00:09:24.559
+So by default, you can execute code on your instance,
+
+00:09:25.719 --> 00:09:27.440
+but there was a CSRF.
+
+00:09:27.440 --> 00:09:32.000
+And CSRF doesn't sound like a $30,000 vulnerability,
+
+00:09:32.000 --> 00:09:35.159
+but if the admin has access
+
+00:09:35.159 --> 00:09:37.880
+or the user has access to execute code,
+
+00:09:37.880 --> 00:09:40.239
+and this functionality has a CSRF,
+
+00:09:40.239 --> 00:09:45.239
+then all of a sudden your CSRF is worth $30,000 like here.
+
+00:09:46.080 --> 00:09:48.880
+And the very interesting thing that we had here
+
+00:09:48.880 --> 00:09:50.400
+was the origin validation,
+
+00:09:50.799 --> 00:09:52.960
+because there was some fuzzing involved.
+
+00:09:52.960 --> 00:09:57.280
+And the key here to bypass the origin check
+
+00:09:58.440 --> 00:09:59.520
+is this address.
+
+00:10:01.280 --> 00:10:03.520
+Turns out that this piece,
+
+00:10:03.520 --> 00:10:06.119
+which is the underscore subdomain,
+
+00:10:06.119 --> 00:10:08.799
+which looks a bit like the emoji,
+
+00:10:08.799 --> 00:10:11.159
+it was enough to, you know,
+
+00:10:11.159 --> 00:10:14.799
+that the website thought this is the origin
+
+00:10:14.799 --> 00:10:19.280
+and it looks valid because it ends with azurewebsites.net.
+
+00:10:19.320 --> 00:10:21.760
+But the browser thought that, you know,
+
+00:10:21.760 --> 00:10:26.719
+this whole thing is the origin and this is attacker site.
+
+00:10:26.719 --> 00:10:30.479
+So a very nice CSRF, also nice write-up
+
+00:10:30.479 --> 00:10:34.400
+because he also disclosed what characters he tried
+
+00:10:34.400 --> 00:10:36.400
+and what worked, what didn't.
+
+00:10:36.400 --> 00:10:39.599
+So really, really, really interesting case here
+
+00:10:39.599 --> 00:10:41.719
+and a really good bounty for this.
+
+00:10:43.119 --> 00:10:45.799
+Then we have a kind of similar case
+
+00:10:45.799 --> 00:10:49.599
+because we have cloud-based functionalities.
+
+00:10:49.599 --> 00:10:50.640
+And here as well,
+
+00:10:50.640 --> 00:10:54.359
+you can execute code on your own instance by default.
+
+00:10:54.359 --> 00:10:56.520
+But the thing here is the vulnerability
+
+00:10:56.520 --> 00:11:01.520
+allowed either the escalation to instance of another user,
+
+00:11:01.679 --> 00:11:06.080
+or it allowed to like execute code on the host
+
+00:11:06.080 --> 00:11:09.520
+of the, where you shouldn't be.
+
+00:11:09.520 --> 00:11:13.520
+Basically, you had a way to escape some kind of sandbox.
+
+00:11:13.520 --> 00:11:15.280
+And we'll not go into the details here
+
+00:11:15.760 --> 00:11:18.640
+because we have a lot of bugs to cover,
+
+00:11:18.640 --> 00:11:21.239
+which are closer to web-related bugs.
+
+00:11:21.239 --> 00:11:24.119
+For example, this first 30K attack was done
+
+00:11:24.119 --> 00:11:27.719
+via exposed kubelet, which is a Kubernetes sync.
+
+00:11:27.719 --> 00:11:31.520
+The second one was via exposed docker socket.
+
+00:11:32.640 --> 00:11:35.320
+So these are not really web bugs.
+
+00:11:35.320 --> 00:11:40.320
+So we'll continue to the next category, which is templates.
+
+00:11:40.520 --> 00:11:44.679
+And most of these are server-side template injection bugs,
+
+00:11:44.679 --> 00:11:48.159
+which to be honest, when I learned about this vulnerability
+
+00:11:48.159 --> 00:11:50.440
+I thought it's much more common
+
+00:11:50.440 --> 00:11:53.960
+and turns out it's actually not.
+
+00:11:53.960 --> 00:11:56.840
+This report is probably the most common example
+
+00:11:56.840 --> 00:11:58.479
+that everyone uses when they want
+
+00:11:58.479 --> 00:11:59.880
+to show this vulnerability.
+
+00:12:00.799 --> 00:12:04.080
+It's in Uber found by Orange Tsai.
+
+00:12:04.080 --> 00:12:08.159
+Your name would be evaluated as a part of the template
+
+00:12:08.159 --> 00:12:10.080
+in the email you received.
+
+00:12:10.919 --> 00:12:14.679
+So you would inject something like this,
+
+00:12:14.679 --> 00:12:17.479
+which contains the Jinja2 templates.
+
+00:12:17.479 --> 00:12:19.799
+And when you would receive an email,
+
+00:12:19.799 --> 00:12:23.840
+it would be evaluated and it usually can lead
+
+00:12:23.840 --> 00:12:25.559
+to a remote code execution.
+
+00:12:25.559 --> 00:12:28.799
+Interestingly, in this case, Orange was not able
+
+00:12:28.799 --> 00:12:32.080
+to exploit it as an RCE because of the length limit,
+
+00:12:32.080 --> 00:12:36.159
+but Uber still probably evaluated it on their side
+
+00:12:36.159 --> 00:12:40.520
+and they paid $10,000 for this vulnerability.
+
+00:12:41.359 --> 00:12:44.719
+And the next category I have is also a way
+
+00:12:44.719 --> 00:12:49.719
+to exploit another vulnerability, which is SQL injection.
+
+00:12:49.960 --> 00:12:53.799
+I also talked about it in the SQL injection case study,
+
+00:12:53.799 --> 00:12:55.679
+which I recommend you to watch.
+
+00:12:55.679 --> 00:12:57.520
+I also, I'm going to link this
+
+00:12:57.520 --> 00:12:59.840
+in the description down below.
+
+00:12:59.840 --> 00:13:02.039
+But the thing is, in some cases,
+
+00:13:02.039 --> 00:13:04.880
+in some configuration, with some configuration options
+
+00:13:04.919 --> 00:13:08.039
+and in some database engines,
+
+00:13:08.039 --> 00:13:11.919
+you are able to directly turn SQL injection
+
+00:13:11.919 --> 00:13:16.359
+into a remote code execution with a query like this one.
+
+00:13:17.239 --> 00:13:21.159
+And with this, the next functionality is installing packages.
+
+00:13:21.159 --> 00:13:25.520
+So it's a bit different because it often occurs earlier
+
+00:13:25.520 --> 00:13:27.200
+in the development lifecycle.
+
+00:13:27.200 --> 00:13:30.119
+So these are not really bugs in the application itself,
+
+00:13:31.119 --> 00:13:35.440
+but somewhere before the application is even released.
+
+00:13:35.440 --> 00:13:37.039
+And here we have eight reports,
+
+00:13:37.039 --> 00:13:41.239
+but seven of those are dependency confusion vulnerability.
+
+00:13:41.239 --> 00:13:43.799
+This one, I also created a video about.
+
+00:13:43.799 --> 00:13:47.840
+It's a very interesting and novel attack scenario,
+
+00:13:47.840 --> 00:13:50.679
+which Alex Bierson discovered in 2020
+
+00:13:50.679 --> 00:13:53.479
+or published in 2021.
+
+00:13:53.479 --> 00:13:58.440
+And it was basically a way to confuse a package manager
+
+00:13:58.479 --> 00:14:01.440
+to install your malicious package
+
+00:14:01.440 --> 00:14:04.359
+instead of a company's internal package.
+
+00:14:04.359 --> 00:14:07.479
+So when they would use something like this, AuthPaypal,
+
+00:14:07.479 --> 00:14:11.359
+you could convince the package manager
+
+00:14:11.359 --> 00:14:13.880
+to install your AuthPaypal package,
+
+00:14:13.880 --> 00:14:16.440
+which you can publish without any problems,
+
+00:14:16.440 --> 00:14:17.799
+because this one was private.
+
+00:14:17.799 --> 00:14:20.760
+It was in like private PayPal repository.
+
+00:14:20.760 --> 00:14:24.479
+So you published AuthPaypal to a public repository.
+
+00:14:24.479 --> 00:14:27.280
+And if your one would have a higher version,
+
+00:14:27.280 --> 00:14:31.359
+so it would just use version 99999,
+
+00:14:31.359 --> 00:14:32.960
+it would install your package
+
+00:14:32.960 --> 00:14:37.440
+and it would execute your code on the developer's machine,
+
+00:14:37.440 --> 00:14:39.760
+maybe on the server as well.
+
+00:14:39.760 --> 00:14:42.039
+And bounties here were huge.
+
+00:14:42.039 --> 00:14:45.000
+He only mentioned three companies with bounties,
+
+00:14:45.000 --> 00:14:47.159
+and we have 40, 30, and 30K.
+
+00:14:47.159 --> 00:14:49.960
+So it's already $100,000.
+
+00:14:49.960 --> 00:14:51.799
+And he also mentioned a few more payouts,
+
+00:14:51.799 --> 00:14:55.679
+but didn't say exactly how much he got for them.
+
+00:14:55.679 --> 00:14:56.919
+So I couldn't put them here,
+
+00:14:57.760 --> 00:15:01.159
+but definitely the attack worth it.
+
+00:15:01.159 --> 00:15:06.080
+And also here we have other dependency confusion reports,
+
+00:15:06.080 --> 00:15:08.719
+also paid really, really well.
+
+00:15:08.719 --> 00:15:11.760
+And if you're wondering what's the one attack,
+
+00:15:11.760 --> 00:15:15.159
+which is not dependency confusion in this category,
+
+00:15:15.159 --> 00:15:16.000
+it's this one.
+
+00:15:16.000 --> 00:15:19.320
+Basically, Mapbox used some script
+
+00:15:19.320 --> 00:15:22.359
+that pulled code from an S3 bucket,
+
+00:15:22.359 --> 00:15:24.559
+and then they stopped using the S3 bucket,
+
+00:15:24.599 --> 00:15:29.599
+but the script would still pull the code from this bucket.
+
+00:15:29.640 --> 00:15:32.919
+So Franz Rosen would claim this bucket,
+
+00:15:32.919 --> 00:15:34.760
+put his code there,
+
+00:15:34.760 --> 00:15:38.320
+and the script would pull this code and execute it.
+
+00:15:38.320 --> 00:15:43.320
+So they paid $12,500 for this report.
+
+00:15:44.200 --> 00:15:46.919
+The next category I called zero day,
+
+00:15:46.919 --> 00:15:50.559
+and these are basically vulnerabilities in products
+
+00:15:50.559 --> 00:15:53.159
+and not in specific applications.
+
+00:15:53.159 --> 00:15:57.359
+For example, another report by Orange,
+
+00:15:57.359 --> 00:15:59.440
+this one, this time in Twitter.
+
+00:15:59.440 --> 00:16:04.080
+And these are vulnerabilities in the Pulse Secure VPN,
+
+00:16:04.080 --> 00:16:05.559
+which Twitter used.
+
+00:16:05.559 --> 00:16:08.679
+And we can see six different CVEs here,
+
+00:16:08.679 --> 00:16:12.280
+really complex and really long explanation.
+
+00:16:12.280 --> 00:16:16.679
+But the bottom line is it ended in a remote code execution,
+
+00:16:16.679 --> 00:16:18.559
+and they got $20,000 for it.
+
+00:16:18.559 --> 00:16:21.119
+So bugs like this can be worth a lot,
+
+00:16:21.119 --> 00:16:26.119
+especially that if they had the vulnerability in the VPN,
+
+00:16:26.559 --> 00:16:29.520
+they could also report it to many other companies
+
+00:16:29.520 --> 00:16:32.799
+that have bug bounty programs and that are using this VPN.
+
+00:16:32.799 --> 00:16:37.799
+So bugs like this can be really, really worth a lot.
+
+00:16:38.599 --> 00:16:39.880
+And another vulnerability
+
+00:16:39.880 --> 00:16:41.919
+that you should pay a lot of attention
+
+00:16:41.919 --> 00:16:44.080
+is any kind of image processing,
+
+00:16:44.080 --> 00:16:48.400
+or to be fair, processing of any file.
+
+00:16:48.400 --> 00:16:51.359
+Because we can see five of these
+
+00:16:51.359 --> 00:16:53.080
+are image magic vulnerabilities,
+
+00:16:53.080 --> 00:16:58.080
+which you can see the dates, 2018, 18, 19, 16, 18.
+
+00:16:58.080 --> 00:16:59.640
+Quite an old vulnerability
+
+00:16:59.640 --> 00:17:02.799
+that was very common in those days.
+
+00:17:02.799 --> 00:17:06.959
+Also in the SSRF case study, there were quite a lot of those
+
+00:17:08.119 --> 00:17:12.880
+but in any case, any functionality like this
+
+00:17:12.880 --> 00:17:14.800
+should be your focus point.
+
+00:17:14.800 --> 00:17:17.400
+Here we have another vulnerability in GitLab.
+
+00:17:17.400 --> 00:17:19.719
+I also covered it on my channel.
+
+00:17:19.719 --> 00:17:24.160
+And this is a zero day actually in the Exif tool,
+
+00:17:24.160 --> 00:17:29.160
+which is used to strip metadata from a file.
+
+00:17:29.520 --> 00:17:30.719
+And it's a very interesting one
+
+00:17:30.719 --> 00:17:35.719
+because the code that was supposed to not make this possible
+
+00:17:38.280 --> 00:17:43.280
+didn't predict that the new line just after a backslash
+
+00:17:43.560 --> 00:17:46.319
+and would process it incorrectly,
+
+00:17:46.319 --> 00:17:49.239
+which could lead to you basically being able
+
+00:17:49.239 --> 00:17:51.439
+to inject your own code
+
+00:17:51.439 --> 00:17:55.959
+and execute your own code inside of a file.
+
+00:17:55.959 --> 00:17:58.239
+So also a really interesting one,
+
+00:17:58.239 --> 00:18:02.040
+also a lot of code review going on for this.
+
+00:18:02.040 --> 00:18:05.400
+I believe it's not possible to find a bug like this
+
+00:18:05.400 --> 00:18:07.160
+with a black box approach,
+
+00:18:07.160 --> 00:18:08.560
+but definitely worth it
+
+00:18:08.560 --> 00:18:13.160
+because it's $20,000 from GitLab.
+
+00:18:14.160 --> 00:18:16.319
+Then there is another functionality,
+
+00:18:16.319 --> 00:18:18.680
+which I think it's quite obvious
+
+00:18:18.680 --> 00:18:21.319
+and you probably won't be surprised
+
+00:18:21.319 --> 00:18:25.880
+that when the application executes command
+
+00:18:25.880 --> 00:18:28.479
+as the functionality, it should be your focus point
+
+00:18:28.479 --> 00:18:29.560
+because it's quite natural
+
+00:18:29.560 --> 00:18:32.479
+that when we see a command being executed,
+
+00:18:32.479 --> 00:18:34.719
+we immediately think about command injection.
+
+00:18:34.719 --> 00:18:39.719
+So I think it won't be the most interesting takeaway
+
+00:18:40.319 --> 00:18:41.520
+from this case study,
+
+00:18:41.640 --> 00:18:44.400
+but take a look at this back.
+
+00:18:44.400 --> 00:18:47.640
+It shows that not always you actually have
+
+00:18:47.640 --> 00:18:51.839
+to escape the command to make a vulnerability work.
+
+00:18:51.839 --> 00:18:56.119
+Here we have another report by William Bowling
+
+00:18:57.199 --> 00:18:58.959
+and we have a functionality
+
+00:18:58.959 --> 00:19:02.000
+where it would run the Git command under the hood
+
+00:19:02.000 --> 00:19:04.040
+to make some diff.
+
+00:19:04.040 --> 00:19:06.880
+And at the first sight, it doesn't look,
+
+00:19:06.880 --> 00:19:10.439
+this part does not look sensitive at all.
+
+00:19:10.479 --> 00:19:13.560
+The file name was not vulnerable in this case.
+
+00:19:13.560 --> 00:19:15.520
+It was probably sanitized or something,
+
+00:19:16.479 --> 00:19:21.479
+but the commit one or commit two positional arguments,
+
+00:19:21.560 --> 00:19:23.040
+they do not look like something
+
+00:19:23.040 --> 00:19:25.920
+where you can inject your own comments.
+
+00:19:25.920 --> 00:19:29.640
+But the thing was that William created a branch
+
+00:19:29.640 --> 00:19:31.160
+with a name like this,
+
+00:19:31.160 --> 00:19:34.239
+a branch with a name dash dash output equals
+
+00:19:34.239 --> 00:19:35.239
+and a file name.
+
+00:19:36.160 --> 00:19:39.199
+And when it was put into the comment,
+
+00:19:39.199 --> 00:19:44.199
+then it was put here as commit one or commit two.
+
+00:19:44.479 --> 00:19:47.920
+And all of a sudden, instead of being a positional argument,
+
+00:19:50.040 --> 00:19:53.680
+you were in the named argument called output
+
+00:19:53.680 --> 00:19:57.560
+because still, even though he had a branch name like this,
+
+00:19:57.560 --> 00:19:59.599
+he couldn't just escape the argument
+
+00:19:59.599 --> 00:20:01.199
+and just inject arbitrary comments.
+
+00:20:01.199 --> 00:20:03.560
+It wasn't an easy case like this.
+
+00:20:03.560 --> 00:20:08.560
+He could just inject another argument into this comment
+
+00:20:08.560 --> 00:20:12.119
+and this argument allowed him to create arbitrary file.
+
+00:20:12.119 --> 00:20:15.719
+And as you probably already know from this video,
+
+00:20:15.719 --> 00:20:18.520
+creating arbitrary file often allows you
+
+00:20:18.520 --> 00:20:22.520
+to reach a remote code execution.
+
+00:20:22.520 --> 00:20:25.520
+And it was also case here.
+
+00:20:25.520 --> 00:20:29.280
+And now we'll step to the quite an interesting case
+
+00:20:29.280 --> 00:20:31.199
+of a bug bounty program
+
+00:20:31.199 --> 00:20:33.479
+where all those three reports
+
+00:20:33.479 --> 00:20:38.040
+in the category I called SMTP DB configuration
+
+00:20:38.079 --> 00:20:41.560
+are 5K vulnerabilities in the same program called Ivan,
+
+00:20:41.560 --> 00:20:43.479
+which I've never heard about.
+
+00:20:43.479 --> 00:20:47.400
+But what it does is it allows some configuration,
+
+00:20:47.400 --> 00:20:50.800
+some database connectors or some SMTP connectors,
+
+00:20:50.800 --> 00:20:54.439
+generally quite an advanced configuration.
+
+00:20:54.439 --> 00:20:58.719
+And those connectors were vulnerable in a very similar way.
+
+00:20:58.719 --> 00:21:02.959
+For example, here we have the SMTP server configuration
+
+00:21:02.959 --> 00:21:06.119
+and the password argument was vulnerable
+
+00:21:06.119 --> 00:21:09.760
+to a pretty standard common injection, I would say.
+
+00:21:09.760 --> 00:21:14.760
+And it was actually due via the new line injection.
+
+00:21:15.239 --> 00:21:18.920
+So you couldn't like inject the apostrophe or a quote.
+
+00:21:19.800 --> 00:21:21.839
+You could, the new line injection
+
+00:21:22.839 --> 00:21:26.040
+and the other two 5K reports for this program
+
+00:21:26.040 --> 00:21:28.439
+were kind of similar.
+
+00:21:29.359 --> 00:21:31.920
+Next, we have a category called making requests.
+
+00:21:31.920 --> 00:21:34.239
+And if I really wanted,
+
+00:21:34.280 --> 00:21:36.359
+this could be the most common category
+
+00:21:36.359 --> 00:21:38.839
+because in the SSRF case study,
+
+00:21:38.839 --> 00:21:43.680
+I observed, I think it was 28 SSRF reports
+
+00:21:43.680 --> 00:21:47.520
+that resulted in leaking cloud metadata credentials.
+
+00:21:47.520 --> 00:21:49.040
+And cloud metadata credentials
+
+00:21:49.040 --> 00:21:51.400
+often allow you to execute code.
+
+00:21:51.400 --> 00:21:53.640
+So if I really wanted, I could copy reports
+
+00:21:53.640 --> 00:21:56.680
+from that case study to this case study.
+
+00:21:56.680 --> 00:21:59.319
+And then making requests would be
+
+00:21:59.319 --> 00:22:03.560
+the most common functionality vulnerable to RCEs.
+
+00:22:03.560 --> 00:22:07.760
+But I decided that, you know, copying,
+
+00:22:07.760 --> 00:22:09.839
+it won't add to the discussion a lot.
+
+00:22:09.839 --> 00:22:12.119
+So I only have three reports here
+
+00:22:12.119 --> 00:22:15.000
+where making requests or SSRFs,
+
+00:22:15.000 --> 00:22:16.560
+because all these were SSRFs,
+
+00:22:16.560 --> 00:22:19.520
+were directly turned to RCEs.
+
+00:22:19.520 --> 00:22:21.359
+And I really like this report
+
+00:22:21.359 --> 00:22:24.359
+because in all the SSRF world lists
+
+00:22:24.359 --> 00:22:28.160
+or ways to escalate SSRFs,
+
+00:22:28.160 --> 00:22:31.160
+you see the Gopher protocol being used.
+
+00:22:31.280 --> 00:22:35.079
+To be honest, I've never seen it work before this report.
+
+00:22:36.079 --> 00:22:38.719
+And I don't even know what it's supposed to do.
+
+00:22:38.719 --> 00:22:43.160
+But here it was used to achieve an RCE
+
+00:22:43.160 --> 00:22:46.040
+because the Gopher protocol was used
+
+00:22:46.040 --> 00:22:51.040
+to first detect the Redis instance on this port.
+
+00:22:52.040 --> 00:22:57.040
+And then this URL was used to run some Redis comments,
+
+00:22:57.280 --> 00:23:00.839
+which allowed turning this SSRF into an RCE.
+
+00:23:01.520 --> 00:23:03.280
+So I really, really like this report.
+
+00:23:03.280 --> 00:23:06.079
+I really like to see the things
+
+00:23:06.079 --> 00:23:07.800
+which I always see in the world list,
+
+00:23:07.800 --> 00:23:09.199
+and I don't really understand.
+
+00:23:09.199 --> 00:23:10.599
+I love to finally, you know,
+
+00:23:10.599 --> 00:23:14.719
+see them working in the real life.
+
+00:23:14.719 --> 00:23:18.040
+And finally, only one report in the functionality,
+
+00:23:18.040 --> 00:23:21.520
+which I also think you should pay attention to
+
+00:23:21.520 --> 00:23:23.439
+because it's a headless browser.
+
+00:23:23.439 --> 00:23:27.280
+When the server, you know, runs the browser
+
+00:23:27.319 --> 00:23:30.079
+to potentially render a PDF,
+
+00:23:30.079 --> 00:23:32.880
+to generate a report or do whatever.
+
+00:23:33.800 --> 00:23:38.800
+And here the Elastic or Kibana to be more specific,
+
+00:23:39.000 --> 00:23:41.760
+they used a vulnerable version of Chromium.
+
+00:23:41.760 --> 00:23:44.239
+So it was vulnerable to,
+
+00:23:44.239 --> 00:23:47.800
+if you could run your arbitrary JavaScript code
+
+00:23:47.800 --> 00:23:50.880
+in this browser, you could achieve an RCE.
+
+00:23:50.880 --> 00:23:52.479
+And the interesting thing is
+
+00:23:52.479 --> 00:23:57.199
+that this report is somewhat theoretical
+
+00:23:58.119 --> 00:24:01.560
+and every content about bug bounty
+
+00:24:01.560 --> 00:24:04.079
+says to only report real threats.
+
+00:24:05.439 --> 00:24:09.520
+But here the hunter didn't have the way
+
+00:24:09.520 --> 00:24:13.239
+to execute arbitrary JavaScript in the browser,
+
+00:24:13.239 --> 00:24:15.079
+but he decided to report it anyway.
+
+00:24:15.079 --> 00:24:17.839
+And he just wrote very honestly
+
+00:24:17.839 --> 00:24:21.719
+that there is no RCE at the moment,
+
+00:24:21.719 --> 00:24:25.680
+but you're just an XSS or HTML injection
+
+00:24:25.680 --> 00:24:29.000
+or an open redirect away from the RCE
+
+00:24:29.000 --> 00:24:33.719
+and Elastic decided to reward him with $10,000.
+
+00:24:33.719 --> 00:24:38.199
+So it just shows that in very specific situations,
+
+00:24:38.199 --> 00:24:41.880
+you can report vulnerabilities without a direct impact,
+
+00:24:41.880 --> 00:24:44.400
+but you have to be very, very cautious with this.
+
+00:24:45.359 --> 00:24:46.479
+And that's it.
+
+00:24:46.479 --> 00:24:47.839
+That's all the functionalities
+
+00:24:47.839 --> 00:24:50.199
+that I observed during this case study.
+
+00:24:50.199 --> 00:24:53.839
+If you enjoyed this video with part of the case study,
+
+00:24:53.880 --> 00:24:56.680
+I encourage you to join BBRE Premium
+
+00:24:56.680 --> 00:24:59.199
+and see the full article in the archive,
+
+00:24:59.199 --> 00:25:02.319
+as well as other case studies that I've done.
+
+00:25:02.319 --> 00:25:04.719
+I remind you that now is the best time to join
+
+00:25:04.719 --> 00:25:07.239
+because it's the Black Friday deal.
+
+00:25:07.239 --> 00:25:10.680
+If you're interested, go to bbre.dev slash premium.
+

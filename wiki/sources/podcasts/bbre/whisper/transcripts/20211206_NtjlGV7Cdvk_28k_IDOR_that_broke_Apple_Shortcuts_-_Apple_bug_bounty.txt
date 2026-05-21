@@ -1,0 +1,65 @@
+Hello, welcome to another episode of Bug Bounty Report Explained. Today, I will show you how
+Franz Rosen broke shared Apple shortcuts by exploiting improper access control bug. If you
+stay until the end, you will also see why he got the bounty of $28,000 despite violating
+Apple bug bounty rules. Link to the original report is in the description. Enjoy!
+Unlike other tools out there, Detectify does both asset discovery by, for example, crawling your DNS
+and then it also does vulnerability scanning. Of course, it can do simple things from OWASP
+top 10 like course misconfiguration or check vulnerable versions, but the cool part is,
+they are working with a private community of ethical hackers who submit payloads or POCs with
+automatable web vulnerabilities. After the review, Detectify runs the attack on all their customers
+and every time there is a hit, the hacker gets a bounty. So, if you are a defender and you want to
+protect your apps, check out free 2-week trial at Detectify.com slash BBRE. And remember, go hack yourself.
+Apple Shortcuts is a platform that allows you automating stuff on your iPhone. For example,
+I use it for my morning automation where it asks me for my weight, if I eat supplements and so on,
+and then communicates with APIs to insert data into spreadsheets or mark to do each tasks as done. In my
+case, it's mostly iPhone to server communication, but there are tons of interactions that can be done
+between different apps on your phone. And your shortcuts are stored using Apple's Cloud Kit. It's a
+cloud database storage that allows many apps to save the user's data and authenticate directly from the
+phone using Apple's single sign-on. And this data is stored inside containers. Apple shortcuts used
+com.apple.shortcutscontainer. Inside, you have three different databases. Private, to which only the
+owner has access. Shared, which can be, well, shared with other users. And public, to which everyone has access.
+Normally, your shortcuts are stored in the private database and you must authenticate as yourself to access them.
+Shortcuts can be very complex. To make things easier, you don't need to create all of them from scratch.
+There is a whole ecosystem of sharing them. You can find and use shortcuts created by others on websites
+like Routine Hub. Some of them include thousands of steps. Maybe you would think that shared Cloud Kit
+database sounds like a perfect fit for that. But apparently, it wasn't. When you want to share your
+shortcut, a new record with type shared shortcut is created in the public database. It gets a GUID and
+a link which you can use to send it to other people. You must know that this is the third vulnerability
+that Franz found and described in the blog post. Others allowed modifying the data on iCrowd website
+and deleting articles from Apple News. So he had some ideas on how to work with Cloud Kit. It's important
+because it's not always easy to query the Cloud Kit database. For example, the Notes app would communicate
+with the Cloud Kit using a request that looks like this. While the request from the developer portal
+looked more like this. Apple Shortcuts on the other hand talked to gateway.icloud.com using protobuf messages
+which made it significantly harder to fiddle. However, it was possible to connect to the shortcuts
+container by talking to the endpoint originally used by the developer portal. What you needed to do is
+modifying the container name in the request. This way, it was possible to communicate with the shortcuts
+container using simple JSON bodies. The obvious and very impactful attacks that come to mind are adding,
+modifying or deleting other users' shortcuts. However, access control was properly enforced on all those
+scenarios. And one more thing you need to know about Cloud Kit are zones. Public and shared databases can only use the default zone.
+But in private one, you can create new zones to group related objects together. At least that's what the documentation says.
+But turned out that the public database in Shortcuts container did use more than that.
+It also had metadata zone. It was even possible to add new zones to the database, but there was no impact to this,
+as your zone wouldn't be used by anyone. You could also delete the zone you created, but only when authenticated as the same user.
+It hinted that access control is properly enforced on those zones. But anyway, France wanted to test if it was also
+possible to delete the metadata zone. There was no other way to test this other than try to delete it.
+But he got an error saying, user updates to system zones are not allowed.
+Which was the next hint that access control is properly enforced here.
+But anyway, he tried to delete the default zone as well. It was the last idea he had for testing this functionality.
+And this time, it worked. Or it didn't? Listing zones still returned the default zone like nothing was changed.
+So he started looking into other functionalities. But he realized that one of his shared shortcuts was gone.
+So did the shortcut gallery. Shortcut sharing website as well.
+Turned out that all of the shared shortcuts were deleted. Only those shared after the deletion were working.
+My guess is that the new default zone was created just after the previous one was deleted.
+Hence, it was present in the zone listing response. It was that much more problematic because Apple
+couldn't just restore shortcuts from that moment because the new ones would be then removed.
+They had to merge the old ones with the new ones which took a few days.
+Obviously, this is something you never want to see when bug hunting.
+Franz wrote an email to Apple a few minutes later explaining what happened.
+Later, he followed up clarifying the steps he took to prevent any service interruption and tried to
+explain how limited he was to confirm if the deletion call had worked or not.
+Thanks to that, he got the bounty of $28,000 for this vulnerability.
+This shows that even if you go a little too far with your testing, you can still get a reward if you
+justify that you did what you could to avoid that.
+Thank you for watching this episode. I wish your bugs will never cause such problems.
+If you enjoyed this video, you may also like this one about 50k remote code execution in Apple bug bounty program.
+For now, thank you for watching and goodbye.

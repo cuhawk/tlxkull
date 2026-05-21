@@ -1,0 +1,46 @@
+Hello! In today's episode of Bug Bounty Reports Explained, you will learn how Franz Rosen was
+able to access millions of files by bypassing AWS S3 signed URLs. The vulnerability was rewarded
+$25,000. The write-up, originally published at Detectify blog, is linked in the description.
+Detectify is also a sponsor of today's video. It's a dust scanner powered by leading ethical hackers
+in the world. Their payload-based testing finds undocumented vulnerabilities from OWASP top 10,
+vulnerabilities behind authentication, misconfigurations in cores, S3 buckets,
+encryption, and much more. Detectify puts hacker knowledge into hands of security engineers to fix
+their applications. Start a free two-week trial on Detectify.com.bbre to see what it finds on your
+website. AWS S3 is Amazon's service used for storing files in the cloud. When the application needs to
+show the user a file that's stored there, the developer has at least two options. Let's say
+it's an image. One option is to basically stream the file from the S3 through the server. But you can
+probably tell that this is not the most optimal solution. It adds latency and uses resources of the
+server. It would be much better to let the user download the file from S3 bucket directly. However,
+how do you then make sure that users only download their own files? If you make the bucket public,
+then there is no access control at all. This issue can be solved using S3 signed URLs.
+It works this way. A user wants to download a file that's stored on S3 bucket. The server generates a
+specific link for that user that's only valid for a limited time and for the one specified file. With
+that link, the user can access the file from S3 bucket directly. But what is that special in this link?
+Among other parameters, this link contains a signature. The signature is only valid for this one file.
+If you would try to access different one with the same signature, it will not work. The same goes for
+accessing a file after the expiration period. The signature is generated on the backend.
+The signature is also valid for the current file. The signature is not present.
+To create it, the server uses a secret key which, as the name strongly suggests, is secret and not present
+in the link. It is 40 characters long and the signature uses SHA-256. The brute force of this would take ages,
+so for sure we will not be able to generate our own valid signature. We need to find another way to
+hack this mechanism. With such things, it's usually better to not look for a vulnerability in AWS mechanism,
+but in its implementations by developers. We know that we won't break SHA-256, but what if we would just
+ask the server to create a link to a different file? For example, you can use pass traversal to get
+assigned URL to a file from completely different directory that the developers wanted to allow.
+But the problem is, even if we can read arbitrary file, we don't know what files are stored there.
+We would have to blindly brute force filenames, which would significantly reduce the impact.
+However, if you could get a signature for a directory, not a file, and the server would have
+list object's permission, you could get directory listing. And I know from experience that some
+developers absolutely love storing everything just in one bucket. Receipts and reports mixed with CSS and
+JavaScript files separated only by different directory. But coming back to our undisclosed application.
+There you requested a file using S3 key with the filename and random key parameters. Then the application
+opened the URL with this random key in the path, which then redirected to the signed URL. Why did they
+take this additional step? I don't know. But what I know for sure is that S3 key was not validated at all.
+You could just put the forward slash there, follow the redirect and there was directory listing of the
+whole bucket. And inside millions of files. Basically all of their data was stored in this bucket.
+The hunter quickly reported it and got 15,000 bounty plus $10,000 of bonus. To fix this, you mustn't store
+internal files along with user files in the same bucket with the same permissions. You must somehow
+separate it. I think the main takeaway from this report is that if something is signed or encrypted,
+doesn't automatically mean that it's secure. Anyway, if you've learned something new today, leave a like
+or leave a subscription. Also, sign up for BBRE newsletter to get more tips and tricks. For now,
+thank you for watching and goodbye!

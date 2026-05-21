@@ -1,0 +1,648 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.360 --> 00:00:07.080
+Personally, I've never reported an SQL injection&nbsp;
+bug to a bug bounty program, so I was that much&nbsp;&nbsp;
+
+00:00:07.080 --> 00:00:12.600
+more surprised to see that the sum of bounties&nbsp;
+awarded for them isn't really decreasing.&nbsp;&nbsp;
+
+00:00:13.200 --> 00:00:19.440
+I decided to do the case study and extract&nbsp;
+all the disclosed SQL injection reports from&nbsp;&nbsp;
+
+00:00:19.440 --> 00:00:25.320
+the internet to analyze them. In this video,&nbsp;
+I will show you the impact of SQL injection&nbsp;&nbsp;
+
+00:00:25.320 --> 00:00:33.240
+or how to escalate it to, for example, an RCE or&nbsp;
+a file write or simply what to read. I will also&nbsp;&nbsp;
+
+00:00:33.240 --> 00:00:41.880
+show you the charts of those reports and bounties&nbsp;
+per year. Enjoy! So for the impact, I have seven&nbsp;&nbsp;
+
+00:00:41.880 --> 00:00:47.820
+different metrics here and we'll go through them&nbsp;
+one by one and we'll start from the least common,&nbsp;&nbsp;
+
+00:00:48.480 --> 00:00:59.160
+which was file read or write. In this case, it was&nbsp;
+a load file in MySQL. And I'm quite surprised that&nbsp;&nbsp;
+
+00:00:59.160 --> 00:01:05.400
+this is the only report with this impact because&nbsp;
+I also, in the full case study, which is part&nbsp;&nbsp;
+
+00:01:05.400 --> 00:01:11.940
+of VBR Premium, I also did the breakdown of SQL&nbsp;
+engines and MySQL, which is used in this report,&nbsp;&nbsp;
+
+00:01:11.940 --> 00:01:19.080
+is the most common one, but this was the only&nbsp;
+report. And it looked like this. You had the&nbsp;&nbsp;
+
+00:01:20.040 --> 00:01:27.300
+load file function, which just returned you the&nbsp;
+file. So really simple payload. Also the hunter&nbsp;&nbsp;
+
+00:01:27.300 --> 00:01:33.960
+was quite lucky that the result of the query&nbsp;
+was included in the response, but nevertheless,&nbsp;&nbsp;
+
+00:01:33.960 --> 00:01:41.220
+really, really risky back end. If you have an SQL&nbsp;
+injection in a MySQL application, definitely use&nbsp;&nbsp;
+
+00:01:41.220 --> 00:01:48.960
+the load file. And also the hunter was able to&nbsp;
+read, sorry, to write the data into any file,&nbsp;&nbsp;
+
+00:01:49.560 --> 00:01:58.320
+which possibly could be easily turned into&nbsp;
+an RCE. I can't judge by these headers what&nbsp;&nbsp;
+
+00:01:58.320 --> 00:02:04.440
+technology is being used here, but if this is like&nbsp;
+PHP or Java server pages or something like this,&nbsp;&nbsp;
+
+00:02:04.440 --> 00:02:12.480
+you can easily turn this into an RCE. So this is&nbsp;
+a really, really serious bug. So definitely make&nbsp;&nbsp;
+
+00:02:12.480 --> 00:02:20.460
+sure to test this if you have a MySQL target. The&nbsp;
+reason why this is the only one report with this,&nbsp;&nbsp;
+
+00:02:22.680 --> 00:02:29.640
+one of two probably. One is just people don't&nbsp;
+know about this function. The other probably more&nbsp;&nbsp;
+
+00:02:29.640 --> 00:02:38.100
+likely is that this is not enabled by default,&nbsp;
+this function, and developers just rarely use it.&nbsp;&nbsp;
+
+00:02:39.480 --> 00:02:47.640
+So that's what I would assume. But we'll go to&nbsp;
+the next class, which is authentication bypass.&nbsp;&nbsp;
+
+00:02:48.540 --> 00:02:58.860
+And I had two reports like this. One of them is&nbsp;
+here, and we have the case where the most basic&nbsp;&nbsp;
+
+00:02:58.860 --> 00:03:05.820
+SQL injection payload is being used to bypass the&nbsp;
+authentication. This payload, this very payload,&nbsp;&nbsp;
+
+00:03:05.820 --> 00:03:12.840
+I think is my first ever attack on a web&nbsp;
+application. When I was just learning web&nbsp;&nbsp;
+
+00:03:12.840 --> 00:03:19.440
+security, I think this is like one of the first&nbsp;
+labs I've done, so quite sentimental to me.&nbsp;&nbsp;
+
+00:03:19.440 --> 00:03:25.560
+And I wouldn't really expect this to be present&nbsp;
+in a real world application, but apparently&nbsp;&nbsp;
+
+00:03:26.520 --> 00:03:36.480
+it is. You can also see that this write-up is&nbsp;
+quite originally styled, I would say. Quite&nbsp;&nbsp;
+
+00:03:36.480 --> 00:03:44.700
+strange. There's also an interesting image,&nbsp;
+and the system was drunk or something is the&nbsp;&nbsp;
+
+00:03:45.540 --> 00:03:52.200
+takeaway. And when I do these case studies, I&nbsp;
+sometimes go through reports like this where&nbsp;&nbsp;
+
+00:03:53.280 --> 00:04:02.100
+I kind of, the truth is that I can never verify&nbsp;
+a report like this, because if someone says that&nbsp;&nbsp;
+
+00:04:02.100 --> 00:04:08.220
+the target is redacted, I just have to trust them.&nbsp;
+And sometimes I have write-ups like this where I&nbsp;&nbsp;
+
+00:04:08.220 --> 00:04:14.520
+look at them and I think, is this real? But in&nbsp;
+this case, the target is not redacted. It's an&nbsp;&nbsp;
+
+00:04:14.520 --> 00:04:22.260
+actual thing. It's Django REST framework. And I&nbsp;
+checked, it exists. It actually has 26,000 stars.&nbsp;&nbsp;
+
+00:04:23.280 --> 00:04:31.620
+And I even did go one step further and I wanted&nbsp;
+to find the bug, because if it's open source,&nbsp;&nbsp;
+
+00:04:31.620 --> 00:04:38.400
+I can find the bug. And I didn't spend hours&nbsp;
+on it. I spent like 10, 20 minutes on it, and&nbsp;&nbsp;
+
+00:04:38.400 --> 00:04:46.440
+I didn't see the bug. This framework, since the&nbsp;
+very beginning, uses Django's authenticate method.&nbsp;&nbsp;
+
+00:04:47.400 --> 00:04:55.080
+And as much as I could maybe believe a&nbsp;
+simple bug like this would be present in the&nbsp;&nbsp;
+
+00:04:57.000 --> 00:05:05.160
+not very common framework for Django, I really,&nbsp;
+really doubt. I'm pretty sure this bug didn't&nbsp;&nbsp;
+
+00:05:05.160 --> 00:05:10.860
+exist in Django's authenticate method, which is&nbsp;
+probably one of the most commonly used in 2018.&nbsp;&nbsp;
+
+00:05:10.860 --> 00:05:17.760
+There are regularly SQL injections in Django,&nbsp;
+but they are not simple payloads. For example,&nbsp;&nbsp;
+
+00:05:18.420 --> 00:05:29.520
+I remember this one, because it's the first ever&nbsp;
+patch I've reversed. We did a CTF task. It was in&nbsp;&nbsp;
+
+00:05:29.520 --> 00:05:36.720
+2019. So the bug was already public, but the&nbsp;
+payloads weren't public at all. So I had to&nbsp;&nbsp;
+
+00:05:36.720 --> 00:05:43.860
+reverse the patch, and I remember it very clearly.&nbsp;
+And it was quite a complex bug with JSONs,&nbsp;&nbsp;
+
+00:05:43.860 --> 00:05:51.420
+with some nested property, things like this, and&nbsp;
+it was 2019. And I'm pretty sure that in Django,&nbsp;&nbsp;
+
+00:05:51.420 --> 00:06:01.980
+it wasn't present in 2018. This write-up is from&nbsp;
+2018. And also, the write-up here says that he&nbsp;&nbsp;
+
+00:06:01.980 --> 00:06:10.020
+found 10,000 orders and 800 users' accounts&nbsp;
+and 800 employees' accounts on the URL that's&nbsp;&nbsp;
+
+00:06:10.020 --> 00:06:17.520
+redacted here, but the URL in the beginning&nbsp;
+is not redacted, and it is the local host,&nbsp;&nbsp;
+
+00:06:17.520 --> 00:06:22.860
+which makes perfect sense. If you are testing a&nbsp;
+local application, it makes perfect sense that&nbsp;&nbsp;
+
+00:06:24.300 --> 00:06:30.180
+you test it locally, but then you don't access&nbsp;
+customer information. You don't access 10,000&nbsp;&nbsp;
+
+00:06:30.180 --> 00:06:40.080
+orders unless these orders are yours. And also,&nbsp;
+the handler said here $2,000 of reward, which I&nbsp;&nbsp;
+
+00:06:40.080 --> 00:06:46.620
+don't know. Django now gets bounties from Internet&nbsp;
+Bug Bounty Program, which was founded in 2021.&nbsp;&nbsp;
+
+00:06:48.480 --> 00:06:55.440
+And I also googled this person, their&nbsp;
+HackerOne profile. I think I have it&nbsp;&nbsp;
+
+00:06:55.440 --> 00:07:02.880
+here. And they actually are a real person with&nbsp;
+almost 5,000 reputation on HackerOne. So I think&nbsp;&nbsp;
+
+00:07:02.880 --> 00:07:08.940
+they started reporting real bugs after some&nbsp;
+time, but they are not on the leaderboard of&nbsp;&nbsp;
+
+00:07:08.940 --> 00:07:16.080
+Django or of Internet Bug Bounty. And I say Django&nbsp;
+because the website of this framework says that&nbsp;&nbsp;
+
+00:07:20.640 --> 00:07:28.740
+they handle security by Django security&nbsp;
+team. So that's why I'm looking at it. So the&nbsp;&nbsp;
+
+00:07:28.740 --> 00:07:36.540
+takeaway is that this write-up is, I'm 99% sure&nbsp;
+it's fake. I'm happy to be proven otherwise,&nbsp;&nbsp;
+
+00:07:37.080 --> 00:07:43.800
+DM me on Twitter or on Instagram. If you know&nbsp;
+that this is not true, that it is not true that&nbsp;&nbsp;
+
+00:07:43.800 --> 00:07:51.420
+it's fake. But this is the harsh truth because&nbsp;
+here I could verify this. But most of the time,&nbsp;&nbsp;
+
+00:07:51.420 --> 00:07:58.740
+when write-ups say they are from redacted&nbsp;
+program, we have just zero tools to verify this.&nbsp;&nbsp;
+
+00:08:00.120 --> 00:08:05.340
+And I actually didn't study this. I don't have&nbsp;
+time to study every single report like this.&nbsp;&nbsp;
+
+00:08:05.880 --> 00:08:15.000
+I just, while doing the test run for this video,&nbsp;
+I started to think about it and I wanted to dive&nbsp;&nbsp;
+
+00:08:15.000 --> 00:08:21.540
+a bit deeper. And that's how I found this out.&nbsp;
+I hope you don't mind the little off topic.&nbsp;&nbsp;
+
+00:08:22.440 --> 00:08:27.720
+We'll now come back to our case study&nbsp;
+and we'll go to the next category,&nbsp;&nbsp;
+
+00:08:27.720 --> 00:08:34.260
+which is data write or modifying data. And&nbsp;
+we had two reports like this. One of them&nbsp;&nbsp;
+
+00:08:37.440 --> 00:08:42.600
+has been covered on my channel and not&nbsp;
+only has it been covered on my channel,&nbsp;&nbsp;
+
+00:08:42.600 --> 00:08:50.340
+it's my most watched video with over 200,000&nbsp;
+views, even though I recorded it in 2020 with&nbsp;&nbsp;
+
+00:08:51.000 --> 00:08:56.280
+much worse quality and of pretty much&nbsp;
+everything apart from the video topic.&nbsp;&nbsp;
+
+00:08:57.720 --> 00:09:04.200
+And this vulnerability was in Zoom local&nbsp;
+application. It was a local SQL injection,&nbsp;&nbsp;
+
+00:09:04.860 --> 00:09:11.580
+which meant you didn't inject to the&nbsp;
+Zoom database somewhere in Zoom server,&nbsp;&nbsp;
+
+00:09:11.580 --> 00:09:20.160
+but you injected to the local Zoom client. So the&nbsp;
+vector of attack was CSRF-like attack with the&nbsp;&nbsp;
+
+00:09:20.700 --> 00:09:25.860
+Zoom MTG link to the meeting, which contained&nbsp;
+some parameters and those parameters were&nbsp;&nbsp;
+
+00:09:25.860 --> 00:09:32.160
+vulnerable. The attack itself was also very&nbsp;
+interesting with invalid Unicode sequences&nbsp;&nbsp;
+
+00:09:32.160 --> 00:09:37.500
+and things like that I love. I just love bugs&nbsp;
+like this. And the impact was you could write&nbsp;&nbsp;
+
+00:09:37.500 --> 00:09:44.160
+to the database in the local client. So the&nbsp;
+worst thing you could do was modifying settings&nbsp;&nbsp;
+
+00:09:45.120 --> 00:09:51.060
+for the auto-joining meeting and joining&nbsp;
+meetings with the camera turned on. So you&nbsp;&nbsp;
+
+00:09:51.060 --> 00:09:55.920
+could change someone's meetings and invite them&nbsp;
+to a meeting so they would join straight away.&nbsp;&nbsp;
+
+00:09:57.000 --> 00:10:02.400
+So we could pretty much turn on anyone's camera&nbsp;
+on the Zoom call, wherever you wanted. So it was&nbsp;&nbsp;
+
+00:10:02.400 --> 00:10:11.040
+a really, really interesting bug. One of only two&nbsp;
+in the case study, which resulted in modifying&nbsp;&nbsp;
+
+00:10:12.180 --> 00:10:19.320
+the data. And after writing the data, we&nbsp;
+have data read and surprisingly, I only&nbsp;&nbsp;
+
+00:10:19.320 --> 00:10:27.180
+have seven reports of SQL injection bugs where&nbsp;
+hunters actually read data from the database.&nbsp;&nbsp;
+
+00:10:28.020 --> 00:10:36.780
+You will see later what did other reports read,&nbsp;
+but it was quite rare to see an actual like&nbsp;&nbsp;
+
+00:10:36.780 --> 00:10:44.460
+customer data or a password hash being leaked from&nbsp;
+the database. One of these that did read the data&nbsp;&nbsp;
+
+00:10:44.460 --> 00:10:51.840
+is this one really nice report of SQL injection&nbsp;
+in a WordPress plugin, which was only available&nbsp;&nbsp;
+
+00:10:51.840 --> 00:10:58.980
+in the admin panel, which is normally quite bad&nbsp;
+because if you can access admin panel, it's not&nbsp;&nbsp;
+
+00:10:58.980 --> 00:11:06.840
+really dangerous if you can inject SQL comments&nbsp;
+because you have all the access anyway, probably.&nbsp;&nbsp;
+
+00:11:07.800 --> 00:11:13.200
+But this SQL injection was chained&nbsp;
+with cross-site scripting. So&nbsp;&nbsp;
+
+00:11:13.200 --> 00:11:20.400
+you could attack the admin and your cross-site&nbsp;
+scripting payload would send SQL injection&nbsp;&nbsp;
+
+00:11:20.400 --> 00:11:26.640
+payloads to the backend. So really nice chain.&nbsp;
+And especially in this case, it was a blind SQL&nbsp;&nbsp;
+
+00:11:26.640 --> 00:11:34.320
+injection. Like most of the SQL injections we&nbsp;
+have are blind, which means you have to send a&nbsp;&nbsp;
+
+00:11:34.320 --> 00:11:40.920
+lot of payloads. And normally it is not that big&nbsp;
+of a problem because if you're leaking the data,&nbsp;&nbsp;
+
+00:11:40.920 --> 00:11:46.740
+we don't really care, especially for bug bounty&nbsp;
+purpose, when you just want to show the injection,&nbsp;&nbsp;
+
+00:11:46.740 --> 00:11:54.480
+we don't care if we use 1000 or 10,000 or even&nbsp;
+20 or 30,000 requests, if there is no strict rate&nbsp;&nbsp;
+
+00:11:54.480 --> 00:12:02.760
+limiting. But with chaining it with JavaScript,&nbsp;
+it's different because your victim has to stay on&nbsp;&nbsp;
+
+00:12:02.760 --> 00:12:09.420
+the page with the payload for the whole time,&nbsp;
+which really makes you want to be efficient.&nbsp;&nbsp;
+
+00:12:10.140 --> 00:12:16.980
+In this case, the hunter was able to make&nbsp;
+more efficient payload and reduced payloads&nbsp;&nbsp;
+
+00:12:16.980 --> 00:12:26.640
+from requests from over 2000 to 300 to make the&nbsp;
+attack more likely. Also if you're interested in&nbsp;&nbsp;
+
+00:12:27.780 --> 00:12:36.240
+the technique to optimize your SQL injection&nbsp;
+payloads, check out this video I made about&nbsp;&nbsp;
+
+00:12:36.240 --> 00:12:43.080
+a CTF task from Live Overflow from another&nbsp;
+YouTuber, which I solved and I really paid&nbsp;&nbsp;
+
+00:12:43.080 --> 00:12:50.220
+attention to the effectiveness of my experts.&nbsp;
+I think that's a nice video. And this report&nbsp;&nbsp;
+
+00:12:50.220 --> 00:12:57.360
+is also really nice. Here is the whole payload.&nbsp;
+You see quite a lot of code for a normal payload.&nbsp;&nbsp;
+
+00:12:58.020 --> 00:13:08.100
+And we can see actual data being leaked, which&nbsp;
+as I said, is quite rare in case of these bugs.&nbsp;&nbsp;
+
+00:13:09.900 --> 00:13:19.860
+And it was rewarded $30,000, so quite a&nbsp;
+nice reward as well. Next we have RCE with&nbsp;&nbsp;
+
+00:13:21.240 --> 00:13:31.260
+seven reports. And an example of an RCE we have&nbsp;
+here. Of those seven reports, as much as five&nbsp;&nbsp;
+
+00:13:31.260 --> 00:13:40.560
+were in Microsoft SQL Server, which makes me&nbsp;
+think that there is something that developers&nbsp;&nbsp;
+
+00:13:40.560 --> 00:13:48.660
+need because it's the xpcmdshell function that's&nbsp;
+interesting here, and it's turned off by default.&nbsp;&nbsp;
+
+00:13:49.560 --> 00:13:55.020
+But for some reason, apparently developers&nbsp;
+need this and then they either forgot to turn&nbsp;&nbsp;
+
+00:13:55.020 --> 00:14:00.300
+the configuration off or they actually&nbsp;
+use this in the production code or they&nbsp;&nbsp;
+
+00:14:00.300 --> 00:14:05.340
+just don't think that they will have SQL&nbsp;
+injection because who would think this way?&nbsp;&nbsp;
+
+00:14:07.080 --> 00:14:14.820
+So if you have an SQL injection in the Microsoft&nbsp;
+SQL Server, definitely try this out. Here is the&nbsp;&nbsp;
+
+00:14:14.820 --> 00:14:22.860
+whole payload. So we have something like&nbsp;
+this. We have here master.dbo.xpcmdshell.&nbsp;&nbsp;
+
+00:14:23.760 --> 00:14:31.500
+And then there's the command and no,&nbsp;
+I think, no, sorry, the command was&nbsp;&nbsp;
+
+00:14:31.500 --> 00:14:38.220
+declared earlier. So we just have the ping&nbsp;
+here, which is good confirmation of the bug.&nbsp;&nbsp;
+
+00:14:39.300 --> 00:14:51.240
+And that's good because having an RCE just removes&nbsp;
+any reasonable doubt that you deserve a maximum&nbsp;&nbsp;
+
+00:14:51.900 --> 00:15:00.660
+payout. And now we'll go to two most common&nbsp;
+categories. The second most common was&nbsp;&nbsp;
+
+00:15:01.860 --> 00:15:06.060
+with 27 reports was something&nbsp;
+that I called no real impact&nbsp;&nbsp;
+
+00:15:07.380 --> 00:15:14.520
+because here hunters usually only showed&nbsp;
+that the injection is present and they&nbsp;&nbsp;
+
+00:15:14.520 --> 00:15:19.200
+didn't actually exfiltrate nothing,&nbsp;
+not even the version, not even the,&nbsp;&nbsp;
+
+00:15:20.880 --> 00:15:28.860
+I don't know, the database name. You see a lot&nbsp;
+of these are time-based and a lot of them only&nbsp;&nbsp;
+
+00:15:29.700 --> 00:15:35.520
+showed that the response was delayed. So they&nbsp;
+had the sleep function like here, sleep time&nbsp;&nbsp;
+
+00:15:35.520 --> 00:15:43.500
+means sleep for 10 seconds. So the response&nbsp;
+is delayed and it does prove that this SQL&nbsp;&nbsp;
+
+00:15:43.500 --> 00:15:49.080
+injection is there. I'm actually, I'm definitely&nbsp;
+not saying that there's anything wrong with this,&nbsp;&nbsp;
+
+00:15:50.940 --> 00:16:00.420
+but it just not exfiltrating any data and it&nbsp;
+basically works well enough. In most cases,&nbsp;&nbsp;
+
+00:16:00.420 --> 00:16:06.720
+it doesn't have to be time-based. For&nbsp;
+example, here we have the if expression,&nbsp;&nbsp;
+
+00:16:06.720 --> 00:16:13.560
+which changes based on some statement. Here we&nbsp;
+just have one equals two, which is always false.&nbsp;&nbsp;
+
+00:16:14.280 --> 00:16:21.840
+And based on the response length, the hunter could&nbsp;
+determine if the condition was true or false.&nbsp;&nbsp;
+
+00:16:22.380 --> 00:16:28.740
+So again, not exfiltrating any data, just&nbsp;
+showing that the database query was processed.&nbsp;&nbsp;
+
+00:16:30.480 --> 00:16:38.400
+And the average bounty here was $920. But in the&nbsp;
+most common category, which was reading database&nbsp;&nbsp;
+
+00:16:38.400 --> 00:16:47.460
+metadata, it's $1,500. And so it's 50% increase&nbsp;
+of the average bounty for pretty much nothing.&nbsp;&nbsp;
+
+00:16:47.460 --> 00:16:55.380
+Because this category, reading database metadata,&nbsp;
+means that the hunters read something which wasn't&nbsp;&nbsp;
+
+00:16:55.380 --> 00:17:01.500
+confidential. So previously we had the category&nbsp;
+read data, where you would read customer data,&nbsp;&nbsp;
+
+00:17:01.500 --> 00:17:07.440
+password, hash, something like this. The best&nbsp;
+case scenario, basically, apart from RCEs and&nbsp;&nbsp;
+
+00:17:07.440 --> 00:17:13.800
+everything. And this is the second best. If&nbsp;
+you, for some reason, are unable to do that,&nbsp;&nbsp;
+
+00:17:13.800 --> 00:17:18.300
+or you don't want to read the data because&nbsp;
+you're afraid the customer won't like it,&nbsp;&nbsp;
+
+00:17:19.560 --> 00:17:25.680
+you should read some metadata about the&nbsp;
+database. For example, database name,&nbsp;&nbsp;
+
+00:17:25.680 --> 00:17:35.100
+database version. Here we have one of the very few&nbsp;
+examples where hunters could see in the response&nbsp;&nbsp;
+
+00:17:35.100 --> 00:17:42.660
+the result of the query. Normally, this is not&nbsp;
+possible. And here, just payload from the path was&nbsp;&nbsp;
+
+00:17:42.660 --> 00:17:47.700
+returned here, which is really interesting. I'd&nbsp;
+like to see the code behind this functionality.&nbsp;&nbsp;
+
+00:17:48.540 --> 00:17:54.480
+So here we have database version. So nothing&nbsp;
+really sensitive, but enough to prove the SQL&nbsp;&nbsp;
+
+00:17:54.480 --> 00:18:02.160
+injection is there. But sometimes it was really&nbsp;
+not much. For example, here the hunter extracted&nbsp;&nbsp;
+
+00:18:02.160 --> 00:18:09.840
+the length of the database name. So basically&nbsp;
+length of the database function call, which was&nbsp;&nbsp;
+
+00:18:09.840 --> 00:18:17.520
+11. And determined this on some logical condition&nbsp;
+as well, because there is no time delay here.&nbsp;&nbsp;
+
+00:18:18.480 --> 00:18:29.340
+Here you just have the first digit of the version.&nbsp;
+And it's basically enough to prove that the&nbsp;&nbsp;
+
+00:18:29.340 --> 00:18:38.100
+injection is there. And yeah, it doesn't feel like&nbsp;
+much more than, I don't know, showing the delay.&nbsp;&nbsp;
+
+00:18:38.100 --> 00:18:46.500
+But we can see on the average bounty that it's&nbsp;
+just better. And if we see like reading real data,&nbsp;&nbsp;
+
+00:18:48.540 --> 00:18:52.740
+looking at the average here doesn't make sense&nbsp;
+because there is a mass write-up from Apple,&nbsp;&nbsp;
+
+00:18:52.740 --> 00:19:03.840
+which skews the data. But the rest is 30K, 10K,&nbsp;
+4.5K, 3K, 1.5K, and $200. So it's definitely more&nbsp;&nbsp;
+
+00:19:03.840 --> 00:19:14.400
+than those ones. So if you have an SQL injection,&nbsp;
+invest at least this additional time into reading&nbsp;&nbsp;
+
+00:19:14.400 --> 00:19:21.900
+some data or at least leading some metadata from&nbsp;
+the database. Don't just report the time delay. As&nbsp;&nbsp;
+
+00:19:21.900 --> 00:19:29.820
+promised, charts of reports and bounties by year.&nbsp;
+We can see that the number of reports is actually&nbsp;&nbsp;
+
+00:19:29.820 --> 00:19:37.620
+quite consistent. If we take the 2020 year away,&nbsp;
+I don't know what's the reason behind there being&nbsp;&nbsp;
+
+00:19:37.620 --> 00:19:45.540
+more reports in 2020. And in 2022, we don't&nbsp;
+see many more reports than in previous years,&nbsp;&nbsp;
+
+00:19:45.540 --> 00:19:52.920
+but we see a lot more bounties being awarded. So&nbsp;
+this is very interesting. It also shows me that&nbsp;&nbsp;
+
+00:19:52.920 --> 00:20:02.400
+SQL injection is not dead and I should maybe look&nbsp;
+for it sometime. But also, as always, relying on&nbsp;&nbsp;
+
+00:20:02.400 --> 00:20:08.820
+disclosed reports is not perfect because it's&nbsp;
+only a small portion of all the reports being&nbsp;&nbsp;
+
+00:20:08.820 --> 00:20:15.300
+disclosed. So it's not the perfect statistic, but&nbsp;
+it's the best we have. If you've learned something&nbsp;&nbsp;
+
+00:20:15.300 --> 00:20:22.440
+new from this small part of the case study, I'm&nbsp;
+sure that you will enjoy the full version in BBR&nbsp;&nbsp;
+
+00:20:22.440 --> 00:20:28.080
+Premium Archive. The link is in the description.&nbsp;
+And if you want to see another free video,&nbsp;&nbsp;
+
+00:20:28.740 --> 00:20:36.720
+I suggest you this one about account takeover&nbsp;
+case study, where I took a look at over 1.3&nbsp;&nbsp;
+
+00:20:36.720 --> 00:20:43.200
+million dollars worth of bug bounty reports.&nbsp;
+For now, thank you for watching and goodbye.
+
