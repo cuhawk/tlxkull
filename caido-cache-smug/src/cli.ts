@@ -13,6 +13,7 @@ import { runCachePoison } from "./modules/cache_poison/index.js";
 import { runCacheDeception } from "./modules/cache_deception/index.js";
 import { runHtmlSmuggling } from "./modules/html_smuggling/index.js";
 import { runSmuggling } from "./modules/smuggling/index.js";
+import { runRace } from "./modules/race/index.js";
 import { writeFindings } from "./report/findings.js";
 import { renderReport } from "./report/markdown.js";
 import type { Finding, HttpMessage } from "./types.js";
@@ -34,9 +35,13 @@ program
   .option("--auth-cookie <kv>", "auth cookie e.g. session=abc")
   .option("--aggressive-smuggling", "enable Module D (raw-socket CL/TE)", false)
   .option("--collaborator <fqdn>", "OOB collaborator for smuggling confirmation")
+  .option("--race", "enable Module E (HTTP/2 single-packet race detection)", false)
+  .option("--race-concurrency <n>", "parallel-request count per race volley", (v: string) => parseInt(v, 10), 20)
+  .option("--race-allow-mutate", "permit POST/PUT/PATCH/DELETE race probes (requires --race-endpoints)", false)
+  .option("--race-endpoints <path>", "allowlist file for mutating race probes (METHOD /path per line)")
   .action(async (raw: Record<string, unknown>) => {
     const cfg = parseConfig(raw, process.env);
-    if (cfg.aggressiveSmuggling || cfg.rps > 20) {
+    if (cfg.aggressiveSmuggling || cfg.raceAllowMutate || cfg.rps > 20) {
       const ok = await confirm(`Aggressive mode against ${cfg.host}. Proceed? [y/N] `);
       if (!ok) { log.warn("aborted by user"); process.exit(1); }
     }
@@ -78,6 +83,19 @@ program
         findings.push(...runHtmlSmuggling(ep, msg));
       if (cfg.modules.includes("smuggling"))
         findings.push(...(await runSmuggling(ep, { aggressive: cfg.aggressiveSmuggling, collaborator: cfg.collaborator })));
+      if (cfg.modules.includes("race")) {
+        try {
+          findings.push(...(await runRace(ep, msg, {
+            enabled: cfg.race,
+            concurrency: cfg.raceConcurrency,
+            allowMutate: cfg.raceAllowMutate,
+            allowlist: cfg.raceAllowlist,
+            authCookie: cfg.authCookie
+          })));
+        } catch (err) {
+          log.warn({ err, endpoint: ep.path }, "race probe failed");
+        }
+      }
     }
     const duration = Date.now() - start;
 

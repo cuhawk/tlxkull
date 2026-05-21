@@ -7,7 +7,8 @@ export const ModuleSchema = z.enum([
   "cache-poison",
   "cache-deception",
   "html-smuggling",
-  "smuggling"
+  "smuggling",
+  "race"
 ]);
 export type Module = z.infer<typeof ModuleSchema>;
 
