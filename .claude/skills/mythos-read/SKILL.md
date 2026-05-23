@@ -1,6 +1,6 @@
 ---
 name: mythos-read
-description: Full-source-tree whole-bundle audit by one big Claude Code subagent, inspired by the Mythos OpenBSD-vuln discovery (Code with Claude London 2026). Complements the chain-based pipeline — catches bugs with no clean data-flow edge (cross-file invariants, prototype-pollution gadgets, crypto misuse, auth-state confusion, dead-code reactivation). Only viable when `targets/<name>/sources/` fits inside a single Opus prompt (default cap 5 MB eligible). Hypotheses get cross-checked against existing chains; novel medium+ confidence ones are emitted as synthetic chains for cc-taint-adversarial follow-up. Trigger: `/mythos-read <target>` OR user says "mythos read", "full-tree audit", "whole-bundle Opus pass", "Mythos-style audit". Run AFTER `sourcemap-explode` (and ideally `js-index` + `chain-triage` so cross-checking against known chains is meaningful).
+description: Full-source-tree audit by one Opus subagent — catches bugs with no clean data-flow edge (cross-file invariants, prototype-pollution, crypto misuse). Only viable when sources/ ≤5 MB. Trigger: /mythos-read <target>, "full-tree audit", "Mythos-style audit". Run after sourcemap-explode.
 ---
 
 # mythos-read

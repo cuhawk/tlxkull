@@ -1,6 +1,6 @@
 ---
 name: async-edges
-description: Build async / event continuation edges (addEventListener, Promise.then/.catch, setTimeout, MutationObserver, RxJS subscribe, postMessage, WebSocket.onmessage) into the per-target snapshot DB so interprocedural taint reaches handler bodies. Plans §3 of plans/ARCHITECTURE_EVOLUTION.md. Run after js-index + db-isolate + implicit-tags, BEFORE extract_chains_bounded or chain-triage. Idempotent.
+description: Build async/event continuation edges into per-target snapshot DB so interprocedural taint reaches handler bodies. Run after js-index + db-isolate + implicit-tags, before extract_chains_bounded or chain-triage. Idempotent.
 ---
 
 # async-edges

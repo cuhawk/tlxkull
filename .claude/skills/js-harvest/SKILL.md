@@ -1,6 +1,6 @@
 ---
 name: js-harvest
-description: Crawl an in-scope target and download every JS file plus public sourcemap. Use after target-init when targets/<name>/raw/ is missing. Reads scope from status.json. Walks pages via chrome-devtools MCP, enumerates <script src=>, dynamic imports, and webpack chunks, fetches the assets, and discovers .js.map siblings via sourceMappingURL pragma / X-SourceMap header / common relative paths.
+description: Crawl in-scope target, download every JS file + public sourcemap. Enumerates script tags, dynamic imports, webpack chunks, and .js.map siblings. Run after target-init when targets/<name>/raw/ is missing.
 ---
 
 # js-harvest

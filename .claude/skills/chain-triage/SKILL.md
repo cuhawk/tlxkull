@@ -1,6 +1,6 @@
 ---
 name: chain-triage
-description: Rank candidate taint chains produced by js-index and split into hot vs cold. Calls js_get_chains(max_chains=200), scores by (source_severity × sink_severity), path length, and framework-match strength, writes chains/all.jsonl and chains/hot.jsonl. Run after js-index, before opus-deep-audit. Hot chains get Opus attention; cold chains feed autoresearch-loop.
+description: Rank taint chains and split into hot vs cold. Scores by severity, path length, framework-match strength; writes chains/all.jsonl and chains/hot.jsonl. Run after js-index, before opus-deep-audit.
 ---
 
 # chain-triage

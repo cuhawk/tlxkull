@@ -1,6 +1,6 @@
 ---
 name: tlx-investigate
-description: Natural-language investigation skill for a TLX target — answer "why / which / where / how" questions about a specific engagement by writing a visible plan, executing read-only tool calls, fanning out read-only Claude Code subagents for discrete fact-checks, and emitting a cited verdict + remediation list. Implements Anthropic's "Clue" detection-and-response pattern from Code with Claude London 2026. Trigger with `/tlx-investigate`, "investigate this target", "answer this question about <target>", "what's the biggest unaudited surface in", "give me a plan to exploit", "explain why chain X", or "diagnose <target>".
+description: Natural-language investigation for a TLX target — answer why/which/where/how questions with cited verdicts. Trigger: /tlx-investigate, "investigate this target", "diagnose <target>", "explain why chain X".
 ---
 
 # tlx-investigate

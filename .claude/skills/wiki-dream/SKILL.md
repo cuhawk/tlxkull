@@ -1,6 +1,6 @@
 ---
 name: wiki-dream
-description: Offline-batch curator inspired by Anthropic's "Memory and dreaming for self-learning agents" (Code with Claude London 2026). Walks recent tail data — autoresearch logs, confirmed/failed findings, opus audit records, verifier downgrades, podcast distill logs — and dispatches read-only Claude-Code subagents to distill candidate wiki patches into `wiki-staging/<utc>/`. Strictly non-destructive: NEVER edits `wiki/` directly. User reviews `_summary.md` and manually promotes selected patches via `python3 bin/wiki_dream.py promote`. Trigger: /wiki-dream, "run wiki dream", "dream over recent findings", scheduled nightly remote agent.
+description: Offline wiki curator — walks recent tail data (autoresearch, findings, audits, podcasts), dispatches subagents to distill candidate patches into wiki-staging/. Non-destructive. Trigger: /wiki-dream, "run wiki dream", "dream over recent findings".
 ---
 
 # wiki-dream

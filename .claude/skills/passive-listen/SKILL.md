@@ -1,6 +1,6 @@
 ---
 name: passive-listen
-description: Accumulate live browser evidence while the user browses a target normally — captures DOMLogger++ + postMessage-tracker + Gecko store state plus Caido network capture into a structured per-target runtime/ tree. Pairs with @browser (claude-in-chrome MCP). Use when (a) the user is going to browse the target for N minutes and you want every source/sink/listener observation persisted, (b) a long static job is running in background and the user is filling the wait with manual exploration, or (c) at the start of any engagement BEFORE chain-triage so dynamic evidence informs which chains opus actually audits. Output lands under targets/<name>/runtime/<utc-iso>/state.json and a rolling _log.jsonl.
+description: Accumulate live browser evidence while user browses — DOMLogger++ + postMessage-tracker + Caido capture into per-target runtime/ tree. Use when browsing a target during static analysis, or before chain-triage for dynamic evidence.
 ---
 
 # passive-listen

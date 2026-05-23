@@ -1,6 +1,6 @@
 ---
 name: chain-bestfirst
-description: Confidence-driven best-first chain extractor (plans/ARCHITECTURE_EVOLUTION.md §8). Heap-ordered BFS keyed by partial P(chain) = P_source × Π P_edge × Π (1 − P_sanitizer) × P_viability × async/dynamic discounts. Prunes frontiers below --p-cutoff. Consumes async-edges output + browser_context.json + node_sanitizers. Lives alongside extract_chains_bounded; opt-in. Run after async-edges, browser-context-infer, implicit-tags.
+description: Confidence-driven best-first chain extractor. Heap-ordered BFS keyed by partial P(chain) with sanitizer and viability discounts. Opt-in alongside extract_chains_bounded. Run after async-edges, browser-context-infer, implicit-tags.
 ---
 
 # chain-bestfirst

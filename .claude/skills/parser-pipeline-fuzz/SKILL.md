@@ -1,6 +1,6 @@
 ---
 name: parser-pipeline-fuzz
-description: Local fuzzing of HTML/sanitizer pipelines (DOMPurify + parse5 + JSXSS) at versions pinned from the target bundle (T3.3). Surfaces a single survivor input that bypasses the local pipeline; then hands off to browser-confirm for live verification. Stub — vendored sanitizer pinning and corpus seed live under bin/parser_fuzz/.
+description: Local fuzzing of HTML/sanitizer pipelines (DOMPurify + parse5 + JSXSS) at versions pinned from target bundle. Use when target uses a known sanitizer and you want bypass inputs. Hands off to browser-confirm for live verification.
 ---
 
 # parser-pipeline-fuzz

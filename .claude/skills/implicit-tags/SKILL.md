@@ -1,6 +1,6 @@
 ---
 name: implicit-tags
-description: Closure-expand source/sink tags from the static taxonomy along the callgraph so wrapper functions (e.g. renderHTML wrapping innerHTML) are tagged as derived sinks/sources with confidence decay 0.7^hop. Writes targets/<name>/tags_discovered.jsonl and merges rows into node_tags with source='implicit_closure'. Run after js-index + db-isolate snapshot, before chain-triage / extract_chains_bounded.
+description: Closure-expand source/sink tags along the callgraph so wrapper functions inherit tags with confidence decay 0.7^hop. Writes tags_discovered.jsonl, merges into node_tags. Run after js-index + db-isolate, before chain-triage.
 ---
 
 # implicit-tags

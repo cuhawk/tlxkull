@@ -1,6 +1,6 @@
 ---
 name: browser-context-infer
-description: Infer the runtime browser context for a target — Content-Security-Policy, Trusted Types enforcement, rendering model (SSR/CSR/hybrid), framework family, sandbox iframes. Writes targets/<name>/browser_context.json. Consumed by sink_viability for multiplicative chain-score adjustment (plans/ARCHITECTURE_EVOLUTION.md §4). Run after target-init / js-harvest / passive-listen so CSP headers + HTML + framework detection are available. Cheap, idempotent.
+description: Infer runtime browser context — CSP, Trusted Types, rendering model, framework family, sandbox iframes. Writes browser_context.json. Run after target-init / js-harvest / passive-listen. Idempotent.
 ---
 
 # browser-context-infer

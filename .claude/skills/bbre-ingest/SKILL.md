@@ -1,6 +1,6 @@
 ---
 name: bbre-ingest
-description: Bug Bounty Reports Explained (BBRE) YouTube inbox processor. For every READY marker under inbox/bbre/<vid>/, run RAG ingest of the transcript into the wiki collection, then distill techniques/tools/targets/findings mentioned into the appropriate wiki pages (Claude-Code-driven, no autonomous AI calls), then run wiki-lint. Idempotent — skips videos already ingested (txt id already in wiki collection) and skips distill if vid already recorded in wiki/sources/podcasts/bbre/_distill_log.jsonl. Trigger: /bbre-ingest or auto-fire by bbre-poll.sh.
+description: BBRE YouTube inbox processor. RAG-ingest transcripts into wiki collection, distill techniques/tools/targets into wiki pages, run wiki-lint. Idempotent. Trigger: /bbre-ingest or auto-fire by bbre-poll.sh.
 ---
 
 # bbre-ingest

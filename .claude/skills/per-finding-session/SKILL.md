@@ -1,6 +1,6 @@
 ---
 name: per-finding-session
-description: Drain `findings/_queue_browser_confirm.jsonl` by dispatching ONE Claude Code subagent per queued chain instead of processing the queue serially in the main session. Each subagent owns ONE finding end-to-end (live browser-confirm → confirmed.json → report-finding writeup) with isolated context. Mirrors Anthropic Cloud Security's per-finding-session UX from Code with Claude London 2026 — one session per finding scales better than one mega-session draining all of them. Trigger: `/per-finding-session <target>` OR user says "drain the confirm queue in parallel" / "one session per finding" / "fan out browser confirm".
+description: Fan-out browser-confirm queue — one CC subagent per finding (browser-confirm → confirmed.json → report-finding). Trigger: /per-finding-session <target>, "drain the confirm queue in parallel", "one session per finding".
 ---
 
 # per-finding-session

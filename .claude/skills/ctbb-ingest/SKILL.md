@@ -1,6 +1,6 @@
 ---
 name: ctbb-ingest
-description: Critical Thinking Bug-Bounty Podcast inbox processor. For every READY marker under inbox/ctbb/<vid>/, run RAG ingest of the transcript into the wiki collection, then distill techniques/tools/targets/findings mentioned into the appropriate wiki pages (Claude-Code-driven, no autonomous AI calls), then run wiki-lint. Idempotent — skips episodes already ingested (txt id already in wiki collection) and skips distill if vid already recorded in wiki/sources/podcasts/ct/_distill_log.jsonl. Trigger: /ctbb-ingest or auto-fire by the scheduled remote agent.
+description: Critical Thinking Bug-Bounty podcast inbox processor. RAG-ingest transcripts into wiki collection, distill techniques/tools/targets into wiki pages, run wiki-lint. Idempotent. Trigger: /ctbb-ingest or auto-fire by scheduled remote agent.
 ---
 
 # ctbb-ingest

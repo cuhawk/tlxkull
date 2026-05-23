@@ -1,6 +1,6 @@
 ---
 name: wiki-ingest
-description: Karpathy llmwiki ingest. Take a new source (a confirmed finding, a teach-me FP, a new technique observed) and update the relevant wiki pages — technique, target, tool, findings — with cross-links. Use after report-finding, after any FP that taught us something, or when the user says "ingest this". Idempotent — re-ingesting the same source updates timestamps and adds new cross-refs but doesn't duplicate.
+description: Ingest a new source (confirmed finding, FP lesson, technique) into wiki pages with cross-links. Idempotent. Use when a finding is reported, after a teach-me FP, or when user says "ingest this". Run after report-finding.
 ---
 
 # wiki-ingest

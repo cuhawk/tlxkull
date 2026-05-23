@@ -1,6 +1,6 @@
 ---
 name: caido-idor
-description: Generic IDOR + broken-access-control sweep. Wraps bin/idor_sweep.py (plan + consume) plus the Caido MCP. Pattern-driven — auto-detects ID-shaped params (int, uuid, objectid, email, hashid, ...) in URL path / query / headers / body across every captured request, generates shape-respecting mutations + auth-swap variants, replays through Caido, classifies responses via body-parity diff. Trigger when the user says "idor sweep", "access control check", or memory.md > auto_idor_on_capture is true.
+description: IDOR + broken-access-control sweep via Caido. Auto-detects ID-shaped params, generates mutations + auth-swap variants, replays, classifies via body-parity diff. Trigger: "idor sweep", "access control check", or memory.md > auto_idor_on_capture is true.
 ---
 
 # caido-idor

@@ -1,6 +1,6 @@
 ---
 name: v2-pipeline
-description: Run every enabled V2 subsystem (plans/ARCHITECTURE_EVOLUTION_V2.md §11-§24) against a per-target snapshot DB. Covers persistent storage taint, origin trust, DOM clobbering, prototype-pollution gadgets, parser context, deobfuscation evidence, corpus-pattern matching, sink reachability + lifecycle, auth/state abuse, worker / service-worker semantics. Each stage is flag-gated in js_analyzer_config; --all forces every stage on. Idempotent. Run after async-edges + browser-context-infer, before chain-bestfirst (so the new tables feed scoring).
+description: Run all enabled V2 subsystems (§11-§24) against per-target snapshot DB — storage taint, origin trust, DOM clobbering, proto-pollution, parser context, deobfuscation, corpus patterns, sink reachability, auth abuse, worker semantics. Run after async-edges + browser-context-infer, before chain-bestfirst.
 ---
 
 # v2-pipeline

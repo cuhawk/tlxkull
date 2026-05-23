@@ -1,6 +1,6 @@
 ---
 name: pipeline-auto
-description: Branched per-scope-entry pipeline. Classifies every in-scope entry into url|wildcard|ip_cidr, runs the matching lane (js-harvest for url; subdomain enum + masscan + httpx + js-harvest for wildcard; masscan + httpx + js-harvest for ip/cidr), and HALTS at the audit boundary — never auto-fires opus-deep-audit or cc-taint-adversarial. Use after target-init; trigger /pipeline-auto <name> or "run pipeline on <name>".
+description: Branched per-scope-entry pipeline — classifies entries into url|wildcard|ip_cidr, runs matching lane, halts at audit boundary. Trigger: /pipeline-auto <name> or "run pipeline on <name>". Run after target-init.
 ---
 
 # pipeline-auto

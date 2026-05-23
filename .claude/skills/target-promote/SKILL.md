@@ -1,6 +1,6 @@
 ---
 name: target-promote
-description: Pick up inbox/invites/<plat>/<slug>/READY markers from target-invite-sweep and turn them into proper targets/<slug>-<plat>/ engagements (http.md stub + status.json + lifecycle field). Synack auto-promotes as tracking-only (per memory feedback_synack_no_live_visits). Non-Synack platforms get a stub http.md that user fills with real scope (optionally via browser MCP). Trigger /target-promote (process all READY markers), /target-promote <slug> (one specific), or /target-promote --synack-only.
+description: Promote READY inbox markers into proper targets/<slug>-<plat>/ engagements. Synack auto-promotes as tracking-only. Trigger: /target-promote (all), /target-promote <slug> (one), or /target-promote --synack-only. Run after target-invite-sweep.
 ---
 
 # target-promote

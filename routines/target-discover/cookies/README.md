@@ -3,13 +3,34 @@
 Per-platform session cookies for the dashboard-walk phase.
 **Gitignored** — never commit cookie payloads.
 
-## Bootstrap (one-time, ~5 min per platform)
+## Bootstrap
 
-1. Install the Chrome extension
-   [Cookie-Editor](https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm).
-2. For each platform below: log in via real Chrome, click the
-   Cookie-Editor icon → Export → JSON. Save the JSON payload to the
-   target file below.
+Two paths. Pick one.
+
+### Path A — auto-extract via Chrome CDP (recommended, ~2 min total)
+
+Real Chrome serves cookies via its own DevTools Protocol — no on-disk
+SQLite decryption, no extension.
+
+```bash
+bash routines/target-discover/launch_chrome_debug.sh
+# (quits + reopens Chrome with --remote-debugging-port=9222 + your real profile)
+
+python3 routines/target-discover/bootstrap_cookies.py
+# (extracts cookies for all 4 platforms via CDP -> cookies/<plat>.json)
+
+# Then quit debug Chrome, reopen normally.
+```
+
+Prereq: you must already be logged into H1 + Intigriti + Bugcrowd + Synack
+in your real Chrome profile. The debug-port launch reuses your profile so
+sessions persist.
+
+### Path B — Cookie-Editor extension (manual fallback, ~5 min per platform)
+
+1. Install [Cookie-Editor](https://chrome.google.com/webstore/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm).
+2. For each platform: log in via real Chrome, click the Cookie-Editor
+   icon → Export → JSON. Save the JSON payload to the target file below.
 
 | Platform | File | Cookie domain(s) |
 |---|---|---|

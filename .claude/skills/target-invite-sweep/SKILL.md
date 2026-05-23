@@ -1,6 +1,6 @@
 ---
 name: target-invite-sweep
-description: Sweep Gmail for new bug-bounty program invitations across HackerOne / Intigriti / Bugcrowd / Synack, emit one JSON thread per stdout line for routines/target-discover/parse_invites.py to consume. Trigger via /target-invite-sweep (manual) or via routines/target-discover/routine.sh (launchd-driven daily). Idempotent — parse_invites.py de-dupes against inbox/invites/.
+description: Sweep Gmail for new bug-bounty program invitations across HackerOne / Intigriti / Bugcrowd / Synack. Idempotent — de-dupes against inbox/invites/. Trigger: /target-invite-sweep (manual) or routines/target-discover/routine.sh (daily).
 ---
 
 # target-invite-sweep

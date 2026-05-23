@@ -1,6 +1,6 @@
 ---
 name: cspt-csrf
-description: Surface client-side path traversal that lands in fetch/XHR/axios URLs (CSPT-2-CSRF candidates per Doyensec's playbook). Scans chains/dom_reachable.jsonl (or chains/hot.jsonl fallback) for sinks tagged `cspt_*` family + path-traversal markers, ranks by mutating-verb severity, writes chains/cspt_csrf.jsonl. Run after dom-xss-hunt and before browser-confirm.
+description: Surface CSPT-to-CSRF candidates — path traversal landing in fetch/XHR/axios URLs. Scans dom_reachable.jsonl for cspt_* sinks, ranks by verb severity, writes cspt_csrf.jsonl. Run after dom-xss-hunt, before browser-confirm.
 ---
 
 # cspt-csrf

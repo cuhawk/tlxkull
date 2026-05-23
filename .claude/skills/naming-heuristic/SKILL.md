@@ -1,6 +1,6 @@
 ---
 name: naming-heuristic
-description: Phase 4 of project_implicit_tags_plan.md. Function-name regex seeder for implicit sinks/sources that the standard taxonomy + closure expander both miss. Off by default (--enable required); confidence 0.3-0.4 keeps these chains buried in all.jsonl unless no higher-confidence chain is available. Useful on targets with sourcemaps / un-obfuscated bundles where wrapper functions carry descriptive names (renderHTML, getQueryParam, etc.). Skip on heavily minified targets — names are 1-2 letters and won't match.
+description: Function-name regex seeder for implicit sinks/sources missed by taxonomy + closure expander. Off by default (--enable required). Use when target has sourcemaps or un-obfuscated bundles. Run after js-index + db-isolate.
 ---
 
 # naming-heuristic

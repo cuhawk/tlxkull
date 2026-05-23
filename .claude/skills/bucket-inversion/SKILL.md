@@ -1,6 +1,6 @@
 ---
 name: bucket-inversion
-description: Phase 5 of project_implicit_tags_plan.md. Inverse of bucket-anomaly. When N>=3 sibling methods (same file + same parent class) already carry a tag for the same taxonomy_id, seed the remaining untagged siblings as implicit_bucket sinks/sources at confidence 0.5. Targets coverage gaps where regex + AST + closure-expansion all missed a function that fits the cluster. Skip on file-level (parent=null) functions — sibling concept is too coarse. Run after js-index + db-isolate, optionally after implicit-tags + naming-heuristic.
+description: Seed untagged sibling methods as implicit sinks/sources when N>=3 siblings share a tag for the same taxonomy_id. Targets coverage gaps missed by regex + AST + closure-expansion. Run after js-index + db-isolate, optionally after implicit-tags + naming-heuristic.
 ---
 
 # bucket-inversion

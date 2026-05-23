@@ -1,6 +1,6 @@
 ---
 name: caido-replay
-description: Replay a captured Caido request with one or more mutations, diff each response against the baseline, and emit a structured diff report. Use when investigating a specific endpoint, when caido-idor or autoresearch-loop calls programmatically, or when the user names a request id. Mutations include header swaps (auth cookie, role, origin), parameter fuzz, method overrides, body tampering.
+description: Replay a captured Caido request with mutations, diff response against baseline. Use when investigating a specific endpoint or when the user names a request id. Mutations include header swaps, param fuzz, method overrides, body tampering.
 ---
 
 # caido-replay

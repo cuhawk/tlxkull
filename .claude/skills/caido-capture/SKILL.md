@@ -1,6 +1,6 @@
 ---
 name: caido-capture
-description: Ensure Caido is running locally, ensure a per-engagement project exists, and route the browser MCP through Caido as proxy so every live request is captured. Run at the start of any live-target session. Idempotent — calling twice on the same target updates the project's last-seen timestamp.
+description: Ensure Caido is running, create per-engagement project, route browser through Caido proxy. Use when starting any live-target session. Idempotent.
 ---
 
 # caido-capture

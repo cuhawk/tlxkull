@@ -1,6 +1,6 @@
 ---
 name: opus-deep-audit
-description: Deep-audit each chain in chains/dom_reachable.jsonl (fallback chains/hot.jsonl) using TLX's Sonnet→Opus advisor pipeline (js_run_audit + js_audit_status). Writes opus/<chain_id>.md with verdict + reasoning + proposed PoC. Respects opus_budget_per_target_usd from memory.md. Run after dom-xss-hunt. Verdict ∈ {true_positive, false_positive, undetermined}.
+description: Deep-audit chains in dom_reachable.jsonl (fallback hot.jsonl) via Sonnet→Opus advisor pipeline. Writes opus/<chain_id>.md with verdict + PoC. Respects opus_budget from memory.md. Run after dom-xss-hunt.
 ---
 
 # opus-deep-audit

@@ -1,6 +1,6 @@
 ---
 name: wiki-query
-description: Query the personal LLM-maintained wiki via the wiki RAG collection plus direct Reads, returning relevant excerpts and (optionally) drafting a new wiki page for a question that didn't have one. Use when Claude can't answer from current target files alone, when the user says "search wiki" or invokes /wiki-query, or before opus-deep-audit to pull in prior technique notes.
+description: Query wiki via RAG collection + direct reads, returning relevant excerpts. Use when Claude can't answer from target files alone, when user says "search wiki", or before opus-deep-audit for technique notes.
 ---
 
 # wiki-query

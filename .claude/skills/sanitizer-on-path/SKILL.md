@@ -1,6 +1,6 @@
 ---
 name: sanitizer-on-path
-description: Cheap proxy for CFG-dominance sanitizer check. Per chain in chains/all.jsonl, walk path qnames and query node_sanitizers; if any sanitizer's `clears` category matches the chain's sink/source category (or is `any`), mark chain.sanitized=True. Default mode is strict-dominance (sanitizer line < next call-out line) — flipped from coarse on 2026-05-19 because Number_coerce/parseInt_parseFloat (clears=any) over-defused. Use --coarse to revert. Splits chains/all.jsonl into sanitized.jsonl + clean.jsonl. Run after extract_chains_bounded.py (Phase 2 of project_implicit_tags_plan.md). Targets the audited→confirmed FP-rate gap.
+description: Per-chain sanitizer check — walk path qnames, match sanitizer categories against sink/source. Splits chains/all.jsonl into sanitized.jsonl + clean.jsonl. Use --coarse for lenient mode. Run after extract_chains_bounded.
 ---
 
 # sanitizer-on-path

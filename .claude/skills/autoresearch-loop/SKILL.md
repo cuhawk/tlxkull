@@ -1,6 +1,6 @@
 ---
 name: autoresearch-loop
-description: Karpathy autoresearch pattern applied to bug hunting. Time-budgeted loop over open chains. Each iter generates an exploit hypothesis via Opus, runs minimum-viable test (mock | live | caido), judges via Opus, logs append-only to autoresearch.jsonl. Fixed 5-min wall-clock per iter mirrors Karpathy's spec (≈12 iters/hour). Trigger: "loop <target> <minutes>" or auto after hot chains done if user opted in.
+description: Time-budgeted exploit-hypothesis loop over open chains. Each iter generates hypothesis, tests (mock|live|caido), judges, logs to autoresearch.jsonl. Trigger: "loop <target> <minutes>" or auto after hot chains done if user opted in.
 ---
 
 # autoresearch-loop

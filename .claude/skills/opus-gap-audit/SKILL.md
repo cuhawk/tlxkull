@@ -1,6 +1,6 @@
 ---
 name: opus-gap-audit
-description: Find missing security controls — sibling functions in the same module/component that don't call a control their peers do. Per-target adjacent-function-gap pass (T1.1, wiki/techniques/recon/adjacent-function-gap.md). Wraps gap_analyzer + cascade gate + Opus deep-audit. Run when js-index is complete and the user names a control qname (e.g. RequireRole, csrf.verify, DOMPurify.sanitize).
+description: Find missing security controls — sibling functions that skip a control their peers call. Wraps gap_analyzer + cascade gate + Opus deep-audit. Run when js-index is complete and user names a control qname.
 ---
 
 # opus-gap-audit

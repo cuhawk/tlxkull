@@ -1,6 +1,6 @@
 ---
 name: cc-taint-adversarial
-description: Per-chain Claude-Code-driven adversarial taint audit. Replaces the Sonnet→Opus advisor (`opus-deep-audit` / `js_run_audit`) for max-quality engagements. One read-only subagent per chain runs an attacker/skeptic dual-role pass over an expanded snippet bundle + bucket-level anomaly hints; result is a structured JSON record with `triage ∈ {runtime, evidence_gap, drop}` that feeds `cc-taint-route` and downstream `browser-confirm` / `mock_run` queues. Trigger: `/cc-taint-adversarial <target>` OR user says "adversarial taint audit", "cc taint audit", "deep-audit with subagents", or asks to replace `opus-deep-audit` with the CC-driven path. Run after `dom-xss-hunt` (or `chain-triage` if dom_reachable is empty).
+description: Per-chain adversarial taint audit via CC subagents. Trigger: /cc-taint-adversarial <target>, "adversarial taint audit", "cc taint audit", "deep-audit with subagents". Run after dom-xss-hunt (or chain-triage if dom_reachable empty).
 ---
 
 # cc-taint-adversarial

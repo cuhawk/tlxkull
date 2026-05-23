@@ -1,6 +1,6 @@
 ---
 name: browser-confirm
-description: Confirm a Opus-flagged true-positive chain in a real browser via chrome-devtools MCP (real Chrome) — live target through Caido proxy OR TLX mock_backend localhost URL. Same MCP for both modes so installed Chrome extensions (DOMLogger++, Caido browser, Wappalyzer) load in either. Run per chain that opus-deep-audit marked verdict=true_positive OR per chain queued by cc-taint-route (findings/_queue_browser_confirm.jsonl / _queue_mock_run.jsonl). Writes findings/<id>/confirmed.json + screenshots. Default mode is live; falls back to mock if rate-limited or sensitive.
+description: Confirm an Opus-flagged true-positive chain in a real browser (live via Caido proxy or mock_backend). Run when opus-deep-audit marked verdict=true_positive or chain queued by cc-taint-route. Writes findings/<id>/confirmed.json. Default live; falls back to mock if rate-limited.
 ---
 
 # browser-confirm
