@@ -2,7 +2,7 @@
 title: Codex (OpenAI) — Operational Notes for Bug-Bounty Use
 slug: tools-codex-notes
 created_utc: 2026-05-15T00:00:00Z
-updated_utc: 2026-05-15T00:00:00Z
+updated_utc: 2026-05-22T00:00:00Z
 tags: [tool/codex, tool/ai, tool/agent]
 inbound: []
 ---
@@ -85,11 +85,33 @@ vary per account / per program — re-confirm if hitting refusals.
 - Save session logs — `/goal` runs can be hours long and the auditable
   trail is your only protection if a finding is contested.
 
+## PhD-style bug-description verbosity (prompt fix)
+
+Justin + gr3pme (CT Ep. 175): GPT-5.5-via-Codex reports tend to
+describe bugs using over-academic phrasing — long words, formal
+constructions, multi-clause sentences. Reads as "PhD / autistic"; hard
+to skim during triage. Claude Code reports of equivalent quality are
+materially easier to scan because the prose is plainer.
+
+Fix that has held up so far: append an explain-it-simply directive to
+the report-generation prompt, e.g.
+
+> "Explain this like I'm an idiot. Short sentences, common words, no
+> Latinate phrasing. Lead with the impact, then the chain, then the
+> proof."
+
+This brings GPT-5.5 reports closer to the readability of Claude's
+default voice without losing technical substance. Re-test per skill
+revision — model updates seem to drift the baseline tone.
+
 ## Seen used
 
 - **2026-05 — fresh BugCrowd invite.** 3 P1s in 30 minutes via
   `/goal "find five crits"`. Source:
   [CT Ep. 174](wiki://podcasts/ct/20260514_qi4dGzjDPI8_Saving_Bug_Bounty_Programs_+_AMPScript_tessl_GPT-5.5_Ep._174).
+- **2026-05 — readability gap.** Justin + gr3pme on CT Ep. 175 confirm
+  the PhD-tone issue + prompt fix above.
+  [CT Ep. 175](wiki://podcasts/ct/20260521_v-XhQHy_jHM_Rhyno_s_Hackbot_Setup_Sick_Bugs_and_ZDI_Drama_Ep._175)
 
 ## Related
 

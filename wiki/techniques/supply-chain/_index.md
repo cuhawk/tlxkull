@@ -11,3 +11,8 @@ _Auto-generated index._
 - [npm cache poisoning 404](npm-cache-poisoning-404.md)
 - [npx binary package confusion](npx-binary-package-confusion.md)
 - [zip slip path traversal](zip-slip-path-traversal.md)
+
+## Incidents — historical post-mortems
+
+44 disclosed supply-chain incidents, written for the bug-hunter's
+"what would I have caught" lens. See [incidents/](incidents/_index.md).

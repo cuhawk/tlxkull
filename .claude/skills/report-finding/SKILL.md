@@ -29,7 +29,28 @@ written up well: clear repro, clear impact, clear remediation.
    - Remediation suggestion
    - References (CWE, OWASP, related wiki pages)
 5. Bundle PoC: `findings/<id>/poc.html` + `findings/<id>/poc.curl` if
-   relevant.
+   relevant. **DOM verification contract (2026-05):** if the PoC is
+   HTML/JS, embed `data-verify-*` attributes on the trigger element
+   and set `data-verify-result="<canary>"` from inside the
+   sink-triggering code. See `bin/poc_verify_contract.js` for the
+   exact attribute schema. This lets `browser-confirm` verify the
+   exploit deterministically instead of relying on
+   screenshot-plus-LLM-judge.
+
+   Minimal contract example for a fragment-XSS PoC:
+   ```html
+   <a id="trig"
+      data-verify-trigger="fragment-xss"
+      data-verify-source="url:#hash"
+      data-verify-sink="innerHTML"
+      href="https://target.example/#<img src=x onerror=__tlxFire()>">click me</a>
+   <script>
+     function __tlxFire() {
+       document.getElementById("trig")
+               .setAttribute("data-verify-result", "TLX_XSS_CANARY_<id>");
+     }
+   </script>
+   ```
 6. Update `status.json.findings[]` and `status.json.phases.report`.
 
 ## Outputs
@@ -51,5 +72,7 @@ written up well: clear repro, clear impact, clear remediation.
 ```
 
 ## Submission policy
-Never auto-submit to HackerOne, Synack, or any platform. The skill
-ends with the writeup ready and the user notified. The user submits.
+Never auto-submit to HackerOne, Synack, or any platform. (2026-05 —
+platform-trust rule; user must read every report before it ships.)
+The skill ends with the writeup ready and the user notified. The
+user submits.

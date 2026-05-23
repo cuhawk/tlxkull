@@ -54,6 +54,33 @@ durable facts; remove stale ones.
 _(Append items here only when they are workflow-relevant, not
 technique-relevant. Technique items go to `wiki/techniques/`.)_
 
+### Pipeline upgrades 2026-05-23 — Claude YT takeaways batch
+
+Implemented per [plans/IMPLEMENTATION_2026-05-23.md](plans/IMPLEMENTATION_2026-05-23.md).
+Skills added: `tlx-investigate`, `wiki-dream`, `mythos-read`,
+`per-finding-session`. Two-judge verifier added to
+cc-taint-adversarial (Step 4.5; verifier prompt at
+`.claude/skills/cc-taint-adversarial/prompts/verifier.md`,
+runner at `bin/verdict_verifier.py`). DOM verification contract
+added to browser-confirm + report-finding (helper at
+`bin/poc_verify_contract.js`). Eval set for chain audits at
+`evals/chain_audit/` with runner `bin/run_chain_eval.py` — buckets
+empty initially; populate from real engagement data. Audit tools
+`bin/cache_audit.py` and `bin/skill_hygiene_audit.py` for periodic
+hygiene checks. DSL chain-rep spec at [plans/CHAIN_DSL.md](plans/CHAIN_DSL.md)
+— deferred until two-judge + eval set prove out.
+
+### Billing decision 2026-05-23 — local-only
+
+Decision: skip CMA, MCP tunnels, Anthropic Routines, and DO droplets
+for cockpit work. Keep DO only for `recon`. Reason: Max sub still
+covers interactive CC; autoresearch-loop on CMA would cost ~$1500/mo
+vs free local. Post 2026-06-15 billing split: only *interactive* CC
+draws from Max sub; `claude -p` headless and Agent SDK draw from a
+separate $200/mo credit pool. Memory `feedback_loop_max_subscription`
+remains valid for interactive use; flag that headless/scheduled
+sessions hit the credit pool, not the Max budget.
+
 ### Pipeline upgrades 2026-05-15 (IMPL_TIER123.md)
 
 15 additions land per [IMPL_TIER123.md](IMPL_TIER123.md). Build order

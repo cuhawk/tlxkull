@@ -79,3 +79,5 @@ Example traversal payload (URL-encoded as needed):
 - See also: [secondary-context-path-traversal](secondary-context-path-traversal.md)
 - See also: [../csrf/_index.md](../csrf/_index.md)
 - Rennie Pak — CSP bypass research
+- Impact-chaining cookbook: [cspt-impact-gadgets](cspt-impact-gadgets.md)
+- Mobile delivery variant: [cspt-mobile-deeplink-stored-params](../mobile/cspt-mobile-deeplink-stored-params.md)

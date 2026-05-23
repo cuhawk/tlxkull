@@ -71,7 +71,12 @@ Find the reason this won't work in practice. Be concrete:
   (list each as a `blocking_unknowns[]` entry — what you'd need to
   see to commit either way).
 
-## Output (JSON only)
+## Output (JSON only) — REASONS-FIRST KEY ORDER
+
+Emit the JSON keys in this exact order. Auto-regressive sampling
+anchors on the first token of each value; if you write `confidence`
+or `triage` first, you will then justify whatever scored value you
+emitted, regardless of the underlying evidence. Reasons first.
 
 ```json
 {

@@ -139,7 +139,7 @@ A failing schema check raises `error:` to stderr, appends to
 subagent.** If a chain fails, log it and move on; surface to user at the
 end.
 
-### Step 4 — finalize
+### Step 4 — finalize Phase B
 
 ```bash
 python3 bin/cc_taint_runner.py --target <name> finalize
@@ -147,6 +147,94 @@ python3 bin/cc_taint_runner.py --target <name> finalize
 
 Rolls counters into `status.json.phases.cc_taint_adversarial.final_summary`
 and prints `{total, by_triage, by_confidence}`.
+
+### Step 4.5 — two-judge verifier (per runtime/high + runtime/medium chain)
+
+Second-opinion pass on every chain the auditor flagged as
+`runtime` + `high|medium`. Reasoning: per the 2026 prompting playbook
+(Code with Claude London), a single LLM judge over-justifies its
+first scored token. A fresh-context verifier subagent reading only
+the auditor's reasoning catches strawman counterarguments,
+mis-cited line numbers, and miscalibrated confidence — before any
+browser/mock budget is spent.
+
+Verifier may **agree** or **downgrade**. Never escalate. Never invent
+a new `drop` verdict (a verifier doesn't create FPs).
+
+```bash
+python3 bin/verdict_verifier.py --target <name> prepare
+```
+
+Writes `two_judge/_prompts/<chain_id>.md` for each eligible chain
+(triage=runtime, confidence in {high, medium}) and a
+`two_judge/_manifest.json`. Records skipped chains and their reason.
+
+For each chain in the manifest, Claude dispatches a subagent:
+
+```
+Agent(
+  subagent_type="general-purpose",
+  description="cc-taint two-judge verifier <id>",
+  prompt=<contents of two_judge/_prompts/<chain_id>.md>,
+)
+```
+
+The verifier prompt
+(`.claude/skills/cc-taint-adversarial/prompts/verifier.md`) embeds:
+
+- The chain + expanded snippet (same evidence the auditor saw).
+- The auditor's `exploit_argument`, `counterargument`,
+  `blocking_unknowns`, `confidence`, `triage`.
+- Reasons-first key ordering for the JSON response
+  (`issues_found` + `reasoning` BEFORE `audit_quality` /
+  recommended fields).
+
+Subagent constraints (in the prompt body):
+
+- Read-only. No file writes. No MCP mutations.
+- Allowed: `Grep`, `Read`, `Glob` against `targets/<name>/sources/`,
+  `wiki/`, `tlx/`. Allowed MCP: `mcp__tlx__docs_query` against
+  `target_<name>`, `mcp__tlx__js_get_snippet`,
+  `mcp__tlx__js_examine_chain`.
+- Output JSON only matching the schema. No prose preamble.
+
+Capture each response and ingest:
+
+```bash
+python3 bin/verdict_verifier.py --target <name> ingest \
+    --chain-id <id> --response-file <temp_path>
+```
+
+Side effects on `audit_quality != agree`:
+
+- Rewrite `opus/<chain_id>.json` `triage` + `confidence` to the
+  verifier's recommendation. Old values stored under
+  `_verifier_history[]`.
+- Strip the chain from `findings/_queue_browser_confirm.jsonl` and
+  `findings/_queue_mock_run.jsonl` if present (no-op if not yet
+  queued — verifier should run BEFORE route in normal flow).
+- If `recommended_triage == evidence_gap`, append the chain to
+  `chains/_re_expand_queue.jsonl` with `reason: two_judge_downgrade`
+  and the verifier's blocking_unknowns as `hint`.
+
+Verifier ingest enforces:
+
+- `audit_quality ∈ {agree, downgrade, flawed}`.
+- Recommended values can only equal or downgrade the auditor's.
+  Escalation attempts get clamped.
+- `audit_quality=flawed` forces `recommended_confidence=low`.
+
+Then roll up:
+
+```bash
+python3 bin/verdict_verifier.py --target <name> finalize
+```
+
+Prints `{total, by_audit_quality, downgrades, by_recommended_triage}`
+and writes `status.json.phases.two_judge.final_summary`.
+
+**Skip the verifier only when**: time-pressed, OR the engagement is
+explicit "speed over precision". Default = always run.
 
 ### Step 5 — route
 
@@ -156,7 +244,9 @@ python3 bin/cc_taint_route.py --target <name>
 
 Triggers the `cc-taint-route` flow: high/runtime → `browser-confirm`
 queue, medium/runtime → `mock_run` queue, evidence_gap → re-expand loop
-(retry cap 2), drop → FP archive.
+(retry cap 2), drop → FP archive. Route MUST run AFTER the two-judge
+verifier; otherwise verified-downgraded chains stay on the browser
+queue.
 
 ## Run modes
 
@@ -173,8 +263,15 @@ queue, medium/runtime → `mock_run` queue, evidence_gap → re-expand loop
 - `targets/<name>/chains/anomalies/<slug>.json` — Phase A divergence
   notes per sink-file bucket.
 - `targets/<name>/opus/<chain_id>.json` — Phase B adversarial records.
+  May contain `_verifier_history[]` if the two-judge verifier
+  downgraded the verdict.
+- `targets/<name>/two_judge/<chain_id>.json` — Phase 4.5 verifier
+  records (per runtime/high + runtime/medium chain).
 - `targets/<name>/status.json.phases.cc_taint_adversarial` — counters:
   `prompts_ready`, `subagent_count`, `by_triage`, `by_confidence`,
+  `final_summary`.
+- `targets/<name>/status.json.phases.two_judge` — counters:
+  `prompts_ready`, `ingested`, `by_audit_quality`, `downgrades`,
   `final_summary`.
 
 ## Cost tracking

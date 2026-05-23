@@ -63,6 +63,24 @@ leave the queue file in place — a future re-run that sees a
     `findings/<chain_id>/event_handlers.json`. Cross-reference with
     the static-chain handler list to spot static-only or
     runtime-only handlers.
+
+2c. **DOM verification contract (2026-05).** When the PoC HTML is
+    being authored (by `report-finding` or by hand), it MUST emit
+    `data-verify-*` attributes on the trigger element and set
+    `data-verify-result="<canary>"` from inside the sink-triggering
+    code. After the PoC fires, read the contract with:
+    ```
+    evaluate_script(script=<contents of bin/poc_verify_contract.js>)
+    ```
+    Returns JSON `{fired, trigger, source, sink, result_canary,
+    evidence, entries[]}`. Write to
+    `findings/<chain_id>/verify_contract.json`. The structured
+    `fired` boolean is the load-bearing verification signal — prefer
+    it over screenshot+LLM-judge whenever the PoC emits the contract.
+    See [bin/poc_verify_contract.js](../../../bin/poc_verify_contract.js)
+    for the attribute schema. Why this exists: a deterministic DOM
+    contract replaces LLM-judged screenshots, which historically
+    over-confirmed both visual coincidences and outright failures.
 3. Inject the PoC payload via the channel the chain identifies:
    - URL parameter / fragment
    - form input + submit
@@ -93,8 +111,13 @@ same source/sink instrumentation runs against the mock surface.
 4. Trigger the chain analogously (URL param, form submit, postMessage).
 5. `mock_confirm(session_id, chain_id)` — TLX hook observes server-side
    sink calls and persists.
-6. `take_screenshot` of the trigger moment.
-7. `mock_stop(session_id)`.
+6. Inject `bin/poc_verify_contract.js` via `evaluate_script` — same
+   DOM contract reader as live mode (step 2c). Write result to
+   `findings/<chain_id>/verify_contract.json`. In mock mode the
+   contract is the primary verification signal since there's no
+   network beacon to corroborate.
+7. `take_screenshot` of the trigger moment.
+8. `mock_stop(session_id)`.
 
 ## Outputs
 - `targets/<name>/findings/<chain_id>/confirmed.json`
@@ -102,6 +125,10 @@ same source/sink instrumentation runs against the mock surface.
 - `targets/<name>/findings/<chain_id>/network.har` (live mode only)
 - `targets/<name>/findings/<chain_id>/domlogger.jsonl` (live mode, T2.1)
 - `targets/<name>/findings/<chain_id>/event_handlers.json` (live mode, T2.4)
+- `targets/<name>/findings/<chain_id>/verify_contract.json` (DOM
+  verification contract, 2026-05). If `fired==true` AND
+  `result_canary` matches the PoC's canary, the confirmation is
+  considered deterministic — `confirmed.json.dom_contract_match: true`.
 
 ## Failure modes
 - Sink doesn't fire → demote chain to `verdict: undetermined`,

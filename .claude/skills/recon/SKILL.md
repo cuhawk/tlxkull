@@ -61,7 +61,7 @@ Persist into `targets/<name>/status.json.recon = {job_id, summary_path, finished
 
 ## Hard rules
 
-- Never start a recon job whose `targets` include hosts outside `targets/<name>/http.md` scope.
+- Never start a recon job whose `targets` include hosts outside `targets/<name>/http.md` scope. (2026-05 — scope-discipline rule; load-bearing for H1/Synack ToS compliance.)
 - Confirm with the user before `probe_regions` longer than 3 (cost).
 - If `recon_cancel` is invoked, also verify droplet count is 0 via `recon_list_jobs`.
 

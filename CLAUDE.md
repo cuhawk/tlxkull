@@ -93,6 +93,49 @@ version <3.11.
    But do NOT add new pipelines that bulk-embed external corpora
    into `wiki` without user OK per ingest.
 
+## 2026-05-23 additions
+
+Skills added in the [plans/IMPLEMENTATION_2026-05-23.md](plans/IMPLEMENTATION_2026-05-23.md) batch:
+
+- **tlx-investigate** — Clue-pattern NL investigation per target. Plan
+  → execute → cite → recommend. Output under
+  `targets/<name>/investigations/<utc>/`.
+- **wiki-dream** — Offline curator. Walks recent tail data, distills
+  candidate wiki patches into `wiki-staging/<utc>/`. Non-destructive.
+  Manual promote.
+- **mythos-read** — Full-source-tree audit. Only viable when sources
+  ≤5 MB (default cap). Hypotheses emitted as
+  `chains/_mythos_synthetic.jsonl`.
+- **per-finding-session** — Fan-out browser-confirm queue draining.
+  One subagent per finding, capped at 3 parallel.
+
+cc-taint-adversarial now has a Step 4.5 — the **two-judge verifier**.
+Every chain the auditor flagged `runtime` + `high|medium` gets a
+second-opinion subagent that may agree or downgrade (never escalate).
+On downgrade, the chain is rewritten + stripped from runtime queues
+and re-queued to `_re_expand_queue.jsonl`. Drives FP-rate down before
+browser-confirm budget gets spent.
+
+browser-confirm + report-finding now emit a **DOM verification
+contract** (`data-verify-*` attributes + `bin/poc_verify_contract.js`
+reader). Deterministic verification of exploit firing, replaces the
+older screenshot+LLM-judge pattern.
+
+**Eval set:** `evals/chain_audit/{control,edge,boundary}.jsonl` +
+`bin/run_chain_eval.py`. Buckets are empty by design — populate from
+real audited engagements. Re-run after any cc-taint logic change.
+
+**Audit tools** (advisory only): `bin/cache_audit.py` for prompt-cache
+hygiene; `bin/skill_hygiene_audit.py` for stale-instruction +
+description-shape checks.
+
+**Billing rule (post 2026-06-15):** only *interactive* Claude Code in
+terminal/desktop/web draws from your Max subscription. Headless
+`claude -p`, Agent SDK, and scheduled / routine sessions draw from a
+separate $200/mo Agent SDK credit pool (on Max 20x). Do not migrate
+the autoresearch loop to headless or CMA without checking spend
+projections — see `plans/IMPLEMENTATION_2026-05-23.md` for the math.
+
 ## Skill discipline
 
 - Trigger by phase per `skills.md`. Don't skip phases unless the user says

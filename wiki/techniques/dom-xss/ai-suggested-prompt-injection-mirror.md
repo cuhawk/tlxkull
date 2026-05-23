@@ -71,6 +71,9 @@ ingests description, prefix-match passes the safety judge, tool fires.
 
 ## Related
 - [[llm-browser-intent-uri-redirect]] — adjacent Gemini Android chain.
+- [q-param-prompt-injection-wormable](q-param-prompt-injection-wormable.md) — direct-injection sibling via
+  GET param + window.opener; wormable when the AI app ships a write
+  connector.
 
 ## Seen in the wild
 - {date: 2025-08, source: CT Ep 149} — DEFCON 33 talk.

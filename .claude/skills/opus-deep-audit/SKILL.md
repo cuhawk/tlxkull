@@ -64,7 +64,8 @@ gets earned.
     and `verdict: false_positive`, reason `gate: <dead_code|sonnet_reject>`.
     Then submit via `js_submit_finding(chain_id, verdict='false_positive',
     proof='gate: ...')` so the verdict store reflects it.
-    Do NOT call `js_run_audit` for rejected chains.
+    Do NOT call `js_run_audit` for rejected chains. (2026-05 — Opus
+    budget rule; reaffirmed after the cascade-gate landed.)
 
 2. For each chain in `chains/survivors.jsonl`:
    a. `js_examine_chain(chain_id=...)` → full source/sink/path.

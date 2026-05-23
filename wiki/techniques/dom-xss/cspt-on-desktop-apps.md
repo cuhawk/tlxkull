@@ -82,3 +82,5 @@ myapp://load?path=../../config/secrets.json
 
 - Critical Thinking Podcast Ep 171 - <https://www.youtube.com/watch?v=l5fs7Okdj3o>
 - Related: [[cspt-fetch-hijacking]], [[cspt-cache-deception-chain]]
+- Mobile sibling: [cspt-mobile-deeplink-stored-params](../mobile/cspt-mobile-deeplink-stored-params.md)
+- Impact-chaining cookbook: [cspt-impact-gadgets](../server-side/cspt-impact-gadgets.md)

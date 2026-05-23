@@ -1,0 +1,2328 @@
+1
+00:00:00,000 --> 00:00:06,160
+I had to slow my hack bot down a little bit because I was churning through a lot of tokens,
+
+2
+00:00:06,160 --> 00:00:09,360
+you know, and I was like, actually, no, no, you shouldn't do that. You should just buy another
+
+3
+00:00:09,360 --> 00:00:14,400
+sub for another $100. Shut up, dude. I know. I know. Just give me a second.
+
+4
+00:00:19,200 --> 00:00:22,320
+Best part of hacking when you can just, you know, critical thing.
+
+5
+00:00:22,320 --> 00:00:41,840
+Hey, what's up guys, before we get into the show, I wanted to mention something super quick from our
+
+6
+00:00:41,840 --> 00:00:45,760
+friends at ThreatLocker and I actually think you're all going to think it's pretty awesome because
+
+7
+00:00:46,320 --> 00:00:50,400
+so much of bug bounty is often, you know, kind of quoted as like, yeah, but hackers would never
+
+8
+00:00:50,400 --> 00:00:53,760
+exploit that because they can just get in via phishing. Well, that's actually true. You know,
+
+9
+00:00:53,760 --> 00:00:59,360
+most of the time, whenever companies get breached, it's because of phishing or access to that user's
+
+10
+00:00:59,360 --> 00:01:04,560
+account or, you know, they do something like do a whole bunch of push notification to FA and eventually
+
+11
+00:01:04,560 --> 00:01:08,800
+a user gets so much fatigue, they approve it, but they have a solution for this. ThreatLocker has
+
+12
+00:01:08,800 --> 00:01:13,760
+a thing called zero trust cloud access, right? Which prevents access to cloud resources or SaaS
+
+13
+00:01:13,760 --> 00:01:19,920
+resources based on the device you're logging in from. So if a user gets phished, right, they put
+
+14
+00:01:19,920 --> 00:01:24,000
+in their credentials, they get phished or they get this, they, the attacker has their credentials,
+
+15
+00:01:24,000 --> 00:01:28,400
+maybe they even have a way to get the MFA because they did some sort of SIM swap because they have
+
+16
+00:01:28,400 --> 00:01:33,600
+a hookup at Verizon or AT&T or whatever, right? So they have the credentials, they have the MFA,
+
+17
+00:01:33,600 --> 00:01:39,840
+they still can't get in because the zero trust cloud access like will basically straight up allow or deny
+
+18
+00:01:39,840 --> 00:01:44,240
+people access to resources based on the device you're logging in from. So if you're an enterprise or a
+
+19
+00:01:44,240 --> 00:01:49,360
+company and you're concerned about the highest risk, which really is phishing, this is a way to add
+
+20
+00:01:49,360 --> 00:01:57,280
+another like basically impenetrable layer to preventing it and securing your network. Yeah, back to the show.
+
+21
+00:01:58,720 --> 00:02:02,960
+All right, man, let's kick off this episode with a couple bugs from this week. Yeah, do you have
+
+22
+00:02:02,960 --> 00:02:07,200
+something in the docket? Yeah, I feel like we haven't talked enough about the awesome bugs that we've been
+
+23
+00:02:07,200 --> 00:02:12,080
+finding. Yeah, yeah. So let's let's flex on the people a little bit. How about that? Perfect. Yeah, that's
+
+24
+00:02:12,080 --> 00:02:15,840
+great. Okay. You want to go first? Or should I? Yeah, sure. I'll go. I know we were just talking
+
+25
+00:02:15,840 --> 00:02:20,480
+about this. I tried to mention a bug, honestly, beforehand. And Justin's like, No, we just talked
+
+26
+00:02:20,480 --> 00:02:24,080
+about something similar. I'm like, Dude, no, this is cool enough to talk about. So basically,
+
+27
+00:02:25,760 --> 00:02:32,240
+so so basically, I keep my eye on a lot of AI apps. And so there is an AI application that added,
+
+28
+00:02:32,240 --> 00:02:36,000
+well, that has had a long standing q parameter injection, right? So for those of you that don't know
+
+29
+00:02:36,000 --> 00:02:40,880
+what that is, basically just a get parameter that automatically invokes. And so there was a company
+
+30
+00:02:40,880 --> 00:02:45,840
+that added some more automatically invokes a prompt injection. Well, automatically invokes a prompt,
+
+31
+00:02:45,840 --> 00:02:52,080
+right? And just, again, to recount why that's so powerful. In prompt injections, oftentimes,
+
+32
+00:02:52,080 --> 00:02:56,400
+the models are able to see that it's not from the original user. But the nice thing about these Q
+
+33
+00:02:56,400 --> 00:03:01,200
+brand prompt injection is it totally seems like it's coming directly from the user and they're asking for
+
+34
+00:03:01,200 --> 00:03:05,600
+the thing. So you almost never get rejections, you're not having to work around anything. And so anyways,
+
+35
+00:03:05,600 --> 00:03:08,960
+I had been sitting on one of those for a long time. And in fact, people probably reported it,
+
+36
+00:03:08,960 --> 00:03:13,840
+but there just was like, hardly any impact. They recently I kept an eye on it, like I immediately
+
+37
+00:03:13,840 --> 00:03:17,920
+saw the same day when they released this feature where it could make changes to your GitHub. And so
+
+38
+00:03:18,960 --> 00:03:24,240
+in this case, that's like extremely powerful for a bunch of reasons, because q parameter can be invoked
+
+39
+00:03:24,240 --> 00:03:30,160
+by CSRF, or by redirects or and you told me this before we jumped on the pod, that actually, you can do
+
+40
+00:03:30,160 --> 00:03:35,520
+like a window opener. So you can redirect them to a benign site and then in the background have something be
+
+41
+00:03:35,520 --> 00:03:40,560
+processing because often these q parameter injections can kind of look funny if you're just trying to sell it as like,
+
+42
+00:03:40,880 --> 00:03:45,360
+Oh, I'm just gonna sit here and let the agent do something malicious on this random website for me as you like,
+
+43
+00:03:45,360 --> 00:03:48,720
+or you're watching it slowly stream by as it's like getting RC on your stuff.
+
+44
+00:03:48,720 --> 00:03:50,480
+They take a second, right? Yeah.
+
+45
+00:03:50,560 --> 00:03:54,400
+Yeah, it takes a second. And so it feels less believable, right? That someone would do that. But your
+
+46
+00:03:54,400 --> 00:04:01,440
+your example where you use a window opener to basically open it up in the previous tab, so that it's like injecting you and making changes
+
+47
+00:04:01,440 --> 00:04:06,240
+a lot of people like, you know, like, you know, like, you know, like, you know, like, you know, like,
+
+48
+00:04:06,240 --> 00:04:10,800
+you know, like, you know, like, you know, like, you know, like, you know, like, you know, like, you know,
+
+49
+00:04:10,800 --> 00:04:13,920
+like, you know, like, you know, like, you know, like, you know, like, you know, like, you know, like, you know,
+
+50
+00:04:13,920 --> 00:04:18,720
+like, you know, like, you know, like, you know, like, you know, like, you know, like, you know, like, you know, like,
+
+51
+00:04:18,720 --> 00:04:23,360
+to be honest, I know that it was a concern of a lot of people that when you start using AI in the way
+
+52
+00:04:23,360 --> 00:04:26,720
+I have been, because I do feel like I do less manual hacking. But this bug actually that I'm
+
+53
+00:04:26,720 --> 00:04:30,880
+mentioning was just fully all me all the way from beginning to the end to the reporting and everything.
+
+54
+00:04:32,320 --> 00:04:36,560
+So I anyways, I appreciate that. I actually do think that basically I've been a triage of sorts.
+
+55
+00:04:36,560 --> 00:04:41,200
+And we've mentioned in the past that being a triage is the best way to learn. And so I've been triaging
+
+56
+00:04:41,200 --> 00:04:45,360
+lots of these volumes from from the hack bot. And so I have actually learned a lot. So and also
+
+57
+00:04:45,360 --> 00:04:50,160
+working with JD and you help a lot. But anyways, so all that to say, this was really cool, because
+
+58
+00:04:50,160 --> 00:04:55,440
+now you can automatically via q parameter injection, make changes to anybody's GitHub repo that they
+
+59
+00:04:55,440 --> 00:05:00,240
+had connected into this application. And the neat thing is that it was fully wormable because so many
+
+60
+00:05:00,240 --> 00:05:04,800
+GitHub repos are just literally automatically pushed to prod when you get a push. I mean, that's how my
+
+61
+00:05:04,800 --> 00:05:10,400
+my blog works, right? I push in some new content, it's CI CD automatically pushes it. And so when you've
+
+62
+00:05:10,400 --> 00:05:15,280
+automatically pwned that now you have another site out there that can then make those
+
+63
+00:05:15,280 --> 00:05:20,960
+same CSRF requests or the post messenger request, right, to then keep going. And so this is like a
+
+64
+00:05:20,960 --> 00:05:25,040
+a wormable AI exploit to make changes in everyone's GitHub repo.
+
+65
+00:05:25,040 --> 00:05:32,800
+Dude, that is crazy. So first, first part in the chain, q parameter prompt injection, which can be
+
+66
+00:05:32,800 --> 00:05:37,600
+done in the background via window.opener redirect, you know, so that they're not seeing how long it takes
+
+67
+00:05:37,600 --> 00:05:41,520
+for the exploit to work, which is like, which was pretty fast, by the way, I when I saw the video.
+
+68
+00:05:41,520 --> 00:05:42,240
+Yeah.
+
+69
+00:05:42,240 --> 00:05:49,520
+And then the AI reading that that prompt injection changes an arbitrary file in your GitHub repo via
+
+70
+00:05:49,520 --> 00:05:56,400
+the connector. And that what you're envisioning would change a website that is run. And it's very
+
+71
+00:05:56,400 --> 00:06:01,920
+easy to adapt that prompt to a dynamic like change any, you know, GitHub pages, you know, website or
+
+72
+00:06:01,920 --> 00:06:09,680
+whatever. And then worm that exploit through all of the websites of all the users, you know, everybody who
+
+73
+00:06:09,680 --> 00:06:12,960
+visits that website. Yeah, we should take a second to talk about that, because that's probably almost
+
+74
+00:06:12,960 --> 00:06:17,120
+like a technique. So like, let's just call it ambiguous prompting. So your ambiguous prompt
+
+75
+00:06:17,120 --> 00:06:22,960
+could say something like, Hey, go change my website, which the agent knows they can like list GitHub
+
+76
+00:06:22,960 --> 00:06:27,840
+repos, right. And so some of those are websites. And so then it's like, go change my website, such that it
+
+77
+00:06:27,840 --> 00:06:32,080
+actually does a redirect. And then in the background does this thing to really help out the user because
+
+78
+00:06:32,080 --> 00:06:35,280
+they need that right or something, just like something to convince the model to do it. Yeah.
+
+79
+00:06:35,280 --> 00:06:41,920
+That's such a powerful thing about AI stuff is like, obviously, you're going to get a more
+
+80
+00:06:41,920 --> 00:06:49,360
+deterministic exploit, the more specific you are, but you also gain a lot of power in it being able
+
+81
+00:06:49,360 --> 00:06:54,240
+to fill in the blanks for you if you very specifically describe what you need. Yeah, exactly.
+
+82
+00:06:54,240 --> 00:06:58,320
+You know, what's insane, though, I didn't I don't think I even shared this with you. In one of mine,
+
+83
+00:06:58,320 --> 00:07:04,000
+I because I just had, I think I had Claude write a prompt or something at some point to see if I can make it
+
+84
+00:07:04,000 --> 00:07:11,200
+do something else. And it used like attacker.com. This app, this app still did it, it went and made
+
+85
+00:07:11,200 --> 00:07:17,360
+the change and pointed the redirect to attacker.com. It's like, do you not understand that this is like
+
+86
+00:07:17,360 --> 00:07:19,120
+not a safe thing to do? But anyways,
+
+87
+00:07:19,120 --> 00:07:25,520
+Oh my gosh. Yeah. Well, it's funny. As soon as you said that, like, as soon as, yeah, it makes me think,
+
+88
+00:07:25,520 --> 00:07:33,040
+I actually recently gave Claude access to like a digital ocean API key that I have. And just said,
+
+89
+00:07:33,040 --> 00:07:38,000
+like, Hey, add this record, you know, and it just boom by the CLI just added it easy peasy. And I'm
+
+90
+00:07:38,000 --> 00:07:42,880
+like, Oh my gosh, now I don't even have to log into digital ocean anymore. Yeah, you know, like,
+
+91
+00:07:42,880 --> 00:07:45,760
+and it can just automatically do stuff. Yeah.
+
+92
+00:07:46,400 --> 00:07:50,080
+That's really powerful inside of cloud flare. If anybody wants to take on that risk of letting
+
+93
+00:07:50,080 --> 00:07:54,880
+their agent have like a global key to their cloud flare, it can configure so much via the CLI.
+
+94
+00:07:56,720 --> 00:08:00,640
+Yeah, dude. And you know, obviously, all this stuff that we're saying shouldn't be done
+
+95
+00:08:00,640 --> 00:08:05,600
+in any sort of professional environment, you know, but the thing is, as a bug bounty hunter, like,
+
+96
+00:08:06,560 --> 00:08:12,400
+the beauty of us is we're scrappy as hell, you know, and I'm not going to pretend with you guys
+
+97
+00:08:12,400 --> 00:08:18,400
+that all of my everything that I run is is secure. It's not, you know, like, I know, it's not and I
+
+98
+00:08:18,400 --> 00:08:24,160
+just don't, you know, it's just not high enough value for me to like, you know, what are you going
+
+99
+00:08:24,160 --> 00:08:28,640
+to do? You're going to pop me and you're going to like, see the pictures of my daughter, you know,
+
+100
+00:08:28,640 --> 00:08:33,200
+on my desktop, like, okay, like, that's weird, you know, but it's like, not the end of the world,
+
+101
+00:08:33,200 --> 00:08:37,440
+right? You know, I don't have a bigger target than you're selling, right? You do have access to a lot
+
+102
+00:08:37,440 --> 00:08:43,680
+of vulnerabilities. But, but I Yeah, I mean, yeah, they'll find my little eye doors with, you know,
+
+103
+00:08:43,680 --> 00:08:47,440
+I don't know, sometimes and there have been four or five times in my career where I'm like,
+
+104
+00:08:48,240 --> 00:08:53,920
+okay, actually, this exploit might put me on the, you know, this is something that people
+
+105
+00:08:54,160 --> 00:08:57,520
+might actually hack me to get access to, you know, if they knew that I had it.
+
+106
+00:08:57,520 --> 00:09:02,080
+Yeah, my first RCE if you remember this, it was only $1,000 paid because they had not
+
+107
+00:09:02,080 --> 00:09:06,560
+up their boundaries yet was RC on Alibaba on a Chinese server. And I remember thinking like, man,
+
+108
+00:09:06,560 --> 00:09:08,720
+does this actually increase my risk of going to China?
+
+109
+00:09:08,720 --> 00:09:14,720
+Yeah, dude, I don't know. I'm I don't think I will go to China, dude. I think I think that would,
+
+110
+00:09:14,720 --> 00:09:22,080
+I don't know. I just let's just put it this way. I've had interactions with governments that I have
+
+111
+00:09:22,080 --> 00:09:28,640
+not wanted to have. And I definitely don't want to do that in China. Like, and it's like, yeah,
+
+112
+00:09:28,640 --> 00:09:36,400
+so don't love that. All right. Anyway, share your bug. Great, great bug, dude. I will I will mention
+
+113
+00:09:36,400 --> 00:09:46,240
+my bug now. This one, wow, big surprise is a CSPT. But it's a little bit of an interesting twist on a
+
+114
+00:09:46,240 --> 00:09:54,800
+CSPT because it is a mobile bug. And the way that it works is there was a it's kind of like a second
+
+115
+00:09:54,800 --> 00:10:03,840
+order CSPT in a mobile app. So what would happen is the attacker would have to use an API key that was
+
+116
+00:10:03,840 --> 00:10:14,400
+embedded in the mobile app to create a custom link on the victim sites. What it would link shortener
+
+117
+00:10:14,400 --> 00:10:22,160
+service. And in that link shortener service, you have the ability to supply extra parameters that
+
+118
+00:10:22,160 --> 00:10:29,760
+get sent along with that short link, like in our post also, it's not like parameters like that. It's
+
+119
+00:10:29,760 --> 00:10:40,080
+like, like a JSON, you know, key value thing. And it just like, gives it whenever it resolves that link.
+
+120
+00:10:40,080 --> 00:10:45,040
+And so anyway, what would happen is we would create I would create the link. And I would include
+
+121
+00:10:45,040 --> 00:10:50,880
+these, you know, this JSON blob in there there for the parameters for this link. And then when I opened
+
+122
+00:10:50,880 --> 00:10:58,960
+it in the app, the app would catch that link because it's right, it registered that link. And then it would
+
+123
+00:10:58,960 --> 00:11:06,240
+grab those parameters from the service using an API key. And then it would invoke any array of actions. I
+
+124
+00:11:06,240 --> 00:11:13,440
+think there was like 27 actions that the app would take from those parameters that were passed in by
+
+125
+00:11:15,920 --> 00:11:23,120
+the link shortening service. And one of those, of course, would trigger a post request where the
+
+126
+00:11:23,120 --> 00:11:28,560
+attacker's parameter that was supplied by the link shortener service would be embedded into the path.
+
+127
+00:11:28,560 --> 00:11:34,480
+So then I could do, you know, truncation with the hashtag path traversal with the dot dot slash,
+
+128
+00:11:34,480 --> 00:11:42,160
+and that would result in an arbitrary post verb request being sent to anywhere on the API with
+
+129
+00:11:42,160 --> 00:11:43,200
+the victim's API key.
+
+130
+00:11:43,200 --> 00:11:45,200
+Josh Birkley. Could you control the body or no?
+
+131
+00:11:45,200 --> 00:11:51,040
+Josh Birkley. Could not control the body. What you could do, however, is control the query parameters,
+
+132
+00:11:51,040 --> 00:11:55,360
+which get injected, you know, like depending on what is processing it on the back end,
+
+133
+00:11:55,360 --> 00:12:01,440
+those sometimes get perceived as the body as well. So I was able to hit a couple good ones
+
+134
+00:12:03,200 --> 00:12:10,560
+that have some effect. One that incurred financial loss, one that made a change to the account,
+
+135
+00:12:11,520 --> 00:12:17,040
+and one that I wasn't able to fully confirm, but got confirmation from the team that it seems vulnerable
+
+136
+00:12:17,040 --> 00:12:23,840
+to be able to confirm somebody who requested access to a restricted resource. So then I could request access,
+
+137
+00:12:23,840 --> 00:12:25,520
+send the link auto confirm myself.
+
+138
+00:12:25,520 --> 00:12:26,160
+Josh Birkley. Oh, nice.
+
+139
+00:12:26,160 --> 00:12:27,600
+Josh Birkley. That's a good one.
+
+140
+00:12:27,600 --> 00:12:32,080
+Josh Birkley. So that was a pretty fun one. I just think that I have mentioned this before because I
+
+141
+00:12:32,080 --> 00:12:39,040
+found a CSPT on a desktop client the other day, but I just think CSPTs are everywhere.
+
+142
+00:12:39,680 --> 00:12:43,120
+They're in desktop clients, they're in mobile apps, they're in web apps, they're everywhere.
+
+143
+00:12:43,120 --> 00:12:47,600
+So everyone I've ever found though, I've struggled to get impact on. Like, I just feel like that it's just
+
+144
+00:12:47,600 --> 00:12:50,240
+like a get request and then it's not that interesting, you know?
+
+145
+00:12:50,240 --> 00:12:53,440
+Josh Birkley. Not going to lie. I spent a lot of time trying to get
+
+146
+00:12:53,440 --> 00:12:57,760
+impact for this and I did, you know, but AI definitely helps with that.
+
+147
+00:12:57,760 --> 00:12:58,320
+Josh Birkley. Mm-hmm.
+
+148
+00:12:58,320 --> 00:13:04,960
+Josh Birkley. You got to know some tricks, you know, getting the parameters to the request in
+
+149
+00:13:06,480 --> 00:13:10,480
+via the query parameters. One, if that gadget doesn't work, it is more painful. Then you go for
+
+150
+00:13:10,480 --> 00:13:13,600
+like a no body request, right? A request that has no body at all.
+
+151
+00:13:13,600 --> 00:13:13,600
+
+
+152
+00:13:13,600 --> 00:13:17,760
+Josh Birkley. And then you see if it ignores your parameters that are automatically being sent in from
+
+153
+00:13:17,760 --> 00:13:27,280
+the forged request. And then worst case scenario, you look for something that will accept similar set
+
+154
+00:13:27,280 --> 00:13:37,120
+of parameters or and or return a sort of a masked version of what the typical response is expecting.
+
+155
+00:13:37,760 --> 00:13:41,760
+And then but you have more control. So sometimes they'll be looking for like ID, or they'll be looking
+
+156
+00:13:41,760 --> 00:13:52,000
+for like a specific JSON key or whatever. And you have like a partial JSON injection on a different
+
+157
+00:13:52,000 --> 00:13:57,600
+endpoint where you can chain that together to like make everything work. So it is a little bit of a
+
+158
+00:13:57,600 --> 00:14:04,960
+chainy bug type for sure. That requires some deep digging to get full impact. But between those
+
+159
+00:14:04,960 --> 00:14:12,480
+techniques and open redirect and an arbitrary JSON hosting gadget, most times some impact falls out.
+
+160
+00:14:12,480 --> 00:14:16,080
+Okay, nice. Yeah, that's good to know. Look for those other little gadgets. I'm going to bake this
+
+161
+00:14:16,080 --> 00:14:21,760
+into a skill. Look for these three things. Yeah, yeah, that's good. Sweet, dude. Let me see if
+
+162
+00:14:21,760 --> 00:14:25,840
+there's okay, actually pulled out the other I had another little thing I was going to talk about. But I
+
+163
+00:14:25,840 --> 00:14:30,000
+think I'll actually talk about that in a future episode. So okay, sweet. So I had a question about
+
+164
+00:14:30,000 --> 00:14:34,480
+this one. The finding is not that interesting. Like it's just a direct phone. Like it's just a key,
+
+165
+00:14:34,480 --> 00:14:39,600
+a key found in a JS file. But I was I'm curious if you've ever ran across like a social media
+
+166
+00:14:40,160 --> 00:14:45,840
+admin API key that like allows you to have like full admin access to like a Facebook group or like
+
+167
+00:14:45,840 --> 00:14:49,280
+a social media account or anything like that. Have you ever found this?
+
+168
+00:14:49,280 --> 00:14:53,360
+No, I haven't. I haven't found that. Yeah. So this this that's what I found. And I was just curious how
+
+169
+00:14:53,360 --> 00:15:00,800
+you rate that severity. Because to me, it feels like there is both integrity and confidentiality impact.
+
+170
+00:15:00,800 --> 00:15:03,920
+Like if if the social media platform allows you to have like,
+
+171
+00:15:03,920 --> 00:15:07,280
+I don't know, private messages or stuff like that, then there's kind of like a confidentiality
+
+172
+00:15:07,280 --> 00:15:12,480
+impact. And then if there if you can like delete, which you almost always can with these keys,
+
+173
+00:15:12,480 --> 00:15:17,440
+basically delete users comments or post on like that Facebook group or on that like social media group,
+
+174
+00:15:17,440 --> 00:15:22,960
+then it feels like there's both confidentiality and integrity. So I feel I mean, I definitely am very
+
+175
+00:15:22,960 --> 00:15:27,280
+passionate. It's a critical but anyways, I was curious about your thoughts on the severity for that.
+
+176
+00:15:27,280 --> 00:15:35,040
+Yeah. Um, geez, dude. I mean, are they actively using it? Like had they posted on it recently?
+
+177
+00:15:36,240 --> 00:15:42,400
+I need to go check that but it definitely has like millions of followers. Oh, what? What? Then
+
+178
+00:15:42,400 --> 00:15:43,600
+absolutely. Like,
+
+179
+00:15:43,600 --> 00:15:47,520
+it's a major brand like it's like a, you know, a fortune 100 brand. Yeah.
+
+180
+00:15:47,520 --> 00:15:58,560
+I mean, that's like a, I feel like that's a mega crit dude. Okay. Like if you are able to take over the
+
+181
+00:15:58,560 --> 00:16:04,080
+social media account of it, that has, I mean, dude, I mean, just think about the impact of tweeting out
+
+182
+00:16:04,080 --> 00:16:09,360
+like a crypto scam. Yeah, like, like, you would, you would walk away with millions of dollars if you
+
+183
+00:16:09,360 --> 00:16:13,600
+just tweeted out a crypto scam from that dude. Yeah, I think this is one of those situations where like,
+
+184
+00:16:13,600 --> 00:16:16,400
+two years ago, I'd have been like, Oh, yeah, it's definitely a crit. But today it just feels like
+
+185
+00:16:16,400 --> 00:16:22,080
+programs are so stingy and argumentative. It feels hard, you know, to like, just to know for sure,
+
+186
+00:16:22,080 --> 00:16:28,240
+like, yeah, this actually is a critical. So yeah, I mean, like people pay a ton of money to get like a,
+
+187
+00:16:28,240 --> 00:16:33,600
+you know, a post on like a million dollar or million followers plus they so totally and then especially,
+
+188
+00:16:33,600 --> 00:16:38,560
+I mean, if it's their main social media account, and if you have access to like, reading DMS,
+
+189
+00:16:38,560 --> 00:16:42,960
+and yeah, it is a it is a country specific account. But it but it's like a major like,
+
+190
+00:16:42,960 --> 00:16:47,040
+it's a major first world country where they like I said, it has millions of followers on the on the
+
+191
+00:16:47,040 --> 00:16:54,000
+page. So dude, mega crit nice work, dude, give me some, give me some dude, you are printing man,
+
+192
+00:16:54,000 --> 00:17:01,280
+guys, I have been blown away by how much resume like, dude, your queue right now is insane. You your
+
+193
+00:17:01,280 --> 00:17:07,440
+earnings for this year, phenomenal. And your queue is even better than the you know, it's like, Oh my gosh,
+
+194
+00:17:07,440 --> 00:17:10,960
+I appreciate that. Yeah, that's what I keep telling JD, we just got to keep the hopper full,
+
+195
+00:17:10,960 --> 00:17:13,280
+you know, with our hack, we always got to keep the hopper full of bugs.
+
+196
+00:17:13,280 --> 00:17:22,080
+Yeah, yeah, you do. I'll jump to something similar to that, then. I, after learning from your success,
+
+197
+00:17:22,080 --> 00:17:27,600
+have spun up my own hack bot, it is found its first bug this week, I was very pleased and it's 12th bug,
+
+198
+00:17:27,600 --> 00:17:36,880
+but you know, the first one was special, of course. And yeah, it's going great. And I had a couple
+
+199
+00:17:36,880 --> 00:17:42,240
+tips that I was going to throw out to the people, especially in light of the recent announcement
+
+200
+00:17:42,240 --> 00:17:49,120
+from Anthropix saying that they're going to start charging for programmatic use of cloud code,
+
+201
+00:17:50,560 --> 00:17:54,080
+which erases access to cloud dash P or dash dash print.
+
+202
+00:17:54,080 --> 00:17:58,000
+Well, let me clarify this because it's very confusing. They had a very confusing tweet.
+
+203
+00:17:58,720 --> 00:18:03,360
+Basically, they're selling this as, Oh, this is an upgrade. If you're on the $200 a month plan,
+
+204
+00:18:03,360 --> 00:18:09,120
+you now have a separate extra $200 worth of API credits that you can use for programmatic access
+
+205
+00:18:09,120 --> 00:18:14,720
+for the agent SDK or for the dash P non interactive mode. And that's just extra justice. That's just
+
+206
+00:18:14,720 --> 00:18:20,320
+an extra $200 just for you, man. But what they didn't say, which really sucks is that now you can't
+
+207
+00:18:20,320 --> 00:18:25,520
+use your normal token bucket, which is like, you know, the like $4,000 per month crazy amount of
+
+208
+00:18:25,520 --> 00:18:30,720
+subsidized tokens that you get that you would normally use. And so yeah, that massively impacted me
+
+209
+00:18:30,720 --> 00:18:36,240
+because both like mine and JD's hack bot and also just the discord control that I use to like interact
+
+210
+00:18:36,240 --> 00:18:42,000
+with cloud on my VPS both use the dash P parameter. Yeah, that's really disappointing to see. And I
+
+211
+00:18:42,000 --> 00:18:48,320
+tweeted out about it. And I was like, guys, this sucks because this is just very easily bypassable.
+
+212
+00:18:48,320 --> 00:18:53,840
+And I think Johan came in and said, Yeah, but you know, essentially, they're just adding friction to
+
+213
+00:18:53,840 --> 00:18:59,520
+stop the bleeding, you know, and I get that that makes sense. But anyway, you guys that are listeners of
+
+214
+00:18:59,520 --> 00:19:04,480
+the podcast, we know that you're smart enough, and you're going to get a workaround, which was
+
+215
+00:19:04,480 --> 00:19:10,160
+actually very conveniently timed because I when building my own hack bot was consulting with Rezo,
+
+216
+00:19:10,160 --> 00:19:16,800
+and they're using dash dash print. And I was like, I would like to use the dash dash RC feature
+
+217
+00:19:16,800 --> 00:19:24,080
+cloud code to be able to connect it back to my like remote control for in the cloud app on my mobile
+
+218
+00:19:24,080 --> 00:19:31,520
+device. And you can't do that with dash dash print. So I actually built a harness that uses a pseudo
+
+219
+00:19:31,520 --> 00:19:39,920
+terminal, and just writes messages straight into the the tui that cloud has. And it's worked great.
+
+220
+00:19:39,920 --> 00:19:45,200
+I haven't had any issues with it, I'm able to get dash dash RC working so I can easily control it from my
+
+221
+00:19:45,200 --> 00:19:53,920
+my phone. And you get all the benefits of the normal cloud UI and the app. So that's an easy workaround.
+
+222
+00:19:53,920 --> 00:19:59,120
+I mean, just, I'm sure you guys would have figured that out already. But it's just annoying that they're
+
+223
+00:19:59,120 --> 00:20:00,320
+making us refactor a little bit.
+
+224
+00:20:00,320 --> 00:20:04,160
+Jeff Lerner, Ph.D.: Yeah, I think there's like a bunch of different ways to get around the
+
+225
+00:20:05,440 --> 00:20:10,400
+input in an interactive session. And then there's also probably some ways to get around it from an API
+
+226
+00:20:10,400 --> 00:20:15,280
+level. I think we're in a group chat with Corbin and Douglas. And Corbin was like very quickly like,
+
+227
+00:20:15,280 --> 00:20:18,160
+I wonder how they're doing this on the API side of things. So there's probably just a parameter
+
+228
+00:20:18,160 --> 00:20:22,720
+that's like interactive false or interactive true because it just still goes to the same model on the
+
+229
+00:20:22,720 --> 00:20:23,040
+back end.
+
+230
+00:20:23,040 --> 00:20:26,640
+Jeff Lerner, Ph.D.: That's like, that's like a little gray hat though, in my opinion.
+
+231
+00:20:26,640 --> 00:20:28,960
+Jeff Lerner, Ph.D.: Like, oh, if you're like intercepting it and swapping that?
+
+232
+00:20:28,960 --> 00:20:33,040
+Dr. David P.: Yeah, like that's where it kind of crosses the line. Like, like, in my opinion,
+
+233
+00:20:33,040 --> 00:20:34,000
+Jeff Lerner, Ph.D.: Yeah, yeah, sure.
+
+234
+00:20:34,000 --> 00:20:40,160
+Dr. David P.: They don't control what, in my opinion, and maybe there's some legal things
+
+235
+00:20:40,160 --> 00:20:46,000
+that's different than this. But in my opinion, you know, I'm still using their app just like a
+
+236
+00:20:46,000 --> 00:20:48,320
+normal user would by the TUI, right?
+
+237
+00:20:48,320 --> 00:20:48,560
+Jeff Lerner, Ph.D.: Right.
+
+238
+00:20:48,560 --> 00:20:52,800
+Dr. David P.: You know, so it's like, okay, they don't really control what terminal interface I use.
+
+239
+00:20:52,800 --> 00:20:54,560
+So it doesn't matter.
+
+240
+00:20:54,560 --> 00:20:57,760
+Jeff Lerner, Ph.D.: Well, and I think the main reason they're rolling this out,
+
+241
+00:20:57,760 --> 00:21:03,600
+Justin, is because I guarantee you there are tons of scrappy startups that are not allowed to,
+
+242
+00:21:03,600 --> 00:21:09,200
+based on the terms of service, use these subsidized tokens for like real customers in the world.
+
+243
+00:21:09,200 --> 00:21:09,760
+Jeff Lerner, Ph.D.: Yeah.
+
+244
+00:21:09,760 --> 00:21:12,720
+Dr. David P.: And like, and honestly, this is actually one reason why I love being a bug
+
+245
+00:21:12,720 --> 00:21:16,800
+bounty hunter. Back to what you were saying before. It's like, when we're using these hack bots,
+
+246
+00:21:16,800 --> 00:21:20,640
+like we're using them for personal use for like literally hacking it. We're not getting,
+
+247
+00:21:20,640 --> 00:21:24,800
+we're not like a company who's doing a pen test because I'm sure there actually are a lot of
+
+248
+00:21:24,800 --> 00:21:28,400
+people also doing that. That's against the terms of service. If you're basically a business providing
+
+249
+00:21:28,400 --> 00:21:33,600
+services to a customer via cloud code, you are supposed to be paying the API credits. You're
+
+250
+00:21:33,600 --> 00:21:36,480
+not supposed to be using these subsidized tokens, right? It's like for personal use.
+
+251
+00:21:36,480 --> 00:21:36,480
+
+
+252
+00:21:36,480 --> 00:21:40,480
+Dr. David P.: And I think that there are probably lots of companies that are basically using the
+
+253
+00:21:40,480 --> 00:21:48,960
+Asia SDK or the dash P like print mode to basically sell a service at the subsidized token cost. And
+
+254
+00:21:48,960 --> 00:21:53,360
+so I think that what they're really trying to do is just like basically enforce the terms of service
+
+255
+00:21:53,360 --> 00:21:57,920
+that people have already agreed to for usage, but it does really suck because like you said,
+
+256
+00:21:57,920 --> 00:22:01,040
+Justin, it's like super easy to bypass and these companies are going to do the same thing we're
+
+257
+00:22:01,040 --> 00:22:05,120
+doing. And so it's like, I do think that the subsidized tokens are not going to last forever.
+
+258
+00:22:05,120 --> 00:22:08,160
+Jeff Lerner, Ph.D.: Yeah, it's unfortunate, man. So we got to get while the getting's good.
+
+259
+00:22:08,160 --> 00:22:13,200
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+
+260
+00:22:13,200 --> 00:22:18,160
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+
+261
+00:22:18,160 --> 00:22:21,040
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+
+262
+00:22:21,040 --> 00:22:23,040
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+
+263
+00:22:23,040 --> 00:22:27,040
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top of the top.
+
+264
+00:22:27,040 --> 00:22:32,080
+Justin, it's like, okay, yes, you are correct. And I will do that next week once I figure out
+
+265
+00:22:32,080 --> 00:22:40,240
+how to handle the scale. But very fun stuff. And I will say it is now my go to, like scrolling thing.
+
+266
+00:22:40,240 --> 00:22:45,280
+And I will say, hey, I'm going to go to the top of the top of the top of the top of the top of the top.
+
+267
+00:22:45,280 --> 00:22:49,280
+And I will say, hey, I'm going to go to the top of the top of the top of the top of the top.
+
+268
+00:22:49,280 --> 00:22:51,280
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+269
+00:22:51,280 --> 00:22:53,280
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+270
+00:22:53,280 --> 00:22:55,280
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+271
+00:22:55,280 --> 00:22:57,280
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+272
+00:22:57,280 --> 00:22:59,280
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+273
+00:22:59,280 --> 00:23:01,280
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+274
+00:23:01,280 --> 00:23:06,320
+And I will say, hey, I'm going to go to the top of the top of the top of the top of the top of the top.
+
+275
+00:23:06,320 --> 00:23:08,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+276
+00:23:08,320 --> 00:23:10,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+277
+00:23:10,320 --> 00:23:12,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+278
+00:23:12,320 --> 00:23:14,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+279
+00:23:14,320 --> 00:23:16,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+280
+00:23:16,320 --> 00:23:18,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+281
+00:23:18,320 --> 00:23:20,320
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+282
+00:23:20,320 --> 00:23:23,360
+And I will say, hey, I'm going to go to the top of the top of the top.
+
+283
+00:23:23,360 --> 00:23:25,360
+And I will say, hey, I'm going to go to the top of the top.
+
+284
+00:23:25,360 --> 00:23:27,360
+And I will say, hey, I'm going to go to the top of the top.
+
+285
+00:23:27,360 --> 00:23:29,360
+And I will say, hey, I'm going to go to the top of the top.
+
+286
+00:23:29,360 --> 00:23:31,360
+And I will say, hey, I'm going to go to the top of the top.
+
+287
+00:23:31,360 --> 00:23:33,360
+And I will say, hey, I'm going to go to the top of the top.
+
+288
+00:23:33,360 --> 00:23:35,360
+And I will say, hey, I'm going to go to the top of the top.
+
+289
+00:23:35,360 --> 00:23:37,360
+And I will say, hey, I'm going to go to the top of the top.
+
+290
+00:23:37,360 --> 00:23:39,360
+And I will say, hey, I'm going to go to the top of the top.
+
+291
+00:23:39,360 --> 00:23:41,360
+And I will say, hey, I'm going to go to the top of the top.
+
+292
+00:23:41,360 --> 00:23:44,400
+And I will say, hey, I'm going to go to the top of the top.
+
+293
+00:23:44,400 --> 00:23:46,400
+And I will say, hey, I'm going to go to the top of the top.
+
+294
+00:23:46,400 --> 00:23:48,400
+And I will say, hey, I'm going to go to the top.
+
+295
+00:23:48,400 --> 00:23:50,400
+And I will say, hey, I'm going to go to the top.
+
+296
+00:23:50,400 --> 00:23:52,400
+And I will say, hey, I'm going to go to the top.
+
+297
+00:23:52,400 --> 00:23:54,400
+And I will say, hey, I'm going to go to the top.
+
+298
+00:23:54,400 --> 00:23:56,400
+And I will say, hey, I'm going to go to the top.
+
+299
+00:23:56,400 --> 00:23:58,400
+And I will say, hey, I'm going to go to the top.
+
+300
+00:23:58,400 --> 00:24:00,400
+And I will say, hey, I'm going to go to the top.
+
+301
+00:24:00,400 --> 00:24:02,400
+And I will say, hey, I'm going to go to the top.
+
+302
+00:24:02,400 --> 00:24:04,400
+And I will say, hey, I'm going to go to the top.
+
+303
+00:24:04,400 --> 00:24:06,400
+And I will say, hey, I'm going to go to the top.
+
+304
+00:24:11,360 --> 00:24:16,400
+And I will say, hey, I'm going to go to the top of the top.
+
+305
+00:24:16,400 --> 00:24:18,400
+And I will say, hey, I'm going to go to the top of the top.
+
+306
+00:24:18,400 --> 00:24:20,400
+And I will say, hey, I'm going to go to the top of the top.
+
+307
+00:24:20,400 --> 00:24:22,400
+And I will say, hey, I'm going to go to the top of the top.
+
+308
+00:24:22,400 --> 00:24:24,400
+And I will say, hey, I'm going to go to the top of the top.
+
+309
+00:24:24,400 --> 00:24:26,400
+And I will say, hey, I'm going to go to the top of the top.
+
+310
+00:24:26,400 --> 00:24:28,400
+And I will say, hey, I'm going to go to the top of the top.
+
+311
+00:24:28,400 --> 00:24:30,400
+And I will say, hey, I'm going to go to the top of the top.
+
+312
+00:24:30,400 --> 00:24:32,400
+And I will say, hey, I'm going to go to the top of the top.
+
+313
+00:24:32,400 --> 00:24:34,400
+And I will say, hey, I'm going to go to the top of the top.
+
+314
+00:24:34,400 --> 00:24:37,440
+And I will say, hey, I'm going to go to the top of the top.
+
+315
+00:24:37,440 --> 00:24:39,440
+And I will say, hey, I'm going to go to the top of the top.
+
+316
+00:24:39,440 --> 00:24:41,440
+And I will say, hey, I'm going to go to the top.
+
+317
+00:24:41,440 --> 00:24:43,440
+And I will say, hey, I'm going to go to the top.
+
+318
+00:24:43,440 --> 00:24:45,440
+And I will say, hey, I'm going to go to the top.
+
+319
+00:24:45,440 --> 00:24:47,440
+And I will say, hey, I'm going to go to the top.
+
+320
+00:24:47,440 --> 00:24:49,440
+And I will say, hey, I'm going to go to the top.
+
+321
+00:24:49,440 --> 00:24:51,440
+And I will say, hey, I'm going to go to the top.
+
+322
+00:24:51,440 --> 00:24:53,440
+And I will say, hey, I'm going to go to the top.
+
+323
+00:24:53,440 --> 00:24:55,440
+And I will say, hey, I'm going to go to the top.
+
+324
+00:24:55,440 --> 00:24:57,440
+And I will say, hey, I'm going to go to the top.
+
+325
+00:24:57,440 --> 00:24:59,480
+And I will say, hey, I'm going to go to the top.
+
+326
+00:24:59,480 --> 00:25:01,480
+And I will say, hey, I'm going to go to the top.
+
+327
+00:25:01,480 --> 00:25:03,480
+And I will say, hey, I'm going to go to the top.
+
+328
+00:25:03,480 --> 00:25:05,480
+And I will say, hey, I'm going to go to the top.
+
+329
+00:25:05,480 --> 00:25:07,480
+And I will say, hey, I'm going to go to the top.
+
+330
+00:25:07,480 --> 00:25:09,480
+And I will say, hey, I'm going to go to the top.
+
+331
+00:25:09,480 --> 00:25:11,480
+And I will say, hey, I'm going to go to the top.
+
+332
+00:25:11,480 --> 00:25:13,480
+And I will say, hey, I'm going to go to the top.
+
+333
+00:25:13,480 --> 00:25:15,480
+And I will say, hey, I'm going to go to the top.
+
+334
+00:25:15,480 --> 00:25:17,480
+And I will say, hey, I'm going to go to the top.
+
+335
+00:25:17,480 --> 00:25:19,480
+And I will say, hey, I'm going to go to the top.
+
+336
+00:25:19,480 --> 00:25:21,480
+And I will say, hey, I'm going to go to the top.
+
+337
+00:25:21,480 --> 00:25:23,520
+Where you have to do greater than.
+
+338
+00:25:23,520 --> 00:25:24,520
+Yes.
+
+339
+00:25:24,520 --> 00:25:26,520
+We mentioned it last week.
+
+340
+00:25:26,520 --> 00:25:26,520
+
+
+341
+00:25:26,520 --> 00:25:26,520
+
+
+342
+00:25:26,520 --> 00:25:29,520
+So basically, I figured that out like two weeks before that.
+
+343
+00:25:29,520 --> 00:25:31,520
+And I have my skills and I use it for two weeks.
+
+344
+00:25:31,520 --> 00:25:32,520
+And then I share on the pod.
+
+345
+00:25:32,520 --> 00:25:34,520
+So that's kind of my thoughts.
+
+346
+00:25:34,520 --> 00:25:35,520
+That's good.
+
+347
+00:25:35,520 --> 00:25:36,520
+That's brave.
+
+348
+00:25:36,520 --> 00:25:37,520
+That's brave.
+
+349
+00:25:37,520 --> 00:25:37,520
+
+
+350
+00:25:37,520 --> 00:25:37,520
+
+
+351
+00:25:37,520 --> 00:25:39,520
+I mean, maybe it's a month or maybe I forget or whatever.
+
+352
+00:25:39,520 --> 00:25:42,520
+But that's kind of like my philosophy where I can still be extremely giving,
+
+353
+00:25:42,520 --> 00:25:49,520
+but still feel like in this day and age that like, you know, I'm able to like harvest
+
+354
+00:25:49,520 --> 00:25:51,560
+some of that benefit for my family as well.
+
+355
+00:25:51,560 --> 00:25:54,560
+I'm so, I'm so lucky to have you as a co-host, man.
+
+356
+00:25:54,560 --> 00:25:57,560
+Thank you for coming on the pod and doing this with me.
+
+357
+00:25:57,560 --> 00:25:58,560
+Yeah, of course.
+
+358
+00:25:58,560 --> 00:25:58,560
+
+
+359
+00:25:58,560 --> 00:26:01,560
+And one more thing on that same topic with just the building of hackbots,
+
+360
+00:26:01,560 --> 00:26:03,560
+because I've been talking a lot with grab me about this.
+
+361
+00:26:03,560 --> 00:26:04,560
+He is just peeved.
+
+362
+00:26:04,560 --> 00:26:07,560
+Like he's just, oh man, is there, is there an English word for being mad?
+
+363
+00:26:07,560 --> 00:26:08,560
+What's what?
+
+364
+00:26:08,560 --> 00:26:09,560
+He's not.
+
+365
+00:26:09,560 --> 00:26:11,560
+What's the idea of chuffed a buddy tweaked?
+
+366
+00:26:11,560 --> 00:26:12,560
+I don't know.
+
+367
+00:26:12,560 --> 00:26:13,560
+Yeah, he's tweaked.
+
+368
+00:26:13,560 --> 00:26:14,560
+There we go.
+
+369
+00:26:14,560 --> 00:26:17,560
+And he, he has been mad at Claude ever since four.
+
+370
+00:26:17,560 --> 00:26:18,560
+Well, one, he got gas lit.
+
+371
+00:26:18,560 --> 00:26:19,560
+Right.
+
+372
+00:26:19,560 --> 00:26:23,520
+When they had those weird changes where it was like dropping the, like the session history
+
+373
+00:26:23,520 --> 00:26:27,600
+and like the quality actually did degrade and who called them out for that from trusted sec.
+
+374
+00:26:27,600 --> 00:26:30,600
+Dave Kennedy was calling them out for this and all that.
+
+375
+00:26:30,600 --> 00:26:32,600
+During that drama, Brandon got burned a lot.
+
+376
+00:26:32,600 --> 00:26:33,600
+I was so upset.
+
+377
+00:26:33,600 --> 00:26:34,600
+He felt gas lit.
+
+378
+00:26:34,600 --> 00:26:38,600
+And so then four, seven drops and he felt like for his hackbot, it got way worse.
+
+379
+00:26:38,600 --> 00:26:39,600
+So he was gas lit again.
+
+380
+00:26:39,600 --> 00:26:40,600
+Yeah.
+
+381
+00:26:40,600 --> 00:26:42,600
+And then now all of a sudden with the dash P he's just like mad.
+
+382
+00:26:42,600 --> 00:26:43,600
+Right.
+
+383
+00:26:43,600 --> 00:26:46,600
+So I was messaging this morning and we were talking about GPT five, five.
+
+384
+00:26:46,600 --> 00:26:47,600
+And then he was like, okay, so what are you doing?
+
+385
+00:26:47,600 --> 00:26:49,600
+Are you using codecs with GPT five, five?
+
+386
+00:26:49,600 --> 00:26:50,600
+And which, you know, you've probably seen me tweeting.
+
+387
+00:26:50,600 --> 00:26:51,600
+I could say it's quite good.
+
+388
+00:26:51,600 --> 00:26:53,600
+And, um, he was like, yeah, that's what I've been using.
+
+389
+00:26:53,600 --> 00:26:54,640
+It's been great.
+
+390
+00:26:54,640 --> 00:27:01,600
+And then I told him, I was like, my biggest problem is that it's a little bit overly PhD
+
+391
+00:27:01,600 --> 00:27:05,600
+slash autistic key in the way that it describes bugs.
+
+392
+00:27:05,600 --> 00:27:10,760
+It describes them in like such like a high level language, like such big vocabulary that it
+
+393
+00:27:10,760 --> 00:27:11,760
+feels confusing to me.
+
+394
+00:27:11,760 --> 00:27:15,680
+Whereas like Claude code reports feel like much more like, um, human like, like I can just
+
+395
+00:27:15,680 --> 00:27:16,840
+understand them a lot better.
+
+396
+00:27:16,840 --> 00:27:18,840
+And he said he had found that exact same experience.
+
+397
+00:27:18,840 --> 00:27:22,120
+So I wanted to mention that to our listeners, because if they, if anyone's building on that,
+
+398
+00:27:22,120 --> 00:27:24,960
+like maybe there's some way to get around that and via prompting, like, Hey, make sure
+
+399
+00:27:24,960 --> 00:27:25,960
+you explain this to me.
+
+400
+00:27:25,960 --> 00:27:27,160
+Like I'm an idiot.
+
+401
+00:27:27,160 --> 00:27:28,160
+Like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+
+402
+00:27:28,160 --> 00:27:29,160
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+
+403
+00:27:29,160 --> 00:27:30,160
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+
+404
+00:27:30,160 --> 00:27:31,160
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+
+405
+00:27:31,160 --> 00:27:32,160
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+
+406
+00:27:32,160 --> 00:27:33,160
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+407
+00:27:33,160 --> 00:27:34,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+408
+00:27:34,160 --> 00:27:35,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+409
+00:27:35,160 --> 00:27:36,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+410
+00:27:36,160 --> 00:27:37,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+411
+00:27:37,160 --> 00:27:38,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+412
+00:27:38,160 --> 00:27:39,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+413
+00:27:39,160 --> 00:27:40,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+414
+00:27:40,160 --> 00:27:42,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+415
+00:27:42,160 --> 00:27:46,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+416
+00:27:46,160 --> 00:27:50,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+417
+00:27:50,160 --> 00:27:53,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+418
+00:27:53,160 --> 00:27:57,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+419
+00:27:57,160 --> 00:28:01,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+420
+00:28:01,160 --> 00:28:05,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+421
+00:28:05,160 --> 00:28:09,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+422
+00:28:09,160 --> 00:28:13,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+423
+00:28:13,160 --> 00:28:17,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+424
+00:28:17,160 --> 00:28:21,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+425
+00:28:21,160 --> 00:28:25,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+426
+00:28:25,160 --> 00:28:29,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+427
+00:28:29,160 --> 00:28:31,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+428
+00:28:31,160 --> 00:28:35,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+429
+00:28:35,160 --> 00:28:39,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+430
+00:28:39,160 --> 00:28:43,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+431
+00:28:43,160 --> 00:28:47,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+432
+00:28:47,160 --> 00:28:51,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+433
+00:28:51,160 --> 00:28:55,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+434
+00:28:55,160 --> 00:28:59,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+435
+00:28:59,160 --> 00:29:03,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+436
+00:29:03,160 --> 00:29:07,160
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+
+437
+00:29:07,160 --> 00:29:12,160
+I appreciate that it's doing a good job, you know, like filtering the noise because it does catch
+
+438
+00:29:12,160 --> 00:29:19,160
+some noise. But I also am not getting the amount of debate that I would like to have between the two
+
+439
+00:29:19,160 --> 00:29:24,160
+agents, like I would like to have the main agent really advocate for its bug to the validator,
+
+440
+00:29:24,160 --> 00:29:29,160
+right? Because essentially, like, the validator is coming back saying, hey, this is not a bug,
+
+441
+00:29:29,160 --> 00:29:33,160
+this is a primitive, here's what you need to convince me, it's a bug. And then the thing is like, okay,
+
+442
+00:29:33,160 --> 00:29:36,160
+well, the validator says it's primitive, so I'm gonna put it as a primitive.
+
+443
+00:29:36,160 --> 00:29:42,160
+Anyway, moving on to my next, you know, and I'm like, no. So I feel like my validator is doing a
+
+444
+00:29:42,160 --> 00:29:48,160
+little bit, a little bit too much right now. So I have to feel like I have to kind of keep an eye on
+
+445
+00:29:48,160 --> 00:29:56,160
+it and really read the primitives that come out of each, you know, turn of the hackbot, because there
+
+446
+00:29:56,160 --> 00:29:59,160
+could be some good stuff there that is kind of slipping through the cracks.
+
+447
+00:29:59,160 --> 00:30:02,160
+Yeah, I've got a lot to say on that. So if the first one is pretty cool that you have them
+
+448
+00:30:02,160 --> 00:30:05,160
+communicating our validators, just like an independent run. But but but secondly, I'm like,
+
+449
+00:30:05,160 --> 00:30:10,160
+I think that there are a couple ways to solve this one is, I think all of your failed validations,
+
+450
+00:30:10,160 --> 00:30:14,160
+you should still be outputting to a thread like in discord, because like, that that's the best thing
+
+451
+00:30:14,160 --> 00:30:18,160
+to scroll. Like we I scroll to scroll through my failed validation all the time. And like you said,
+
+452
+00:30:18,160 --> 00:30:21,160
+every once in a while, there's one in there that I'm like, Oh, that's a bug.
+
+453
+00:30:21,160 --> 00:30:27,160
+But I think that the other thing that you could do is set up that tiered system that I've that I've
+
+454
+00:30:27,160 --> 00:30:32,160
+pitched on the pod multiple times, where like, you know, you have like notes, primitives.
+
+455
+00:30:32,160 --> 00:30:34,160
+I have that. I do have that.
+
+456
+00:30:34,160 --> 00:30:38,160
+So then yeah, like you should just you could just go back and read the primitive channel or the or the leads
+
+457
+00:30:38,160 --> 00:30:43,160
+or the gadget channel, whatever, from time to time, like, you know, in your scrolling, like if there's no
+
+458
+00:30:43,160 --> 00:30:48,160
+findings, then go scroll those. Yeah, that's a good point, though. So what how I have that currently is that notes and
+
+459
+00:30:48,160 --> 00:30:54,160
+primitives are not being outputted to a channel. They're just being kept in the exploitation kit.
+
+460
+00:30:54,160 --> 00:30:57,160
+No, that makes sense for notes. But for primitives, you should output it there because you're much smarter.
+
+461
+00:30:57,160 --> 00:31:01,160
+And when you see those primitives, you'll be like, Oh, that's a great gadget. You know, that's a good point.
+
+462
+00:31:01,160 --> 00:31:05,160
+Okay, I'll do that. I'm going to do that right after this. Yeah, I'll do that. Thank you.
+
+463
+00:31:05,160 --> 00:31:12,160
+Second, another tip that I had for the hack bot was, you know, I'm struggling struggling with the whole concept of like,
+
+464
+00:31:12,160 --> 00:31:17,160
+how do you keep it going forever? Right. And there's like the Ralph loop or whatever, bloody bloody blah.
+
+465
+00:31:17,160 --> 00:31:27,160
+Well, they've got a really special goal loops now. They do, which is cool. But I've got a very much simpler solution, which is just use a stop hook to write into the PTY.
+
+466
+00:31:27,160 --> 00:31:39,160
+So there's like very easy configuration file you can write in for Claude, where it's like, you know, triggers whenever Claude naturally stops. Yep.
+
+467
+00:31:39,160 --> 00:31:52,160
+And so as soon as that triggers, it just grabs the PTY and writes into it, like, don't stop, keep going. You know, and I will say it had like, maybe it's not a perfect solution because sometimes it'll be like, especially on like really tight scope.
+
+468
+00:31:52,160 --> 00:32:01,160
+It'll be like, I've done everything. I'm just going to wait. And then it stops again. And it's like, keep going. It's like, no, I'm just going to wait. Like I've done everything complete.
+
+469
+00:32:01,160 --> 00:32:02,160
+You know,
+
+470
+00:32:02,160 --> 00:32:14,160
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+
+471
+00:32:14,160 --> 00:32:20,160
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+
+472
+00:32:20,160 --> 00:32:32,160
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+
+473
+00:32:32,160 --> 00:32:38,160
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+
+474
+00:32:38,160 --> 00:32:44,160
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+
+475
+00:32:44,160 --> 00:32:48,160
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+
+476
+00:32:48,160 --> 00:33:16,160
+That's a good point. Okay. Last little bit that I had on my Hackbot journey is I don't want to give away super duper secret sauce. Maybe I'll give it a couple of weeks and do what you do. But I've been having a ton of success with something that I'm going to try to vaguely describe to you guys. And hopefully some of you guys will really get it and benefit from it. But essentially, I thought about what does AI
+
+477
+00:33:16,160 --> 00:33:46,140
+do so much differently than any other automation that we've ever had? Right? And what does having an actual understanding of the app and having like looking at the JS code and being able to comprehend how this application exists, you know, what benefit does that give me as far as exploitation goes? And then I've created a, the Hackbot that focuses specifically on those
+
+478
+00:33:46,140 --> 00:34:12,140
+areas and, and, and attack surface that was previously very, very hard to automate against. And I was kind of surprised because it, it requires a very specific condition to be met. That I believe the AI can meet in most cases, but I've been blown away because I've added like six apps to this and it is able to find, it is able to hit that condition every time, which just opens up a ton of scope for it.
+
+479
+00:34:12,140 --> 00:34:36,140
+So anyway, I know that that's vague and annoying, but maybe it'll get your brains, it'll get it'll get your brain spinning. But just think about what AI can do very differently and what understanding the app, like from like a understanding perspective can, can give you and what kind of scope that that can expand and then go after that scope, because it's very fruitful right now. It's very fruitful.
+
+480
+00:34:36,140 --> 00:35:01,140
+Nice. Yeah, yeah, I think a good example of that, which is not what you're talking about, but is like, decompiling like Mac apps and like, you know, local apps and like all of that, like things that like some hackers do do and can do. But these agents are like extremely good at like, you know, I never do that sort of thing. But I've pointed at, I got a couple apps and they just like immediately dump source code and starts going through it and finding like secrets, you know, like it's really good at looking at local apps.
+
+481
+00:35:01,140 --> 00:35:06,140
+I'll add one more demystifying piece. This is something that a user normally gives the AI.
+
+482
+00:35:06,140 --> 00:35:35,340
+Yeah, but it is actually something the AI can do itself and or continue on indefinitely that the user typically provides. Okay, that's it. That's your riddle. Figure it out. Let's move to the next piece here. So there was a tweet popping up in. Okay, before I hijack it, do you have anything else on the hack bot bot arena?
+
+483
+00:35:35,340 --> 00:35:39,840
+Nope. Yeah, I was moving. I was ready to move on to actually solve another bug. Oh, yeah, we skipped. Really?
+
+484
+00:35:39,840 --> 00:35:40,840
+Oh, really?
+
+485
+00:35:40,840 --> 00:35:43,340
+Let's go. No, no, hit me. Hit me. I want that.
+
+486
+00:35:43,340 --> 00:35:53,840
+Cool. Yeah, this is actually a program that we have a friend who runs, which I'll just say the name and we'll just bleep it. But you know where he works?
+
+487
+00:35:53,840 --> 00:36:05,240
+Oh, yeah. Yeah. So they don't they don't get a lot of great bugs. So they're a relatively secure company. And anyways, this was a endpoint that for some for some reason,
+
+488
+00:36:05,240 --> 00:36:20,240
+my hack bot found that you could use a base 64 encoded username. It was like it didn't give you like a traditional basic off pop up if you went to the site or whatever. But, but it gave you like a random 401 or 403.
+
+489
+00:36:20,240 --> 00:36:50,240
+And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it.
+
+490
+00:36:50,240 --> 00:37:20,240
+And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can
+
+491
+00:37:20,240 --> 00:37:50,240
+it's like, oh, yeah, I'm sorry. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it
+
+492
+00:37:50,240 --> 00:38:20,240
+it's like, you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then
+
+493
+00:38:20,240 --> 00:38:50,240
+you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it
+
+494
+00:38:50,240 --> 00:39:20,240
+it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it
+
+495
+00:39:20,240 --> 00:39:50,240
+like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like
+
+496
+00:39:50,240 --> 00:40:19,520
+Uryotak, who we've talked about on the pod last week for his amazing vulnerability with the delete directory thing, tweeted out, does anybody have a direct contact at ZDI? I've been trying to register for the Pwn2Own entries for the past three weeks, but I haven't received a clear response. I'm gonna have to cancel my flight soon. Please help me, essentially. And they got back to him. And as I'm sure a lot of you guys saw on Twitter, ZDI had to like cap out their competition, because of so many submissions this year.
+
+497
+00:40:20,240 --> 00:40:50,220
+Um, and a lot of people just had to submit to the main program. There's probably going to be a lot of dupes. Um, well, I think they said there's only five valid reports, right? Did they really? I was pretty sure. Well, see if you can while I'm, while I'm talking about this, but, um, one, just really sad to see super talented researchers like, uh, not be able to get their stuff submitted to totally crazy that Pwn2Own is maxing out, like what kind of a world
+
+498
+00:40:50,220 --> 00:41:02,220
+are we in right now, uh, where that is happening? Um, Oh, they're actually tweeting in the last 30 minutes. They've tweeted a bunch of findings. Yeah. Yeah. That's what, so, um, yeah, I don't think it's just five because I mean, there were a couple that,
+
+499
+00:41:02,220 --> 00:41:24,220
+that came through, uh, that I saw that I had in the notes for today. And one of which is freaking, uh, dude of orange dropped a four logic bug chain to get RCE on Microsoft edge and got 175 K without a memory corruption, without a memory corruption.
+
+500
+00:41:24,220 --> 00:41:54,200
+He pwned the browser without a memory corruption corruption bug dude. Insane. Insane. Yeah. And so I just, the amount of skill required to do that without any sort of like memory corruption bug is nuts. And I think Johan posted in the discord this morning, like a video that, uh, ZDI took of him being like, yeah, I didn't, um, it was such a beast video. He was like, yeah, I, um, I used my eyes to find this bug. Not the, not the AI.
+
+501
+00:41:54,200 --> 00:42:05,200
+I'm like, dude, you are, you are crazy dude. Um, so I've gotta, I've gotta get, I gotta talk to orange more. Yeah. I'm definitely wrong. There's so many bugs.
+
+502
+00:42:06,200 --> 00:42:22,300
+Yeah. Yeah. So shout out to orange. Congrats on that. 175 K 17.5 masters of pwn points. That's pretty sick dude. On just bugs. As somebody who doesn't do a lot of, um, memory corruption.
+
+503
+00:42:22,300 --> 00:42:34,300
+Um, it's very encouraging to me to see him pwn a browser with logic bugs. Yeah. Um, um, the other one that I wanted to mention though was, uh, chompy. Who's another person I would love to get on the pod.
+
+504
+00:42:34,300 --> 00:42:47,300
+Um, she tweeted out after getting a 50 K and five masters of pwn, um, uh, exploit in envy container toolkit. She tweeted out, not a bad return on one month of Claude code max.
+
+505
+00:42:47,300 --> 00:42:52,300
+That's right. That's right. Which is like, dude, clearly it's her skill mixed with Claude code, but yes.
+
+506
+00:42:52,300 --> 00:43:07,300
+Yeah, clearly, clearly knowing how to direct the AI. Right. Um, so I dunno, cool stuff happening in the Pwn Tone world. A little difficult for a lot of the people that didn't get their, um, submissions accepted into the, into the event.
+
+507
+00:43:07,300 --> 00:43:19,300
+But, um, yeah. So do they, do they not get, do they get points or money if that happens or you can do or most, I think they submit it to the main ZDI program and they might get their submission accepted.
+
+508
+00:43:19,300 --> 00:43:26,300
+But, um, you know, less cool than, uh, having, having access to the Pwn Tone environment, you know?
+
+509
+00:43:26,300 --> 00:43:32,300
+Do you know if you think there's gonna be like way more findings and way more payouts this year versus any other year ever before?
+
+510
+00:43:32,300 --> 00:43:34,300
+Yeah. I mean, has to be right.
+
+511
+00:43:34,300 --> 00:43:42,300
+I think so. I mean, look at our, look at our payouts this year, dude. I feel like this has been a really good year already and we've got a lot in the pipeline still.
+
+512
+00:43:42,300 --> 00:43:48,300
+Right. So, um, I, I imagine that's representative of the rest of the community.
+
+513
+00:43:48,300 --> 00:43:48,300
+
+
+514
+00:43:48,300 --> 00:43:48,300
+
+
+515
+00:43:48,300 --> 00:43:48,300
+
+
+516
+00:43:49,300 --> 00:43:58,300
+Um, so that's just sweet to see like, you know, so many bugs being mopped up. Like, you know, I tweeted that yesterday. I was like, we're mopping up the internet one bucket, one submission at a time, you know?
+
+517
+00:43:58,300 --> 00:44:08,300
+Yeah, man. Yeah. So we'll see. We'll see. I mean, it's, it's definitely interesting to see where the, um, industry is gonna go. Like I said, triagers are, are burnt and stressed.
+
+518
+00:44:08,300 --> 00:44:17,300
+And there's a lot of really like verbose confusing reports that they're having to deal with in mass volume. Um, tricky time.
+
+519
+00:44:17,300 --> 00:44:26,300
+Can I just give a shout out though, to towel from bug crowd. Whenever it feels like he literally is just triaging every vulnerability that goes to bug crowd. Like, I mean, yeah, I assume it's a he, but they might not be, but forgive me if, if not. But anyways, just like, it feels like he literally triages every single vulnerability for all of bug crowd. And he's like,
+
+520
+00:44:26,300 --> 00:44:35,300
+fast and efficient and good at his job. So anyways, yeah, that, that type of skill right now is just so much more impressive. You know,
+
+521
+00:44:35,300 --> 00:44:44,300
+that is, that is, I agree. Shout out to all the triagers. You guys are, you guys are going through it right now. Um, yeah. And the last one that I wanted to talk about was, uh, GitHub security.
+
+522
+00:44:44,300 --> 00:44:53,300
+Tweeted out and I think you retweeted and we commented and had a little back and forth, but 325 bounty reports submitted 226 hackers participated in the program and $2,367 in bounding was paid out in April.
+
+523
+00:44:53,300 --> 00:45:00,300
+Yeah. Yeah. Yeah. So it's, it has to be massive slop. But the other thing is, I think there's probably more valid reports in there and they are, they're, they're slow to get back to them. And obviously,
+
+524
+00:45:00,300 --> 00:45:09,300
+GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. Yeah. And I mean, I don't understand how they have to get back to them.
+
+525
+00:45:09,300 --> 00:45:21,300
+And obviously, GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. Yeah. And I mean, I don't understand how they have to get back to them.
+
+526
+00:45:21,300 --> 00:45:29,300
+And obviously, GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. Yeah. And I mean, I don't understand how they have to get back to them.
+
+527
+00:45:29,300 --> 00:45:39,300
+I don't understand how they haven't started charging per repository or per data on repository for because they're basically hosting the code of the entire world. Right?
+
+528
+00:45:39,300 --> 00:45:52,300
+Yeah. Yeah. That's it's crazy, dude. I don't know. I don't know. And I'm sure people are utilizing, you know, all sorts of GitHub actions for this, for that, for the other thing.
+
+529
+00:45:52,300 --> 00:46:04,300
+So it's, it's definitely challenging. And I think that probably the 2000 awarded here, just like you said, is not GitHub, you know, doing some crazy cutting of hackers, you know, ripping off hackers.
+
+530
+00:46:04,300 --> 00:46:13,300
+It's slop or and or reports that they have been struggling, struggling, struggling to get through the volume and just haven't paid out yet. So. Right.
+
+531
+00:46:13,300 --> 00:46:29,300
+Yeah. My guess is my guess is that if you could like draw a perfect line and be omniscient and be like, Hey, these, these 20% of or 10% of bugs that do get paid out eventually, if you could like move them from the forward back into this month where they paid the same month they were submitted, that it might be something more like 20 or 30 K. Right.
+
+532
+00:46:29,300 --> 00:46:36,300
+It's not going to be some crazy number, but at the very least it would actually be like a more reasonable number, like, because this just feels very unreasonable.
+
+533
+00:46:36,300 --> 00:46:40,300
+I don't know, man. GitHub, GitHub, I mean, might be more than 20 or 30 GitHub.
+
+534
+00:46:40,300 --> 00:46:53,300
+Uh, I guess we should go back and look at what they have paid in previous months, but when I've hacked on GitHub. Yeah. I mean, they're paying in, in March, they paid 94, you know, in February 48 in January 76.
+
+535
+00:46:53,300 --> 00:47:09,300
+So yeah, I would, I would imagine. I wonder if they just have a bunch of boundaries that they, uh, that are ready to be paid and just didn't pay in April, you know, like they paid them on May 1st or something because of some sort of like hiccup in like the payment processing or their team or whatever.
+
+536
+00:47:09,300 --> 00:47:11,300
+Dude, look, look at, hold on.
+
+537
+00:47:11,300 --> 00:47:14,300
+Uh, I'm about to like message you on, on discord.
+
+538
+00:47:14,300 --> 00:47:17,300
+Look at the, um, look at the, the tweets though.
+
+539
+00:47:17,300 --> 00:47:32,300
+Cause if we look back at, uh, let's go back to November 162, 78 K 162 reports, 78 K 146 reports, 93 K, uh, 151 reports, 48 K 182 reports, 76 K.
+
+540
+00:47:32,300 --> 00:47:36,300
+And then here comes, here comes the hack bot problems, right?
+
+541
+00:47:36,300 --> 00:47:44,300
+200 reports, 48 K 380 reports, 94 K 320 reports, 2 K.
+
+542
+00:47:44,300 --> 00:47:45,300
+Right.
+
+543
+00:47:45,300 --> 00:47:46,300
+They stopped being able to keep up.
+
+544
+00:47:46,300 --> 00:47:47,300
+Yeah.
+
+545
+00:47:47,300 --> 00:48:12,300
+It seems like, and I will say, don't you think this is both true of humans, but also true of our hack bots is like when there's really complex scope where like the boundaries for permissions are hard to know, uh, exactly what, uh, what's intended mixed with the fact that a lot of times, like on like CI CD runners and stuff like that, you might have code execution, but it's not impactful because whatever.
+
+546
+00:48:12,300 --> 00:48:23,300
+And I bet there are a lot of, uh, newbies and, or people using hack bots that are like finding issues for companies that are hosting something on GitHub, but it's being reported to GitHub as a GitHub bug.
+
+547
+00:48:23,300 --> 00:48:26,300
+When it's really somebody set up a malicious runner or something, right?
+
+548
+00:48:26,300 --> 00:48:27,300
+Like totally.
+
+549
+00:48:27,300 --> 00:48:28,300
+Yeah.
+
+550
+00:48:28,300 --> 00:48:29,300
+Yeah.
+
+551
+00:48:29,300 --> 00:48:30,300
+I imagine so.
+
+552
+00:48:30,300 --> 00:48:35,300
+And so anyway, I just wanted to give a shout out to the GitHub team, you know, for one, for the transparency, right?
+
+553
+00:48:35,300 --> 00:48:36,300
+Mm-hmm .
+
+554
+00:48:36,300 --> 00:48:37,300
+And hopefully you guys can hang in there.
+
+555
+00:48:37,300 --> 00:48:41,300
+Uh, cause you know, that was a painful button to push, you know, there was a painful button to push.
+
+556
+00:48:41,300 --> 00:48:43,300
+I know we're going to catch flack for this tweet.
+
+557
+00:48:43,300 --> 00:48:44,300
+Yeah.
+
+558
+00:48:44,300 --> 00:48:45,300
+So shout out to them for that.
+
+559
+00:48:45,300 --> 00:48:57,300
+I appreciate the transparency and yeah, my prayers go up for you because I mean, comparing some of these months, you've seen triple the reports, you know, closer to triple than double.
+
+560
+00:48:57,300 --> 00:49:01,300
+Uh, which is just gotta be really rough.
+
+561
+00:49:01,300 --> 00:49:05,300
+Uh, and like we talked about before, it's not just triple the reports.
+
+562
+00:49:05,300 --> 00:49:11,300
+It's longer reports, more, more professional looking reports that are just garbage.
+
+563
+00:49:11,300 --> 00:49:12,300
+So sad.
+
+564
+00:49:12,300 --> 00:49:14,300
+Harder to weed through.
+
+565
+00:49:14,300 --> 00:49:15,300
+Yeah.
+
+566
+00:49:15,300 --> 00:49:16,300
+Yeah, totally, man.
+
+567
+00:49:16,300 --> 00:49:17,300
+All right.
+
+568
+00:49:17,300 --> 00:49:18,300
+Well, that's all I had.
+
+569
+00:49:18,300 --> 00:49:19,300
+You got anything else?
+
+570
+00:49:19,300 --> 00:49:20,300
+That's all I've got.
+
+571
+00:49:20,300 --> 00:49:21,300
+All right.
+
+572
+00:49:21,300 --> 00:49:22,300
+Well, keep hacking hackers.
+
+573
+00:49:22,300 --> 00:49:23,300
+Peace.
+
+574
+00:49:23,300 --> 00:49:24,300
+Peace.
+
+575
+00:49:24,300 --> 00:49:26,300
+And that's a wrap on this episode of critical thinking.
+
+576
+00:49:26,300 --> 00:49:27,300
+Thanks so much for watching to the end.
+
+577
+00:49:27,300 --> 00:49:34,300
+Y'all, if you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show slash discord.
+
+578
+00:49:34,300 --> 00:49:35,300
+You can hop in the community.
+
+579
+00:49:35,300 --> 00:49:43,300
+There's lots of great high level hacking discussion happening there on top of the masterclasses, hack alongs, exclusive content, and a full-time hunters guild.
+
+580
+00:49:43,300 --> 00:49:46,300
+If you're a full-time hunter, it's a great time.
+
+581
+00:49:46,300 --> 00:49:47,300
+Trust me.
+
+582
+00:49:47,300 --> 00:49:48,300
+I'll see you there.
+

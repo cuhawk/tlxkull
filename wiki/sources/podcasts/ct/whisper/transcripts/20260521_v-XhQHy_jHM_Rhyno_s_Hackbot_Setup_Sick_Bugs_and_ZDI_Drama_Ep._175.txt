@@ -1,0 +1,582 @@
+I had to slow my hack bot down a little bit because I was churning through a lot of tokens,
+you know, and I was like, actually, no, no, you shouldn't do that. You should just buy another
+sub for another $100. Shut up, dude. I know. I know. Just give me a second.
+Best part of hacking when you can just, you know, critical thing.
+Hey, what's up guys, before we get into the show, I wanted to mention something super quick from our
+friends at ThreatLocker and I actually think you're all going to think it's pretty awesome because
+so much of bug bounty is often, you know, kind of quoted as like, yeah, but hackers would never
+exploit that because they can just get in via phishing. Well, that's actually true. You know,
+most of the time, whenever companies get breached, it's because of phishing or access to that user's
+account or, you know, they do something like do a whole bunch of push notification to FA and eventually
+a user gets so much fatigue, they approve it, but they have a solution for this. ThreatLocker has
+a thing called zero trust cloud access, right? Which prevents access to cloud resources or SaaS
+resources based on the device you're logging in from. So if a user gets phished, right, they put
+in their credentials, they get phished or they get this, they, the attacker has their credentials,
+maybe they even have a way to get the MFA because they did some sort of SIM swap because they have
+a hookup at Verizon or AT&T or whatever, right? So they have the credentials, they have the MFA,
+they still can't get in because the zero trust cloud access like will basically straight up allow or deny
+people access to resources based on the device you're logging in from. So if you're an enterprise or a
+company and you're concerned about the highest risk, which really is phishing, this is a way to add
+another like basically impenetrable layer to preventing it and securing your network. Yeah, back to the show.
+All right, man, let's kick off this episode with a couple bugs from this week. Yeah, do you have
+something in the docket? Yeah, I feel like we haven't talked enough about the awesome bugs that we've been
+finding. Yeah, yeah. So let's let's flex on the people a little bit. How about that? Perfect. Yeah, that's
+great. Okay. You want to go first? Or should I? Yeah, sure. I'll go. I know we were just talking
+about this. I tried to mention a bug, honestly, beforehand. And Justin's like, No, we just talked
+about something similar. I'm like, Dude, no, this is cool enough to talk about. So basically,
+so so basically, I keep my eye on a lot of AI apps. And so there is an AI application that added,
+well, that has had a long standing q parameter injection, right? So for those of you that don't know
+what that is, basically just a get parameter that automatically invokes. And so there was a company
+that added some more automatically invokes a prompt injection. Well, automatically invokes a prompt,
+right? And just, again, to recount why that's so powerful. In prompt injections, oftentimes,
+the models are able to see that it's not from the original user. But the nice thing about these Q
+brand prompt injection is it totally seems like it's coming directly from the user and they're asking for
+the thing. So you almost never get rejections, you're not having to work around anything. And so anyways,
+I had been sitting on one of those for a long time. And in fact, people probably reported it,
+but there just was like, hardly any impact. They recently I kept an eye on it, like I immediately
+saw the same day when they released this feature where it could make changes to your GitHub. And so
+in this case, that's like extremely powerful for a bunch of reasons, because q parameter can be invoked
+by CSRF, or by redirects or and you told me this before we jumped on the pod, that actually, you can do
+like a window opener. So you can redirect them to a benign site and then in the background have something be
+processing because often these q parameter injections can kind of look funny if you're just trying to sell it as like,
+Oh, I'm just gonna sit here and let the agent do something malicious on this random website for me as you like,
+or you're watching it slowly stream by as it's like getting RC on your stuff.
+They take a second, right? Yeah.
+Yeah, it takes a second. And so it feels less believable, right? That someone would do that. But your
+your example where you use a window opener to basically open it up in the previous tab, so that it's like injecting you and making changes
+a lot of people like, you know, like, you know, like, you know, like, you know, like, you know, like,
+you know, like, you know, like, you know, like, you know, like, you know, like, you know, like, you know,
+like, you know, like, you know, like, you know, like, you know, like, you know, like, you know, like, you know,
+like, you know, like, you know, like, you know, like, you know, like, you know, like, you know, like, you know, like,
+to be honest, I know that it was a concern of a lot of people that when you start using AI in the way
+I have been, because I do feel like I do less manual hacking. But this bug actually that I'm
+mentioning was just fully all me all the way from beginning to the end to the reporting and everything.
+So I anyways, I appreciate that. I actually do think that basically I've been a triage of sorts.
+And we've mentioned in the past that being a triage is the best way to learn. And so I've been triaging
+lots of these volumes from from the hack bot. And so I have actually learned a lot. So and also
+working with JD and you help a lot. But anyways, so all that to say, this was really cool, because
+now you can automatically via q parameter injection, make changes to anybody's GitHub repo that they
+had connected into this application. And the neat thing is that it was fully wormable because so many
+GitHub repos are just literally automatically pushed to prod when you get a push. I mean, that's how my
+my blog works, right? I push in some new content, it's CI CD automatically pushes it. And so when you've
+automatically pwned that now you have another site out there that can then make those
+same CSRF requests or the post messenger request, right, to then keep going. And so this is like a
+a wormable AI exploit to make changes in everyone's GitHub repo.
+Dude, that is crazy. So first, first part in the chain, q parameter prompt injection, which can be
+done in the background via window.opener redirect, you know, so that they're not seeing how long it takes
+for the exploit to work, which is like, which was pretty fast, by the way, I when I saw the video.
+Yeah.
+And then the AI reading that that prompt injection changes an arbitrary file in your GitHub repo via
+the connector. And that what you're envisioning would change a website that is run. And it's very
+easy to adapt that prompt to a dynamic like change any, you know, GitHub pages, you know, website or
+whatever. And then worm that exploit through all of the websites of all the users, you know, everybody who
+visits that website. Yeah, we should take a second to talk about that, because that's probably almost
+like a technique. So like, let's just call it ambiguous prompting. So your ambiguous prompt
+could say something like, Hey, go change my website, which the agent knows they can like list GitHub
+repos, right. And so some of those are websites. And so then it's like, go change my website, such that it
+actually does a redirect. And then in the background does this thing to really help out the user because
+they need that right or something, just like something to convince the model to do it. Yeah.
+That's such a powerful thing about AI stuff is like, obviously, you're going to get a more
+deterministic exploit, the more specific you are, but you also gain a lot of power in it being able
+to fill in the blanks for you if you very specifically describe what you need. Yeah, exactly.
+You know, what's insane, though, I didn't I don't think I even shared this with you. In one of mine,
+I because I just had, I think I had Claude write a prompt or something at some point to see if I can make it
+do something else. And it used like attacker.com. This app, this app still did it, it went and made
+the change and pointed the redirect to attacker.com. It's like, do you not understand that this is like
+not a safe thing to do? But anyways,
+Oh my gosh. Yeah. Well, it's funny. As soon as you said that, like, as soon as, yeah, it makes me think,
+I actually recently gave Claude access to like a digital ocean API key that I have. And just said,
+like, Hey, add this record, you know, and it just boom by the CLI just added it easy peasy. And I'm
+like, Oh my gosh, now I don't even have to log into digital ocean anymore. Yeah, you know, like,
+and it can just automatically do stuff. Yeah.
+That's really powerful inside of cloud flare. If anybody wants to take on that risk of letting
+their agent have like a global key to their cloud flare, it can configure so much via the CLI.
+Yeah, dude. And you know, obviously, all this stuff that we're saying shouldn't be done
+in any sort of professional environment, you know, but the thing is, as a bug bounty hunter, like,
+the beauty of us is we're scrappy as hell, you know, and I'm not going to pretend with you guys
+that all of my everything that I run is is secure. It's not, you know, like, I know, it's not and I
+just don't, you know, it's just not high enough value for me to like, you know, what are you going
+to do? You're going to pop me and you're going to like, see the pictures of my daughter, you know,
+on my desktop, like, okay, like, that's weird, you know, but it's like, not the end of the world,
+right? You know, I don't have a bigger target than you're selling, right? You do have access to a lot
+of vulnerabilities. But, but I Yeah, I mean, yeah, they'll find my little eye doors with, you know,
+I don't know, sometimes and there have been four or five times in my career where I'm like,
+okay, actually, this exploit might put me on the, you know, this is something that people
+might actually hack me to get access to, you know, if they knew that I had it.
+Yeah, my first RCE if you remember this, it was only $1,000 paid because they had not
+up their boundaries yet was RC on Alibaba on a Chinese server. And I remember thinking like, man,
+does this actually increase my risk of going to China?
+Yeah, dude, I don't know. I'm I don't think I will go to China, dude. I think I think that would,
+I don't know. I just let's just put it this way. I've had interactions with governments that I have
+not wanted to have. And I definitely don't want to do that in China. Like, and it's like, yeah,
+so don't love that. All right. Anyway, share your bug. Great, great bug, dude. I will I will mention
+my bug now. This one, wow, big surprise is a CSPT. But it's a little bit of an interesting twist on a
+CSPT because it is a mobile bug. And the way that it works is there was a it's kind of like a second
+order CSPT in a mobile app. So what would happen is the attacker would have to use an API key that was
+embedded in the mobile app to create a custom link on the victim sites. What it would link shortener
+service. And in that link shortener service, you have the ability to supply extra parameters that
+get sent along with that short link, like in our post also, it's not like parameters like that. It's
+like, like a JSON, you know, key value thing. And it just like, gives it whenever it resolves that link.
+And so anyway, what would happen is we would create I would create the link. And I would include
+these, you know, this JSON blob in there there for the parameters for this link. And then when I opened
+it in the app, the app would catch that link because it's right, it registered that link. And then it would
+grab those parameters from the service using an API key. And then it would invoke any array of actions. I
+think there was like 27 actions that the app would take from those parameters that were passed in by
+the link shortening service. And one of those, of course, would trigger a post request where the
+attacker's parameter that was supplied by the link shortener service would be embedded into the path.
+So then I could do, you know, truncation with the hashtag path traversal with the dot dot slash,
+and that would result in an arbitrary post verb request being sent to anywhere on the API with
+the victim's API key.
+Josh Birkley. Could you control the body or no?
+Josh Birkley. Could not control the body. What you could do, however, is control the query parameters,
+which get injected, you know, like depending on what is processing it on the back end,
+those sometimes get perceived as the body as well. So I was able to hit a couple good ones
+that have some effect. One that incurred financial loss, one that made a change to the account,
+and one that I wasn't able to fully confirm, but got confirmation from the team that it seems vulnerable
+to be able to confirm somebody who requested access to a restricted resource. So then I could request access,
+send the link auto confirm myself.
+Josh Birkley. Oh, nice.
+Josh Birkley. That's a good one.
+Josh Birkley. So that was a pretty fun one. I just think that I have mentioned this before because I
+found a CSPT on a desktop client the other day, but I just think CSPTs are everywhere.
+They're in desktop clients, they're in mobile apps, they're in web apps, they're everywhere.
+So everyone I've ever found though, I've struggled to get impact on. Like, I just feel like that it's just
+like a get request and then it's not that interesting, you know?
+Josh Birkley. Not going to lie. I spent a lot of time trying to get
+impact for this and I did, you know, but AI definitely helps with that.
+Josh Birkley. Mm-hmm.
+Josh Birkley. You got to know some tricks, you know, getting the parameters to the request in
+via the query parameters. One, if that gadget doesn't work, it is more painful. Then you go for
+like a no body request, right? A request that has no body at all.
+
+Josh Birkley. And then you see if it ignores your parameters that are automatically being sent in from
+the forged request. And then worst case scenario, you look for something that will accept similar set
+of parameters or and or return a sort of a masked version of what the typical response is expecting.
+And then but you have more control. So sometimes they'll be looking for like ID, or they'll be looking
+for like a specific JSON key or whatever. And you have like a partial JSON injection on a different
+endpoint where you can chain that together to like make everything work. So it is a little bit of a
+chainy bug type for sure. That requires some deep digging to get full impact. But between those
+techniques and open redirect and an arbitrary JSON hosting gadget, most times some impact falls out.
+Okay, nice. Yeah, that's good to know. Look for those other little gadgets. I'm going to bake this
+into a skill. Look for these three things. Yeah, yeah, that's good. Sweet, dude. Let me see if
+there's okay, actually pulled out the other I had another little thing I was going to talk about. But I
+think I'll actually talk about that in a future episode. So okay, sweet. So I had a question about
+this one. The finding is not that interesting. Like it's just a direct phone. Like it's just a key,
+a key found in a JS file. But I was I'm curious if you've ever ran across like a social media
+admin API key that like allows you to have like full admin access to like a Facebook group or like
+a social media account or anything like that. Have you ever found this?
+No, I haven't. I haven't found that. Yeah. So this this that's what I found. And I was just curious how
+you rate that severity. Because to me, it feels like there is both integrity and confidentiality impact.
+Like if if the social media platform allows you to have like,
+I don't know, private messages or stuff like that, then there's kind of like a confidentiality
+impact. And then if there if you can like delete, which you almost always can with these keys,
+basically delete users comments or post on like that Facebook group or on that like social media group,
+then it feels like there's both confidentiality and integrity. So I feel I mean, I definitely am very
+passionate. It's a critical but anyways, I was curious about your thoughts on the severity for that.
+Yeah. Um, geez, dude. I mean, are they actively using it? Like had they posted on it recently?
+I need to go check that but it definitely has like millions of followers. Oh, what? What? Then
+absolutely. Like,
+it's a major brand like it's like a, you know, a fortune 100 brand. Yeah.
+I mean, that's like a, I feel like that's a mega crit dude. Okay. Like if you are able to take over the
+social media account of it, that has, I mean, dude, I mean, just think about the impact of tweeting out
+like a crypto scam. Yeah, like, like, you would, you would walk away with millions of dollars if you
+just tweeted out a crypto scam from that dude. Yeah, I think this is one of those situations where like,
+two years ago, I'd have been like, Oh, yeah, it's definitely a crit. But today it just feels like
+programs are so stingy and argumentative. It feels hard, you know, to like, just to know for sure,
+like, yeah, this actually is a critical. So yeah, I mean, like people pay a ton of money to get like a,
+you know, a post on like a million dollar or million followers plus they so totally and then especially,
+I mean, if it's their main social media account, and if you have access to like, reading DMS,
+and yeah, it is a it is a country specific account. But it but it's like a major like,
+it's a major first world country where they like I said, it has millions of followers on the on the
+page. So dude, mega crit nice work, dude, give me some, give me some dude, you are printing man,
+guys, I have been blown away by how much resume like, dude, your queue right now is insane. You your
+earnings for this year, phenomenal. And your queue is even better than the you know, it's like, Oh my gosh,
+I appreciate that. Yeah, that's what I keep telling JD, we just got to keep the hopper full,
+you know, with our hack, we always got to keep the hopper full of bugs.
+Yeah, yeah, you do. I'll jump to something similar to that, then. I, after learning from your success,
+have spun up my own hack bot, it is found its first bug this week, I was very pleased and it's 12th bug,
+but you know, the first one was special, of course. And yeah, it's going great. And I had a couple
+tips that I was going to throw out to the people, especially in light of the recent announcement
+from Anthropix saying that they're going to start charging for programmatic use of cloud code,
+which erases access to cloud dash P or dash dash print.
+Well, let me clarify this because it's very confusing. They had a very confusing tweet.
+Basically, they're selling this as, Oh, this is an upgrade. If you're on the $200 a month plan,
+you now have a separate extra $200 worth of API credits that you can use for programmatic access
+for the agent SDK or for the dash P non interactive mode. And that's just extra justice. That's just
+an extra $200 just for you, man. But what they didn't say, which really sucks is that now you can't
+use your normal token bucket, which is like, you know, the like $4,000 per month crazy amount of
+subsidized tokens that you get that you would normally use. And so yeah, that massively impacted me
+because both like mine and JD's hack bot and also just the discord control that I use to like interact
+with cloud on my VPS both use the dash P parameter. Yeah, that's really disappointing to see. And I
+tweeted out about it. And I was like, guys, this sucks because this is just very easily bypassable.
+And I think Johan came in and said, Yeah, but you know, essentially, they're just adding friction to
+stop the bleeding, you know, and I get that that makes sense. But anyway, you guys that are listeners of
+the podcast, we know that you're smart enough, and you're going to get a workaround, which was
+actually very conveniently timed because I when building my own hack bot was consulting with Rezo,
+and they're using dash dash print. And I was like, I would like to use the dash dash RC feature
+cloud code to be able to connect it back to my like remote control for in the cloud app on my mobile
+device. And you can't do that with dash dash print. So I actually built a harness that uses a pseudo
+terminal, and just writes messages straight into the the tui that cloud has. And it's worked great.
+I haven't had any issues with it, I'm able to get dash dash RC working so I can easily control it from my
+my phone. And you get all the benefits of the normal cloud UI and the app. So that's an easy workaround.
+I mean, just, I'm sure you guys would have figured that out already. But it's just annoying that they're
+making us refactor a little bit.
+Jeff Lerner, Ph.D.: Yeah, I think there's like a bunch of different ways to get around the
+input in an interactive session. And then there's also probably some ways to get around it from an API
+level. I think we're in a group chat with Corbin and Douglas. And Corbin was like very quickly like,
+I wonder how they're doing this on the API side of things. So there's probably just a parameter
+that's like interactive false or interactive true because it just still goes to the same model on the
+back end.
+Jeff Lerner, Ph.D.: That's like, that's like a little gray hat though, in my opinion.
+Jeff Lerner, Ph.D.: Like, oh, if you're like intercepting it and swapping that?
+Dr. David P.: Yeah, like that's where it kind of crosses the line. Like, like, in my opinion,
+Jeff Lerner, Ph.D.: Yeah, yeah, sure.
+Dr. David P.: They don't control what, in my opinion, and maybe there's some legal things
+that's different than this. But in my opinion, you know, I'm still using their app just like a
+normal user would by the TUI, right?
+Jeff Lerner, Ph.D.: Right.
+Dr. David P.: You know, so it's like, okay, they don't really control what terminal interface I use.
+So it doesn't matter.
+Jeff Lerner, Ph.D.: Well, and I think the main reason they're rolling this out,
+Justin, is because I guarantee you there are tons of scrappy startups that are not allowed to,
+based on the terms of service, use these subsidized tokens for like real customers in the world.
+Jeff Lerner, Ph.D.: Yeah.
+Dr. David P.: And like, and honestly, this is actually one reason why I love being a bug
+bounty hunter. Back to what you were saying before. It's like, when we're using these hack bots,
+like we're using them for personal use for like literally hacking it. We're not getting,
+we're not like a company who's doing a pen test because I'm sure there actually are a lot of
+people also doing that. That's against the terms of service. If you're basically a business providing
+services to a customer via cloud code, you are supposed to be paying the API credits. You're
+not supposed to be using these subsidized tokens, right? It's like for personal use.
+
+Dr. David P.: And I think that there are probably lots of companies that are basically using the
+Asia SDK or the dash P like print mode to basically sell a service at the subsidized token cost. And
+so I think that what they're really trying to do is just like basically enforce the terms of service
+that people have already agreed to for usage, but it does really suck because like you said,
+Justin, it's like super easy to bypass and these companies are going to do the same thing we're
+doing. And so it's like, I do think that the subsidized tokens are not going to last forever.
+Jeff Lerner, Ph.D.: Yeah, it's unfortunate, man. So we got to get while the getting's good.
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top.
+Justin, it's like, I'm going to go to the top of the top of the top of the top of the top of the top of the top.
+Justin, it's like, okay, yes, you are correct. And I will do that next week once I figure out
+how to handle the scale. But very fun stuff. And I will say it is now my go to, like scrolling thing.
+And I will say, hey, I'm going to go to the top of the top of the top of the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top of the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top of the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+And I will say, hey, I'm going to go to the top.
+Where you have to do greater than.
+Yes.
+We mentioned it last week.
+
+
+So basically, I figured that out like two weeks before that.
+And I have my skills and I use it for two weeks.
+And then I share on the pod.
+So that's kind of my thoughts.
+That's good.
+That's brave.
+That's brave.
+
+
+I mean, maybe it's a month or maybe I forget or whatever.
+But that's kind of like my philosophy where I can still be extremely giving,
+but still feel like in this day and age that like, you know, I'm able to like harvest
+some of that benefit for my family as well.
+I'm so, I'm so lucky to have you as a co-host, man.
+Thank you for coming on the pod and doing this with me.
+Yeah, of course.
+
+And one more thing on that same topic with just the building of hackbots,
+because I've been talking a lot with grab me about this.
+He is just peeved.
+Like he's just, oh man, is there, is there an English word for being mad?
+What's what?
+He's not.
+What's the idea of chuffed a buddy tweaked?
+I don't know.
+Yeah, he's tweaked.
+There we go.
+And he, he has been mad at Claude ever since four.
+Well, one, he got gas lit.
+Right.
+When they had those weird changes where it was like dropping the, like the session history
+and like the quality actually did degrade and who called them out for that from trusted sec.
+Dave Kennedy was calling them out for this and all that.
+During that drama, Brandon got burned a lot.
+I was so upset.
+He felt gas lit.
+And so then four, seven drops and he felt like for his hackbot, it got way worse.
+So he was gas lit again.
+Yeah.
+And then now all of a sudden with the dash P he's just like mad.
+Right.
+So I was messaging this morning and we were talking about GPT five, five.
+And then he was like, okay, so what are you doing?
+Are you using codecs with GPT five, five?
+And which, you know, you've probably seen me tweeting.
+I could say it's quite good.
+And, um, he was like, yeah, that's what I've been using.
+It's been great.
+And then I told him, I was like, my biggest problem is that it's a little bit overly PhD
+slash autistic key in the way that it describes bugs.
+It describes them in like such like a high level language, like such big vocabulary that it
+feels confusing to me.
+Whereas like Claude code reports feel like much more like, um, human like, like I can just
+understand them a lot better.
+And he said he had found that exact same experience.
+So I wanted to mention that to our listeners, because if they, if anyone's building on that,
+like maybe there's some way to get around that and via prompting, like, Hey, make sure
+you explain this to me.
+Like I'm an idiot.
+Like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm
+like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like, I'm like,
+I appreciate that it's doing a good job, you know, like filtering the noise because it does catch
+some noise. But I also am not getting the amount of debate that I would like to have between the two
+agents, like I would like to have the main agent really advocate for its bug to the validator,
+right? Because essentially, like, the validator is coming back saying, hey, this is not a bug,
+this is a primitive, here's what you need to convince me, it's a bug. And then the thing is like, okay,
+well, the validator says it's primitive, so I'm gonna put it as a primitive.
+Anyway, moving on to my next, you know, and I'm like, no. So I feel like my validator is doing a
+little bit, a little bit too much right now. So I have to feel like I have to kind of keep an eye on
+it and really read the primitives that come out of each, you know, turn of the hackbot, because there
+could be some good stuff there that is kind of slipping through the cracks.
+Yeah, I've got a lot to say on that. So if the first one is pretty cool that you have them
+communicating our validators, just like an independent run. But but but secondly, I'm like,
+I think that there are a couple ways to solve this one is, I think all of your failed validations,
+you should still be outputting to a thread like in discord, because like, that that's the best thing
+to scroll. Like we I scroll to scroll through my failed validation all the time. And like you said,
+every once in a while, there's one in there that I'm like, Oh, that's a bug.
+But I think that the other thing that you could do is set up that tiered system that I've that I've
+pitched on the pod multiple times, where like, you know, you have like notes, primitives.
+I have that. I do have that.
+So then yeah, like you should just you could just go back and read the primitive channel or the or the leads
+or the gadget channel, whatever, from time to time, like, you know, in your scrolling, like if there's no
+findings, then go scroll those. Yeah, that's a good point, though. So what how I have that currently is that notes and
+primitives are not being outputted to a channel. They're just being kept in the exploitation kit.
+No, that makes sense for notes. But for primitives, you should output it there because you're much smarter.
+And when you see those primitives, you'll be like, Oh, that's a great gadget. You know, that's a good point.
+Okay, I'll do that. I'm going to do that right after this. Yeah, I'll do that. Thank you.
+Second, another tip that I had for the hack bot was, you know, I'm struggling struggling with the whole concept of like,
+how do you keep it going forever? Right. And there's like the Ralph loop or whatever, bloody bloody blah.
+Well, they've got a really special goal loops now. They do, which is cool. But I've got a very much simpler solution, which is just use a stop hook to write into the PTY.
+So there's like very easy configuration file you can write in for Claude, where it's like, you know, triggers whenever Claude naturally stops. Yep.
+And so as soon as that triggers, it just grabs the PTY and writes into it, like, don't stop, keep going. You know, and I will say it had like, maybe it's not a perfect solution because sometimes it'll be like, especially on like really tight scope.
+It'll be like, I've done everything. I'm just going to wait. And then it stops again. And it's like, keep going. It's like, no, I'm just going to wait. Like I've done everything complete.
+You know,
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+I've done everything. I've done everything. I've done everything. I've done everything. I've done everything. I've done everything.
+That's a good point. Okay. Last little bit that I had on my Hackbot journey is I don't want to give away super duper secret sauce. Maybe I'll give it a couple of weeks and do what you do. But I've been having a ton of success with something that I'm going to try to vaguely describe to you guys. And hopefully some of you guys will really get it and benefit from it. But essentially, I thought about what does AI
+do so much differently than any other automation that we've ever had? Right? And what does having an actual understanding of the app and having like looking at the JS code and being able to comprehend how this application exists, you know, what benefit does that give me as far as exploitation goes? And then I've created a, the Hackbot that focuses specifically on those
+areas and, and, and attack surface that was previously very, very hard to automate against. And I was kind of surprised because it, it requires a very specific condition to be met. That I believe the AI can meet in most cases, but I've been blown away because I've added like six apps to this and it is able to find, it is able to hit that condition every time, which just opens up a ton of scope for it.
+So anyway, I know that that's vague and annoying, but maybe it'll get your brains, it'll get it'll get your brain spinning. But just think about what AI can do very differently and what understanding the app, like from like a understanding perspective can, can give you and what kind of scope that that can expand and then go after that scope, because it's very fruitful right now. It's very fruitful.
+Nice. Yeah, yeah, I think a good example of that, which is not what you're talking about, but is like, decompiling like Mac apps and like, you know, local apps and like all of that, like things that like some hackers do do and can do. But these agents are like extremely good at like, you know, I never do that sort of thing. But I've pointed at, I got a couple apps and they just like immediately dump source code and starts going through it and finding like secrets, you know, like it's really good at looking at local apps.
+I'll add one more demystifying piece. This is something that a user normally gives the AI.
+Yeah, but it is actually something the AI can do itself and or continue on indefinitely that the user typically provides. Okay, that's it. That's your riddle. Figure it out. Let's move to the next piece here. So there was a tweet popping up in. Okay, before I hijack it, do you have anything else on the hack bot bot arena?
+Nope. Yeah, I was moving. I was ready to move on to actually solve another bug. Oh, yeah, we skipped. Really?
+Oh, really?
+Let's go. No, no, hit me. Hit me. I want that.
+Cool. Yeah, this is actually a program that we have a friend who runs, which I'll just say the name and we'll just bleep it. But you know where he works?
+Oh, yeah. Yeah. So they don't they don't get a lot of great bugs. So they're a relatively secure company. And anyways, this was a endpoint that for some for some reason,
+my hack bot found that you could use a base 64 encoded username. It was like it didn't give you like a traditional basic off pop up if you went to the site or whatever. But, but it gave you like a random 401 or 403.
+And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it.
+And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can
+it's like, oh, yeah, I'm sorry. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it
+it's like, you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then
+you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it. And then you can see it
+it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it
+like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like, it's like
+Uryotak, who we've talked about on the pod last week for his amazing vulnerability with the delete directory thing, tweeted out, does anybody have a direct contact at ZDI? I've been trying to register for the Pwn2Own entries for the past three weeks, but I haven't received a clear response. I'm gonna have to cancel my flight soon. Please help me, essentially. And they got back to him. And as I'm sure a lot of you guys saw on Twitter, ZDI had to like cap out their competition, because of so many submissions this year.
+Um, and a lot of people just had to submit to the main program. There's probably going to be a lot of dupes. Um, well, I think they said there's only five valid reports, right? Did they really? I was pretty sure. Well, see if you can while I'm, while I'm talking about this, but, um, one, just really sad to see super talented researchers like, uh, not be able to get their stuff submitted to totally crazy that Pwn2Own is maxing out, like what kind of a world
+are we in right now, uh, where that is happening? Um, Oh, they're actually tweeting in the last 30 minutes. They've tweeted a bunch of findings. Yeah. Yeah. That's what, so, um, yeah, I don't think it's just five because I mean, there were a couple that,
+that came through, uh, that I saw that I had in the notes for today. And one of which is freaking, uh, dude of orange dropped a four logic bug chain to get RCE on Microsoft edge and got 175 K without a memory corruption, without a memory corruption.
+He pwned the browser without a memory corruption corruption bug dude. Insane. Insane. Yeah. And so I just, the amount of skill required to do that without any sort of like memory corruption bug is nuts. And I think Johan posted in the discord this morning, like a video that, uh, ZDI took of him being like, yeah, I didn't, um, it was such a beast video. He was like, yeah, I, um, I used my eyes to find this bug. Not the, not the AI.
+I'm like, dude, you are, you are crazy dude. Um, so I've gotta, I've gotta get, I gotta talk to orange more. Yeah. I'm definitely wrong. There's so many bugs.
+Yeah. Yeah. So shout out to orange. Congrats on that. 175 K 17.5 masters of pwn points. That's pretty sick dude. On just bugs. As somebody who doesn't do a lot of, um, memory corruption.
+Um, it's very encouraging to me to see him pwn a browser with logic bugs. Yeah. Um, um, the other one that I wanted to mention though was, uh, chompy. Who's another person I would love to get on the pod.
+Um, she tweeted out after getting a 50 K and five masters of pwn, um, uh, exploit in envy container toolkit. She tweeted out, not a bad return on one month of Claude code max.
+That's right. That's right. Which is like, dude, clearly it's her skill mixed with Claude code, but yes.
+Yeah, clearly, clearly knowing how to direct the AI. Right. Um, so I dunno, cool stuff happening in the Pwn Tone world. A little difficult for a lot of the people that didn't get their, um, submissions accepted into the, into the event.
+But, um, yeah. So do they, do they not get, do they get points or money if that happens or you can do or most, I think they submit it to the main ZDI program and they might get their submission accepted.
+But, um, you know, less cool than, uh, having, having access to the Pwn Tone environment, you know?
+Do you know if you think there's gonna be like way more findings and way more payouts this year versus any other year ever before?
+Yeah. I mean, has to be right.
+I think so. I mean, look at our, look at our payouts this year, dude. I feel like this has been a really good year already and we've got a lot in the pipeline still.
+Right. So, um, I, I imagine that's representative of the rest of the community.
+
+
+
+Um, so that's just sweet to see like, you know, so many bugs being mopped up. Like, you know, I tweeted that yesterday. I was like, we're mopping up the internet one bucket, one submission at a time, you know?
+Yeah, man. Yeah. So we'll see. We'll see. I mean, it's, it's definitely interesting to see where the, um, industry is gonna go. Like I said, triagers are, are burnt and stressed.
+And there's a lot of really like verbose confusing reports that they're having to deal with in mass volume. Um, tricky time.
+Can I just give a shout out though, to towel from bug crowd. Whenever it feels like he literally is just triaging every vulnerability that goes to bug crowd. Like, I mean, yeah, I assume it's a he, but they might not be, but forgive me if, if not. But anyways, just like, it feels like he literally triages every single vulnerability for all of bug crowd. And he's like,
+fast and efficient and good at his job. So anyways, yeah, that, that type of skill right now is just so much more impressive. You know,
+that is, that is, I agree. Shout out to all the triagers. You guys are, you guys are going through it right now. Um, yeah. And the last one that I wanted to talk about was, uh, GitHub security.
+Tweeted out and I think you retweeted and we commented and had a little back and forth, but 325 bounty reports submitted 226 hackers participated in the program and $2,367 in bounding was paid out in April.
+Yeah. Yeah. Yeah. So it's, it has to be massive slop. But the other thing is, I think there's probably more valid reports in there and they are, they're, they're slow to get back to them. And obviously,
+GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. Yeah. And I mean, I don't understand how they have to get back to them.
+And obviously, GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. Yeah. And I mean, I don't understand how they have to get back to them.
+And obviously, GitHub has already been in the news for lots of drama around uptime and all kinds of stuff. Yeah. And I mean, I don't understand how they have to get back to them.
+I don't understand how they haven't started charging per repository or per data on repository for because they're basically hosting the code of the entire world. Right?
+Yeah. Yeah. That's it's crazy, dude. I don't know. I don't know. And I'm sure people are utilizing, you know, all sorts of GitHub actions for this, for that, for the other thing.
+So it's, it's definitely challenging. And I think that probably the 2000 awarded here, just like you said, is not GitHub, you know, doing some crazy cutting of hackers, you know, ripping off hackers.
+It's slop or and or reports that they have been struggling, struggling, struggling to get through the volume and just haven't paid out yet. So. Right.
+Yeah. My guess is my guess is that if you could like draw a perfect line and be omniscient and be like, Hey, these, these 20% of or 10% of bugs that do get paid out eventually, if you could like move them from the forward back into this month where they paid the same month they were submitted, that it might be something more like 20 or 30 K. Right.
+It's not going to be some crazy number, but at the very least it would actually be like a more reasonable number, like, because this just feels very unreasonable.
+I don't know, man. GitHub, GitHub, I mean, might be more than 20 or 30 GitHub.
+Uh, I guess we should go back and look at what they have paid in previous months, but when I've hacked on GitHub. Yeah. I mean, they're paying in, in March, they paid 94, you know, in February 48 in January 76.
+So yeah, I would, I would imagine. I wonder if they just have a bunch of boundaries that they, uh, that are ready to be paid and just didn't pay in April, you know, like they paid them on May 1st or something because of some sort of like hiccup in like the payment processing or their team or whatever.
+Dude, look, look at, hold on.
+Uh, I'm about to like message you on, on discord.
+Look at the, um, look at the, the tweets though.
+Cause if we look back at, uh, let's go back to November 162, 78 K 162 reports, 78 K 146 reports, 93 K, uh, 151 reports, 48 K 182 reports, 76 K.
+And then here comes, here comes the hack bot problems, right?
+200 reports, 48 K 380 reports, 94 K 320 reports, 2 K.
+Right.
+They stopped being able to keep up.
+Yeah.
+It seems like, and I will say, don't you think this is both true of humans, but also true of our hack bots is like when there's really complex scope where like the boundaries for permissions are hard to know, uh, exactly what, uh, what's intended mixed with the fact that a lot of times, like on like CI CD runners and stuff like that, you might have code execution, but it's not impactful because whatever.
+And I bet there are a lot of, uh, newbies and, or people using hack bots that are like finding issues for companies that are hosting something on GitHub, but it's being reported to GitHub as a GitHub bug.
+When it's really somebody set up a malicious runner or something, right?
+Like totally.
+Yeah.
+Yeah.
+I imagine so.
+And so anyway, I just wanted to give a shout out to the GitHub team, you know, for one, for the transparency, right?
+Mm-hmm .
+And hopefully you guys can hang in there.
+Uh, cause you know, that was a painful button to push, you know, there was a painful button to push.
+I know we're going to catch flack for this tweet.
+Yeah.
+So shout out to them for that.
+I appreciate the transparency and yeah, my prayers go up for you because I mean, comparing some of these months, you've seen triple the reports, you know, closer to triple than double.
+Uh, which is just gotta be really rough.
+Uh, and like we talked about before, it's not just triple the reports.
+It's longer reports, more, more professional looking reports that are just garbage.
+So sad.
+Harder to weed through.
+Yeah.
+Yeah, totally, man.
+All right.
+Well, that's all I had.
+You got anything else?
+That's all I've got.
+All right.
+Well, keep hacking hackers.
+Peace.
+Peace.
+And that's a wrap on this episode of critical thinking.
+Thanks so much for watching to the end.
+Y'all, if you want more critical thinking content, uh, or if you want to support the show, head over to ctbb.show slash discord.
+You can hop in the community.
+There's lots of great high level hacking discussion happening there on top of the masterclasses, hack alongs, exclusive content, and a full-time hunters guild.
+If you're a full-time hunter, it's a great time.
+Trust me.
+I'll see you there.
